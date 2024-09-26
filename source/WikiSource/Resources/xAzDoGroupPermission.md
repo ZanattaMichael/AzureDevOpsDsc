@@ -1,13 +1,13 @@
-# xAzDoGroupPermission Resource Documentation (Currently Disabled)
+# AzDoGroupPermission Resource Documentation (Currently Disabled)
 
 ## Overview
 
-The `xAzDoGroupPermission` resource is part of the Azure DevOps Desired State Configuration (DSC) module. It allows you to manage group permissions within an Azure DevOps project repository. This resource provides properties for specifying the group name, permission inheritance, and a list of permissions to be set.
+The `AzDoGroupPermission` resource is part of the Azure DevOps Desired State Configuration (DSC) module. It allows you to manage group permissions within an Azure DevOps project repository. This resource provides properties for specifying the group name, permission inheritance, and a list of permissions to be set.
 
 ## Syntax
 
 ```PowerShell
-xAzDoGroupPermission [string] #ResourceName
+AzDoGroupPermission [string] #ResourceName
 {
     GroupName = [String]$GroupName
     [ isInherited = [Boolean]$isInherited ]
@@ -24,7 +24,7 @@ xAzDoGroupPermission [string] #ResourceName
 ## Permissions Syntax
 
 ```PowerShell
-xAzDoGroupPermission/Permissions
+AzDoGroupPermission/Permissions
 {
     Identity = [String]$Identity
     #   SYNTAX:     '[ProjectName | OrganizationName]\ServicePrincipalName, UserPrincipalName, UserDisplayName, GroupDisplayName'
@@ -38,7 +38,7 @@ xAzDoGroupPermission/Permissions
 ### Permission Usage
 
 ```PowerShell
-xAzDoGroupPermission/Permissions/Permission
+AzDoGroupPermission/Permissions/Permission
 {
     PermissionName|PermissionDisplayName = [String]$Name { 'Allow, Deny' }
 }
@@ -66,7 +66,7 @@ Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzDevOpsDsc'
 
     Node localhost {
-        xAzDoGroupPermission GroupPermission {
+        AzDoGroupPermission GroupPermission {
             GroupName        = 'SampleGroup'
             isInherited      = $true
             Permissions      = @(
@@ -102,19 +102,19 @@ $properties = @{
                       )
 }
 
-Invoke-DSCResource -Name 'xAzDoGroupPermission' -Method Set -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DSCResource -Name 'AzDoGroupPermission' -Method Set -Property $properties -ModuleName 'AzureDevOpsDsc'
 ```
 
 ## Methods
 
 ### Get Method
 
-Retrieves the current state properties of the `xAzDoGroupPermission` resource.
+Retrieves the current state properties of the `AzDoGroupPermission` resource.
 
 ```PowerShell
-[xAzDoGroupPermission] Get()
+[AzDoGroupPermission] Get()
 {
-    return [xAzDoGroupPermission]$($this.GetDscCurrentStateProperties())
+    return [AzDoGroupPermission]$($this.GetDscCurrentStateProperties())
 }
 ```
 
@@ -135,7 +135,7 @@ hidden [Hashtable] GetDscCurrentStateProperties([PSCustomObject]$CurrentResource
     $properties.isInherited = $CurrentResourceObject.isInherited
     $properties.Permissions = $CurrentResourceObject.Permissions
 
-    Write-Verbose "[xAzDoGroupPermission] Current state properties: $($properties | Out-String)"
+    Write-Verbose "[AzDoGroupPermission] Current state properties: $($properties | Out-String)"
 
     return $properties
 }

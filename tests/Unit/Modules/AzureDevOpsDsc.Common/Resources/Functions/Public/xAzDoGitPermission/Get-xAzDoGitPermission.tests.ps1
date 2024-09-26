@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Get-xAzDoGitPermission Tests' {
+Describe 'Get-AzDoGitPermission Tests' {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global
@@ -12,7 +12,7 @@ Describe 'Get-xAzDoGitPermission Tests' {
 
         # Load the functions to test
         if ($null -eq $currentFile) {
-            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'Get-xAzDoGitPermission.tests.ps1'
+            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'Get-AzDoGitPermission.tests.ps1'
         }
 
         # Load the functions to test
@@ -104,7 +104,7 @@ Describe 'Get-xAzDoGitPermission Tests' {
         $isInherited = $true
         $Permissions = @(@{ 'Permission' = 'Deny' })
 
-        $result = Get-xAzDoGitPermission -ProjectName $ProjectName -RepositoryName $RepositoryName -isInherited $isInherited -Permissions $Permissions
+        $result = Get-AzDoGitPermission -ProjectName $ProjectName -RepositoryName $RepositoryName -isInherited $isInherited -Permissions $Permissions
 
         $result | Should -Not -BeNullOrEmpty
         $result.status | Should -Be 'Changed'
@@ -125,7 +125,7 @@ Describe 'Get-xAzDoGitPermission Tests' {
             }
         }
 
-        $result = Get-xAzDoGitPermission -ProjectName $ProjectName -RepositoryName $RepositoryName -isInherited $isInherited -Permissions $Permissions
+        $result = Get-AzDoGitPermission -ProjectName $ProjectName -RepositoryName $RepositoryName -isInherited $isInherited -Permissions $Permissions
 
         $result | Should -Not -BeNullOrEmpty
         $result.status | Should -Be 'Unchanged'
@@ -138,7 +138,7 @@ Describe 'Get-xAzDoGitPermission Tests' {
         $isInherited = $true
         $Permissions = @(@{ 'Permission' = $null })
 
-        $result = Get-xAzDoGitPermission -ProjectName $ProjectName -RepositoryName $RepositoryName -isInherited $isInherited -Permissions $Permissions
+        $result = Get-AzDoGitPermission -ProjectName $ProjectName -RepositoryName $RepositoryName -isInherited $isInherited -Permissions $Permissions
 
         $result | Should -Not -BeNullOrEmpty
         $result.status | Should -Be 'Changed'
@@ -154,7 +154,7 @@ Describe 'Get-xAzDoGitPermission Tests' {
         $isInherited = $true
         $Permissions = @(@{ 'Permission' = 'Allow' })
 
-        $result = Get-xAzDoGitPermission -ProjectName $ProjectName -RepositoryName $RepositoryName -isInherited $isInherited -Permissions $Permissions
+        $result = Get-AzDoGitPermission -ProjectName $ProjectName -RepositoryName $RepositoryName -isInherited $isInherited -Permissions $Permissions
 
         $result | Should -Not -BeNullOrEmpty
         $result.status | Should -Be 'NotFound'
@@ -170,7 +170,7 @@ Describe 'Get-xAzDoGitPermission Tests' {
         $isInherited = $true
         $Permissions = @(@{ 'Permission' = 'Allow' })
 
-        $result = Get-xAzDoGitPermission -ProjectName $ProjectName -RepositoryName $RepositoryName -isInherited $isInherited -Permissions $Permissions
+        $result = Get-AzDoGitPermission -ProjectName $ProjectName -RepositoryName $RepositoryName -isInherited $isInherited -Permissions $Permissions
 
         $result | Should -Not -BeNullOrEmpty
         $result.status | Should -Be 'NotFound'
@@ -186,7 +186,7 @@ Describe 'Get-xAzDoGitPermission Tests' {
         $isInherited = $true
         $Permissions = @(@{ 'Permission' = 'Allow' })
 
-        $result = Get-xAzDoGitPermission -ProjectName $ProjectName -RepositoryName $RepositoryName -isInherited $isInherited -Permissions $Permissions
+        $result = Get-AzDoGitPermission -ProjectName $ProjectName -RepositoryName $RepositoryName -isInherited $isInherited -Permissions $Permissions
 
         $result | Should -Not -BeNullOrEmpty
         $result.status | Should -Be 'NotFound'

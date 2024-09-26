@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Remove-xAzDoGitPermission" {
+Describe "Remove-AzDoGitPermission" {
 
 
     AfterAll {
@@ -13,7 +13,7 @@ Describe "Remove-xAzDoGitPermission" {
 
         # Load the functions to test
         if ($null -eq $currentFile) {
-            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'Remove-xAzDoGitPermission.tests.ps1'
+            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'Remove-AzDoGitPermission.tests.ps1'
         }
 
         # Load the functions to test
@@ -63,7 +63,7 @@ Describe "Remove-xAzDoGitPermission" {
 
         Mock -CommandName 'Write-Verbose' -Verifiable
 
-        Remove-xAzDoGitPermission @params
+        Remove-AzDoGitPermission @params
 
         Assert-MockCalled -CommandName Remove-xAzDoPermission -Times 1
         Assert-VerifiableMock
@@ -80,7 +80,7 @@ Describe "Remove-xAzDoGitPermission" {
             }
         }
 
-        Remove-xAzDoGitPermission @params
+        Remove-AzDoGitPermission @params
 
         Assert-MockCalled -CommandName Remove-xAzDoPermission -Exactly 0
         Assert-VerifiableMock
@@ -97,7 +97,7 @@ Describe "Remove-xAzDoGitPermission" {
             }
         }
 
-        Remove-xAzDoGitPermission @params
+        Remove-AzDoGitPermission @params
 
         Assert-MockCalled -CommandName Remove-xAzDoPermission -Exactly 0
         Assert-VerifiableMock
@@ -114,7 +114,7 @@ Describe "Remove-xAzDoGitPermission" {
             }
         }
 
-        Remove-xAzDoGitPermission @params
+        Remove-AzDoGitPermission @params
 
         Assert-MockCalled -CommandName Remove-xAzDoPermission -Exactly 0
         Assert-VerifiableMock
@@ -131,7 +131,7 @@ Describe "Remove-xAzDoGitPermission" {
             }
         }
 
-        Remove-xAzDoGitPermission @params
+        Remove-AzDoGitPermission @params
 
         Assert-MockCalled -CommandName Remove-xAzDoPermission -Exactly 0
         Assert-VerifiableMock
@@ -148,7 +148,7 @@ Describe "Remove-xAzDoGitPermission" {
             }
         }
 
-        Remove-xAzDoGitPermission @params
+        Remove-AzDoGitPermission @params
 
         Assert-MockCalled -CommandName Remove-xAzDoPermission -Exactly 0
         Assert-VerifiableMock

@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'New-xAzDoGitPermission' {
+Describe 'New-AzDoGitPermission' {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global
@@ -12,7 +12,7 @@ Describe 'New-xAzDoGitPermission' {
 
         # Load the functions to test
         if ($null -eq $currentFile) {
-            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'New-xAzDoGitPermission.tests.ps1'
+            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'New-AzDoGitPermission.tests.ps1'
         }
 
         # Load the functions to test
@@ -40,7 +40,7 @@ Describe 'New-xAzDoGitPermission' {
                 RepositoryName = 'TestRepo'
                 isInherited = $true
             }
-            New-xAzDoGitPermission @params
+            New-AzDoGitPermission @params
 
             Assert-MockCalled -CommandName Set-xAzDoPermission -Exactly 1
         }
@@ -52,7 +52,7 @@ Describe 'New-xAzDoGitPermission' {
                 isInherited = $true
                 LookupResult = @{ propertiesChanged = @{} }
             }
-            New-xAzDoGitPermission @params
+            New-AzDoGitPermission @params
 
             Assert-MockCalled -CommandName ConvertTo-ACLHashtable -Exactly 1
             Assert-MockCalled -CommandName Set-xAzDoPermission -Exactly 1
@@ -72,7 +72,7 @@ Describe 'New-xAzDoGitPermission' {
                 Ensure = 'Present'
                 Force = $true
             }
-            New-xAzDoGitPermission @params
+            New-AzDoGitPermission @params
 
             Assert-MockCalled -CommandName Get-CacheItem -Times 2
             Assert-MockCalled -CommandName ConvertTo-ACLHashtable -Exactly 1
@@ -92,7 +92,7 @@ Describe 'New-xAzDoGitPermission' {
                 RepositoryName = 'TestRepo'
                 isInherited = $true
             }
-            New-xAzDoGitPermission @params
+            New-AzDoGitPermission @params
 
             Assert-MockCalled -CommandName ConvertTo-ACLHashtable -Exactly 0
             Assert-MockCalled -CommandName Set-xAzDoPermission -Exactly 0
@@ -109,7 +109,7 @@ Describe 'New-xAzDoGitPermission' {
                 isInherited = $true
                 Force = $true
             }
-            New-xAzDoGitPermission @params
+            New-AzDoGitPermission @params
 
             # Verify if any additional logic related to -Force was executed
             # This is a placeholder as the current implementation does not use -Force
@@ -127,7 +127,7 @@ Describe 'New-xAzDoGitPermission' {
                 isInherited = $true
             }
 
-            New-xAzDoGitPermission @params
+            New-AzDoGitPermission @params
 
             Assert-VerifiableMock
 

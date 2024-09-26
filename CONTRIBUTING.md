@@ -240,7 +240,7 @@ class ClassName : AzDevOpsDscResourceBase
 
     [ClassName] Get()
     {
-        return [xAzDoProject]$($this.GetDscCurrentStateProperties())
+        return [AzDoProject]$($this.GetDscCurrentStateProperties())
     }
 
     hidden [System.String[]]GetDscResourcePropertyNamesWithNoSetSupport()
@@ -281,7 +281,7 @@ This format helps users understand each property and method of your resource, pr
 
 ### Naming the Resource
 
-The resource name must start with the prefix xAzDo, such as xAzDoProject.
+The resource name must start with the prefix xAzDo, such as AzDoProject.
 
 ### Guidelines for Documentation
 
@@ -430,7 +430,7 @@ The `Get` function performs the lookup of the resource properties and calculates
 The changed contents are stored within the `LookupResult.PropertiesChanged` property.
 
 ```PowerShell
-Function Get-xAzDoProjectServices {
+Function Get-AzDoProjectServices {
 
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]

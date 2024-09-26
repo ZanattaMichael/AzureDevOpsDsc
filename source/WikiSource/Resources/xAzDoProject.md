@@ -1,9 +1,9 @@
-# DSC xAzDoProject Resource
+# DSC AzDoProject Resource
 
 # Syntax
 
 ``` PowerShell
-xAzDoProject [string] #ResourceName
+AzDoProject [string] #ResourceName
 {
     ProjectName = [String]$ProjectName
     [ Ensure = [String] {'Present', 'Absent'}]
@@ -31,14 +31,14 @@ It allows you to define the properties of an Azure DevOps project and ensures th
 
 # Examples
 
-## Example 1: Sample Configuration for Azure DevOps Project using xAzDoProject Resource
+## Example 1: Sample Configuration for Azure DevOps Project using AzDoProject Resource
 
 ``` PowerShell
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzDevOpsDsc'
 
     Node localhost {
-        xAzDoProject ProjectExample {
+        AzDoProject ProjectExample {
             Ensure             = 'Present'
             ProjectName        = 'MySampleProject'
             ProjectDescription = 'This is a sample Azure DevOps project.'
@@ -57,7 +57,7 @@ Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ## Example 2: Sample Configuration for Azure DevOps Project using Invoke-DSCResource
 
 ``` PowerShell
-# Return the current configuration for xAzDoProject
+# Return the current configuration for AzDoProject
 # Ensure is not required
 $properties = @{
     ProjectName             = 'MySameProject'
@@ -67,7 +67,7 @@ $properties = @{
     Visibility              = 'Private'
 }
 
-Invoke-DSCResource -Name 'xAzDoProject' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DSCResource -Name 'AzDoProject' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
 ```
 
 ## Example 3: Sample Configuration to remove/exclude an Azure DevOps Project using Invoke-DSCResource
@@ -79,7 +79,7 @@ $properties = @{
     Ensure                  = 'Absent'
 }
 
-Invoke-DSCResource -Name 'xAzDoProject' -Method Set -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DSCResource -Name 'AzDoProject' -Method Set -Property $properties -ModuleName 'AzureDevOpsDsc'
 ```
 
 ## Example 4: Sample Configuration using xAzDoDSCDatum
@@ -95,7 +95,7 @@ variables: {
 resources:
 
   - name: Project
-    type: AzureDevOpsDsc/xAzDoProject
+    type: AzureDevOpsDsc/AzDoProject
     properties:
       projectName: $ProjectName
       projectDescription: $ProjectDescription

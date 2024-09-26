@@ -1,9 +1,9 @@
-# DSC xAzDoProjectServices Resource
+# DSC AzDoProjectServices Resource
 
 ## Syntax
 
 ```PowerShell
-xAzDoProjectServices [string] #ResourceName
+AzDoProjectServices [string] #ResourceName
 {
     ProjectName = [String]$ProjectName
     [ GitRepositories = [String]$GitRepositories { 'Enabled' | 'Disabled' } ]
@@ -31,14 +31,14 @@ This resource is used to manage Azure DevOps project services using Desired Stat
 
 ## Examples
 
-### Example 1: Sample Configuration using xAzDoProjectServices Resource
+### Example 1: Sample Configuration using AzDoProjectServices Resource
 
 ```PowerShell
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzDevOpsDsc'
 
     Node localhost {
-        xAzDoProjectServices ProjectServices {
+        AzDoProjectServices ProjectServices {
             Ensure             = 'Present'
             ProjectName        = 'SampleProject'
             GitRepositories    = 'Enabled'
@@ -57,7 +57,7 @@ Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ### Example 2: Sample Configuration using Invoke-DSCResource
 
 ```PowerShell
-# Return the current configuration for xAzDoProjectServices
+# Return the current configuration for AzDoProjectServices
 # Ensure is not required
 $properties = @{
     ProjectName      = 'SampleProject'
@@ -68,7 +68,7 @@ $properties = @{
     AzureArtifact    = 'Enabled'
 }
 
-Invoke-DSCResource -Name 'xAzDoProjectServices' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DSCResource -Name 'AzDoProjectServices' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
 ```
 
 ### Example 3: Sample Configuration using xAzDoDSCDatum
@@ -82,7 +82,7 @@ variables: {
 
 resources:
 - name: Sample Project Services
-  type: AzureDevOpsDsc/xAzDoProjectServices
+  type: AzureDevOpsDsc/AzDoProjectServices
   properties:
     ProjectName: SampleProject
     GitRepositories: Enabled
