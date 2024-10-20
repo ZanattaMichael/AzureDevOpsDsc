@@ -3,7 +3,7 @@
     This class represents an Azure DevOps project and its associated services.
 
 .DESCRIPTION
-    The xAzDoProjectServices class is a DSC resource that allows you to manage the services associated with an Azure DevOps project. It provides properties to enable or disable various services such as Git repositories, work boards, build pipelines, test plans, and Azure artifacts.
+    The AzDoProjectServices class is a DSC resource that allows you to manage the services associated with an Azure DevOps project. It provides properties to enable or disable various services such as Git repositories, work boards, build pipelines, test plans, and Azure artifacts.
 
 .PARAMETER ProjectName
     The name of the Azure DevOps project.
@@ -24,13 +24,13 @@
     Specifies whether Azure artifacts are enabled or disabled for the project. Valid values are 'Enabled' and 'Disabled'. The default value is 'Enabled'.
 
 .EXAMPLE
-    This example shows how to use the xAzDoProjectServices resource to manage the services of an Azure DevOps project.
+    This example shows how to use the AzDoProjectServices resource to manage the services of an Azure DevOps project.
 
     Configuration Example {
         Import-DscResource -ModuleName xAzDevOpsDSC
 
         Node localhost {
-            xAzDoProjectServices ProjectServices {
+            AzDoProjectServices ProjectServices {
                 ProjectName     = 'MyProject'
                 GitRepositories = 'Enabled'
                 WorkBoards      = 'Disabled'
@@ -50,7 +50,7 @@
 
 [DscResource()]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSDSCStandardDSCFunctionsInResource', '', Justification='Test() and Set() method are inherited from base, "AzDevOpsDscResourceBase" class')]
-class xAzDoProjectServices : AzDevOpsDscResourceBase
+class AzDoProjectServices : AzDevOpsDscResourceBase
 {
     [DscProperty(Mandatory, Key)]
     [Alias('Name')]
@@ -81,14 +81,14 @@ class xAzDoProjectServices : AzDevOpsDscResourceBase
     [ValidateSet('Enabled', 'Disabled')]
     [System.String]$AzureArtifact = 'Enabled'
 
-    xAzDoProjectServices()
+    AzDoProjectServices()
     {
         $this.Construct()
     }
 
-    [xAzDoProjectServices] Get()
+    [AzDoProjectServices] Get()
     {
-        return [xAzDoProjectServices]$($this.GetDscCurrentStateProperties())
+        return [AzDoProjectServices]$($this.GetDscCurrentStateProperties())
     }
 
     hidden [System.String[]]GetDscResourcePropertyNamesWithNoSetSupport()
@@ -114,7 +114,7 @@ class xAzDoProjectServices : AzDevOpsDscResourceBase
         $properties.Ensure              = $CurrentResourceObject.Ensure
         $properties.LookupResult        = $CurrentResourceObject.LookupResult
 
-        Write-Verbose "[xAzDoProjectGroup] Current state properties: $($properties | Out-String)"
+        Write-Verbose "[AzDoProjectGroup] Current state properties: $($properties | Out-String)"
 
         return $properties
     }

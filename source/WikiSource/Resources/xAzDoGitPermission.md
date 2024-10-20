@@ -164,7 +164,7 @@ resources:
   - name: SampleGroup Permissions
     type: AzureDevOpsDsc/AzDoGitPermission
     dependsOn: 
-        - AzureDevOpsDsc/xAzDoProjectGroup/SampleGroupReadAccess
+        - AzureDevOpsDsc/AzDoProjectGroup/SampleGroupReadAccess
     properties:
       projectName: $ProjectName
       RepositoryName: $RepositoryName

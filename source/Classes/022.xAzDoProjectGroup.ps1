@@ -3,7 +3,7 @@
     This class represents an Azure DevOps project group.
 
 .DESCRIPTION
-    The xAzDoProjectGroup class is a DSC resource that allows you to manage Azure DevOps project groups.
+    The AzDoProjectGroup class is a DSC resource that allows you to manage Azure DevOps project groups.
 
 .NOTES
     Author: Michael Zanatta
@@ -24,7 +24,7 @@
 .EXAMPLE
     This example shows how to create a new project group:
 
-    $projectGroup = [xAzDoProjectGroup]::new()
+    $projectGroup = [AzDoProjectGroup]::new()
     $projectGroup.ProjectName = "MyProject"
     $projectGroup.GroupName = "MyGroup"
     $projectGroup.GroupDescription = "This is my project group."
@@ -43,7 +43,7 @@
 
 [DscResource()]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSDSCStandardDSCFunctionsInResource', '', Justification='Test() and Set() method are inherited from base, "AzDevOpsDscResourceBase" class')]
-class xAzDoProjectGroup : AzDevOpsDscResourceBase
+class AzDoProjectGroup : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)]
     [Alias('Name')]
@@ -57,14 +57,14 @@ class xAzDoProjectGroup : AzDevOpsDscResourceBase
     [Alias('Description')]
     [System.String]$GroupDescription
 
-    xAzDoProjectGroup()
+    AzDoProjectGroup()
     {
         $this.Construct()
     }
 
-    [xAzDoProjectGroup] Get()
+    [AzDoProjectGroup] Get()
     {
-        return [xAzDoProjectGroup]$($this.GetDscCurrentStateProperties())
+        return [AzDoProjectGroup]$($this.GetDscCurrentStateProperties())
     }
 
     hidden [System.String[]]GetDscResourcePropertyNamesWithNoSetSupport()
@@ -81,7 +81,7 @@ class xAzDoProjectGroup : AzDevOpsDscResourceBase
             ProjectName = $this.ProjectName
         }
 
-        return Get-xAzDoProjectGroup @params
+        return Get-AzDoProjectGroup @params
 
     }
 
@@ -101,7 +101,7 @@ class xAzDoProjectGroup : AzDevOpsDscResourceBase
         $properties.LookupResult        = $CurrentResourceObject.LookupResult
         #$properties.Reasons             = $CurrentResourceObject.LookupResult.Reasons
 
-        Write-Verbose "[xAzDoProjectGroup] Current state properties: $($properties | Out-String)"
+        Write-Verbose "[AzDoProjectGroup] Current state properties: $($properties | Out-String)"
 
         return $properties
     }

@@ -1,4 +1,4 @@
-function New-xAzDoProject
+function Set-AzDoProject
 {
     [CmdletBinding()]
     param
@@ -39,31 +39,30 @@ function New-xAzDoProject
 
     )
 
-    # Set the organization name
     $OrganizationName = $Global:DSCAZDO_OrganizationName
 
     #
     # Perform a lookup to see if the group exists in Azure DevOps
+    $project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
     $processTemplateObj = Get-CacheItem -Key $ProcessTemplate -Type 'LiveProcesses'
 
     #
     # Construct the parameters for the API call
     $parameters = @{
         organization = $OrganizationName
-        projectName  = $ProjectName
+        projectId  = $project.id
         description  = $ProjectDescription
-        sourceControlType = $SourceControlType
         processTemplateId = $processTemplateObj.id
         visibility = $Visibility
     }
 
     #
-    # Create the project
+    # Update the project
 
-    $projectJob = New-DevOpsProject @parameters
+    $projectJob = Update-DevOpsProject @parameters
 
     #
-    # Wait for the project to be created
+    # Wait for the project to be updated
 
     Wait-DevOpsProject -ProjectURL $projectJob.url -OrganizationName $OrganizationName
 
@@ -73,5 +72,3 @@ function New-xAzDoProject
     Refresh-AzDoCache -OrganizationName $OrganizationName
 
 }
-
-

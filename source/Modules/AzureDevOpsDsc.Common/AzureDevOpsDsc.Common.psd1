@@ -40,17 +40,17 @@
 
         #
         # DSC Class Based Resources
-        'Get-xAzDoProject',
-        'New-xAzDoProject',
-        'Set-xAzDoProject',
-        'Remove-xAzDoProject',
-        'Test-xAzDoProject',
+        'Get-AzDoProject',
+        'New-AzDoProject',
+        'Set-AzDoProject',
+        'Remove-AzDoProject',
+        'Test-AzDoProject',
 
-        'Get-xAzDoProjectGroup',
-        'New-xAzDoProjectGroup',
-        'Set-xAzDoProjectGroup',
-        'Remove-xAzDoProjectGroup',
-        'Test-xAzDoProjectGroup',
+        'Get-AzDoProjectGroup',
+        'New-AzDoProjectGroup',
+        'Set-AzDoProjectGroup',
+        'Remove-AzDoProjectGroup',
+        'Test-AzDoProjectGroup',
 
         'Get-AzDoOrganizationGroup',
         'New-AzDoOrganizationGroup',
@@ -78,10 +78,10 @@
         'Remove-AzDoGroupPermission',
         'Set-AzDoGroupPermission',
 
-        'Get-xAzDoProjectServices',
-        'Set-xAzDoProjectServices',
-        'Test-xAzDoProjectServices',
-        'Remove-xAzDoProjectServices'
+        'Get-AzDoProjectServices',
+        'Set-AzDoProjectServices',
+        'Test-AzDoProjectServices',
+        'Remove-AzDoProjectServices'
 
     )
 

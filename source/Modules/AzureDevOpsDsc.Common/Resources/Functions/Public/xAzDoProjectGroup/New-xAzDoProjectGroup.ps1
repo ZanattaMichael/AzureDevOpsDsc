@@ -1,4 +1,4 @@
-Function New-xAzDoProjectGroup {
+Function New-AzDoProjectGroup {
 
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
@@ -39,26 +39,26 @@ Function New-xAzDoProjectGroup {
 
     # If the project scope descriptor is not found, write a warning message to the console and return.
     if ($null -eq $params.ProjectScopeDescriptor) {
-        Write-Warning "[New-xAzDoProjectGroup] Unable to find project scope descriptor for project '$ProjectName'. Aborting group creation."
+        Write-Warning "[New-AzDoProjectGroup] Unable to find project scope descriptor for project '$ProjectName'. Aborting group creation."
         return
     }
 
     # Write verbose log before creating a new group
-    Write-Verbose "[New-xAzDoProjectGroup] Creating a new DevOps group with the following parameters: $($params | Out-String)"
+    Write-Verbose "[New-AzDoProjectGroup] Creating a new DevOps group with the following parameters: $($params | Out-String)"
 
     # Create a new group
     $group = New-DevOpsGroup @params
 
     # Write verbose log after group creation
-    Write-Verbose "[New-xAzDoProjectGroup] New DevOps group created: $($group | Out-String)"
+    Write-Verbose "[New-AzDoProjectGroup] New DevOps group created: $($group | Out-String)"
 
     # Update the cache with the new group
     Refresh-CacheIdentity -Identity $group -Key $group.principalName -CacheType 'LiveGroups'
 
     Add-CacheItem -Key $group.principalName -Value $group -Type 'Group'
-    Write-Verbose "[New-xAzDoProjectGroup] Added new group to Group cache with key: $($group.principalName)"
+    Write-Verbose "[New-AzDoProjectGroup] Added new group to Group cache with key: $($group.principalName)"
 
     Set-CacheObject -Content $Global:AzDoGroup -CacheType 'Group'
-    Write-Verbose "[New-xAzDoProjectGroup] Updated global AzDoGroup cache object."
+    Write-Verbose "[New-AzDoProjectGroup] Updated global AzDoGroup cache object."
 
 }

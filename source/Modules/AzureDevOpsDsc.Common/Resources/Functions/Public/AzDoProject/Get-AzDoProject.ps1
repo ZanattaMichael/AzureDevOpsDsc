@@ -1,4 +1,4 @@
-function Get-xAzDoProject
+function Get-AzDoProject
 {
     [CmdletBinding()]
     param (
@@ -30,11 +30,11 @@ function Get-xAzDoProject
         [Ensure] $Ensure
     )
 
-    Write-Verbose "[Get-xAzDoProject] Started."
+    Write-Verbose "[Get-AzDoProject] Started."
 
     # Set the organization name
     $OrganizationName = $Global:DSCAZDO_OrganizationName
-    Write-Verbose "[Get-xAzDoProject] Organization Name: $OrganizationName"
+    Write-Verbose "[Get-AzDoProject] Organization Name: $OrganizationName"
 
     # Construct a hashtable detailing the group
     $result = @{
@@ -47,44 +47,44 @@ function Get-xAzDoProject
         propertiesChanged  = @()
         status             = $null
     }
-    Write-Verbose "[Get-xAzDoProject] Initial result hashtable constructed."
+    Write-Verbose "[Get-AzDoProject] Initial result hashtable constructed."
 
     # Perform a lookup to see if the project exists in Azure DevOps
     $project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
     # Set the project description to be a string if it is not already.
-    Write-Verbose "[Get-xAzDoProject] Project lookup result: $project"
+    Write-Verbose "[Get-AzDoProject] Project lookup result: $project"
 
     $processTemplateObj = Get-CacheItem -Key $ProcessTemplate -Type 'LiveProcesses'
-    Write-Verbose "[Get-xAzDoProject] Process template lookup result: $processTemplateObj"
+    Write-Verbose "[Get-AzDoProject] Process template lookup result: $processTemplateObj"
 
     # Test if the project exists. If the project does not exist, return NotFound
     if (($null -eq $project) -and ($null -ne $ProjectName))
     {
         $result.Status = [DSCGetSummaryState]::NotFound
-        Write-Verbose "[Get-xAzDoProject] Project not found."
+        Write-Verbose "[Get-AzDoProject] Project not found."
         return $result
     }
 
     # Test if the process template exists. If the process template does not exist, throw an error.
     if ($null -eq $processTemplateObj)
     {
-        throw "[Get-xAzDoProject] Process template '$processTemplateObj' not found."
+        throw "[Get-AzDoProject] Process template '$processTemplateObj' not found."
     }
 
-    Write-Verbose "[Get-xAzDoProject] Testing source control type."
+    Write-Verbose "[Get-AzDoProject] Testing source control type."
 
     # Test if the project is using the same source control type. If the source control type is different, return a conflict.
     if ($SourceControlType -ne $project.SourceControlType)
     {
-        Write-Warning "[Get-xAzDoProject] Source control type is different. Current: $($project.SourceControlType), Desired: $SourceControlType"
-        Write-Warning "[Get-xAzDoProject] Source control type cannot be changed. Please delete the project and recreate it."
+        Write-Warning "[Get-AzDoProject] Source control type is different. Current: $($project.SourceControlType), Desired: $SourceControlType"
+        Write-Warning "[Get-AzDoProject] Source control type cannot be changed. Please delete the project and recreate it."
     }
 
     # If the project description is null, set it to an empty string.
     if ($null -eq $project.description)
     {
         $project | Add-Member -MemberType NoteProperty -Name description -Value ''
-        Write-Verbose "[Get-xAzDoProject] Project description was null, set to empty string."
+        Write-Verbose "[Get-AzDoProject] Project description was null, set to empty string."
     }
 
     # Test if the project description is the same. If the description is different, return a conflict.
@@ -92,7 +92,7 @@ function Get-xAzDoProject
     {
         $result.Status = [DSCGetSummaryState]::Changed
         $result.propertiesChanged += 'Description'
-        Write-Verbose "[Get-xAzDoProject] Project description has changed."
+        Write-Verbose "[Get-AzDoProject] Project description has changed."
     }
 
     <#
@@ -109,10 +109,10 @@ function Get-xAzDoProject
     {
         $result.Status = [DSCGetSummaryState]::Changed
         $result.propertiesChanged += 'Visibility'
-        Write-Verbose "[Get-xAzDoProject] Project visibility has changed."
+        Write-Verbose "[Get-AzDoProject] Project visibility has changed."
     }
 
     # Return the group from the cache
-    Write-Verbose "[Get-xAzDoProject] Returning final result."
+    Write-Verbose "[Get-AzDoProject] Returning final result."
     return $result
 }

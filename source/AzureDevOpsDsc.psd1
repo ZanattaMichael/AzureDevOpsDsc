@@ -43,7 +43,7 @@
     DscResourcesToExport = @(
       'xAzDevOpsProject',
       'AzDoOrganizationGroup',
-      'xAzDoProjectGroup'
+      'AzDoProjectGroup'
     )
 
     RequiredAssemblies = @()

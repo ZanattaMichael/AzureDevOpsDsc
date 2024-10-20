@@ -83,7 +83,7 @@ class AzDoGroupMember : AzDevOpsDscResourceBase
         $properties.Ensure              = $CurrentResourceObject.Ensure
         $properties.LookupResult        = $CurrentResourceObject.LookupResult
 
-        Write-Verbose "[xAzDoProjectGroup] Current state properties: $($properties | Out-String)"
+        Write-Verbose "[AzDoProjectGroup] Current state properties: $($properties | Out-String)"
 
         return $properties
     }

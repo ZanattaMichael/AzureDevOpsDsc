@@ -22,7 +22,7 @@ Function New-AzDoGroupPermission {
     )
 
 
-    Write-Verbose "[New-xAzDoProjectGroupPermission] Started."
+    Write-Verbose "[New-AzDoProjectGroupPermission] Started."
 
     #
     # Format the Group Name
@@ -32,7 +32,7 @@ Function New-AzDoGroupPermission {
 
     # Test if the Group Name is valid
     if ($split.Count -ne 2) {
-        Write-Warning "[Get-xAzDoProjectGroupPermission] Invalid Group Name: $GroupName"
+        Write-Warning "[Get-AzDoProjectGroupPermission] Invalid Group Name: $GroupName"
         return
     }
 

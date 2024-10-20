@@ -1,4 +1,4 @@
-Function Remove-xAzDoProjectGroup {
+Function Remove-AzDoProjectGroup {
 
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]

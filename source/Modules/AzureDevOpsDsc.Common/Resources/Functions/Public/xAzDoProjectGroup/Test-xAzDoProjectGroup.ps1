@@ -30,7 +30,7 @@
     using the specified personal access token and API URI.
 
 #>
-Function Test-xAzDoProjectGroup {
+Function Test-AzDoProjectGroup {
 
     param(
         [Parameter(Mandatory)]

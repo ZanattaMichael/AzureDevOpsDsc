@@ -1,4 +1,4 @@
-Function Remove-xAzDoProjectServices {
+Function Remove-AzDoProjectServices {
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
     param

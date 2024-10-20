@@ -1,4 +1,4 @@
-function Remove-xAzDoProject
+function Remove-AzDoProject
 {
     [CmdletBinding()]
     param (
@@ -35,28 +35,28 @@ function Remove-xAzDoProject
 
     # Set the organization name
     $OrganizationName = $Global:DSCAZDO_OrganizationName
-    Write-Verbose "[Remove-xAzDoProject] Using organization name: $OrganizationName"
+    Write-Verbose "[Remove-AzDoProject] Using organization name: $OrganizationName"
 
     # Perform a lookup to see if the group exists in Azure DevOps
-    Write-Verbose "[Remove-xAzDoProject] Looking up project: $ProjectName"
+    Write-Verbose "[Remove-AzDoProject] Looking up project: $ProjectName"
     $project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
 
     if ($null -eq $project)
     {
-        Write-Verbose "[Remove-xAzDoProject] Project $ProjectName not found in cache."
+        Write-Verbose "[Remove-AzDoProject] Project $ProjectName not found in cache."
         return
     }
 
-    Write-Verbose "[Remove-xAzDoProject] Found project $ProjectName with ID: $($project.id)"
+    Write-Verbose "[Remove-AzDoProject] Found project $ProjectName with ID: $($project.id)"
 
     # Remove the project
-    Write-Verbose "[Remove-xAzDoProject] Removing project $ProjectName from Azure DevOps"
+    Write-Verbose "[Remove-AzDoProject] Removing project $ProjectName from Azure DevOps"
     Remove-DevOpsProject -Organization $OrganizationName -ProjectId $project.id
 
     # Remove the project from the cache and export the cache
-    Write-Verbose "[Remove-xAzDoProject] Removing project $ProjectName from local cache"
+    Write-Verbose "[Remove-AzDoProject] Removing project $ProjectName from local cache"
     Remove-CacheItem -Key $ProjectName -Type 'LiveProjects'
 
-    Write-Verbose "[Remove-xAzDoProject] Exporting updated cache object for LiveProjects"
+    Write-Verbose "[Remove-AzDoProject] Exporting updated cache object for LiveProjects"
     Export-CacheObject -CacheType 'LiveProjects' -Content $AzDoLiveProjects
 }

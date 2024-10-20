@@ -1,4 +1,4 @@
-function Test-xAzDoProject
+function Test-AzDoProject
 {
     [CmdletBinding()]
     param

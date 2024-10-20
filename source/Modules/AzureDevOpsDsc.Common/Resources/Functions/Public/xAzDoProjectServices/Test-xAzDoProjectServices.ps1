@@ -1,4 +1,4 @@
-Function Test-xAzDoProjectServices {
+Function Test-AzDoProjectServices {
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
     param

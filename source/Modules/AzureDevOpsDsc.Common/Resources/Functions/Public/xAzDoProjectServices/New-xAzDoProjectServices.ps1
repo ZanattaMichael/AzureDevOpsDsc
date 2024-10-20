@@ -1,4 +1,4 @@
-Function New-xAzDoProjectServices {
+Function New-AzDoProjectServices {
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
     param

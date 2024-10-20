@@ -3,7 +3,7 @@
     This class represents an Azure DevOps project.
 
 .DESCRIPTION
-    The xAzDoProject class is used to define and manage Azure DevOps projects. It inherits from the AzDevOpsDscResourceBase class.
+    The AzDoProject class is used to define and manage Azure DevOps projects. It inherits from the AzDevOpsDscResourceBase class.
 
 .NOTES
     Author: Your Name
@@ -34,7 +34,7 @@
     None
 
 .EXAMPLE
-    $project = [xAzDoProject]::Get()
+    $project = [AzDoProject]::Get()
     $project.ProjectName = 'MyProject'
     $project.ProjectDescription = 'This is a sample project'
     $project.SourceControlType = 'Git'
@@ -46,7 +46,7 @@
 
 [DscResource()]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSDSCStandardDSCFunctionsInResource', '', Justification='Test() and Set() method are inherited from base, "AzDevOpsDscResourceBase" class')]
-class xAzDoProject : AzDevOpsDscResourceBase
+class AzDoProject : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)]
     [Alias('Name')]
@@ -68,14 +68,14 @@ class xAzDoProject : AzDevOpsDscResourceBase
     [ValidateSet('Public', 'Private')]
     [System.String]$Visibility = 'Private'
 
-    xAzDoProject()
+    AzDoProject()
     {
         $this.Construct()
     }
 
-    [xAzDoProject] Get()
+    [AzDoProject] Get()
     {
-        return [xAzDoProject]$($this.GetDscCurrentStateProperties())
+        return [AzDoProject]$($this.GetDscCurrentStateProperties())
     }
 
 
