@@ -1,4 +1,4 @@
-Function New-xAzDoOrganizationGroup {
+Function New-AzDoOrganizationGroup {
 
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
@@ -33,7 +33,7 @@ Function New-xAzDoOrganizationGroup {
     }
 
     # Write verbose log with the parameters used for creating the group
-    Write-Verbose "[New-xAzDoOrganizationGroup] Creating a new DevOps group with GroupName: '$($params.GroupName)', GroupDescription: '$($params.GroupDescription)' and ApiUri: '$($params.ApiUri)'"
+    Write-Verbose "[New-AzDoOrganizationGroup] Creating a new DevOps group with GroupName: '$($params.GroupName)', GroupDescription: '$($params.GroupDescription)' and ApiUri: '$($params.ApiUri)'"
 
     # Create a new group
     $group = New-DevOpsGroup @params
@@ -43,11 +43,11 @@ Function New-xAzDoOrganizationGroup {
 
     # Add the group to the Group cache and write to verbose log
     Add-CacheItem -Key $group.principalName -Value $group -Type 'Group'
-    Write-Verbose "[New-xAzDoOrganizationGroup] Added new group to Group cache with key: '$($group.principalName)'"
+    Write-Verbose "[New-AzDoOrganizationGroup] Added new group to Group cache with key: '$($group.principalName)'"
 
     # Update the global AzDoGroup object and write to verbose log
     Set-CacheObject -Content $Global:AzDoGroup -CacheType 'Group'
-    Write-Verbose "[New-xAzDoOrganizationGroup] Updated global AzDoGroup cache object."
+    Write-Verbose "[New-AzDoOrganizationGroup] Updated global AzDoGroup cache object."
 
 
 }

@@ -52,11 +52,11 @@
         'Remove-xAzDoProjectGroup',
         'Test-xAzDoProjectGroup',
 
-        'Get-xAzDoOrganizationGroup',
-        'New-xAzDoOrganizationGroup',
-        'Set-xAzDoOrganizationGroup',
-        'Remove-xAzDoOrganizationGroup',
-        'Test-xAzDoOrganizationGroup',
+        'Get-AzDoOrganizationGroup',
+        'New-AzDoOrganizationGroup',
+        'Set-AzDoOrganizationGroup',
+        'Remove-AzDoOrganizationGroup',
+        'Test-AzDoOrganizationGroup',
 
         'Get-AzDoGroupMember',
         'New-AzDoGroupMember',

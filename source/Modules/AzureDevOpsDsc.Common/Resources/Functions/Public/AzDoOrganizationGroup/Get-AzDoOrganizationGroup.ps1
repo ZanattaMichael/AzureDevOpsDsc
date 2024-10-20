@@ -3,7 +3,7 @@
 Retrieves an organization group from Azure DevOps.
 
 .DESCRIPTION
-The Get-xAzDoOrganizationGroup function retrieves an organization group from Azure DevOps based on the provided parameters.
+The Get-AzDoOrganizationGroup function retrieves an organization group from Azure DevOps based on the provided parameters.
 
 .PARAMETER ApiUri
 The URI of the Azure DevOps API. This parameter is validated using the Test-AzDevOpsApiUri function.
@@ -19,12 +19,12 @@ The name of the organization group to retrieve.
 The retrieved organization group.
 
 .EXAMPLE
-Get-xAzDoOrganizationGroup -ApiUri 'https://dev.azure.com/contoso' -Pat 'xxxxxxxxxxxxxxxxxxxxxxxxxxxx' -GroupName 'Developers'
+Get-AzDoOrganizationGroup -ApiUri 'https://dev.azure.com/contoso' -Pat 'xxxxxxxxxxxxxxxxxxxxxxxxxxxx' -GroupName 'Developers'
 Retrieves the organization group named 'Developers' from the Azure DevOps instance at 'https://dev.azure.com/contoso' using the provided PAT.
 
 #>
 
-Function Get-xAzDoOrganizationGroup {
+Function Get-AzDoOrganizationGroup {
 
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
@@ -47,7 +47,7 @@ Function Get-xAzDoOrganizationGroup {
     )
 
     # Logging
-    Write-Verbose "[Get-xAzDoOrganizationGroup] Retriving the GroupName from the Live and Local Cache."
+    Write-Verbose "[Get-AzDoOrganizationGroup] Retriving the GroupName from the Live and Local Cache."
 
     #
     # Format the Key According to the Principal Name
@@ -62,7 +62,7 @@ Function Get-xAzDoOrganizationGroup {
     $localgroup = Get-CacheItem -Key $Key -Type 'Group'
 
 
-    Write-Verbose "[Get-xAzDoOrganizationGroup] GroupName: '$GroupName'"
+    Write-Verbose "[Get-AzDoOrganizationGroup] GroupName: '$GroupName'"
 
     #
     # Construct a hashtable detailing the group
@@ -75,13 +75,13 @@ Function Get-xAzDoOrganizationGroup {
         status = $null
     }
 
-    Write-Verbose "[Get-xAzDoOrganizationGroup] Testing LocalCache, LiveCache and Parameters."
+    Write-Verbose "[Get-AzDoOrganizationGroup] Testing LocalCache, LiveCache and Parameters."
 
     #
     # If the localgroup and lifegroup are present, compare the properties as well as the originId
     if (($null -ne $livegroup.originId) -and ($null -ne $localgroup.originId)) {
 
-        Write-Verbose "[Get-xAzDoOrganizationGroup] Testing LocalCache, LiveCache and Parameters."
+        Write-Verbose "[Get-AzDoOrganizationGroup] Testing LocalCache, LiveCache and Parameters."
 
         #
         # Check if the originId is the same. If so, the group is unchanged. If not, the group has been renamed.
@@ -100,7 +100,7 @@ Function Get-xAzDoOrganizationGroup {
                 $getGroupResult.status = [DSCGetSummaryState]::Renamed
 
                 # Add the reason
-                #$getGroupResult.Reasons += [DscResourceReason]::New('xAzDoOrganizationGroup:xAzDoOrganizationGroup:RenamedGroup', 'The group was renamed')
+                #$getGroupResult.Reasons += [DscResourceReason]::New('AzDoOrganizationGroup:AzDoOrganizationGroup:RenamedGroup', 'The group was renamed')
 
             } else {
                 # The group has been deleted and recreated. Treat the new group as the live group.
@@ -119,7 +119,7 @@ Function Get-xAzDoOrganizationGroup {
                     # Update the Result
                     $getGroupResult.status = [DSCGetSummaryState]::Changed
                     # Add the reason
-                    #$getGroupResult.Reasons += [DscResourceReason]::New('xAzDoOrganizationGroup:xAzDoOrganizationGroup:Deleted&ReCreate', 'The group was deleted and recreated with another group. The properties have changed')
+                    #$getGroupResult.Reasons += [DscResourceReason]::New('AzDoOrganizationGroup:AzDoOrganizationGroup:Deleted&ReCreate', 'The group was deleted and recreated with another group. The properties have changed')
                 } else {
                     # Update the Result
                     $getGroupResult.status = [DSCGetSummaryState]::Unchanged
@@ -142,7 +142,7 @@ Function Get-xAzDoOrganizationGroup {
         $getGroupResult.status = ($getGroupResult.propertiesChanged.count -ne 0) ? [DSCGetSummaryState]::Changed : [DSCGetSummaryState]::Unchanged
         if ($getGroupResult.status -eq [DSCGetSummaryState]::Changed) {
             # Add the reason
-            #$getGroupResult.Reasons += [DscResourceReason]::New('xAzDoOrganizationGroup:xAzDoOrganizationGroup:Changed', 'The group has changed')
+            #$getGroupResult.Reasons += [DscResourceReason]::New('AzDoOrganizationGroup:AzDoOrganizationGroup:Changed', 'The group has changed')
         } else {
             $getGroupResult.Ensure = [Ensure]::Present
         }
@@ -158,7 +158,7 @@ Function Get-xAzDoOrganizationGroup {
         $getGroupResult.status = [DSCGetSummaryState]::NotFound
         $getGroupResult.propertiesChanged = @('description', 'displayName')
         # Add the reason
-        #$getGroupResult.Reasons += [DscResourceReason]::New('xAzDoOrganizationGroup:xAzDoOrganizationGroup:Removed', 'The group is missing')
+        #$getGroupResult.Reasons += [DscResourceReason]::New('AzDoOrganizationGroup:AzDoOrganizationGroup:Removed', 'The group is missing')
         return $getGroupResult
     }
 
@@ -175,7 +175,7 @@ Function Get-xAzDoOrganizationGroup {
         $getGroupResult.status = ($getGroupResult.propertiesChanged.count -ne 0) ? [DSCGetSummaryState]::Changed : [DSCGetSummaryState]::Unchanged
         if ($getGroupResult.status -ne [DSCGetSummaryState]::Unchanged) {
             # Add the reason
-            #$getGroupResult.Reasons += [DscResourceReason]::New('xAzDoOrganizationGroup:xAzDoOrganizationGroup:Missing', 'The group is missing')
+            #$getGroupResult.Reasons += [DscResourceReason]::New('AzDoOrganizationGroup:AzDoOrganizationGroup:Missing', 'The group is missing')
             # Set the Ensure to Present
             $getGroupResult.Ensure = [Ensure]::Present
         } else {
@@ -194,7 +194,7 @@ Function Get-xAzDoOrganizationGroup {
         $getGroupResult.status = [DSCGetSummaryState]::NotFound
         $getGroupResult.propertiesChanged = @('description', 'displayName')
         # Add the reason
-        #$getGroupResult.Reasons += [DscResourceReason]::New('xAzDoOrganizationGroup:xAzDoOrganizationGroup:NotFound', 'The group is not found')
+        #$getGroupResult.Reasons += [DscResourceReason]::New('AzDoOrganizationGroup:AzDoOrganizationGroup:NotFound', 'The group is not found')
         return $getGroupResult
     }
 

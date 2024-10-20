@@ -22,7 +22,7 @@
     Returns $true if the organization group exists, otherwise returns $false.
 
 .EXAMPLE
-    Test-xAzDoOrganizationGroup -GroupName 'MyGroup' -Pat '********' -ApiUri 'https://dev.azure.com/myorg'
+    Test-AzDoOrganizationGroup -GroupName 'MyGroup' -Pat '********' -ApiUri 'https://dev.azure.com/myorg'
 
     Description
     -----------

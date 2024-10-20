@@ -147,7 +147,7 @@ Function Get-xAzDoProjectGroup {
         $getGroupResult.status = ($getGroupResult.propertiesChanged.count -ne 0) ? [DSCGetSummaryState]::Changed : [DSCGetSummaryState]::Unchanged
         if ($getGroupResult.status -eq [DSCGetSummaryState]::Changed) {
             # Add the reason
-            #$getGroupResult.Reasons += [DscResourceReason]::New('xAzDoOrganizationGroup:xAzDoOrganizationGroup:Changed', 'The group has changed')
+            #$getGroupResult.Reasons += [DscResourceReason]::New('AzDoOrganizationGroup:AzDoOrganizationGroup:Changed', 'The group has changed')
         } else {
             $getGroupResult.Ensure = [Ensure]::Present
         }
@@ -163,7 +163,7 @@ Function Get-xAzDoProjectGroup {
         $getGroupResult.status = [DSCGetSummaryState]::NotFound
         $getGroupResult.propertiesChanged = @('description', 'displayName')
         # Add the reason
-        #$getGroupResult.Reasons += [DscResourceReason]::New('xAzDoOrganizationGroup:xAzDoOrganizationGroup:Removed', 'The group is missing')
+        #$getGroupResult.Reasons += [DscResourceReason]::New('AzDoOrganizationGroup:AzDoOrganizationGroup:Removed', 'The group is missing')
         return $getGroupResult
     }
 
@@ -181,7 +181,7 @@ Function Get-xAzDoProjectGroup {
 
         if ($getGroupResult.status -ne [DSCGetSummaryState]::Unchanged) {
             # Add the reason
-            #$getGroupResult.Reasons += [DscResourceReason]::New('xAzDoOrganizationGroup:xAzDoOrganizationGroup:Missing', 'The group is missing')
+            #$getGroupResult.Reasons += [DscResourceReason]::New('AzDoOrganizationGroup:AzDoOrganizationGroup:Missing', 'The group is missing')
             # Set the Ensure to Present
             $getGroupResult.Ensure = [Ensure]::Present
         } else {
@@ -200,7 +200,7 @@ Function Get-xAzDoProjectGroup {
         $getGroupResult.status = [DSCGetSummaryState]::NotFound
         $getGroupResult.propertiesChanged = @('description', 'displayName')
         # Add the reason
-        #$getGroupResult.Reasons += [DscResourceReason]::New('xAzDoOrganizationGroup:xAzDoOrganizationGroup:NotFound', 'The group is not found')
+        #$getGroupResult.Reasons += [DscResourceReason]::New('AzDoOrganizationGroup:AzDoOrganizationGroup:NotFound', 'The group is not found')
         return $getGroupResult
     }
 

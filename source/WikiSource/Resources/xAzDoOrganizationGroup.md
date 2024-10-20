@@ -1,9 +1,9 @@
-# DSC xAzDoOrganizationGroup Resource
+# DSC AzDoOrganizationGroup Resource
 
 ## Syntax
 
 ```PowerShell
-xAzDoOrganizationGroup [string] #ResourceName
+AzDoOrganizationGroup [string] #ResourceName
 {
     GroupName = [String]$GroupName
     [ GroupDescription = [String]$GroupDescription ]
@@ -23,14 +23,14 @@ This resource is used to manage Azure DevOps organization groups using Desired S
 
 ## Examples
 
-## Example 1: Sample Configuration using xAzDoOrganizationGroup Resource
+## Example 1: Sample Configuration using AzDoOrganizationGroup Resource
 
 ``` PowerShell
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzDevOpsDsc'
 
     Node localhost {
-        xAzDoOrganizationGroup OrgGroup {
+        AzDoOrganizationGroup OrgGroup {
             Ensure              = 'Present'
             GroupName           = 'SampleGroup'
             GroupDescription    = 'This is a sample group!'
@@ -53,7 +53,7 @@ $properties = @{
     GroupDescription = 'This is a sample group!'
 }
 
-Invoke-DSCResource -Name 'xAzDoOrganizationGroup' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DSCResource -Name 'AzDoOrganizationGroup' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
 ```
 
 ## Example 3: Sample Configuration using xAzDoDSCDatum
@@ -67,13 +67,13 @@ variables: {
 
 resources:
 - name: Team Leaders Organization Group
-  type: AzureDevOpsDsc/xAzDoOrganizationGroup
+  type: AzureDevOpsDsc/AzDoOrganizationGroup
   properties:
     GroupName: AZDO_TeamLeaders_Group
     GroupDescription: Team Leaders Organization Group
 
 - name: Service Accounts Organization Group
-  type: AzureDevOpsDsc/xAzDoOrganizationGroup
+  type: AzureDevOpsDsc/AzDoOrganizationGroup
   properties:
     GroupName: AZDO_ServiceAccounts_Group
     GroupDescription: Service Accounts Organization Group

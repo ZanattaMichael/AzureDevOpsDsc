@@ -1,4 +1,4 @@
-Function Set-xAzDoOrganizationGroup {
+Function Set-AzDoOrganizationGroup {
 
     param(
 
@@ -28,7 +28,7 @@ Function Set-xAzDoOrganizationGroup {
     if ($LookupResult.Status -eq [DSCGetSummaryState]::Renamed) {
 
         # For the time being write a warning and return
-        Write-Warning "[Set-xAzDoOrganizationGroup] The group has been renamed. The group will not be set."
+        Write-Warning "[Set-AzDoOrganizationGroup] The group has been renamed. The group will not be set."
         return
 
     }

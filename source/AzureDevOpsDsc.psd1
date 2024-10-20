@@ -42,7 +42,7 @@
 
     DscResourcesToExport = @(
       'xAzDevOpsProject',
-      'xAzDoOrganizationGroup',
+      'AzDoOrganizationGroup',
       'xAzDoProjectGroup'
     )
 

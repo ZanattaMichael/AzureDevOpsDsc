@@ -3,7 +3,7 @@
     This class represents an Azure DevOps organization group.
 
 .DESCRIPTION
-    The xAzDoOrganizationGroup class is a DSC resource that allows you to manage Azure DevOps organization groups.
+    The AzDoOrganizationGroup class is a DSC resource that allows you to manage Azure DevOps organization groups.
     It provides properties to specify the group name, display name, and description.
 
 .NOTES
@@ -27,9 +27,9 @@
     None.
 
 .EXAMPLE
-    This example shows how to create an instance of the xAzDoOrganizationGroup class:
+    This example shows how to create an instance of the AzDoOrganizationGroup class:
 
-    $organizationGroup = [xAzDoOrganizationGroup]::new()
+    $organizationGroup = [AzDoOrganizationGroup]::new()
     $organizationGroup.GroupName = "MyGroup"
     $organizationGroup.GroupDescription = "This is my group."
 
@@ -39,7 +39,7 @@
 
 [DscResource()]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSDSCStandardDSCFunctionsInResource', '', Justification='Test() and Set() method are inherited from base, "AzDevOpsDscResourceBase" class')]
-class xAzDoOrganizationGroup : AzDevOpsDscResourceBase
+class AzDoOrganizationGroup : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)]
     [Alias('Name')]
@@ -49,14 +49,14 @@ class xAzDoOrganizationGroup : AzDevOpsDscResourceBase
     [Alias('Description')]
     [System.String]$GroupDescription
 
-    xAzDoOrganizationGroup()
+    AzDoOrganizationGroup()
     {
         $this.Construct()
     }
 
-    [xAzDoOrganizationGroup] Get()
+    [AzDoOrganizationGroup] Get()
     {
-        return [xAzDoOrganizationGroup]$($this.GetDscCurrentStateProperties())
+        return [AzDoOrganizationGroup]$($this.GetDscCurrentStateProperties())
     }
 
     hidden [HashTable] getDscCurrentAPIState()
@@ -67,7 +67,7 @@ class xAzDoOrganizationGroup : AzDevOpsDscResourceBase
             GroupDescription = $this.GroupDescription
         }
 
-        return Get-xAzDoOrganizationGroup @params
+        return Get-AzDoOrganizationGroup @params
 
     }
 
@@ -91,7 +91,7 @@ class xAzDoOrganizationGroup : AzDevOpsDscResourceBase
         $properties.LookupResult        = $CurrentResourceObject.LookupResult
         #$properties.Reasons             = $CurrentResourceObject.LookupResult.Reasons
 
-        Write-Verbose "[xAzDoOrganizationGroup] Current state properties: $($properties | Out-String)"
+        Write-Verbose "[AzDoOrganizationGroup] Current state properties: $($properties | Out-String)"
 
         return $properties
     }
