@@ -1,9 +1,9 @@
-# DSC xAzDoGroupMember Resource
+# DSC AzDoGroupMember Resource
 
 ## Syntax
 
 ```PowerShell
-xAzDoGroupMember [string] #ResourceName
+AzDoGroupMember [string] #ResourceName
 {
     GroupName = [String]$GroupName # [ProjectName|OrganizationName]\GroupName
     # For GroupMember Syntax, refer to # GroupMembers Syntax
@@ -49,14 +49,14 @@ This resource is used to manage Azure DevOps group memberships using Desired Sta
 
 ## Examples
 
-### Example 1: Sample Configuration for Azure DevOps Group using xAzDoGroupMember Resource
+### Example 1: Sample Configuration for Azure DevOps Group using AzDoGroupMember Resource
 
 ```PowerShell
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzDevOpsDsc'
 
     Node localhost {
-        xAzDoGroupMember GroupExample {
+        AzDoGroupMember GroupExample {
             GroupName    = 'MySampleGroup'
             GroupMembers = @('user1@example.com', 'user2@example.com')
         }
@@ -70,13 +70,13 @@ Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ### Example 2: Sample Configuration for Azure DevOps Group using Invoke-DSCResource
 
 ```PowerShell
-# Return the current configuration for xAzDoGroupMember
+# Return the current configuration for AzDoGroupMember
 $properties = @{
     GroupName    = 'MySampleGroup'
     GroupMembers = @('user1@example.com', 'user2@example.com')
 }
 
-Invoke-DSCResource -Name 'xAzDoGroupMember' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DSCResource -Name 'AzDoGroupMember' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
 ```
 
 ### Example 3: Sample Configuration to remove/exclude an Azure DevOps Group using Invoke-DSCResource
@@ -88,7 +88,7 @@ $properties = @{
     Ensure       = 'Absent'
 }
 
-Invoke-DSCResource -Name 'xAzDoGroupMember' -Method Set -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DSCResource -Name 'AzDoGroupMember' -Method Set -Property $properties -ModuleName 'AzureDevOpsDsc'
 ```
 
 ### Example 4: Sample Configuration using xAzDoDSCDatum
@@ -104,7 +104,7 @@ variables: {
 resources:
 
   - name: Group
-    type: AzureDevOpsDsc/xAzDoGroupMember
+    type: AzureDevOpsDsc/AzDoGroupMember
     properties:
       groupName: $GroupName
       groupMembers: $GroupMembers

@@ -3,7 +3,7 @@
     This class represents a DSC resource for managing Azure DevOps group members.
 
 .DESCRIPTION
-    The xAzDoGroupMember class is a DSC resource that allows you to manage the members of an Azure DevOps group.
+    The AzDoGroupMember class is a DSC resource that allows you to manage the members of an Azure DevOps group.
     It inherits from the AzDevOpsDscResourceBase class.
 
 .NOTES
@@ -20,13 +20,13 @@
     An array of strings representing the members of the Azure DevOps group.
 
 .EXAMPLE
-    This example shows how to use the xAzDoGroupMember resource to add members to an Azure DevOps group.
+    This example shows how to use the AzDoGroupMember resource to add members to an Azure DevOps group.
 
     Configuration Example {
-        Import-DscResource -ModuleName xAzDoGroupMember
+        Import-DscResource -ModuleName AzDoGroupMember
 
         Node localhost {
-            xAzDoGroupMember GroupMember {
+            AzDoGroupMember GroupMember {
                 GroupName = 'MyGroup'
                 GroupMembers = @('User1', 'User2', 'User3')
                 Ensure = 'Present'
@@ -44,7 +44,7 @@
 
 [DscResource()]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSDSCStandardDSCFunctionsInResource', '', Justification='Test() and Set() method are inherited from base, "AzDevOpsDscResourceBase" class')]
-class xAzDoGroupMember : AzDevOpsDscResourceBase
+class AzDoGroupMember : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)]
     [Alias('Name')]
@@ -54,14 +54,14 @@ class xAzDoGroupMember : AzDevOpsDscResourceBase
     [Alias('Members')]
     [System.String[]]$GroupMembers
 
-    xAzDoGroupMember()
+    AzDoGroupMember()
     {
         $this.Construct()
     }
 
-    [xAzDoGroupMember] Get()
+    [AzDoGroupMember] Get()
     {
-        return [xAzDoGroupMember]$($this.GetDscCurrentStateProperties())
+        return [AzDoGroupMember]$($this.GetDscCurrentStateProperties())
     }
 
     hidden [System.String[]]GetDscResourcePropertyNamesWithNoSetSupport()

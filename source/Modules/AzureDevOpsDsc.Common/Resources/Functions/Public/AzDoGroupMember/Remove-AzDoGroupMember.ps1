@@ -1,4 +1,4 @@
-Function Remove-xAzDoGroupMember {
+Function Remove-AzDoGroupMember {
 
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
@@ -35,7 +35,7 @@ Function Remove-xAzDoGroupMember {
 
     # If the group identity or key is not found, write a warning message to the console and return.
     if ([String]::IsNullOrEmpty($GroupIdentity) -or [String]::IsNullOrWhiteSpace($GroupIdentity)) {
-        Write-Warning "[Remove-xAzDoGroupMember] Unable to find identity for group '$GroupName'."
+        Write-Warning "[Remove-AzDoGroupMember] Unable to find identity for group '$GroupName'."
         return
     }
 
@@ -44,8 +44,8 @@ Function Remove-xAzDoGroupMember {
         ApiUri = 'https://vssps.dev.azure.com/{0}/' -f $Global:DSCAZDO_OrganizationName
     }
 
-    Write-Verbose "[Remove-xAzDoGroupMember] Starting group member removal process for group '$GroupName'."
-    Write-Verbose "[Remove-xAzDoGroupMember] Group members: $($LiveGroupMembers.principalName -join ',')."
+    Write-Verbose "[Remove-AzDoGroupMember] Starting group member removal process for group '$GroupName'."
+    Write-Verbose "[Remove-AzDoGroupMember] Group members: $($LiveGroupMembers.principalName -join ',')."
 
     # Define the members
     #$members = [System.Collections.Generic.List[object]]::new()
@@ -54,17 +54,17 @@ Function Remove-xAzDoGroupMember {
     ForEach ($MemberIdentity in $LiveGroupMembers) {
 
         # Use the Find-AzDoIdentity function to search for an Azure DevOps identity that matches the given $MemberIdentity.
-        Write-Verbose "[Remove-xAzDoGroupMember] Looking up identity for member '$($MemberIdentity.principalName)'."
+        Write-Verbose "[Remove-AzDoGroupMember] Looking up identity for member '$($MemberIdentity.principalName)'."
         $identity = Find-AzDoIdentity -Identity $MemberIdentity.principalName
 
         # If the identity is not found, write a warning message to the console and continue to the next member.
         if ([String]::IsNullOrEmpty($identity) -or [String]::IsNullOrWhiteSpace($identity)) {
-            Write-Warning "[Remove-xAzDoGroupMember] Unable to find identity for member '$($MemberIdentity.principalName)'."
+            Write-Warning "[Remove-AzDoGroupMember] Unable to find identity for member '$($MemberIdentity.principalName)'."
             continue
         }
 
         # Call the New-DevOpsGroupMember function with a hashtable of parameters to add the found identity as a new member to a group.
-        Write-Verbose "[Remove-xAzDoGroupMember] Removing member '$($MemberIdentity.principalName)' from group '$($params.GroupIdentity.displayName)'."
+        Write-Verbose "[Remove-AzDoGroupMember] Removing member '$($MemberIdentity.principalName)' from group '$($params.GroupIdentity.displayName)'."
 
         $result = Remove-DevOpsGroupMember @params -MemberIdentity $identity
 
@@ -73,19 +73,19 @@ Function Remove-xAzDoGroupMember {
     <#
     # If the group members are not found, write a warning message to the console and return.
     if ($members.Count -eq 0) {
-        Write-Warning "[Remove-xAzDoGroupMember] No group members found: $($GroupMembers -join ',')."
+        Write-Warning "[Remove-AzDoGroupMember] No group members found: $($GroupMembers -join ',')."
         return
     }
     #>
 
     # Add the group to the cache
-    Write-Verbose "[Remove-xAzDoGroupMember] Removed group '$GroupName' with members to the cache."
+    Write-Verbose "[Remove-AzDoGroupMember] Removed group '$GroupName' with members to the cache."
     Remove-CacheItem -Key $GroupIdentity.principalName -Type 'LiveGroupMembers'
 
-    Write-Verbose "[Remove-xAzDoGroupMember] Updated global cache with live group information."
+    Write-Verbose "[Remove-AzDoGroupMember] Updated global cache with live group information."
     Set-CacheObject -Content $Global:AzDoLiveGroupMembers -CacheType 'LiveGroupMembers'
 
     # Write a verbose log message indicating that the function has completed the group member removal process.
-    Write-Verbose "[Remove-xAzDoGroupMember] Completed group member removal process for group '$GroupName'."
+    Write-Verbose "[Remove-AzDoGroupMember] Completed group member removal process for group '$GroupName'."
 
 }

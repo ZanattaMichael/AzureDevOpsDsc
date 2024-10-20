@@ -58,11 +58,11 @@
         'Remove-xAzDoOrganizationGroup',
         'Test-xAzDoOrganizationGroup',
 
-        'Get-xAzDoGroupMember',
-        'New-xAzDoGroupMember',
-        'Set-xAzDoGroupMember',
-        'Remove-xAzDoGroupMember',
-        'Test-xAzDoGroupMember'
+        'Get-AzDoGroupMember',
+        'New-AzDoGroupMember',
+        'Set-AzDoGroupMember',
+        'Remove-AzDoGroupMember',
+        'Test-AzDoGroupMember'
 
         'Get-AzDoGitRepository',
         'New-AzDoGitRepository',

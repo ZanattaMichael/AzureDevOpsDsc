@@ -1,4 +1,4 @@
-Function Set-xAzDoGroupMember {
+Function Set-AzDoGroupMember {
 
     param(
 
@@ -34,13 +34,13 @@ Function Set-xAzDoGroupMember {
 
     # If the members are null or empty, stop.
     if (($null -eq $GroupMembers) -or ($members.Count -eq 0)) {
-        Write-Error "[Set-xAzDoGroupMember] No members found in the LiveGroupMembers cache for group '$Key'."
+        Write-Error "[Set-AzDoGroupMember] No members found in the LiveGroupMembers cache for group '$Key'."
         return
     }
 
     # If the lookup result is not provided, we need to look it up.
     if ($null -eq $LookupResult.propertiesChanged) {
-        Throw "[Set-xAzDoGroupMember] - LookupResult.propertiesChanged is required."
+        Throw "[Set-AzDoGroupMember] - LookupResult.propertiesChanged is required."
     }
 
     # Fetch the Group Identity
@@ -49,7 +49,7 @@ Function Set-xAzDoGroupMember {
         ApiUri = 'https://vssps.dev.azure.com/{0}/' -f $Global:DSCAZDO_OrganizationName
     }
 
-    Write-Verbose "[Set-xAzDoGroupMember] Starting group member addition process for group '$GroupName'."
+    Write-Verbose "[Set-AzDoGroupMember] Starting group member addition process for group '$GroupName'."
 
     # If the lookup result is not provided, we need to look it up.
     switch ($LookupResult.propertiesChanged) {
@@ -58,23 +58,23 @@ Function Set-xAzDoGroupMember {
         { $_.action -eq "Add" } {
 
             # Use the Find-AzDoIdentity function to search for an Azure DevOps identity that matches the given $MemberIdentity.
-            Write-Verbose "[Set-xAzDoGroupMember][ADD] Adding Identity for Principal Name '$($_.value.principalName)'."
+            Write-Verbose "[Set-AzDoGroupMember][ADD] Adding Identity for Principal Name '$($_.value.principalName)'."
             $identity = $_.value
 
             # Check for circular reference
             if ($GroupIdentity.originId -eq $identity.originId) {
-                Write-Warning "[Set-xAzDoGroupMember][ADD] Circular reference detected for member '$($GroupIdentity.principalName)'."
+                Write-Warning "[Set-AzDoGroupMember][ADD] Circular reference detected for member '$($GroupIdentity.principalName)'."
                 continue
             }
 
             # Call the New-DevOpsGroupMember function with a hashtable of parameters to add the found identity as a new member to a group.
-            Write-Verbose "[Set-xAzDoGroupMember][ADD] Adding member '$($identity.displayName)' to group '$($params.GroupIdentity.displayName)'."
+            Write-Verbose "[Set-AzDoGroupMember][ADD] Adding member '$($identity.displayName)' to group '$($params.GroupIdentity.displayName)'."
 
             $result = New-DevOpsGroupMember @params -MemberIdentity $identity
 
             # Add the member to the list
             $members.Add($identity)
-            Write-Verbose "[Set-xAzDoGroupMember][ADD] Member '$($identity.displayName)' added to the internal list."
+            Write-Verbose "[Set-AzDoGroupMember][ADD] Member '$($identity.displayName)' added to the internal list."
 
         }
 
@@ -82,43 +82,43 @@ Function Set-xAzDoGroupMember {
         { $_.action -eq "Remove" } {
 
             # Use the Find-AzDoIdentity function to search for an Azure DevOps identity that matches the given $MemberIdentity.
-            Write-Verbose "[Set-xAzDoGroupMember][REMOVE] Removing Identity for Principal Name '$($_.value.principalName)'."
+            Write-Verbose "[Set-AzDoGroupMember][REMOVE] Removing Identity for Principal Name '$($_.value.principalName)'."
             $identity = $_.value
 
             # Check for circular reference
             if ($GroupIdentity.originId -eq $identity.originId) {
-                Write-Warning "[Set-xAzDoGroupMember][REMOVE] Circular reference detected for member '$($GroupIdentity.principalName)'."
+                Write-Warning "[Set-AzDoGroupMember][REMOVE] Circular reference detected for member '$($GroupIdentity.principalName)'."
                 continue
             }
 
             # Call the New-DevOpsGroupMember function with a hashtable of parameters to add the found identity as a new member to a group.
-            Write-Verbose "[Set-xAzDoGroupMember][REMOVE] Removing member '$($identity.displayName)' to group '$($params.GroupIdentity.displayName)'."
+            Write-Verbose "[Set-AzDoGroupMember][REMOVE] Removing member '$($identity.displayName)' to group '$($params.GroupIdentity.displayName)'."
 
             $result = Remove-DevOpsGroupMember @params -MemberIdentity $identity
 
             # Remove the member from the list
 
-            Write-Verbose "[Set-xAzDoGroupMember][REMOVE] Removing member '$($identity.displayName)' from the internal list."
-            Write-Verbose "[Set-xAzDoGroupMember][REMOVE] members count: $($members.count)"
+            Write-Verbose "[Set-AzDoGroupMember][REMOVE] Removing member '$($identity.displayName)' from the internal list."
+            Write-Verbose "[Set-AzDoGroupMember][REMOVE] members count: $($members.count)"
 
             $id = 0 .. $members.count | Where-Object { $members[$_].originId -eq $identity.originId }
             $members.RemoveAt($id)
-            Write-Verbose "[Set-xAzDoGroupMember][REMOVE] Member '$($identity.displayName)' removed from the internal list."
+            Write-Verbose "[Set-AzDoGroupMember][REMOVE] Member '$($identity.displayName)' removed from the internal list."
 
         }
 
         # Default
         Default {
-            Write-Warning "[Set-xAzDoGroupMember] Invalid action '$($_.action)' provided."
+            Write-Warning "[Set-AzDoGroupMember] Invalid action '$($_.action)' provided."
         }
 
     }
 
     # Add the group to the cache
-    Write-Verbose "[Set-xAzDoGroupMember] Added group '$GroupName' with the updated member list to the cache."
+    Write-Verbose "[Set-AzDoGroupMember] Added group '$GroupName' with the updated member list to the cache."
     Add-CacheItem -Key $GroupIdentity.principalName -Value $members -Type 'LiveGroupMembers'
 
-    Write-Verbose "[Set-xAzDoGroupMember] Updated global cache with live group information."
+    Write-Verbose "[Set-AzDoGroupMember] Updated global cache with live group information."
     Set-CacheObject -Content $Global:AzDoLiveGroupMembers -CacheType 'LiveGroupMembers'
 
 }

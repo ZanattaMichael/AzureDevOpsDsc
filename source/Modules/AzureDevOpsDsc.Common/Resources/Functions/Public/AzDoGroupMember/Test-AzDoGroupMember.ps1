@@ -1,5 +1,5 @@
 
-Function Test-xAzDoGroupMember{
+Function Test-AzDoGroupMember{
 
     param(
 

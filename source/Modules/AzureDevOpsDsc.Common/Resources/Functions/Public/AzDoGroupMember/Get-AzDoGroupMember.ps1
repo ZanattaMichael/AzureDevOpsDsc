@@ -1,6 +1,6 @@
 
 
-Function Get-xAzDoGroupMember {
+Function Get-AzDoGroupMember {
 
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
@@ -27,7 +27,7 @@ Function Get-xAzDoGroupMember {
     )
 
     # Logging
-    Write-Verbose "[Get-xAzDoGroupMember] Retriving the GroupName from the Live and Local Cache."
+    Write-Verbose "[Get-AzDoGroupMember] Retriving the GroupName from the Live and Local Cache."
 
 
     # Format the  According to the Group Name
@@ -36,7 +36,7 @@ Function Get-xAzDoGroupMember {
     # Check the cache for the group
     $livegroupMembers = Get-CacheItem -Key $Key -Type 'LiveGroupMembers'
 
-    Write-Verbose "[Get-xAzDoGroupMember] GroupName: '$GroupName'"
+    Write-Verbose "[Get-AzDoGroupMember] GroupName: '$GroupName'"
 
     #
     # Construct a hashtable detailing the group
@@ -50,13 +50,13 @@ Function Get-xAzDoGroupMember {
         status = $null
     }
 
-    Write-Verbose "[Get-xAzDoGroupMember] Testing LocalCache, LiveCache and Parameters."
+    Write-Verbose "[Get-AzDoGroupMember] Testing LocalCache, LiveCache and Parameters."
 
     #
     # Test if the group is present in the live cache
     if ($null -eq $livegroupMembers) {
 
-        Write-Verbose "[Get-xAzDoGroupMember] Group '$GroupName' not found in the live cache."
+        Write-Verbose "[Get-AzDoGroupMember] Group '$GroupName' not found in the live cache."
 
         # If there are no group members, test to see if there are group members defined in the parameters
         if ($GroupMembers.Count -eq 0) {
@@ -74,7 +74,7 @@ Function Get-xAzDoGroupMember {
     # Test if there are no group members in parameters
     if ($GroupMembers.Count -eq 0) {
 
-        Write-Verbose "[Get-xAzDoGroupMember] Group '$GroupName' not found in the parameters."
+        Write-Verbose "[Get-AzDoGroupMember] Group '$GroupName' not found in the parameters."
 
         # If there are no live group members, the group is unchanged.
         if ($livegroupMembers.Count -eq 0) {
