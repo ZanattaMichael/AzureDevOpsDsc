@@ -1,4 +1,4 @@
-Function Set-xAzDoGroupPermission {
+Function Set-AzDoGroupPermission {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -22,7 +22,7 @@ Function Set-xAzDoGroupPermission {
     )
 
 
-    Write-Verbose "[Set-xAzDoGroupPermission] Started."
+    Write-Verbose "[Set-AzDoGroupPermission] Started."
 
     #
     # Format the Group Name

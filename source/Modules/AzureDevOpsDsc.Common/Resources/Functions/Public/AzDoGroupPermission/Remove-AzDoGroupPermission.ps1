@@ -1,4 +1,4 @@
-Function Remove-xAzDoGroupPermission {
+Function Remove-AzDoGroupPermission {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -22,7 +22,7 @@ Function Remove-xAzDoGroupPermission {
     )
 
 
-    Write-Verbose "[Remove-xAzDoGroupPermission] Started."
+    Write-Verbose "[Remove-AzDoGroupPermission] Started."
 
     #
     # Format the Group Name

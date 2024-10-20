@@ -3,7 +3,7 @@
     This class represents a DSC resource for managing Azure DevOps project group permissions.
 
 .DESCRIPTION
-    The xAzDoGroupPermission class is a DSC resource that allows you to manage permissions for a group in an Azure DevOps project.
+    The AzDoGroupPermission class is a DSC resource that allows you to manage permissions for a group in an Azure DevOps project.
 
 .NOTES
     Author: Your Name
@@ -25,13 +25,13 @@
     Specifies the permissions to be assigned to the group. This should be an array of hashtables, where each hashtable represents a permission.
 
 .EXAMPLE
-    This example shows how to use the xAzDoGroupPermission resource to manage permissions for a group in an Azure DevOps project.
+    This example shows how to use the AzDoGroupPermission resource to manage permissions for a group in an Azure DevOps project.
 
     Configuration Example {
         Import-DscResource -ModuleName AzDevOpsDsc
 
         Node localhost {
-            xAzDoGroupPermission GroupPermission {
+            AzDoGroupPermission GroupPermission {
                 GroupName = 'MyGroup'
                 ProjectName = 'MyProject'
                 Permissions = @(
@@ -53,7 +53,7 @@
 # RESOURCE IS CURRENTLY DISABLED
 #[DscResource()]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSDSCStandardDSCFunctionsInResource', '', Justification='Test() and Set() method are inherited from base, "AzDevOpsDscResourceBase" class')]
-class xAzDoGroupPermission : AzDevOpsDscResourceBase
+class AzDoGroupPermission : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)]
     [Alias('Name')]
@@ -66,14 +66,14 @@ class xAzDoGroupPermission : AzDevOpsDscResourceBase
     [DscProperty()]
     [HashTable[]]$Permissions
 
-    xAzDoGroupPermission()
+    AzDoGroupPermission()
     {
         $this.Construct()
     }
 
-    [xAzDoGroupPermission] Get()
+    [AzDoGroupPermission] Get()
     {
-        return [xAzDoGroupPermission]$($this.GetDscCurrentStateProperties())
+        return [AzDoGroupPermission]$($this.GetDscCurrentStateProperties())
     }
 
     hidden [System.String[]]GetDscResourcePropertyNamesWithNoSetSupport()
@@ -97,7 +97,7 @@ class xAzDoGroupPermission : AzDevOpsDscResourceBase
         $properties.lookupResult          = $CurrentResourceObject.lookupResult
         $properties.Ensure                = $CurrentResourceObject.Ensure
 
-        Write-Verbose "[xAzDoGroupPermission] Current state properties: $($properties | Out-String)"
+        Write-Verbose "[AzDoGroupPermission] Current state properties: $($properties | Out-String)"
 
         return $properties
     }
