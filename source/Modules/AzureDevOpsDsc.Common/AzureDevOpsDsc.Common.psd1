@@ -64,9 +64,9 @@
         'Remove-xAzDoGroupMember',
         'Test-xAzDoGroupMember'
 
-        'Get-xAzDoGitRepository',
-        'New-xAzDoGitRepository',
-        'Remove-xAzDoGitRepository',
+        'Get-AzDoGitRepository',
+        'New-AzDoGitRepository',
+        'Remove-AzDoGitRepository',
 
         'Get-AzDoGitPermission',
         'New-AzDoGitPermission',

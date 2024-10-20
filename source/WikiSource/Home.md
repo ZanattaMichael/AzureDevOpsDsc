@@ -36,7 +36,7 @@ Get-DscResource -Module AzureDevOpsDsc
 ## DSC Resource Documentation
 
 * [AzDoGitPermission](\Resources\AzDoGitPermission.md)
-* [xAzDoGitRepository](\Resources\xAzDoGitRepository.md)
+* [AzDoGitRepository](\Resources\AzDoGitRepository.md)
 * [xAzDoGroupMember](\Resources\xAzDoGroupMember.md)
 * [xAzDoGroupPermission](\Resources\xAzDoGroupPermission.md)
 * [xAzDoOrganizationGroup](\Resources\xAzDoOrganizationGroup.md)

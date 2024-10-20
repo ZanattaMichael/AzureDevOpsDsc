@@ -32,7 +32,7 @@ Function New-Repository {
     # Create a new repository
 
     $parameters = @{
-        Name = 'xAzDoGitRepository'
+        Name = 'AzDoGitRepository'
         ModuleName = 'AzureDevOpsDsc'
         Method = 'Set'
         property = @{

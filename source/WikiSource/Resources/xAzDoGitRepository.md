@@ -1,9 +1,9 @@
-# DSC xAzDoGitRepository Resource
+# DSC AzDoGitRepository Resource
 
 ## Syntax
 
 ```PowerShell
-xAzDoGitRepository [string] #ResourceName
+AzDoGitRepository [string] #ResourceName
 {
     ProjectName = [String]$ProjectName
     RepositoryName = [String]$RepositoryName
@@ -40,13 +40,13 @@ This resource allows you to manage Git repositories in Azure DevOps projects usi
 ### Example 1: Create a Git Repository
 
 ```PowerShell
-Configuration Sample_xAzDoGitRepository
+Configuration Sample_AzDoGitRepository
 {
     Import-DscResource -ModuleName AzDevOpsDsc
 
     Node localhost
     {
-        xAzDoGitRepository MyRepository
+        AzDoGitRepository MyRepository
         {
             ProjectName      = 'MySampleProject'
             RepositoryName   = 'MySampleRepository'
@@ -56,20 +56,20 @@ Configuration Sample_xAzDoGitRepository
     }
 }
 
-Sample_xAzDoGitRepository -OutputPath 'C:\DSC\'
+Sample_AzDoGitRepository -OutputPath 'C:\DSC\'
 Start-DscConfiguration -Path 'C:\DSC\' -Wait -Verbose -Force
 ```
 
 ### Example 2: Remove a Git Repository
 
 ```PowerShell
-Configuration Remove_xAzDoGitRepository
+Configuration Remove_AzDoGitRepository
 {
     Import-DscResource -ModuleName AzDevOpsDsc
 
     Node localhost
     {
-        xAzDoGitRepository MyRepository
+        AzDoGitRepository MyRepository
         {
             ProjectName    = 'MySampleProject'
             RepositoryName = 'MySampleRepository'
@@ -78,6 +78,6 @@ Configuration Remove_xAzDoGitRepository
     }
 }
 
-Remove_xAzDoGitRepository -OutputPath 'C:\DSC\'
+Remove_AzDoGitRepository -OutputPath 'C:\DSC\'
 Start-DscConfiguration -Path 'C:\DSC\' -Wait -Verbose -Force
 ```
