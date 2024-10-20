@@ -3,7 +3,7 @@
     This class represents an Azure DevOps Git repository.
 
 .DESCRIPTION
-    The xAzDoGitRepository class is a DSC resource that allows you to manage Azure DevOps Git repositories.
+    The AzDoGitRepository class is a DSC resource that allows you to manage Azure DevOps Git repositories.
     It inherits from the AzDevOpsDscResourceBase class.
 
 .NOTES
@@ -23,12 +23,12 @@
     The source repository URL.
 
 .EXAMPLE
-    This example shows how to use the xAzDoGitRepository resource to ensure that a Git repository exists in an Azure DevOps project.
+    This example shows how to use the AzDoGitRepository resource to ensure that a Git repository exists in an Azure DevOps project.
 
     Configuration Example {
-        Import-DscResource -ModuleName xAzDoGitRepository
+        Import-DscResource -ModuleName AzDoGitRepository
 
-        xAzDoGitRepository MyGitRepository {
+        AzDoGitRepository MyGitRepository {
             ProjectName = 'MyProject'
             GitRepositoryName = 'MyRepository'
             SourceRepository = 'https://github.com/MyUser/MyRepository.git'
@@ -45,7 +45,7 @@
 
 [DscResource()]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSDSCStandardDSCFunctionsInResource', '', Justification='Test() and Set() method are inherited from base, "AzDevOpsDscResourceBase" class')]
-class xAzDoGitRepository : AzDevOpsDscResourceBase
+class AzDoGitRepository : AzDevOpsDscResourceBase
 {
     [DscProperty(Mandatory)]
     [Alias('Name')]
@@ -59,14 +59,14 @@ class xAzDoGitRepository : AzDevOpsDscResourceBase
     [Alias('Source')]
     [System.String]$SourceRepository
 
-    xAzDoGitRepository()
+    AzDoGitRepository()
     {
         $this.Construct()
     }
 
-    [xAzDoGitRepository] Get()
+    [AzDoGitRepository] Get()
     {
-        return [xAzDoGitRepository]$($this.GetDscCurrentStateProperties())
+        return [AzDoGitRepository]$($this.GetDscCurrentStateProperties())
     }
 
     hidden [System.String[]]GetDscResourcePropertyNamesWithNoSetSupport()

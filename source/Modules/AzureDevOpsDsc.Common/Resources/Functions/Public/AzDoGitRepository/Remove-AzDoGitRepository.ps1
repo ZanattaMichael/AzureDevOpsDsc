@@ -1,4 +1,4 @@
-Function Remove-xAzDoGitRepository
+Function Remove-AzDoGitRepository
 {
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
@@ -28,7 +28,7 @@ Function Remove-xAzDoGitRepository
     )
 
 
-    Write-Verbose "[Remove-xAzDoGitRepository] Removing repository '$($RepositoryName)' in project '$($ProjectName)'"
+    Write-Verbose "[Remove-AzDoGitRepository] Removing repository '$($RepositoryName)' in project '$($ProjectName)'"
 
     # Define parameters for creating a new DevOps group
     $params = @{
@@ -39,7 +39,7 @@ Function Remove-xAzDoGitRepository
 
     # Check if the project exists in the LiveProjects cache
     if (($null -eq $params.Project) -or ($null -eq $params.Repository)) {
-        Write-Error "[Remove-xAzDoGitRepository] Project '$($ProjectName)' or Repository '$($RepositoryName)' does not exist in the LiveProjects or LiveRepositories cache. Skipping change."
+        Write-Error "[Remove-AzDoGitRepository] Project '$($ProjectName)' or Repository '$($RepositoryName)' does not exist in the LiveProjects or LiveRepositories cache. Skipping change."
         return
     }
 
@@ -49,6 +49,6 @@ Function Remove-xAzDoGitRepository
     # Add the repository to the LiveRepositories cache and write to verbose log
     Remove-CacheItem -Key "$ProjectName\$RepositoryName" -Type 'LiveRepositories'
     Export-CacheObject -CacheType 'LiveRepositories' -Content $AzDoLiveRepositories
-    Write-Verbose "[Remove-xAzDoGitRepository] Added new group to LiveGroups cache with key: '$($value.Name)'"
+    Write-Verbose "[Remove-AzDoGitRepository] Added new group to LiveGroups cache with key: '$($value.Name)'"
 
 }

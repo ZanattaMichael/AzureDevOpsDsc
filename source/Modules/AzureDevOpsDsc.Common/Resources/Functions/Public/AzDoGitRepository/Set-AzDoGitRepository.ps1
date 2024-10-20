@@ -1,4 +1,4 @@
-Function Set-xAzDoGitRepository {
+Function Set-AzDoGitRepository {
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
     param

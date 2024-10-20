@@ -1,6 +1,6 @@
 
 
-Function New-xAzDoGitRepository {
+Function New-AzDoGitRepository {
 
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
@@ -29,7 +29,7 @@ Function New-xAzDoGitRepository {
         $Force
     )
 
-    Write-Verbose "[New-xAzDoGitRepository] Creating new repository '$($RepositoryName)' in project '$($ProjectName)'"
+    Write-Verbose "[New-AzDoGitRepository] Creating new repository '$($RepositoryName)' in project '$($ProjectName)'"
 
     # Define parameters for creating a new DevOps group
     $params = @{
@@ -40,7 +40,7 @@ Function New-xAzDoGitRepository {
     }
 
     if ($null -eq $params.Project) {
-        Write-Error "[New-xAzDoGitRepository] Project '$($ProjectName)' does not exist in the LiveProjects cache. Skipping change."
+        Write-Error "[New-AzDoGitRepository] Project '$($ProjectName)' does not exist in the LiveProjects cache. Skipping change."
         return
     }
 
@@ -52,6 +52,6 @@ Function New-xAzDoGitRepository {
     Add-CacheItem -Key "$ProjectName\$RepositoryName" -Value $value -Type 'LiveRepositories'
     Export-CacheObject -CacheType 'LiveRepositories' -Content $AzDoLiveRepositories
     Refresh-CacheObject -CacheType 'LiveRepositories'
-    Write-Verbose "[New-xAzDoGitRepository] Added new group to LiveGroups cache with key: '$($value.Name)'"
+    Write-Verbose "[New-AzDoGitRepository] Added new group to LiveGroups cache with key: '$($value.Name)'"
 
 }
