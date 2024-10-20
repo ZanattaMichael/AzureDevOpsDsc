@@ -1,0 +1,4 @@
+{
+    "Organization" : "your-org-name-here",
+    "AuthenticationType" : "ManagedIdentity"
+}
