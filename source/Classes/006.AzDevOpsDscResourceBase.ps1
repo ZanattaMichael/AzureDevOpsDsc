@@ -57,7 +57,8 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
         #
         # Determine the type of Token (PersonalAccessToken or ManagedIdentity)
 
-        switch ($tokenObject.tokenType.ToString()) {
+        switch ($tokenObject.tokenType.ToString())
+        {
 
             # If the Token is empty
             { [String]::IsNullOrEmpty($_) } {
@@ -84,7 +85,8 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
 
         #
         # Initialize the cache objects. Don't delete the cache objects since they are used by other resources.
-        Get-AzDoCacheObjects | ForEach-Object {
+        Get-AzDoCacheObjects | ForEach-Object
+        {
             Initialize-CacheObject -CacheType $_ -BypassFileCheck -Debug
             Write-Verbose "[AzDevOpsDscResourceBase] Initialized cache object of type: $_"
         }
@@ -131,7 +133,6 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
         $getParameters.Keys | ForEach-Object {
             $props."$_" = $this."$_"
         }
-
 
         $props.LookupResult = $this.GetDscCurrentStateResourceObject($getParameters)
         $props.Ensure       = $props.LookupResult.Ensure

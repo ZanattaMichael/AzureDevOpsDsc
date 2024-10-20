@@ -1,4 +1,4 @@
-Function Remove-xAzDoGitPermission {
+Function Remove-AzDoGitPermission {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -24,7 +24,7 @@ Function Remove-xAzDoGitPermission {
         $Force
     )
 
-    Write-Verbose "[New-xAzDoGitPermission] Started."
+    Write-Verbose "[New-AzDoGitPermission] Started."
 
     #
     # Security Namespace ID
@@ -34,7 +34,7 @@ Function Remove-xAzDoGitPermission {
 
     # If the Security Namespace is null, return
     if (-not $SecurityNamespace) {
-        Write-Error "[New-xAzDoGitPermission] Security Namespace not found."
+        Write-Error "[New-AzDoGitPermission] Security Namespace not found."
         return
     }
 
@@ -43,7 +43,7 @@ Function Remove-xAzDoGitPermission {
 
     # If the Project is null, return
     if (-not $Project) {
-        Write-Error "[New-xAzDoGitPermission] Project not found."
+        Write-Error "[New-AzDoGitPermission] Project not found."
         return
     }
 
@@ -52,7 +52,7 @@ Function Remove-xAzDoGitPermission {
 
     # If the Repository is null, return
     if (-not $Repository) {
-        Write-Error "[New-xAzDoGitPermission] Repository not found."
+        Write-Error "[New-AzDoGitPermission] Repository not found."
         return
     }
 
@@ -61,7 +61,7 @@ Function Remove-xAzDoGitPermission {
 
     # If the ACLs are null, return
     if (-not $DescriptorACLList) {
-        Write-Error "[New-xAzDoGitPermission] ACLs not found."
+        Write-Error "[New-AzDoGitPermission] ACLs not found."
         return
     }
 

@@ -1,9 +1,9 @@
-# DSC xAzDoGitPermission Resource
+# DSC AzDoGitPermission Resource
 
 # Syntax
 
 ``` PowerShell
-xAzDoGitPermission [string] #ResourceName
+AzDoGitPermission [string] #ResourceName
 {
     ProjectName = [String]$ProjectName
     RepositoryName = [String]$RepositoryName
@@ -15,7 +15,7 @@ xAzDoGitPermission [string] #ResourceName
 ## Permissions Syntax
 
 ``` PowerShell
-xAzDoGitPermission/Permissions
+AzDoGitPermission/Permissions
 {
     Identity = [String]$Identity # Syntax
     #   SYNTAX:     '[ProjectName | OrganizationName]\ServicePrincipalName, UserPrincipalName, UserDisplayName, GroupDisplayName'
@@ -28,7 +28,7 @@ xAzDoGitPermission/Permissions
 ## Permission Usage
 
 ``` PowerShell
-xAzDoGitPermission/Permissions/Permission
+AzDoGitPermission/Permissions/Permission
 {
     PermissionName|PermissionDisplayName = [String]$Name { 'Allow, Deny' }
 }
@@ -75,14 +75,14 @@ It includes properties for specifying the project name, description, source cont
 
 # Examples
 
-## Example 1: Sample Configuration using xAzDoGitPermission Resource
+## Example 1: Sample Configuration using AzDoGitPermission Resource
 
 ``` PowerShell
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzDevOpsDsc'
 
     Node localhost {
-        xAzDoGitPermission GitPermission {
+        AzDoGitPermission GitPermission {
             Ensure             = 'Present'
             ProjectName        = 'SampleProject'
             RepositoryName     = 'SampleGitRepository'
@@ -109,7 +109,7 @@ Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ## Example 2: Sample Configuration using Invoke-DSCResource
 
 ``` PowerShell
-# Return the current configuration for xAzDoGitPermission
+# Return the current configuration for AzDoGitPermission
 # Ensure is not required
 $properties = @{
     ProjectName        = 'SampleProject'
@@ -127,7 +127,7 @@ $properties = @{
                         )
 }
 
-Invoke-DSCResource -Name 'xAzDoGitPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DSCResource -Name 'AzDoGitPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
 ```
 
 ## Example 3: Sample Configuration to clear permissions for an identity within a group
@@ -146,7 +146,7 @@ $properties = @{
                         )
 }
 
-Invoke-DSCResource -Name 'xAzDoGitPermission' -Method Set -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DSCResource -Name 'AzDoGitPermission' -Method Set -Property $properties -ModuleName 'AzureDevOpsDsc'
 ```
 
 ## Example 4: Sample Configuration using xAzDoDSCDatum
@@ -162,7 +162,7 @@ variables: {
 resources:
 
   - name: SampleGroup Permissions
-    type: AzureDevOpsDsc/xAzDoGitPermission
+    type: AzureDevOpsDsc/AzDoGitPermission
     dependsOn: 
         - AzureDevOpsDsc/xAzDoProjectGroup/SampleGroupReadAccess
     properties:

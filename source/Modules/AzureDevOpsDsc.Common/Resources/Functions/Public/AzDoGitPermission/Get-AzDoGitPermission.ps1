@@ -16,7 +16,7 @@
     [Permission[]]$PermissionsList
 
 #>
-Function Get-xAzDoGitPermission {
+Function Get-AzDoGitPermission {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -42,14 +42,14 @@ Function Get-xAzDoGitPermission {
         $Force
     )
 
-    Write-Verbose "[Get-xAzDoGitPermission] Started."
+    Write-Verbose "[Get-AzDoGitPermission] Started."
 
     # Define the Descriptor Type and Organization Name
     $SecurityNamespace = 'Git Repositories'
     $OrganizationName = $Global:DSCAZDO_OrganizationName
 
-    Write-Verbose "[Get-xAzDoGitPermission] Security Namespace: $SecurityNamespace"
-    Write-Verbose "[Get-xAzDoGitPermission] Organization Name: $OrganizationName"
+    Write-Verbose "[Get-AzDoGitPermission] Security Namespace: $SecurityNamespace"
+    Write-Verbose "[Get-AzDoGitPermission] Organization Name: $OrganizationName"
 
     #
     # Construct a hashtable detailing the group
@@ -63,8 +63,8 @@ Function Get-xAzDoGitPermission {
         reason = $null
     }
 
-    Write-Verbose "[Get-xAzDoGitPermission] Group result hashtable constructed."
-    Write-Verbose "[Get-xAzDoGitPermission] Performing lookup of permissions for the repository."
+    Write-Verbose "[Get-AzDoGitPermission] Group result hashtable constructed."
+    Write-Verbose "[Get-AzDoGitPermission] Performing lookup of permissions for the repository."
 
     # Define the ACL List
     $ACLList = [System.Collections.Generic.List[Hashtable]]::new()
@@ -75,7 +75,7 @@ Function Get-xAzDoGitPermission {
 
     # Test if the Repository was found
     if (-not $repository) {
-        Write-Warning "[Get-xAzDoGitPermission] Repository not found: $RepositoryName"
+        Write-Warning "[Get-AzDoGitPermission] Repository not found: $RepositoryName"
         $getGroupResult.status = [DSCGetSummaryState]::NotFound
         return $getGroupResult
     }
@@ -84,7 +84,7 @@ Function Get-xAzDoGitPermission {
     # Perform Lookup of the Permissions for the Repository
 
     $namespace = Get-CacheItem -Key $SecurityNamespace -Type 'SecurityNamespaces'
-    Write-Verbose "[Get-xAzDoGitPermission] Retrieved namespace: $($namespace.namespaceId)"
+    Write-Verbose "[Get-AzDoGitPermission] Retrieved namespace: $($namespace.namespaceId)"
 
     # Add to the ACL Lookup Params
     $getGroupResult.namespace = $namespace
@@ -95,14 +95,14 @@ Function Get-xAzDoGitPermission {
     }
 
     # Get the ACL List and format the ACLS
-    Write-Verbose "[Get-xAzDoGitPermission] ACL Lookup Params: $($ACLLookupParams | Out-String)"
+    Write-Verbose "[Get-AzDoGitPermission] ACL Lookup Params: $($ACLLookupParams | Out-String)"
 
     # Get the ACLs for the Repository
     $DevOpsACLs = Get-DevOpsACL @ACLLookupParams
 
     # Test if the ACLs were found
     if ($DevOpsACLs -eq $null) {
-        Write-Warning "[Get-xAzDoGitPermission] No ACLs found for the repository."
+        Write-Warning "[Get-AzDoGitPermission] No ACLs found for the repository."
         $getGroupResult.status = [DSCGetSummaryState]::NotFound
         return $getGroupResult
     }
@@ -112,7 +112,7 @@ Function Get-xAzDoGitPermission {
 
     # Test if the ACLs were found
     if ($DifferenceACLs -eq $null) {
-        Write-Warning "[Get-xAzDoGitPermission] No ACLs found for the repository."
+        Write-Warning "[Get-AzDoGitPermission] No ACLs found for the repository."
         $getGroupResult.status = [DSCGetSummaryState]::NotFound
         return $getGroupResult
     }
@@ -121,7 +121,7 @@ Function Get-xAzDoGitPermission {
         ($_.Token.Type -eq 'GitRepository') -and ($_.Token.RepoId -eq $repository.id)
     }
 
-    Write-Verbose "[Get-xAzDoGitPermission] ACL List retrieved and formatted."
+    Write-Verbose "[Get-AzDoGitPermission] ACL List retrieved and formatted."
 
     #
     # Convert the Permissions into an ACL Token
@@ -143,16 +143,16 @@ Function Get-xAzDoGitPermission {
     $getGroupResult.status = [DSCGetSummaryState]::"$($compareResult.status)"
     $getGroupResult.reason = $compareResult.reason
 
-    Write-Verbose "[Get-xAzDoGitPermission] ACL Token converted."
-    Write-Verbose "[Get-xAzDoGitPermission] ACL Token Comparison Result: $($getGroupResult.status)"
+    Write-Verbose "[Get-AzDoGitPermission] ACL Token converted."
+    Write-Verbose "[Get-AzDoGitPermission] ACL Token Comparison Result: $($getGroupResult.status)"
 
     # Export the ACL List to a file
     $getGroupResult.ReferenceACLs = $ReferenceACLs
     $getGroupResult.DifferenceACLs = $DifferenceACLs
 
     # Write
-    Write-Verbose "[Get-xAzDoGitPermission] Result Status: $($getGroupResult.status)"
-    Write-Verbose "[Get-xAzDoGitPermission] Returning Group Result."
+    Write-Verbose "[Get-AzDoGitPermission] Result Status: $($getGroupResult.status)"
+    Write-Verbose "[Get-AzDoGitPermission] Returning Group Result."
 
     # Return the Group Result
     return $getGroupResult

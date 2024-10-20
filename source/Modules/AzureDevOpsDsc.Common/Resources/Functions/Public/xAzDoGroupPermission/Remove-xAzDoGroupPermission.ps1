@@ -22,7 +22,7 @@ Function Remove-xAzDoGroupPermission {
     )
 
 
-    Write-Verbose "[New-xAzDoGitPermission] Started."
+    Write-Verbose "[Remove-xAzDoGroupPermission] Started."
 
     #
     # Format the Group Name

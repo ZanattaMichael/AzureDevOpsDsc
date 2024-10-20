@@ -1,4 +1,4 @@
-Function Set-xAzDoGitPermission {
+Function New-AzDoGitPermission {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -24,7 +24,7 @@ Function Set-xAzDoGitPermission {
         $Force
     )
 
-    Write-Verbose "[Set-xAzDoPermission] Started."
+    Write-Verbose "[New-AzDoGitPermission] Started."
 
     #
     # Security Namespace ID
@@ -32,13 +32,8 @@ Function Set-xAzDoGitPermission {
     $SecurityNamespace = Get-CacheItem -Key 'Git Repositories' -Type 'SecurityNamespaces'
     $Project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
 
-    if ($SecurityNamespace -eq $null) {
-        Write-Error "[Set-xAzDoPermission] Security Namespace not found."
-        return
-    }
-
-    if ($Project -eq $null) {
-        Write-Error "[Set-xAzDoPermission] Project not found."
+    if (($null -eq $SecurityNamespace) -or ($null -eq $Project)) {
+        Write-Warning "[New-AzDoGitPermission] Security Namespace or Project not found."
         return
     }
 

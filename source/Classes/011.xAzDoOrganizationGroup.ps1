@@ -95,5 +95,4 @@ class xAzDoOrganizationGroup : AzDevOpsDscResourceBase
 
         return $properties
     }
-
 }

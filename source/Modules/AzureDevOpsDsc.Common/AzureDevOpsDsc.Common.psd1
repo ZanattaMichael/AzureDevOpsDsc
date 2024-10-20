@@ -68,10 +68,10 @@
         'New-xAzDoGitRepository',
         'Remove-xAzDoGitRepository',
 
-        'Get-xAzDoGitPermission',
-        'New-xAzDoGitPermission',
-        'Remove-xAzDoGitPermission',
-        'Set-xAzDoGitPermission',
+        'Get-AzDoGitPermission',
+        'New-AzDoGitPermission',
+        'Remove-AzDoGitPermission',
+        'Set-AzDoGitPermission',
 
         'Get-xAzDoGroupPermission',
         'New-xAzDoGroupPermission',

@@ -1,4 +1,5 @@
-Enum TokenType {
+enum TokenType
+{
     ManagedIdentity
     PersonalAccessToken
     Certificate

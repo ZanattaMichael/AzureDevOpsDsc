@@ -46,7 +46,7 @@ Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ## Example 2: Sample Configuration using Invoke-DSCResource
 
 ``` PowerShell
-# Return the current configuration for xAzDoGitPermission
+# Return the current configuration for AzDoGitPermission
 # Ensure is not required
 $properties = @{
     GroupName = 'SampleGroup'
