@@ -56,22 +56,26 @@ Function New-ACLToken
         'Git Repositories' {
 
             # Derive the Token Type GitOrganization, GitProject or GitRepository
-            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.OrganizationGit) {
+            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.OrganizationGit)
+            {
                 # Derive the Token Type GitOrganization
                 $result.type = 'GitOrganization'
-
-            } elseif ($TokenName -match $LocalizedDataAzResourceTokenPatten.GitProject) {
+            }
+            elseif ($TokenName -match $LocalizedDataAzResourceTokenPatten.GitProject)
+            {
                 # Derive the Token Type GitProject
                 $result.type = 'GitProject'
                 $result.projectId = (Get-CacheItem -Key $matches.ProjectName.Trim() -Type 'LiveProjects').id
-
-            } elseif ($TokenName -match $LocalizedDataAzResourceTokenPatten.GitRepository) {
+            }
+            elseif ($TokenName -match $LocalizedDataAzResourceTokenPatten.GitRepository)
+            {
                 # Derive the Token Type GitRepository
                 $result.type = 'GitRepository'
                 $result.projectId = (Get-CacheItem -Key $matches.ProjectName.Trim() -Type 'LiveProjects').id
                 $result.RepoId = (Get-CacheItem -Key $TokenName -Type 'LiveRepositories').id
-
-            } else {
+            }
+            else
+            {
                 # Derive the Token Type GitUnknown
                 $result.type = 'GitUnknown'
                 Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known Git ACL Token Patterns."
@@ -83,13 +87,15 @@ Function New-ACLToken
         'Identity' {
 
             # Derive the Token Type Identity
-            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.GroupPermission) {
+            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.GroupPermission)
+            {
                 # Derive the Token Type Identity
                 $result.type = 'GitGroupPermission'
                 $result.projectId = $matches.ProjectId
                 $result.groupId = $matches.GroupId
-
-            } else {
+            }
+            else
+            {
                 # Derive the Token Type Identity
                 $result.type = 'GroupUnknown'
                 Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known Identity ACL Token Patterns."

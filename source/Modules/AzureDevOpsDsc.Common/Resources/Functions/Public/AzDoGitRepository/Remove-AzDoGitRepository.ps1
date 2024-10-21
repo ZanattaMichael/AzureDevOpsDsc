@@ -70,7 +70,8 @@ Function Remove-AzDoGitRepository
     }
 
     # Check if the project exists in the LiveProjects cache
-    if (($null -eq $params.Project) -or ($null -eq $params.Repository)) {
+    if (($null -eq $params.Project) -or ($null -eq $params.Repository))
+    {
         Write-Error "[Remove-AzDoGitRepository] Project '$($ProjectName)' or Repository '$($RepositoryName)' does not exist in the LiveProjects or LiveRepositories cache. Skipping change."
         return
     }

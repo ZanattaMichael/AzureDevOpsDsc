@@ -100,7 +100,8 @@ Function Get-AzDoGitPermission
     $repository = Get-CacheItem -Key $('{0}\{1}' -f $ProjectName, $RepositoryName) -Type 'LiveRepositories'
 
     # Test if the Repository was found
-    if (-not $repository) {
+    if (-not $repository)
+    {
         Write-Warning "[Get-AzDoGitPermission] Repository not found: $RepositoryName"
         $getGroupResult.status = [DSCGetSummaryState]::NotFound
         return $getGroupResult
@@ -127,7 +128,8 @@ Function Get-AzDoGitPermission
     $DevOpsACLs = Get-DevOpsACL @ACLLookupParams
 
     # Test if the ACLs were found
-    if ($DevOpsACLs -eq $null) {
+    if ($DevOpsACLs -eq $null)
+    {
         Write-Warning "[Get-AzDoGitPermission] No ACLs found for the repository."
         $getGroupResult.status = [DSCGetSummaryState]::NotFound
         return $getGroupResult
@@ -137,7 +139,8 @@ Function Get-AzDoGitPermission
     $DifferenceACLs = $DevOpsACLs | ConvertTo-FormattedACL -SecurityNamespace $SecurityNamespace -OrganizationName $OrganizationName
 
     # Test if the ACLs were found
-    if ($DifferenceACLs -eq $null) {
+    if ($DifferenceACLs -eq $null)
+    {
         Write-Warning "[Get-AzDoGitPermission] No ACLs found for the repository."
         $getGroupResult.status = [DSCGetSummaryState]::NotFound
         return $getGroupResult

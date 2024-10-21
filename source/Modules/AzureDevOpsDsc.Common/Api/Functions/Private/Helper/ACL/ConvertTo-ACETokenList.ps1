@@ -20,7 +20,8 @@ Function ConvertTo-ACETokenList
     $SecurityDescriptor = Get-CacheItem -Key $SecurityNamespace -Type 'SecurityNamespaces'
 
     # Check if the Security Descriptor was found
-    if (-not $SecurityDescriptor) {
+    if (-not $SecurityDescriptor)
+    {
         Write-Error "Security Descriptor not found for namespace: $SecurityNamespace"
         return
     }
@@ -30,7 +31,6 @@ Function ConvertTo-ACETokenList
 
     ForEach ($ACEPermission in $ACEPermissions)
     {
-
         # Check to see if there are any permissions that are not found in the Security Descriptor
         $missingPermissions = $ACEPermission.Keys | Where-Object {
             ($_ -notin $SecurityDescriptor.actions.displayName) -and

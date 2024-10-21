@@ -94,7 +94,8 @@ Function Set-AzDoProjectServices
     $Project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
 
     # Construct a hashtable detailing the group
-    ForEach ($PropertyChanged in $LookupResult.propertiesChanged) {
+    ForEach ($PropertyChanged in $LookupResult.propertiesChanged)
+    {
 
         $params = @{
             Organization = $Global:DSCAZDO_OrganizationName

@@ -70,11 +70,14 @@ Function New-AzDoGroupMember
     Write-Verbose "[New-AzDoGroupMember] Retrieved cached group members."
 
     # Check if the group members are already cached
-    if (($null -ne $CachedGroupMembers) -and ($CachedGroupMembers.ContainsKey($GroupIdentity.principalName))) {
+    if (
+        ($null -ne $CachedGroupMembers) -and
+        ($CachedGroupMembers.ContainsKey($GroupIdentity.principalName))
+    )
+    {
         Write-Error "[New-AzDoGroupMember] Group members are already cached for group '$GroupName'."
         return
     }
-
 
     $params = @{
         GroupIdentity = $GroupIdentity
@@ -88,20 +91,22 @@ Function New-AzDoGroupMember
     $members = [System.Collections.Generic.List[object]]::new()
 
     # Fetch the group members and perform a lookup of the members
-    ForEach ($MemberIdentity in $GroupMembers) {
-
+    ForEach ($MemberIdentity in $GroupMembers)
+    {
         # Use the Find-AzDoIdentity function to search for an Azure DevOps identity that matches the given $MemberIdentity.
         Write-Verbose "[New-AzDoGroupMember] Looking up identity for member '$MemberIdentity'."
         $identity = Find-AzDoIdentity -Identity $MemberIdentity
 
         # If the identity is not found, write a warning message to the console and continue to the next member.
-        if ($null -eq $identity) {
+        if ($null -eq $identity)
+        {
             Write-Warning "[New-AzDoGroupMember] Unable to find identity for member '$MemberIdentity'."
             continue
         }
 
         # Check for circular reference
-        if ($GroupIdentity.originId -eq $identity.originId) {
+        if ($GroupIdentity.originId -eq $identity.originId)
+        {
             Write-Warning "[New-AzDoGroupMember] Circular reference detected for member '$MemberIdentity'."
             continue
         }
@@ -119,7 +124,8 @@ Function New-AzDoGroupMember
     }
 
     # If the group members are not found, write a warning message to the console and return.
-    if ($members.Count -eq 0) {
+    if ($members.Count -eq 0)
+    {
         Write-Warning "[New-AzDoGroupMember] No group members found: $($GroupMembers -join ',')."
         return
     }

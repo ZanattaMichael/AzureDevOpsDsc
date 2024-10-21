@@ -41,9 +41,12 @@ Function Get-DevOpsDescriptorIdentity
     )
 
     # Determine the query parameter based on the parameter set
-    if ($SubjectDescriptor) {
+    if ($SubjectDescriptor)
+    {
         $query = "subjectDescriptors=$SubjectDescriptor"
-    } else {
+    }
+    else
+    {
         $query = "descriptors=$Descriptor"
     }
 
@@ -57,7 +60,8 @@ Function Get-DevOpsDescriptorIdentity
     # Invoke the REST API call
     $identity = Invoke-AzDevOpsApiRestMethod @params
 
-    if (($null -eq $identity.value) -or ($identity.count -gt 1)) {
+    if (($null -eq $identity.value) -or ($identity.count -gt 1))
+    {
         return $null
     }
 

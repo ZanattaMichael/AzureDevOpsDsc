@@ -87,7 +87,8 @@ function New-DevOpsProject
         # Invoke the Azure DevOps REST API to create the project
         $response = Invoke-AzDevOpsApiRestMethod @params
 
-        if ($null -eq $response) {
+        if ($null -eq $response)
+        {
             Throw "[New-DevOpsProject] Failed to create the Azure DevOps project: No response returned"
         }
 

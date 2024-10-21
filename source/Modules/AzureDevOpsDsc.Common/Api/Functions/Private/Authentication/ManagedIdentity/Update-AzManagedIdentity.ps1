@@ -18,7 +18,8 @@ This example updates the Azure Managed Identity for the organization named "Cont
 Function Update-AzManagedIdentity
 {
     # Test if the Global Var's Exist $Global:DSCAZDO_OrganizationName
-    if ($null -eq $Global:DSCAZDO_OrganizationName) {
+    if ($null -eq $Global:DSCAZDO_OrganizationName)
+    {
         Throw "[Update-AzManagedIdentity] Organization Name is not set. Please run 'New-AzManagedIdentity -OrganizationName <OrganizationName>'"
     }
 

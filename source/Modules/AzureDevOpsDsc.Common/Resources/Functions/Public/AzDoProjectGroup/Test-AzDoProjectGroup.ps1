@@ -54,7 +54,8 @@ Function Test-AzDoProjectGroup
     #
     # Firstly we need to compare to see if the group names are the same. If so we can return $false.
 
-    if ($GetResult.Status -eq [DSCGetSummaryState]::Unchanged ) {
+    if ($GetResult.Status -eq [DSCGetSummaryState]::Unchanged )
+    {
 
         $result = $true
 
@@ -64,46 +65,53 @@ Function Test-AzDoProjectGroup
             $result = $false
         }
 
-        return $true }
+        return $true
+    }
 
-    #
     # If the status has been flagged as 'Renamed', returned $true. This means that the originId has changed.
-    if ($GetResult.Status -eq [DSCGetSummaryState]::Renamed) { return $false }
+    if ($GetResult.Status -eq [DSCGetSummaryState]::Renamed)
+    {
+        return $false
+    }
 
-    #
     # If the status has been flagged as 'Missing', returned $true. This means that the group is missing from the live cache.
 
+    if ($GetResult.Status -eq [DSCGetSummaryState]::Changed)
+    {
 
-
-    if ($GetResult.Status -eq [DSCGetSummaryState]::Changed) {
-
-        #
         # If the group is present in the live cache and the local cache. This means that the originId has changed. This needs to be updated.
-        if (($null -ne $GetResult.Current) -and ($null -ne $GetResult.Cache)) {
+        if (($null -ne $GetResult.Current) -and ($null -ne $GetResult.Cache))
+        {
             return $true
         }
 
-        #
         # If the group is present in the live cache but not in the local cache. Flag as Changed.
-        if ($GetResult.Current -and -not($GetResult.Cache)) {
+        if ($GetResult.Current -and -not($GetResult.Cache))
+        {
             return $true
         }
 
         #
         # If the group is not present in the live cache but is in the local cache. Flag as Changed.
-        if (-not($GetResult.Current) -and $GetResult.Cache) {
+        if (-not($GetResult.Current) -and $GetResult.Cache)
+        {
             return $true
         }
 
     }
 
-
     # Format the Key According to the Principal Name
     $Key = Format-AzDoGroup -Prefix "[$Global:DSCAZDO_OrganizationName]" -GroupName $GroupName
 
-    #
     # Check the cache for the group
     $group = Get-CacheItem -Key $Key -Type 'LiveGroups'
-    if (-not($group)) { $false } else { $true }
+    if (-not($group))
+    {
+        $false
+    }
+    else
+    {
+        $true
+    }
 
 }

@@ -58,7 +58,8 @@ Function Remove-AzDoOrganizationGroup
     )
 
     # If no cache items exist, return.
-    if (($null -eq $LookupResult.liveCache) -and ($null -eq $LookupResult.localCache)) {
+    if (($null -eq $LookupResult.liveCache) -and ($null -eq $LookupResult.localCache))
+    {
         return
     }
 
@@ -72,7 +73,8 @@ Function Remove-AzDoOrganizationGroup
     }
 
     # If the group is not found, return
-    if (($null -ne $LookupResult.localCache) -and ($null -eq $LookupResult.liveCache)) {
+    if (($null -ne $LookupResult.localCache) -and ($null -eq $LookupResult.liveCache))
+    {
         $cacheItem.Key = $LookupResult.localCache.principalName
         $params.GroupDescriptor = $LookupResult.localCache.Descriptor
     }

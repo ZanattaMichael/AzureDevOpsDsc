@@ -83,7 +83,8 @@ Function Wait-DevOpsProject
 
     } while ($counter -lt 10)
 
-    if ($counter -ge 10) {
+    if ($counter -ge 10)
+    {
         Write-Error "[Wait-DevOpsProject] Timed out waiting for project to be created."
     }
 

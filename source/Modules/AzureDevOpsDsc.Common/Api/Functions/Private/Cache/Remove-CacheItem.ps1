@@ -39,7 +39,8 @@ Function Remove-CacheItem
     Write-Verbose "[Remove-CacheItem] Removing the cache item with the key: '$Key'."
 
     # If the cache has a length of 1, and the key matches, remove the cache
-    if ($cache.Count -eq 1 -and $cache[0].Key -eq $Key) {
+    if ($cache.Count -eq 1 -and $cache[0].Key -eq $Key)
+    {
         Write-Verbose "[Remove-CacheItem] Cache has a length of 1 and the key matches. Removing the cache."
         Set-Variable -Name "AzDo$Type" -Value ([System.Collections.Generic.List[CacheItem]]::New()) -Scope Global
         return

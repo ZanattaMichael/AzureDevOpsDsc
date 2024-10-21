@@ -1,3 +1,19 @@
+<#
+.SYNOPSIS
+Formats an Azure DevOps group member name by removing square brackets and reformatting the string.
+
+.PARAMETER GroupName
+The name of the group to be formatted. This parameter is mandatory.
+
+.RETURNS
+System.String
+A formatted string representing the group name in the format '[prefix]\group'.
+
+.EXAMPLE
+$formattedName = Format-AzDoGroupMember -GroupName '[prefix]\group'
+# This will return 'prefix\group'.
+
+#>
 Function Format-AzDoGroupMember
 {
     param(

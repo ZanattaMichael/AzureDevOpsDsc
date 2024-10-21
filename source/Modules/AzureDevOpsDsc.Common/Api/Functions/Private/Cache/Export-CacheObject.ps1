@@ -50,9 +50,12 @@ Function Export-CacheObject
     Write-Verbose "[Export-ObjectCache] Starting export process for cache type: $CacheType"
 
     # Use the Enviroment Variables to set the Cache Directory Path
-    if ($ENV:AZDODSC_CACHE_DIRECTORY) {
+    if ($ENV:AZDODSC_CACHE_DIRECTORY)
+    {
         $CacheDirectoryPath = Join-Path -Path $ENV:AZDODSC_CACHE_DIRECTORY -ChildPath "Cache"
-    } else {
+    }
+    else
+    {
         Throw "The environment variable 'AZDODSC_CACHE_DIRECTORY' is not set. Please set the variable to the path of the cache directory."
     }
 
@@ -61,7 +64,8 @@ Function Export-CacheObject
         $cacheFilePath = Join-Path -Path $CacheDirectoryPath -ChildPath "$CacheType.clixml"
 
         # Create cache directory if it does not exist
-        if (-not (Test-Path -Path $CacheDirectoryPath)) {
+        if (-not (Test-Path -Path $CacheDirectoryPath))
+        {
             Write-Verbose "[Export-ObjectCache] Creating cache directory at path: $CacheDirectoryPath"
             New-Item -Path $CacheDirectoryPath -ItemType Directory | Out-Null
         }

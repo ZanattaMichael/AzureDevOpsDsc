@@ -34,7 +34,8 @@ Function Remove-AzDoGitPermission
     $SecurityNamespace  = Get-CacheItem -Key 'Git Repositories' -Type 'SecurityNamespaces'
 
     # If the Security Namespace is null, return
-    if (-not $SecurityNamespace) {
+    if (-not $SecurityNamespace)
+    {
         Write-Error "[New-AzDoGitPermission] Security Namespace not found."
         return
     }
@@ -43,16 +44,18 @@ Function Remove-AzDoGitPermission
     $Project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
 
     # If the Project is null, return
-    if (-not $Project) {
+    if (-not $Project)
+    {
         Write-Error "[New-AzDoGitPermission] Project not found."
         return
     }
 
     # Get the Repository
-    $Repository         = Get-CacheItem -Key "$ProjectName\$RepositoryName" -Type 'LiveRepositories'
+    $Repository = Get-CacheItem -Key "$ProjectName\$RepositoryName" -Type 'LiveRepositories'
 
     # If the Repository is null, return
-    if (-not $Repository) {
+    if (-not $Repository)
+    {
         Write-Error "[New-AzDoGitPermission] Repository not found."
         return
     }
@@ -61,7 +64,8 @@ Function Remove-AzDoGitPermission
     $DescriptorACLList  = Get-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'
 
     # If the ACLs are null, return
-    if (-not $DescriptorACLList) {
+    if (-not $DescriptorACLList)
+    {
         Write-Error "[New-AzDoGitPermission] ACLs not found."
         return
     }
@@ -75,8 +79,8 @@ Function Remove-AzDoGitPermission
     $Filtered = $DescriptorACLList | Where-Object { $_.token -eq $searchString }
 
     # If the ACLs are not null, remove them
-    if ($Filtered) {
-
+    if ($Filtered)
+    {
         $params = @{
             OrganizationName = $Global:DSCAZDO_OrganizationName
             SecurityNamespaceID = $SecurityNamespace.namespaceId

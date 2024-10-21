@@ -94,7 +94,8 @@ Function ConvertTo-ACL
     }
 
     # If the ACEs are empty, write a warning and return.
-    if ($ACL.aces.Count -eq 0) {
+    if ($ACL.aces.Count -eq 0)
+    {
         Write-Warning "[ConvertTo-ACL] No ACEs were created. Returning."
         return $ACL
     }

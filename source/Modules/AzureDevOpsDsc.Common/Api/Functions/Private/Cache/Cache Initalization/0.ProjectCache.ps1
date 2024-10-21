@@ -34,7 +34,8 @@ Function AzDoAPI_0_ProjectCache
     # Use a verbose statement to indicate the start of the function.
     Write-Verbose "Starting 'AzDoAPI_0_ProjectCache' function."
 
-    if (-not $OrganizationName) {
+    if (-not $OrganizationName)
+    {
         # If no organization name is provided, use a global variable as fallback
         Write-Verbose "No organization name provided as parameter; using global variable."
         $OrganizationName = $Global:DSCAZDO_OrganizationName

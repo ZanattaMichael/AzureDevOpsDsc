@@ -37,7 +37,10 @@ Function List-DevOpsSecurityNamespaces
     # Invoke the Rest API to get the groups
     $namespaces = Invoke-AzDevOpsApiRestMethod @params
 
-    if ($null -eq $namespaces.value) { return $null }
+    if ($null -eq $namespaces.value)
+    {
+        return $null
+    }
 
     # Return the groups from the cache
     return $namespaces.Value

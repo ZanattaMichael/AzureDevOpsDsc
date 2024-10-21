@@ -33,7 +33,8 @@ Function Group-ACEs
     Write-Verbose "[Group-ACE] Started."
 
     # Check if the ACEs are not found.
-    if (-not $ACEs) {
+    if (-not $ACEs)
+    {
         Write-Verbose "[Group-ACE] ACEs not found."
         return
     }

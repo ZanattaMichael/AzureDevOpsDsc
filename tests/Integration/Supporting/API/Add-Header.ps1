@@ -4,7 +4,8 @@ Function Add-Header {
 
     $headerValue = ""
 
-    switch ($Global:DSCAZDO_AuthenticationToken.tokenType) {
+    switch ($Global:DSCAZDO_AuthenticationToken.tokenType)
+    {
 
         # If the token is null
         {$null} {

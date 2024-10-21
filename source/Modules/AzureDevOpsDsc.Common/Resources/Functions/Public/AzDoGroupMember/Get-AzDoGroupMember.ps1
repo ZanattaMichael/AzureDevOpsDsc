@@ -87,13 +87,14 @@ Function Get-AzDoGroupMember
     # Test if the group is present in the live cache
     if ($null -eq $livegroupMembers)
     {
-
         Write-Verbose "[Get-AzDoGroupMember] Group '$GroupName' not found in the live cache."
-
         # If there are no group members, test to see if there are group members defined in the parameters
-        if ($GroupMembers.Count -eq 0) {
+        if ($GroupMembers.Count -eq 0)
+        {
             $getGroupResult.status = [DSCGetSummaryState]::Unchanged
-        } else {
+        }
+        else
+        {
             # If there are group members defined in the parameters, but no live group members, the group is new.
             $getGroupResult.status = [DSCGetSummaryState]::NotFound
         }
@@ -106,13 +107,15 @@ Function Get-AzDoGroupMember
     # Test if there are no group members in parameters
     if ($GroupMembers.Count -eq 0)
     {
-
         Write-Verbose "[Get-AzDoGroupMember] Group '$GroupName' not found in the parameters."
 
         # If there are no live group members, the group is unchanged.
-        if ($livegroupMembers.Count -eq 0) {
+        if ($livegroupMembers.Count -eq 0)
+        {
             $getGroupResult.status = [DSCGetSummaryState]::Unchanged
-        } else {
+        }
+        else
+        {
             # If there are live group members, the groups members are to be removed.
             $getGroupResult.status = [DSCGetSummaryState]::Missing
         }
@@ -131,7 +134,8 @@ Function Get-AzDoGroupMember
     $FormattedParametersGroups = $GroupMembers | ForEach-Object { Find-AzDoIdentity $_ }
 
     # If the formatted live groups is empty. Modify the formatted live groups to be an empty array.
-    if ($null -eq $FormattedLiveGroups) {
+    if ($null -eq $FormattedLiveGroups)
+    {
         $FormattedLiveGroups = @()
     }
 
@@ -151,13 +155,13 @@ Function Get-AzDoGroupMember
     #
     # If there are no differences, the group is unchanged.
 
-    if ($members.Count -eq 0) {
-
+    if ($members.Count -eq 0)
+    {
         # The group is unchanged.
         $getGroupResult.status = [DSCGetSummaryState]::Unchanged
-
-    } else {
-
+    }
+    else
+    {
         # Users on the left side are in the comparison object but not in the reference object are to be added.
         # Users on the right side are in the reference object but not in the comparison object are to be removed.
         $getGroupResult.propertiesChanged += $members | ForEach-Object {
@@ -169,10 +173,8 @@ Function Get-AzDoGroupMember
 
             }
         }
-
         # The group has changed.
         $getGroupResult.status = [DSCGetSummaryState]::Changed
-
     }
 
     return $getGroupResult

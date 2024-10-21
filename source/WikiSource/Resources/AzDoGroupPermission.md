@@ -129,7 +129,10 @@ hidden [Hashtable] GetDscCurrentStateProperties([PSCustomObject]$CurrentResource
         Ensure = [Ensure]::Absent
     }
 
-    if ($null -eq $CurrentResourceObject) { return $properties }
+    if ($null -eq $CurrentResourceObject)
+    {
+        return $properties
+    }
 
     $properties.GroupName   = $CurrentResourceObject.GroupName
     $properties.isInherited = $CurrentResourceObject.isInherited

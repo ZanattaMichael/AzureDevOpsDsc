@@ -81,7 +81,8 @@ Function New-AzDoProjectGroup
     }
 
     # If the project scope descriptor is not found, write a warning message to the console and return.
-    if ($null -eq $params.ProjectScopeDescriptor) {
+    if ($null -eq $params.ProjectScopeDescriptor)
+    {
         Write-Warning "[New-AzDoProjectGroup] Unable to find project scope descriptor for project '$ProjectName'. Aborting group creation."
         return
     }

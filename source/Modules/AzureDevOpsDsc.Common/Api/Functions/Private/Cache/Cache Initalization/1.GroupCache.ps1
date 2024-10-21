@@ -22,7 +22,8 @@ Function AzDoAPI_1_GroupCache
     # Use a verbose statement to indicate the start of the function.
     Write-Verbose "Starting 'Set-GroupCache' function."
 
-    if (-not $OrganizationName) {
+    if (-not $OrganizationName)
+    {
         Write-Verbose "No organization name provided as parameter; using global variable."
         $OrganizationName = $Global:DSCAZDO_OrganizationName
     }

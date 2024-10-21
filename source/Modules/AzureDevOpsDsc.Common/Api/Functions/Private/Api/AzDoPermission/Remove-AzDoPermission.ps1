@@ -68,9 +68,12 @@ Function Remove-AzDoPermission
         Write-Verbose "[Remove-AzDoPermission] Attempting to invoke REST method to remove ACLs."
         $member = Invoke-AzDevOpsApiRestMethod @params
 
-        if ($member -ne $true) {
+        if ($member -ne $true)
+        {
             Write-Error "[Remove-AzDoPermission] Failed to remove ACLs."
-        } else {
+        }
+        else
+        {
             Write-Verbose "[Remove-AzDoPermission] ACLs removed successfully."
         }
 

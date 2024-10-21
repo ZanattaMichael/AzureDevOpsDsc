@@ -46,7 +46,10 @@ function List-DevOpsProjects
     # Invoke the Rest API to get the groups
     $groups = Invoke-AzDevOpsApiRestMethod @params
 
-    if ($null -eq $groups.value) { return $null }
+    if ($null -eq $groups.value)
+    {
+        return $null
+    }
 
     # Return the groups from the cache
     return $groups.Value

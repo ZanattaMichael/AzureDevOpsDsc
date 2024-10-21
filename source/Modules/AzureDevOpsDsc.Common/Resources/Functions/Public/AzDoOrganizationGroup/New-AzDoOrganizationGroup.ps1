@@ -78,5 +78,4 @@ Function New-AzDoOrganizationGroup
     Set-CacheObject -Content $Global:AzDoGroup -CacheType 'Group'
     Write-Verbose "[New-AzDoOrganizationGroup] Updated global AzDoGroup cache object."
 
-
 }

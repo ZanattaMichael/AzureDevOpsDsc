@@ -99,7 +99,6 @@ Function Get-AzDoProjectServices
         status = [DSCGetSummaryState]::Unchanged
     }
 
-    #
     # Attempt to retrive the Project from the Live Cache.
     Write-Verbose "[Get-xAzDevOpsProjectServices] Retriving the Project from the Live Cache."
 
@@ -107,7 +106,8 @@ Function Get-AzDoProjectServices
     $Project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
 
     # If the Project does not exist in the Live Cache, return the Project object.
-    if ($null -eq $Project) {
+    if ($null -eq $Project)
+    {
         Write-Warning "[Get-xAzDevOpsProjectServices] The Project '$ProjectName' was not found in the Live Cache."
         $Result.Status = [DSCGetSummaryState]::NotFound
         return $Result
@@ -128,35 +128,44 @@ Function Get-AzDoProjectServices
     }
 
     # Compare the Project Services with the desired state.
-    if ($GitRepositories -ne $Result.LiveServices.Repos.state) {
+    if ($GitRepositories -ne $Result.LiveServices.Repos.state)
+    {
         $Result.Status = [DSCGetSummaryState]::Changed
         $Result.propertiesChanged += @{
             Expected = $GitRepositories
             FeatureId = $LocalizedDataAzURLParams.ProjectService_Repos
         }
     }
-    if ($WorkBoards -ne $Result.LiveServices.Boards.state) {
+
+    if ($WorkBoards -ne $Result.LiveServices.Boards.state)
+    {
         $Result.Status = [DSCGetSummaryState]::Changed
         $Result.propertiesChanged += @{
             Expected = $WorkBoards
             FeatureId = $LocalizedDataAzURLParams.ProjectService_Boards
         }
     }
-    if ($BuildPipelines -ne $Result.LiveServices.Pipelines.state) {
+
+    if ($BuildPipelines -ne $Result.LiveServices.Pipelines.state)
+    {
         $Result.Status = [DSCGetSummaryState]::Changed
         $Result.propertiesChanged += @{
             Expected = $BuildPipelines
             FeatureId = $LocalizedDataAzURLParams.ProjectService_Pipelines
         }
     }
-    if ($TestPlans -ne $Result.LiveServices.Tests.state) {
+
+    if ($TestPlans -ne $Result.LiveServices.Tests.state)
+    {
         $Result.Status = [DSCGetSummaryState]::Changed
         $Result.propertiesChanged += @{
             Expected = $TestPlans
             FeatureId = $LocalizedDataAzURLParams.ProjectService_TestPlans
         }
     }
-    if ($AzureArtifact -ne $Result.LiveServices.Artifacts.state) {
+
+    if ($AzureArtifact -ne $Result.LiveServices.Artifacts.state)
+    {
         $Result.Status = [DSCGetSummaryState]::Changed
         $Result.propertiesChanged += @{
             Expected = $AzureArtifact

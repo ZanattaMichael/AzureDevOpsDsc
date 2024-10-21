@@ -47,10 +47,26 @@ Function Get-AzManagedIdentityToken
     }
 
     # Dertimine if the machine is an arc machine
-    if ($env:IDENTITY_ENDPOINT) {
+    if ($env:IDENTITY_ENDPOINT)
+    {
+
+        # Validate what type of machine it is.
+        if ($null -eq $IsCoreCLR)
+        {
+            # If the $IsCoreCLR variable is not set, the script is running on Windows PowerShell.
+            Write-Verbose "[Get-AzManagedIdentityToken] The machine is a Windows machine Running Windows PowerShell."
+            $IsWindows = $true
+        }
 
         # Test if console is being run as Administrator
-        if (-not([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+        if (
+            ($IsWindows) -and
+            (-not (
+                [Security.Principal.WindowsPrincipal]
+                [Security.Principal.WindowsIdentity]::GetCurrent()
+            ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
+        )
+        {
             throw "[Get-AzManagedIdentityToken] Error: Authentication to Azure Arc requires Administrator privileges."
         }
 
@@ -58,7 +74,9 @@ Function Get-AzManagedIdentityToken
         $ManagedIdentityParams.Uri = '{0}?api-version=2020-06-01&resource=499b84ac-1321-427f-aa17-267ca6975798' -f $env:IDENTITY_ENDPOINT
         $ManagedIdentityParams.AzureArcAuthentication = $true
 
-    } else {
+    }
+    else
+    {
         Write-Verbose "[Get-AzManagedIdentityToken] The machine is not an Azure Arc machine. No changes are required."
     }
 
@@ -76,7 +94,7 @@ Function Get-AzManagedIdentityToken
         $wwwAuthHeader = $_.Exception.Response.Headers.WwwAuthenticate
         if ($wwwAuthHeader -notmatch "Basic realm=.+")
         {
-            Throw '[Get-AzManagedIdentityToken] {0}' -f $_
+            Throw ('[Get-AzManagedIdentityToken] {0}' -f $_)
         }
 
         Write-Verbose "[Get-AzManagedIdentityToken] Managed Identity Token Retrival Failed. Retrying with secret file."
@@ -93,7 +111,8 @@ Function Get-AzManagedIdentityToken
     }
 
     # Test the response
-    if ($null -eq $response.access_token) {
+    if ($null -eq $response.access_token)
+    {
         throw "Error. Access token not returned from Azure Instance Metadata Service. Please ensure that the Azure Instance Metadata Service is available."
     }
 
@@ -105,12 +124,18 @@ Function Get-AzManagedIdentityToken
     $null = $response
 
     # Return the token if the verify switch is not set
-    if (-not($verify)) { return $ManagedIdentity }
+    if (-not($verify))
+    {
+        return $ManagedIdentity
+    }
 
     Write-Verbose "[Get-AzManagedIdentityToken] Verifying the connection to the Azure DevOps API."
 
     # Test the Connection
-    if (-not(Test-AzToken $ManagedIdentity)) { throw "Error. Failed to call the Azure DevOps API." }
+    if (-not(Test-AzToken $ManagedIdentity))
+    {
+        throw "Error. Failed to call the Azure DevOps API."
+    }
 
     Write-Verbose "[Get-AzManagedIdentityToken] Connection Verified."
 

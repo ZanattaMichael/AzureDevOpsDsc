@@ -80,4 +80,7 @@ Export-ModuleMember -Function 'Get-AzDoCacheObjects'
 Export-ModuleMember -Function '*-AzDoProjectGroup'
 
 # Stop processing
-if ($isClass) { return }
+if ($isClass)
+{
+    return
+}

@@ -82,7 +82,10 @@ class AzDoGitPermission : AzDevOpsDscResourceBase
         }
 
         # If the resource object is null, return the properties
-        if ($null -eq $CurrentResourceObject) { return $properties }
+        if ($null -eq $CurrentResourceObject)
+        {
+            return $properties
+        }
 
         $properties.ProjectName           = $CurrentResourceObject.ProjectName
         $properties.RepositoryName        = $CurrentResourceObject.RepositoryName

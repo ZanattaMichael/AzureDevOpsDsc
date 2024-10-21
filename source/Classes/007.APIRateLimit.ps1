@@ -73,8 +73,10 @@ class APIRateLimit
         $expectedKeys = @('Retry-After', 'X-RateLimit-Remaining', 'X-RateLimit-Reset')
 
         # Check if all expected keys exist in the hashtable
-        foreach ($key in $expectedKeys) {
-            if (-not $APIRateLimitObj.ContainsKey($key)) {
+        foreach ($key in $expectedKeys)
+        {
+            if (-not $APIRateLimitObj.ContainsKey($key))
+            {
                 Write-Warning "[APIRateLimit] The hashtable does not contain the expected key: $key"
                 return $false
             }

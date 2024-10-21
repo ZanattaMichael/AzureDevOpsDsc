@@ -33,12 +33,14 @@ Function Set-AzDoGitPermission
     $SecurityNamespace = Get-CacheItem -Key 'Git Repositories' -Type 'SecurityNamespaces'
     $Project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
 
-    if ($SecurityNamespace -eq $null) {
+    if ($SecurityNamespace -eq $null)
+    {
         Write-Error "[Set-AzDoPermission] Security Namespace not found."
         return
     }
 
-    if ($Project -eq $null) {
+    if ($Project -eq $null)
+    {
         Write-Error "[Set-AzDoPermission] Project not found."
         return
     }

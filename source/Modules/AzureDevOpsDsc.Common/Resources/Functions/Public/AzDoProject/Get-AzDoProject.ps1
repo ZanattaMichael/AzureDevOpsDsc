@@ -136,15 +136,6 @@ function Get-AzDoProject
         Write-Verbose "[Get-AzDoProject] Project description has changed."
     }
 
-    <#
-    # Test if the project is using the same process template. If the process template is different, return a conflict.
-    if ($ProcessTemplate -ne $project.ProcessTemplate)
-    {
-        $result.Status = [DSCGetSummaryState]::Changed
-        $result.propertiesChanged += 'ProcessTemplate'
-    }
-    #>
-
     # Test if the project visibility is the same. If the visibility is different, return a conflict.
     if ($Visibility -ne $project.Visibility)
     {
@@ -155,5 +146,7 @@ function Get-AzDoProject
 
     # Return the group from the cache
     Write-Verbose "[Get-AzDoProject] Returning final result."
-    return $result
+
+    return [PSCustomObject]$result
+
 }

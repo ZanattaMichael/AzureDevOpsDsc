@@ -67,7 +67,8 @@ Function New-AzDoGitPermission
     $SecurityNamespace = Get-CacheItem -Key 'Git Repositories' -Type 'SecurityNamespaces'
     $Project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
 
-    if (($null -eq $SecurityNamespace) -or ($null -eq $Project)) {
+    if (($null -eq $SecurityNamespace) -or ($null -eq $Project))
+    {
         Write-Warning "[New-AzDoGitPermission] Security Namespace or Project not found."
         return
     }

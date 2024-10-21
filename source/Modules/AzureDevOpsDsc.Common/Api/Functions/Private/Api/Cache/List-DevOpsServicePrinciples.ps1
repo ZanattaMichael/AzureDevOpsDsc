@@ -46,7 +46,10 @@ Function List-DevOpsServicePrinciples
     # Invoke the Rest API to get the groups
     $serviceprincipals = Invoke-AzDevOpsApiRestMethod @params
 
-    if ($null -eq $serviceprincipals.value) { return $null }
+    if ($null -eq $serviceprincipals.value)
+    {
+        return $null
+    }
 
     # Return the groups from the cache
     return $serviceprincipals.Value

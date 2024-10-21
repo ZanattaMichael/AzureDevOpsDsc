@@ -44,7 +44,10 @@ function Get-CacheItem
         Write-Verbose $_
     }
 
-    if ($null -eq $cacheItem) { return $null }
+    if ($null -eq $cacheItem)
+    {
+        return $null
+    }
 
     if ($Filter -ne $null)
     {

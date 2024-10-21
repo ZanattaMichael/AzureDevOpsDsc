@@ -83,7 +83,10 @@ class AzDoOrganizationGroup : AzDevOpsDscResourceBase
         }
 
         # If the resource object is null, return the properties
-        if ($null -eq $CurrentResourceObject) { return $properties }
+        if ($null -eq $CurrentResourceObject)
+        {
+            return $properties
+        }
 
         $properties.GroupName           = $CurrentResourceObject.GroupName
         $properties.GroupDescription    = $CurrentResourceObject.GroupDescription

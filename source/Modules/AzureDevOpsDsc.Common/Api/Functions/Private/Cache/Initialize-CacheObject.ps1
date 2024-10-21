@@ -31,9 +31,12 @@ Function Initialize-CacheObject
     {
 
         # Use the Enviroment Variables to set the Cache Directory Path
-        if ($ENV:AZDODSC_CACHE_DIRECTORY) {
+        if ($ENV:AZDODSC_CACHE_DIRECTORY)
+        {
             $CacheDirectoryPath = Join-Path -Path $ENV:AZDODSC_CACHE_DIRECTORY -ChildPath "Cache"
-        } else {
+        }
+        else
+        {
             Throw "The environment variable 'AZDODSC_CACHE_DIRECTORY' is not set. Please set the variable to the path of the cache directory."
         }
 
@@ -41,33 +44,36 @@ Function Initialize-CacheObject
         Write-Verbose "[Initialize-CacheObject] Cache file path: $cacheFilePath"
 
         # If the cache group is LiveGroups or LiveProjects, set the cache file path to the temporary directory
-        if (-not($BypassFileCheck.IsPresent) -and ($CacheType -match '^Live')) {
-
+        if (-not($BypassFileCheck.IsPresent) -and ($CacheType -match '^Live'))
+        {
             # Flush the cache if it is a live cache
-            if (Test-Path -LiteralPath $cacheFilePath -ErrorAction SilentlyContinue) {
+            if (Test-Path -LiteralPath $cacheFilePath -ErrorAction SilentlyContinue)
+            {
                 Write-Verbose "[Initialize-CacheObject] Cache file found. Removing cache file for '$CacheType'."
                 Remove-Item -LiteralPath $cacheFilePath -Force
             }
-
-        } else {
+        }
+        else
+        {
             # Test if the Cache File exists. If it exists, import the cache object
             Write-Verbose "[Initialize-CacheObject] Cache file path: $cacheFilePath"
         }
 
         # Test if the Cache File exists. If it exists, import the cache object
-        if (Test-Path -Path $cacheFilePath) {
-
+        if (Test-Path -Path $cacheFilePath)
+        {
             # If the cache file exists, import the cache object
             Write-Verbose "[Initialize-CacheObject] Cache file found. Importing cache object for '$CacheType'."
             Import-CacheObject -CacheType $CacheType
-
-        } else {
-
+        }
+        else
+        {
             # If the cache file does not exist, create a new cache object
             Write-Verbose "[Initialize-CacheObject] Cache file not found. Creating new cache object for '$CacheType'."
 
             # Create the cache directory if it does not exist
-            if (-not (Test-Path -Path $CacheDirectoryPath)) {
+            if (-not (Test-Path -Path $CacheDirectoryPath))
+            {
                 Write-Verbose "[Initialize-CacheObject] Cache directory not found. Creating cache directory."
                 New-Item -Path $CacheDirectoryPath -ItemType Directory | Out-Null
             }

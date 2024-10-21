@@ -48,7 +48,10 @@ function List-UserCache
     # Invoke the Rest API to get the groups
     $users = Invoke-AzDevOpsApiRestMethod @params
 
-    if ($null -eq $users.value) { return $null }
+    if ($null -eq $users.value)
+    {
+        return $null
+    }
 
     # Return the groups from the cache
     return $users.Value

@@ -28,7 +28,8 @@ function ConvertTo-Base64String
         $InputObject
     )
 
-    process {
+    process
+    {
         [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($InputObject))
     }
 }

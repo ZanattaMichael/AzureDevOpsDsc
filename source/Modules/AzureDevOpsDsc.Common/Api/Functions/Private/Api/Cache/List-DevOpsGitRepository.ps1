@@ -48,7 +48,10 @@ function List-DevOpsGitRepository
     $repositories = Invoke-AzDevOpsApiRestMethod @params
 
     # Return the groups from the cache
-    if ($null -eq $repositories.value) { return $null }
+    if ($null -eq $repositories.value)
+    {
+        return $null
+    }
 
     #
     # Return the groups from the cache

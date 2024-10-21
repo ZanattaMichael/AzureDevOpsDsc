@@ -91,7 +91,8 @@ Function Set-DevOpsGroup
     }
 
     # If ProjectScopeDescriptor is provided, modify the URI to include it in the query parameters.
-    if ($ProjectScopeDescriptor) {
+    if ($ProjectScopeDescriptor)
+    {
         $params.Uri = '{0}/_apis/graph/groups?scopeDescriptor={1}&api-version={2}' -f $ApiUri, $ProjectScopeDescriptor, $ApiVersion
     }
 

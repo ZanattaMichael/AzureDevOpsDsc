@@ -73,7 +73,8 @@ Function Get-AzDoGroupPermission
     $split = $GroupName.Split('\').Split('/')
 
     # Test if the Group Name is valid
-    if ($split.Count -ne 2) {
+    if ($split.Count -ne 2)
+    {
         Write-Warning "[Get-AzDoGroupPermission] Invalid Group Name: $GroupName"
         return
     }
@@ -83,7 +84,6 @@ Function Get-AzDoGroupPermission
     $GroupName = $split[1]
 
     # If the Project Name contains 'organization'. Update the Project Name
-
 
     Write-Verbose "[Get-AzDoGroupPermission] Security Namespace: $SecurityNamespace"
     Write-Verbose "[Get-AzDoGroupPermission] Organization Name: $OrganizationName"
@@ -106,13 +106,13 @@ Function Get-AzDoGroupPermission
     # Define the ACL List
     $ACLList = [System.Collections.Generic.List[Hashtable]]::new()
 
-    #
     # Perform a Lookup within the Cache for the Group
     $group = Get-CacheItem -Key $('[{0}]\{1}' -f $ProjectName, $GroupName) -Type 'LiveGroups'
     $project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
 
     # Test if the Group was found
-    if (-not $group) {
+    if (-not $group)
+    {
         Throw "[Get-AzDoGroupPermission] Group not found: $('[{0}]\{1}' -f $ProjectName, $GroupName)"
         return
     }
@@ -143,8 +143,10 @@ Function Get-AzDoGroupPermission
 
     #
     # Iterate through each of the Permissions and append the permission identity if it contains 'Self' or 'This'
-    forEach ($Permission in $Permissions) {
-        if ($Permission.Identity -in 'self', 'this') {
+    forEach ($Permission in $Permissions)
+    {
+        if ($Permission.Identity -in 'self', 'this')
+        {
             $Permission.Identity = '[{0}]\{1}' -f $ProjectName, $GroupName
         }
     }
@@ -166,7 +168,8 @@ Function Get-AzDoGroupPermission
     $ReferenceACLs = ConvertTo-ACL @params | Where-Object { $_.token.Type -ne 'GroupUnknown' }
 
     # if the ACEs are empty, skip
-    if ($ReferenceACLs.aces.Count -eq 0) {
+    if ($ReferenceACLs.aces.Count -eq 0)
+    {
         Write-Verbose "[Get-AzDoGroupPermission] No ACEs found for the group."
         return
     }

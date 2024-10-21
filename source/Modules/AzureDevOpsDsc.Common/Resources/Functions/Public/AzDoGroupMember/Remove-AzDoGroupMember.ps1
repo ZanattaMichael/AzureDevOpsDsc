@@ -70,7 +70,8 @@ Function Remove-AzDoGroupMember
     $LiveGroupMembers = @(Get-CacheItem -Key $Key -Type 'LiveGroupMembers')
 
     # If the group identity or key is not found, write a warning message to the console and return.
-    if ([String]::IsNullOrEmpty($GroupIdentity) -or [String]::IsNullOrWhiteSpace($GroupIdentity)) {
+    if ([String]::IsNullOrEmpty($GroupIdentity) -or [String]::IsNullOrWhiteSpace($GroupIdentity))
+    {
         Write-Warning "[Remove-AzDoGroupMember] Unable to find identity for group '$GroupName'."
         return
     }
@@ -84,14 +85,16 @@ Function Remove-AzDoGroupMember
     Write-Verbose "[Remove-AzDoGroupMember] Group members: $($LiveGroupMembers.principalName -join ',')."
 
     # Fetch the group members and perform a lookup of the members
-    ForEach ($MemberIdentity in $LiveGroupMembers) {
+    ForEach ($MemberIdentity in $LiveGroupMembers)
+    {
 
         # Use the Find-AzDoIdentity function to search for an Azure DevOps identity that matches the given $MemberIdentity.
         Write-Verbose "[Remove-AzDoGroupMember] Looking up identity for member '$($MemberIdentity.principalName)'."
         $identity = Find-AzDoIdentity -Identity $MemberIdentity.principalName
 
         # If the identity is not found, write a warning message to the console and continue to the next member.
-        if ([String]::IsNullOrEmpty($identity) -or [String]::IsNullOrWhiteSpace($identity)) {
+        if ([String]::IsNullOrEmpty($identity) -or [String]::IsNullOrWhiteSpace($identity))
+        {
             Write-Warning "[Remove-AzDoGroupMember] Unable to find identity for member '$($MemberIdentity.principalName)'."
             continue
         }

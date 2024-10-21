@@ -155,8 +155,8 @@ function Invoke-AzDevOpsApiRestMethod
         #
         # Invoke the REST method. Loop until the Continuation Token is False.
 
-        Do {
-
+        Do
+        {
             #
             # Add the Authentication Header
 
@@ -230,7 +230,9 @@ function Invoke-AzDevOpsApiRestMethod
                         $retryAfter = [int]$retryAfter
                         Write-Verbose -Message "Received a 'Too Many Requests' response from the Azure DevOps API. Waiting for $retryAfter seconds before retrying."
                         $Global:DSCAZDO_APIRateLimit = [APIRateLimit]::New($retryAfter)
-                    } else {
+                    }
+                    else
+                    {
                         # If the Retry-After header is not present, wait for the specified number of milliseconds before retrying
                         Write-Verbose -Message "Received a 'Too Many Requests' response from the Azure DevOps API. Waiting for $RetryIntervalMs milliseconds before retrying."
                         $Global:DSCAZDO_APIRateLimit = [APIRateLimit]::New($RetryIntervalMs)
@@ -247,7 +249,6 @@ function Invoke-AzDevOpsApiRestMethod
 
                 # Break the continuation token loop so that the next attempt can be made
                 break;
-
             }
 
         } Until (-not $isContinuationToken)

@@ -62,12 +62,11 @@ Function Set-AzDoProjectGroup
 
     #
     # Depending on the type of lookup status, the group has been renamed the group has been deleted and recreated.
-    if ($LookupResult.Status -eq [DSCGetSummaryState]::Renamed) {
-
+    if ($LookupResult.Status -eq [DSCGetSummaryState]::Renamed)
+    {
         # For the time being write a warning and return
         Write-Warning "[Set-AzDoProjectGroup] The group has been renamed. The group will not be set."
         return
-
     }
 
     #
@@ -79,10 +78,13 @@ Function Set-AzDoProjectGroup
         GroupDescriptor = $LookupResult.liveCache.descriptor
     }
 
-    try {
+    try
+    {
         # Set the group from the API
         $group = Set-DevOpsGroup @params
-    } catch {
+    }
+    catch
+    {
         throw $_
     }
 
@@ -94,9 +96,11 @@ Function Set-AzDoProjectGroup
 
     #
     # Secondarily Replace the local cache with the new group
-    if ($null -ne $LookupResult.localCache) {
+    if ($null -ne $LookupResult.localCache)
+    {
         Remove-CacheItem -Key $LookupResult.localCache.principalName -Type 'Group'
     }
+
     Add-CacheItem -Key $group.principalName -Value $group -Type 'Group'
     Set-CacheObject -Content $Global:AzDoGroup -CacheType 'Group'
 

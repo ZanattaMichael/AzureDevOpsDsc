@@ -75,7 +75,10 @@ function Update-DevOpsProject
     }
 
     # Add the description if provided
-    if ($ProjectDescription) { $body.description = $ProjectDescription }
+    if ($ProjectDescription)
+    {
+        $body.description = $ProjectDescription
+    }
 
     # Construct the Paramters for the Invoke-AzDevOpsApiRestMethod function
     $params = @{

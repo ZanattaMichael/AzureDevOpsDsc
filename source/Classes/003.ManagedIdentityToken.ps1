@@ -48,7 +48,8 @@ class ManagedIdentityToken : AuthenticationToken
         $this.tokenType = [TokenType]::ManagedIdentity
 
         # Validate that ManagedIdentityTokenObj is a HashTable and Contains the correct keys
-        if (-not $this.isValid($ManagedIdentityTokenObj)) {
+        if (-not $this.isValid($ManagedIdentityTokenObj))
+        {
             throw "[ManagedIdentityToken] The ManagedIdentityTokenObj is not valid."
         }
 

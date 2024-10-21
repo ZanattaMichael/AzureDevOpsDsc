@@ -48,7 +48,10 @@ function List-DevOpsGroupMembers
     $membership = Invoke-AzDevOpsApiRestMethod @params
 
     # Return the groups from the cache
-    if ($null -eq $membership.value) { return $null }
+    if ($null -eq $membership.value)
+    {
+        return $null
+    }
 
     #
     # Return the groups from the cache

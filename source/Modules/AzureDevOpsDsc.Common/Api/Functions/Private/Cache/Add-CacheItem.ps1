@@ -49,7 +49,8 @@ Function Add-CacheItem
     [System.Collections.Generic.List[CacheItem]]$cache = Get-CacheObject -CacheType $Type
 
     # If the cache is empty, create a new cache
-    if ($cache.count -eq 0) {
+    if ($cache.count -eq 0)
+    {
         Write-Verbose "[Add-CacheItem] Cache is empty. Creating new cache."
         $cache = [System.Collections.Generic.List[CacheItem]]::New()
     }
@@ -60,12 +61,15 @@ Function Add-CacheItem
     Write-Verbose "[Add-CacheItem] Checking if the cache already contains the key: '$Key'."
     $existingItem = $cache | Where-Object { $_.Key -eq $Key }
 
-    if ($existingItem) {
-
+    if ($existingItem)
+    {
         # If the cache already contains the key, remove the existing item
-        if ($SuppressWarning.IsPresent) {
+        if ($SuppressWarning.IsPresent)
+        {
             Write-Verbose "[Add-CacheItem] A cache item with the key '$Key' already exists. Flushing key from the cache."
-        } else {
+        }
+        else
+        {
             Write-Warning "[Add-CacheItem] A cache item with the key '$Key' already exists. Flushing key from the cache."
         }
 
@@ -76,7 +80,8 @@ Function Add-CacheItem
         [System.Collections.Generic.List[CacheItem]]$cache = Get-CacheObject -CacheType $Type
 
         # If the cache is empty, create a new cache
-        if ($cache.count -eq 0) {
+        if ($cache.count -eq 0)
+        {
             Write-Verbose "[Add-CacheItem] Cache is empty. Creating new cache."
             $cache = [System.Collections.Generic.List[CacheItem]]::New()
         }

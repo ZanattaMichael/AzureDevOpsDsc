@@ -73,7 +73,6 @@ Function Get-AzDoGitRepository
         status = $null
     }
 
-
     #
     # Attempt to retrive the Project Group from the Live and Local Cache.
     Write-Verbose "[Get-AzDoGitRepository] Retriving the Project Group from the Live and Local Cache."
@@ -85,12 +84,15 @@ Function Get-AzDoGitRepository
     $repository = Get-CacheItem -Key $projectGroupKey -Type 'LiveRepositories'
 
     # If the Repository exists in the Live Cache, return the Repository object.
-    if ($repository) {
+    if ($repository)
+    {
         Write-Verbose "[Get-AzDoGitRepository] The Repository '$RepositoryName' was found in the Live Cache."
         $getRepositoryResult.status = [DSCGetSummaryState]::Unchanged
         return $getRepositoryResult
 
-    } else {
+    }
+    else
+    {
         Write-Verbose "[Get-AzDoGitRepository] The Repository '$RepositoryName' was not found in the Live Cache."
         $getRepositoryResult.status = [DSCGetSummaryState]::NotFound
     }

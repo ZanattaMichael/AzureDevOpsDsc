@@ -65,13 +65,15 @@ Function Set-AzDoGroupMember
     Get-CacheItem -Key $Key -Type 'LiveGroupMembers' | ForEach-Object { $members.Add($_) }
 
     # If the members are null or empty, stop.
-    if (($null -eq $GroupMembers) -or ($members.Count -eq 0)) {
+    if (($null -eq $GroupMembers) -or ($members.Count -eq 0))
+    {
         Write-Error "[Set-AzDoGroupMember] No members found in the LiveGroupMembers cache for group '$Key'."
         return
     }
 
     # If the lookup result is not provided, we need to look it up.
-    if ($null -eq $LookupResult.propertiesChanged) {
+    if ($null -eq $LookupResult.propertiesChanged)
+    {
         Throw "[Set-AzDoGroupMember] - LookupResult.propertiesChanged is required."
     }
 
@@ -84,7 +86,8 @@ Function Set-AzDoGroupMember
     Write-Verbose "[Set-AzDoGroupMember] Starting group member addition process for group '$GroupName'."
 
     # If the lookup result is not provided, we need to look it up.
-    switch ($LookupResult.propertiesChanged) {
+    switch ($LookupResult.propertiesChanged)
+    {
 
         # Add members
         { $_.action -eq "Add" } {
@@ -94,7 +97,8 @@ Function Set-AzDoGroupMember
             $identity = $_.value
 
             # Check for circular reference
-            if ($GroupIdentity.originId -eq $identity.originId) {
+            if ($GroupIdentity.originId -eq $identity.originId)
+            {
                 Write-Warning "[Set-AzDoGroupMember][ADD] Circular reference detected for member '$($GroupIdentity.principalName)'."
                 continue
             }
@@ -118,7 +122,8 @@ Function Set-AzDoGroupMember
             $identity = $_.value
 
             # Check for circular reference
-            if ($GroupIdentity.originId -eq $identity.originId) {
+            if ($GroupIdentity.originId -eq $identity.originId)
+            {
                 Write-Warning "[Set-AzDoGroupMember][REMOVE] Circular reference detected for member '$($GroupIdentity.principalName)'."
                 continue
             }

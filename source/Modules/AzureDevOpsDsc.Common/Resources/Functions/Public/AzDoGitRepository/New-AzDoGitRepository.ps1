@@ -78,7 +78,8 @@ Function New-AzDoGitRepository
         SourceRepository = $SourceRepository
     }
 
-    if ($null -eq $params.Project) {
+    if ($null -eq $params.Project)
+    {
         Write-Error "[New-AzDoGitRepository] Project '$($ProjectName)' does not exist in the LiveProjects cache. Skipping change."
         return
     }

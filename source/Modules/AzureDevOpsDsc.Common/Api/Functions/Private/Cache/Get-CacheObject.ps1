@@ -45,9 +45,12 @@ function Get-CacheObject
     Write-Verbose "[Get-ObjectCache] Attempting to retrieve cache object for type: $CacheType"
 
     # Use the Enviroment Variables to set the Cache Directory Path
-    if ($ENV:AZDODSC_CACHE_DIRECTORY) {
+    if ($ENV:AZDODSC_CACHE_DIRECTORY)
+    {
         $CacheDirectoryPath = Join-Path -Path $ENV:AZDODSC_CACHE_DIRECTORY -ChildPath "Cache"
-    } else {
+    }
+    else
+    {
         Throw "The environment variable 'AZDODSC_CACHE_DIRECTORY' is not set. Please set the variable to the path of the cache directory."
     }
 
@@ -56,11 +59,14 @@ function Get-CacheObject
         # Attempt to get the variable from the global scope
         $var = Get-Variable -Name "AzDo$CacheType" -Scope Global -ErrorAction SilentlyContinue
 
-        if ($var) {
+        if ($var)
+        {
             Write-Verbose "[Get-ObjectCache] Cache object found in memory for type: $CacheType"
             # If the variable is found, return the content of the cache. Dont use $var here, since it will a different object type.
             $var = Get-Variable -Name "AzDo$CacheType" -ValueOnly -Scope Global
-        } else {
+        }
+        else
+        {
             Write-Verbose "[Get-ObjectCache] Cache object not found in memory, attempting to import for type: $CacheType"
             $var = Import-CacheObject -CacheType $CacheType
         }
