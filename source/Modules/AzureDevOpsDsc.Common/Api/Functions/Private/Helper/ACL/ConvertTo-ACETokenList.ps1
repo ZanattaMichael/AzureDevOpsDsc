@@ -3,10 +3,10 @@
 Function ConvertTo-ACETokenList {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$SecurityNamespace,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Object[]]$ACEPermissions
     )
 

@@ -48,7 +48,7 @@ Function New-AzDoProjectGroup
     [OutputType([System.Management.Automation.PSObject[]])]
     param
     (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('Name')]
         [System.String]$GroupName,
 
@@ -56,7 +56,7 @@ Function New-AzDoProjectGroup
         [Alias('Description')]
         [System.String]$GroupDescription,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('Project')]
         [System.String]$ProjectName,
 

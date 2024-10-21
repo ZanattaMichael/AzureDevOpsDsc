@@ -33,7 +33,7 @@
 Function Test-AzDoProjectGroup
 {
     param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]
         $GroupName,

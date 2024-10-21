@@ -32,12 +32,12 @@ Function Find-Identity {
     [CmdletBinding()]
     param(
         # The name of the identity to search for.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$Name,
 
         # The name of the organization.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$OrganizationName,
 

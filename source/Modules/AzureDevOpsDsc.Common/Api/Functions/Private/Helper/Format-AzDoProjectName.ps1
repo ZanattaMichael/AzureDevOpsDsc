@@ -2,11 +2,11 @@ Function Format-AzDoProjectName {
     [CmdletBinding()]
     param
     (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('Name')]
         [System.String]$GroupName,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('Organization')]
         [System.String]$OrganizationName
     )

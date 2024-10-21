@@ -35,7 +35,7 @@ https://github.com/Azure/AzureDevOpsDsc
 function Get-CacheObject {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [ValidateScript({$_ -in (Get-AzDoCacheObjects)})]
         [string]$CacheType
     )

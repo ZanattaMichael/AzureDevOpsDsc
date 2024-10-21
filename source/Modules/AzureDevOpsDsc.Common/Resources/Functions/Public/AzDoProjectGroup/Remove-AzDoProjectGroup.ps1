@@ -36,7 +36,7 @@ Function Remove-AzDoProjectGroup
     [OutputType([System.Management.Automation.PSObject[]])]
     param
     (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('Name')]
         [System.String]$GroupName,
 
@@ -44,7 +44,7 @@ Function Remove-AzDoProjectGroup
         [Alias('Description')]
         [System.String]$GroupDescription,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('Project')]
         [System.String]$ProjectName,
 

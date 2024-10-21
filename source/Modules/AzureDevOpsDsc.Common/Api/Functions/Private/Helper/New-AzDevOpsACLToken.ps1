@@ -27,10 +27,10 @@ Creates a token for project-level access to the specified Azure DevOps project.
 function New-AzDevOpsACLToken {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$OrganizationName,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$ProjectId,
 
         [Parameter()]

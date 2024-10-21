@@ -2,7 +2,7 @@ Function Get-MIToken {
     [CmdletBinding()]
     param (
         # Organization Name
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [String]
         $OrganizationName
     )

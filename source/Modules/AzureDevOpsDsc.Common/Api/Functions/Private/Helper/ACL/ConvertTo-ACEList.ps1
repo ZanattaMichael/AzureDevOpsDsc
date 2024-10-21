@@ -31,7 +31,7 @@ Function ConvertTo-ACEList {
     [CmdletBinding()]
     param (
         # Mandatory parameter: the security namespace as a string.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$SecurityNamespace,
 
         # Mandatory parameter: an array of permissions objects.
@@ -39,7 +39,7 @@ Function ConvertTo-ACEList {
         [Object[]]$Permissions = @(),
 
         # Mandatory parameter: the organization name as a string.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$OrganizationName
     )
 

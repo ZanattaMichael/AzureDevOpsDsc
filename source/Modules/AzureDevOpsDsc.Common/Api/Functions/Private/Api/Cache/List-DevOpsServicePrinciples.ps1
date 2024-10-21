@@ -1,7 +1,7 @@
 Function List-DevOpsServicePrinciples {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$OrganizationName,
 
         [Parameter()]

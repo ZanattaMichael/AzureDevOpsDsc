@@ -45,13 +45,13 @@ Function Get-AzDoGitPermission
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$ProjectName,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$RepositoryName,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [bool]$isInherited,
 
         [Parameter()]

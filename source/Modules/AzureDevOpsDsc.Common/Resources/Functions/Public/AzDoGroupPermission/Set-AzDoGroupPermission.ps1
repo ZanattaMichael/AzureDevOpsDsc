@@ -2,10 +2,10 @@ Function Set-AzDoGroupPermission
 {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$GroupName,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [bool]$isInherited,
 
         [Parameter()]

@@ -3,7 +3,7 @@ Function Format-DescriptorType {
     [CmdletBinding()]
     [OutputType([String])]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [System.String]$DescriptorType
     )
 

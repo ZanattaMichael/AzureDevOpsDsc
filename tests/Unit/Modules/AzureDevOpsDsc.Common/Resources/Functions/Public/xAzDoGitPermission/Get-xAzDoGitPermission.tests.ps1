@@ -41,9 +41,9 @@ Describe 'Get-AzDoGitPermission Tests' {
 
         Function Mock-Get-DevOpsACL {
             param (
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 [string]$OrganizationName,
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 [string]$SecurityDescriptorId
             )
             return @( @{ Token = @{ Type = 'GitRepository'; RepoId = 123 }; Permission = 'Allow' } )
@@ -51,9 +51,9 @@ Describe 'Get-AzDoGitPermission Tests' {
 
         Function Mock-ConvertTo-FormattedACL {
             param (
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 $SecurityNamespace,
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 $OrganizationName
             )
             return @( @{ Token = @{ Type = 'GitRepository'; RepoId = 123 }; Permission = 'Allow' } )
@@ -61,15 +61,15 @@ Describe 'Get-AzDoGitPermission Tests' {
 
         Function Mock-ConvertTo-ACL {
             param (
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 $Permissions,
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 $SecurityNamespace,
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 $isInherited,
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 $OrganizationName,
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 $TokenName
             )
             return @( @{ Token = @{ Type = 'GitRepository'; RepoId = 123 }; Permission = 'Deny' } )
@@ -77,9 +77,9 @@ Describe 'Get-AzDoGitPermission Tests' {
 
         Function Mock-Test-ACLListforChanges {
             param (
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 $ReferenceACLs,
-                [Parameter(Mandatory)]
+                [Parameter(Mandatory = $true)]
                 $DifferenceACLs
             )
             return @{

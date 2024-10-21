@@ -34,7 +34,7 @@ The function updates the group using the Azure DevOps API and refreshes the cach
 Function Set-AzDoOrganizationGroup
 {
     param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('Name')]
         [System.String]$GroupName,
 

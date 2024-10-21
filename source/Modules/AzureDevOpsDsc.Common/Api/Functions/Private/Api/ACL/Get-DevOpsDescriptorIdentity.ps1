@@ -20,7 +20,8 @@ Get-DevOpsDescriptorIdentity -OrganizationName "MyOrg" -SubjectDescriptor "subje
 This example retrieves the identity associated with the subject descriptor "subject:abcd1234" in the Azure DevOps organization "MyOrg".
 
 #>
-Function Get-DevOpsDescriptorIdentity {
+Function Get-DevOpsDescriptorIdentity
+{
 
     [CmdletBinding(DefaultParameterSetName = 'Default')]
     param(

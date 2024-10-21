@@ -25,10 +25,10 @@ function Get-DevOpsSecurityDescriptor
 {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]
         $ProjectId,
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Organization,
         [Parameter()]

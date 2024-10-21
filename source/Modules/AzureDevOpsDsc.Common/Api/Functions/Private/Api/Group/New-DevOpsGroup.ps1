@@ -41,12 +41,12 @@ Function New-DevOpsGroup {
     param
     (
         # Parameter attribute marks this as a mandatory parameter that the user must supply when calling the function.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]
         $ApiUri, # The URI for the Azure DevOps API.
 
         # Mandatory parameter for the group name
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]
         $GroupName,
 

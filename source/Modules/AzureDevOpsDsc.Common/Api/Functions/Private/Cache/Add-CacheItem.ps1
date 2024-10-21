@@ -24,17 +24,17 @@ Function Add-CacheItem {
     [CmdletBinding()]
     param (
         # The key of the cache item to add
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Key,
 
         # The value of the cache item to add
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [object]
         $Value,
 
         # The type of the cache item to add
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [ValidateScript({$_ -in (Get-AzDoCacheObjects)})]
         [string]
         $Type,

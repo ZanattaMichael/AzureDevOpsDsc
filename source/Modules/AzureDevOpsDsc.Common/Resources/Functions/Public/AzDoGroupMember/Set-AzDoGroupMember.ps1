@@ -35,7 +35,7 @@
 Function Set-AzDoGroupMember
 {
     param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('Name')]
         [System.String]$GroupName,
 

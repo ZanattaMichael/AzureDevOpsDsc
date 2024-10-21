@@ -3,12 +3,12 @@ Function New-DevOpsGroupMember {
     param
     (
         # The group Identity
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('Group')]
         [Object]$GroupIdentity,
 
         # The group member
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('Member')]
         [Object]$MemberIdentity,
 
@@ -18,7 +18,7 @@ Function New-DevOpsGroupMember {
         $ApiVersion = $(Get-AzDevOpsApiVersion -Default),
 
         # The URI for the Azure DevOps API.
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]
         $ApiUri
 

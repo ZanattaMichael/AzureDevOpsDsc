@@ -33,7 +33,7 @@ Function Remove-DevOpsGroup {
         [String]
         $ApiVersion = $(Get-AzDevOpsApiVersion -Default),
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [String]
         $OrganizationName,
 

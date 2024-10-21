@@ -34,11 +34,11 @@ Function Test-ObjectProperty
     [OutputType([System.Boolean])]
     param
     (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [System.Object]
         $Object,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [System.String]
         $PropertyName
     )

@@ -4,15 +4,15 @@ Function New-GitRepository {
     param
     (
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('URI')]
         [System.String]$ApiUri,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('Name')]
         [Object]$Project,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('Repository')]
         [System.String]$RepositoryName,
 

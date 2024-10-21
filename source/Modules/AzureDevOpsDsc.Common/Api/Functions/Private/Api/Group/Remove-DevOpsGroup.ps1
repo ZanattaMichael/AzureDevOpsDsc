@@ -29,7 +29,7 @@ Function Remove-DevOpsGroup {
     [OutputType([System.Management.Automation.PSObject])]
     param
     (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]
         $ApiUri,
 

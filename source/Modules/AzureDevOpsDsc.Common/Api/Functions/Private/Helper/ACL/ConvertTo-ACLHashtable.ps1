@@ -82,11 +82,11 @@ Function ConvertTo-ACLHashtable {
         [Object[]]
         $ReferenceACLs,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Object[]]
         $DescriptorACLList,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [String]
         $DescriptorMatchToken
     )

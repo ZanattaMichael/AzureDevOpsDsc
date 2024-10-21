@@ -1,10 +1,10 @@
 function Get-DevOpsACL
 {
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$OrganizationName,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [String]$SecurityDescriptorId,
 
         [Parameter()]

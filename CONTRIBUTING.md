@@ -409,7 +409,7 @@ Here's an example:
 Function Get-ClassName {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('Name')]
         [System.String]$ResourceParameter,
 
@@ -436,7 +436,7 @@ Function Get-AzDoProjectServices {
     [OutputType([System.Management.Automation.PSObject[]])]
     param
     (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('Name')]
         [System.String]$ProjectName,
 

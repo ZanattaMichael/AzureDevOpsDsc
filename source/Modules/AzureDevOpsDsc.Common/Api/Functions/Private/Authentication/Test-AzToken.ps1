@@ -16,7 +16,7 @@
 Function Test-AzToken {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Object]
         $Token
     )

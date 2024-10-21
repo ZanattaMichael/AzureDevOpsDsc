@@ -1,11 +1,11 @@
 Function Refresh-CacheIdentity {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Object]$Identity,
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [String]$Key,
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [ValidateScript({$_ -in (Get-AzDoCacheObjects)})]
         [String]$CacheType
     )

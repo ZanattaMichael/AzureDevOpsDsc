@@ -1,7 +1,7 @@
 Function Format-AzDoGroupMember
 {
     param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [System.String]$GroupName
     )
 

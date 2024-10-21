@@ -50,7 +50,7 @@ Function Set-AzDoProjectServices
     [OutputType([System.Management.Automation.PSObject[]])]
     param
     (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('Name')]
         [System.String]$ProjectName,
 

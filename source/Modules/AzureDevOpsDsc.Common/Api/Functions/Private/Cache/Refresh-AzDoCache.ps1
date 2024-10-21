@@ -1,6 +1,6 @@
 Function Refresh-AzDoCache {
     param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$OrganizationName
     )
 

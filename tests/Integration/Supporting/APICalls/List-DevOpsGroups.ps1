@@ -3,7 +3,7 @@ Function List-DevOpsGroups {
     [OutputType([System.Object])]
     Param
     (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Organization,
         [Parameter()]

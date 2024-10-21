@@ -25,7 +25,7 @@ Function ConvertTo-FormattedToken {
     [CmdletBinding()]
     param (
         # Define a mandatory parameter named 'Token' of type Object array
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Object[]]$Token
     )
 

@@ -31,10 +31,10 @@ Function New-ACLToken {
     [CmdletBinding()]
     param
     (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$SecurityNamespace,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$TokenName
 
     )

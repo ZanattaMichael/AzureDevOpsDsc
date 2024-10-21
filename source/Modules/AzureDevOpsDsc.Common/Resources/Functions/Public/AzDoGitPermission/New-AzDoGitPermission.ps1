@@ -36,13 +36,13 @@ Function New-AzDoGitPermission
 {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$ProjectName,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$RepositoryName,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [bool]$isInherited,
 
         [Parameter()]

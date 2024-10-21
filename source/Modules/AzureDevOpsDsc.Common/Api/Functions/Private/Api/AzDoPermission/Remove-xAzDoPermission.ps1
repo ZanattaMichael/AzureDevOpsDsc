@@ -1,13 +1,41 @@
+<#
+.SYNOPSIS
+Removes access control lists (ACLs) for a specified token in an Azure DevOps organization.
+
+.DESCRIPTION
+The Remove-xAzDoPermission function removes ACLs for a specified token within a given security namespace in an Azure DevOps organization. It constructs the appropriate API endpoint and invokes a REST method to delete the ACLs.
+
+.PARAMETER OrganizationName
+The name of the Azure DevOps organization.
+
+.PARAMETER SecurityNamespaceID
+The ID of the security namespace.
+
+.PARAMETER TokenName
+The name of the token for which the ACLs should be removed.
+
+.PARAMETER ApiVersion
+The version of the Azure DevOps API to use. If not specified, the default API version is used.
+
+.EXAMPLE
+Remove-xAzDoPermission -OrganizationName "MyOrg" -SecurityNamespaceID "12345" -TokenName "MyToken"
+
+This example removes the ACLs for the token "MyToken" in the security namespace with ID "12345" within the "MyOrg" organization.
+
+.NOTES
+This function uses the Invoke-AzDevOpsApiRestMethod function to perform the REST API call. Ensure that the necessary permissions are in place to delete ACLs in the specified Azure DevOps organization.
+
+#>
 Function Remove-xAzDoPermission
 {
     param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$OrganizationName,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$SecurityNamespaceID,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$TokenName,
 
         [Parameter()]

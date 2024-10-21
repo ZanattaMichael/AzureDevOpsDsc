@@ -1,15 +1,44 @@
+<#
+.SYNOPSIS
+Sets Azure DevOps permissions by invoking a REST API method.
 
+.DESCRIPTION
+The Set-xAzDoPermission function sets permissions in Azure DevOps by sending a POST request to the specified API endpoint.
+It constructs the URI using the organization name, security namespace ID, and API version. The function serializes the
+Access Control Lists (ACLs) and sends them in the body of the request.
+
+.PARAMETER OrganizationName
+The name of the Azure DevOps organization.
+
+.PARAMETER SecurityNamespaceID
+The ID of the security namespace.
+
+.PARAMETER SerializedACLs
+The serialized Access Control Lists (ACLs) to be set.
+
+.PARAMETER ApiVersion
+The version of the Azure DevOps API to use. Defaults to the value returned by Get-AzDevOpsApiVersion -Default.
+
+.EXAMPLE
+Set-xAzDoPermission -OrganizationName "MyOrg" -SecurityNamespaceID "12345" -SerializedACLs $acls
+
+This example sets the permissions for the specified organization and security namespace using the provided ACLs.
+
+.NOTES
+The function uses the Invoke-AzDevOpsApiRestMethod to send the request. If an error occurs during the request,
+an error message is written to the console.
+#>
 
 Function Set-xAzDoPermission
 {
     param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$OrganizationName,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$SecurityNamespaceID,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Object]$SerializedACLs,
 
         [Parameter()]

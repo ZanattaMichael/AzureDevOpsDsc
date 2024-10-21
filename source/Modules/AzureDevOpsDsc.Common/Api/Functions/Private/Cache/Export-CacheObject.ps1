@@ -33,7 +33,7 @@ This function is part of the AzureDevOpsDsc module and is used for caching Azure
 Function Export-CacheObject {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [ValidateScript({$_ -in (Get-AzDoCacheObjects)})]
         [string]$CacheType,
 

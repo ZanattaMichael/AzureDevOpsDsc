@@ -2,7 +2,7 @@ Function Find-AzDoIdentity {
     [CmdletBinding()]
     param
     (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('Name')]
         [System.String]$Identity
     )

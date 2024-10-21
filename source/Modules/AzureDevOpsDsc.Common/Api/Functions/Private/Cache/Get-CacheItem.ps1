@@ -21,11 +21,11 @@ function Get-CacheItem
     [CmdletBinding()]
     [OutputType([CacheItem])]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Key,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [ValidateScript({$_ -in (Get-AzDoCacheObjects)})]
         [string]
         $Type,

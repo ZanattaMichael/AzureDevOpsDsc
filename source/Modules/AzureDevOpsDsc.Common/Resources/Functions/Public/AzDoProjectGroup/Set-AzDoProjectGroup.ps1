@@ -36,7 +36,7 @@ The function updates both the live and local cache with the new group details.
 Function Set-AzDoProjectGroup
 {
     param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('Name')]
         [System.String]$GroupName,
 
@@ -44,7 +44,7 @@ Function Set-AzDoProjectGroup
         [Alias('Description')]
         [System.String]$GroupDescription,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('Project')]
         [System.String]$ProjectName,
 

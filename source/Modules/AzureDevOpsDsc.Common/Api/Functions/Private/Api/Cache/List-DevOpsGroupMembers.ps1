@@ -2,10 +2,10 @@ function List-DevOpsGroupMembers
 {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Organization,
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [String]
         $GroupDescriptor,
         [Parameter()]

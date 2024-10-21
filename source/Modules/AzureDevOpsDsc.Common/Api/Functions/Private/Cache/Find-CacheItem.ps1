@@ -36,7 +36,7 @@ Function Find-CacheItem
         [Alias('Cache')]
         [Object[]]$CacheList,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [ScriptBlock]$Filter
     )
 

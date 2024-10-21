@@ -20,12 +20,12 @@ Returns: "[Contoso]\Developers"
 Function Format-AzDoGroup {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('ProjectName', 'Organization')]
         [string]
         $Prefix,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [String]
         $GroupName
     )

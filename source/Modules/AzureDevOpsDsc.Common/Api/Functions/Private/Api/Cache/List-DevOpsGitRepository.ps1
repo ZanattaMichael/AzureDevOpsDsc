@@ -3,10 +3,10 @@ function List-DevOpsGitRepository
 {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$OrganizationName,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [String]$ProjectName,
 
         [Parameter()]

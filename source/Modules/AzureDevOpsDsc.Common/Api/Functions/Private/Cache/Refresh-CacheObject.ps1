@@ -1,7 +1,7 @@
 # Unloads and reloads the cache object of the specified type.
 Function Refresh-CacheObject {
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [ValidateScript({$_ -in (Get-AzDoCacheObjects)})]
         [string]
         $CacheType

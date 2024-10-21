@@ -22,11 +22,11 @@ Removes the item with the key "anotherKey" from the Group cache.
 
 Function Remove-CacheItem {
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]
         $Key,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [ValidateScript({$_ -in (Get-AzDoCacheObjects)})]
         [string]
         $Type

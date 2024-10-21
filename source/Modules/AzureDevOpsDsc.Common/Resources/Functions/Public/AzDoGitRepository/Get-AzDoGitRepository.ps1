@@ -39,11 +39,11 @@ Function Get-AzDoGitRepository
     [OutputType([System.Management.Automation.PSObject[]])]
     param
     (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('Name')]
         [System.String]$ProjectName,
 
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('Repository')]
         [System.String]$RepositoryName,
 

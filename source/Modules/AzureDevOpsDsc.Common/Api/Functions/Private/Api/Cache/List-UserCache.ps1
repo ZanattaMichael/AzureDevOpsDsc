@@ -2,7 +2,7 @@ function List-UserCache
 {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [string]$OrganizationName,
 
         [Parameter()]

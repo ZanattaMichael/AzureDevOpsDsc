@@ -23,7 +23,7 @@
 Function Test-AzDoGroupMember
 {
     param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [Alias('Name')]
         [System.String]$GroupName,
 

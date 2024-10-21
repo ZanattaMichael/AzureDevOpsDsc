@@ -1,7 +1,7 @@
 Function List-DevOpsSecurityNamespaces {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $true)]
         [String]$OrganizationName
     )
 
