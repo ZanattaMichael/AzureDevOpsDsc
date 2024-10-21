@@ -188,8 +188,14 @@ Function Get-AzDoOrganizationGroup
     {
 
         # Validate that the live properties are the same as the parameters
-        if ($livegroup.description -ne $GroupDescription )            { $getGroupResult.propertiesChanged += 'description' }
-        if ($livegroup.displayName -ne $GroupName )                   { $getGroupResult.propertiesChanged += 'displayName' }
+        if ($livegroup.description -ne $GroupDescription )
+        {
+            $getGroupResult.propertiesChanged += 'description'
+        }
+        if ($livegroup.displayName -ne $GroupName )
+        {
+            $getGroupResult.propertiesChanged += 'displayName'
+        }
 
         # If the properties are the same, the group is unchanged. If not, the group has been changed.
         $getGroupResult.status = $(
