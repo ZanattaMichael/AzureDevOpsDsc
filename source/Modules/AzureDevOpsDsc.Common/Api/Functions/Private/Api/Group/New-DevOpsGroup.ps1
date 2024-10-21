@@ -32,12 +32,10 @@ Creates a new group named "MyGroup" in Azure DevOps within the specified project
 
 #>
 # Define a function to create a new Azure DevOps Group
-Function New-DevOpsGroup {
-    # CmdletBinding attribute specifies that this function is written as an advanced function
+Function New-DevOpsGroup
+{
     [CmdletBinding()]
-    # OutputType attribute defines the output type of the function which is PSObject in this case
     [OutputType([System.Management.Automation.PSObject])]
-    # Parameters block defining the parameters accepted by the function
     param
     (
         # Parameter attribute marks this as a mandatory parameter that the user must supply when calling the function.
@@ -83,7 +81,8 @@ Function New-DevOpsGroup {
     }
 
     # Try to invoke the REST method to create the group and return the result
-    try {
+    try
+    {
         $group = Invoke-AzDevOpsApiRestMethod @params
         return $group
     }

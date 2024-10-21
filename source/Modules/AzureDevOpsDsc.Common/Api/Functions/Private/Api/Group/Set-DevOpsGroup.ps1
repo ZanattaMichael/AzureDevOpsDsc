@@ -31,21 +31,20 @@ This example updates the group named "MyGroup" in the Azure DevOps organization 
 #>
 
 # This function is designed to update the description of a group in Azure DevOps.
-Function Set-DevOpsGroup {
-    # CmdletBinding attribute allows the function to use cmdlet parameters and supports advanced functionality like ShouldProcess.
+Function Set-DevOpsGroup
+{
     [CmdletBinding(DefaultParameterSetName = 'Default')]
-    # OutputType attribute specifies the type of object that the function returns.
     [OutputType([System.Management.Automation.PSObject])]
     param
     (
         # Parameter attribute marks this as a mandatory parameter that the user must supply when calling the function.
-        [Parameter(Mandatory, ParameterSetName = 'ProjectScope')]
-        [Parameter(Mandatory, ParameterSetName = 'Default')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ProjectScope')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Default')]
         [string]
         $ApiUri, # The URI for the Azure DevOps API.
 
-        [Parameter(Mandatory, ParameterSetName = 'ProjectScope')]
-        [Parameter(Mandatory, ParameterSetName = 'Default')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ProjectScope')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Default')]
         [string]
         $GroupName, # The name of the group to be updated.
 
@@ -62,12 +61,12 @@ Function Set-DevOpsGroup {
         $ApiVersion = $(Get-AzDevOpsApiVersion -Default), # The API version to use for the request.
 
         # Group Descriptor for the project within which the group exists.
-        [Parameter(Mandatory, ParameterSetName = 'Default')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Default')]
         [String]
         $GroupDescriptor,
 
         # Optional parameter without a default value.
-        [Parameter(Mandatory, ParameterSetName = 'ProjectScope')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ProjectScope')]
         [String]
         $ProjectScopeDescriptor # Scope descriptor for the project within which the group exists.
     )

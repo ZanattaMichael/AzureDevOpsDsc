@@ -1,3 +1,30 @@
+<#
+.SYNOPSIS
+Removes a member from an Azure DevOps group.
+
+.DESCRIPTION
+The Remove-DevOpsGroupMember function removes a specified member from a specified Azure DevOps group using the Azure DevOps REST API.
+
+.PARAMETER GroupIdentity
+The identity of the group from which the member will be removed. This parameter is mandatory.
+
+.PARAMETER MemberIdentity
+The identity of the member to be removed from the group. This parameter is mandatory.
+
+.PARAMETER ApiVersion
+The version of the Azure DevOps API to use. If not specified, the default version is obtained from the Get-AzDevOpsApiVersion function.
+
+.PARAMETER ApiUri
+The base URI for the Azure DevOps API. This parameter is mandatory.
+
+.EXAMPLE
+Remove-DevOpsGroupMember -GroupIdentity $group -MemberIdentity $member -ApiUri "https://dev.azure.com/organization"
+
+This example removes the specified member from the specified group in the Azure DevOps organization.
+
+.NOTES
+This function constructs the appropriate URI for the Azure DevOps REST API call and uses the Invoke-AzDevOpsApiRestMethod function to perform the removal operation. If the operation fails, an error message is written to the console.
+#>
 Function Remove-DevOpsGroupMember {
     [CmdletBinding()]
     param
@@ -21,7 +48,6 @@ Function Remove-DevOpsGroupMember {
         [Parameter(Mandatory = $true)]
         [string]
         $ApiUri
-
     )
 
     # Define a hashtable to store parameters for the Invoke-AzDevOpsApiRestMethod function.
@@ -51,12 +77,5 @@ Function Remove-DevOpsGroupMember {
         # If an exception occurs, write an error message to the console with details about the issue.
         Write-Error "[Remove-DevOpsGroupMember] Failed to add member to group: $($_.Exception.Message)"
     }
-
-    #Write-Verbose "[Remove-DevOpsGroupMember] Result $($member | ConvertTo-Json)."
-
-    # Return the result of the REST method invocation, which is stored in $member.
-    #Write-Verbose "[Remove-DevOpsGroupMember] Returning result from REST method invocation."
-    #return $member
-
 
 }

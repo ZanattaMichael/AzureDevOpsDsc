@@ -22,7 +22,7 @@ function ConvertTo-Base64String
 {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory = $true, ValueFromPipeline)]
         [ValidateNotNullOrEmpty()]
         [String]
         $InputObject

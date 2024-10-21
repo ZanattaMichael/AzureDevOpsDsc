@@ -32,7 +32,7 @@ Function Find-CacheItem
     [OutputType([System.Management.Automation.PSObject])]
     param
     (
-        [Parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory = $true, ValueFromPipeline)]
         [Alias('Cache')]
         [Object[]]$CacheList,
 

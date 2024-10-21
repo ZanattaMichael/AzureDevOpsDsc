@@ -24,14 +24,14 @@ Function Get-DevOpsDescriptorIdentity
 {
     [CmdletBinding(DefaultParameterSetName = 'Default')]
     param(
-        [Parameter(Mandatory, ParameterSetName = 'Default')]
-        [Parameter(Mandatory, ParameterSetName = 'Descriptors')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Default')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Descriptors')]
         [string]$OrganizationName,
 
-        [Parameter(Mandatory, ParameterSetName = 'Default')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Default')]
         [String]$SubjectDescriptor,
 
-        [Parameter(Mandatory, ParameterSetName = 'Descriptors')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Descriptors')]
         [String]$Descriptor,
 
         [Parameter(ParameterSetName = 'Default')]

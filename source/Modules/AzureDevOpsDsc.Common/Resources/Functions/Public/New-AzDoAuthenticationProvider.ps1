@@ -19,21 +19,21 @@ Function New-AzDoAuthenticationProvider
     [CmdletBinding(DefaultParameterSetName = 'PersonalAccessToken')]
     param (
         # Organization Name
-        [Parameter(Mandatory, ParameterSetName = 'PersonalAccessToken')]
-        [Parameter(Mandatory, ParameterSetName = 'SecureStringPersonalAccessToken')]
-        [Parameter(Mandatory, ParameterSetName = 'ManagedIdentity')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'PersonalAccessToken')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'SecureStringPersonalAccessToken')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ManagedIdentity')]
         [Alias('OrgName')]
         [String]
         $OrganizationName,
 
         # Personal Access Token
-        [Parameter(Mandatory, ParameterSetName = 'PersonalAccessToken')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'PersonalAccessToken')]
         [Alias('PAT')]
         [String]
         $PersonalAccessToken,
 
         # SecureString Personal Access Token
-        [Parameter(Mandatory, ParameterSetName = 'SecureStringPersonalAccessToken')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'SecureStringPersonalAccessToken')]
         [Alias('SecureStringPAT')]
         [SecureString]
         $SecureStringPersonalAccessToken,

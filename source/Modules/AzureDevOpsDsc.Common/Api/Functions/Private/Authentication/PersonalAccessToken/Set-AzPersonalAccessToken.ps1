@@ -2,20 +2,20 @@ Function Set-AzPersonalAccessToken {
     [CmdletBinding(DefaultParameterSetName = 'PersonalAccessToken')]
     param (
         # Organization Name
-        [Parameter(Mandatory, ParameterSetName = 'PersonalAccessToken')]
-        [Parameter(Mandatory, ParameterSetName = 'SecureStringPersonalAccessToken')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'PersonalAccessToken')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'SecureStringPersonalAccessToken')]
         [Alias('OrgName')]
         [String]
         $OrganizationName,
 
         # Personal Access Token
-        [Parameter(Mandatory, ParameterSetName = 'PersonalAccessToken')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'PersonalAccessToken')]
         [Alias("PAT")]
         [String]
         $PersonalAccessToken,
 
         # Secure String Personal Access Token
-        [Parameter(Mandatory, ParameterSetName = 'SecureStringPersonalAccessToken')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'SecureStringPersonalAccessToken')]
         [Alias("SecureStringPAT")]
         [SecureString]
         $SecureStringPersonalAccessToken,
