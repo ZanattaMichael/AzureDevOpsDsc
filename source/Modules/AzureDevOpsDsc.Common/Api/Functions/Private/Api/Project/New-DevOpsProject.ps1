@@ -58,7 +58,6 @@ function New-DevOpsProject
         [Parameter()]
         [String]
         $ApiVersion = $(Get-AzDevOpsApiVersion | Select-Object -Last 1)
-
     )
 
     # Validate the parameters
@@ -94,9 +93,9 @@ function New-DevOpsProject
 
         # Output the response which contains the created project details
         return $response
-    } catch
+    }
+    catch
     {
         Write-Error "[New-DevOpsProject] Failed to create the Azure DevOps project: $_"
     }
-
 }

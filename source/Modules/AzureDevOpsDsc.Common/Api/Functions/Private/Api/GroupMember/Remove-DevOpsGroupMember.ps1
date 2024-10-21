@@ -25,7 +25,8 @@ This example removes the specified member from the specified group in the Azure 
 .NOTES
 This function constructs the appropriate URI for the Azure DevOps REST API call and uses the Invoke-AzDevOpsApiRestMethod function to perform the removal operation. If the operation fails, an error message is written to the console.
 #>
-Function Remove-DevOpsGroupMember {
+Function Remove-DevOpsGroupMember
+{
     [CmdletBinding()]
     param
     (
@@ -66,14 +67,17 @@ Function Remove-DevOpsGroupMember {
 
     # Try to invoke the REST method to create the group and return the result
 
-    try {
+    try
+    {
         # Call the Invoke-AzDevOpsApiRestMethod function with the parameters defined above.
         # The "@" symbol is used to pass the hashtable as splatting parameters.
         Write-Verbose "[Remove-DevOpsGroupMember] Attempting to invoke REST method to remove group member."
         $member = Invoke-AzDevOpsApiRestMethod @params
         Write-Verbose "[Remove-DevOpsGroupMember] Member removed successfully."
 
-    } catch {
+    }
+    catch
+    {
         # If an exception occurs, write an error message to the console with details about the issue.
         Write-Error "[Remove-DevOpsGroupMember] Failed to add member to group: $($_.Exception.Message)"
     }

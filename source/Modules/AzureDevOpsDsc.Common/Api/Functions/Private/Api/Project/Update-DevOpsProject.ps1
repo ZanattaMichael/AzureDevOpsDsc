@@ -75,10 +75,7 @@ function Update-DevOpsProject
     }
 
     # Add the description if provided
-    if ($ProjectDescription)
-    {
-        $body.description = $ProjectDescription
-    }
+    if ($ProjectDescription) { $body.description = $ProjectDescription }
 
     # Construct the Paramters for the Invoke-AzDevOpsApiRestMethod function
     $params = @{
@@ -91,7 +88,8 @@ function Update-DevOpsProject
     try
     {
         $response = Invoke-AzDevOpsApiRestMethod @params
-    } catch
+    }
+    catch
     {
         Write-Error "Failed to update the Azure DevOps project: $_"
     }

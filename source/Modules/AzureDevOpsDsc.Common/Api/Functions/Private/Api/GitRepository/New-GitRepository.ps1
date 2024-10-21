@@ -83,7 +83,8 @@ Function New-GitRepository
         return $repo
     }
     # Catch any exceptions and write an error message
-    catch {
+    catch
+    {
         Write-Error "[New-GitRepository] Failed to Create Repository: $_"
     }
 

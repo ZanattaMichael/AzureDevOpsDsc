@@ -95,12 +95,14 @@ Function Set-DevOpsGroup
         $params.Uri = "{0}/_apis/graph/groups?scopeDescriptor={1}&api-version={2}" -f $ApiUri, $ProjectScopeDescriptor, $ApiVersion
     }
 
-    try {
+    try
+    {
         # Invoke the REST method with the parameters and store the result in $group.
         $group = Invoke-AzDevOpsApiRestMethod @params
         return $group # Return the result of the REST method call.
     }
-    catch {
+    catch
+    {
         # Write an error message to the console if the REST method call fails.
         Write-Error "Failed to create group: $_"
     }

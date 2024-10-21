@@ -59,7 +59,8 @@ Function Remove-AzDoPermission
         Method = 'DELETE'
     }
 
-    try {
+    try
+    {
         <#
             Call the Invoke-AzDevOpsApiRestMethod function with the parameters defined above.
             The "@" symbol is used to pass the hashtable as splatting parameters.
@@ -73,7 +74,9 @@ Function Remove-AzDoPermission
             Write-Verbose "[Remove-AzDoPermission] ACLs removed successfully."
         }
 
-    } catch {
+    }
+    catch
+    {
         # If an exception occurs, write an error message to the console with details about the issue.
         Write-Error "[Remove-AzDoPermission] Failed to add member to group: $($_.Exception.Message)"
     }

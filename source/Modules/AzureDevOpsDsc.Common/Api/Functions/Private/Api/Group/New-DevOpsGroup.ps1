@@ -87,7 +87,8 @@ Function New-DevOpsGroup
         return $group
     }
     # Catch any exceptions and write an error message
-    catch {
+    catch
+    {
         Write-Error "Failed to create group: $_"
     }
 }

@@ -71,13 +71,13 @@ Function New-DevOpsGroupMember
 
     # Try to invoke the REST method to create the group and return the result
 
-    try {
+    try
+    {
         # Call the Invoke-AzDevOpsApiRestMethod function with the parameters defined above.
         # The "@" symbol is used to pass the hashtable as splatting parameters.
         Write-Verbose "[Add-DevOpsGroupMember] Attempting to invoke REST method to add group member."
         $member = Invoke-AzDevOpsApiRestMethod @params
         Write-Verbose "[Add-DevOpsGroupMember] Member added successfully."
-
     } catch {
         # If an exception occurs, write an error message to the console with details about the issue.
         Write-Error "[Add-DevOpsGroupMember] Failed to add member to group: $($_.Exception.Message)"

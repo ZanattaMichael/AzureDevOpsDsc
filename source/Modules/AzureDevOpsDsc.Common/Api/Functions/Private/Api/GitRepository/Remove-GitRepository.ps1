@@ -61,7 +61,8 @@ Function Remove-GitRepository
         return
     }
     # Catch any exceptions and write an error message
-    catch {
+    catch
+    {
         Write-Error "[Remove-GitRepository] Failed to Create Repository: $_"
     }
 
