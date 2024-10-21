@@ -66,6 +66,6 @@ Function Set-AzDoGroupPermission
     #
     # Set the Git Repository Permissions
 
-    Set-xAzDoPermission @params
+    Set-AzDoPermission @params
 
 }

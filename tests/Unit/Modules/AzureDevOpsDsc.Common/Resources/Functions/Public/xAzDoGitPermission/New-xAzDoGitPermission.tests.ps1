@@ -30,7 +30,7 @@ Describe 'New-AzDoGitPermission' {
 
         Mock -CommandName Get-CacheItem -MockWith { return @{ namespaceId = '12345'; id = '67890' } }
         Mock -CommandName ConvertTo-ACLHashtable -MockWith { return @{} }
-        Mock -CommandName Set-xAzDoPermission -MockWith { }
+        Mock -CommandName Set-AzDoPermission -MockWith { }
     }
 
     Context 'With mandatory parameters provided' {
@@ -42,10 +42,10 @@ Describe 'New-AzDoGitPermission' {
             }
             New-AzDoGitPermission @params
 
-            Assert-MockCalled -CommandName Set-xAzDoPermission -Exactly 1
+            Assert-MockCalled -CommandName Set-AzDoPermission -Exactly 1
         }
 
-        It 'should call ConvertTo-ACLHashtable and Set-xAzDoPermission' {
+        It 'should call ConvertTo-ACLHashtable and Set-AzDoPermission' {
             $params = @{
                 ProjectName = 'TestProject'
                 RepositoryName = 'TestRepo'
@@ -55,7 +55,7 @@ Describe 'New-AzDoGitPermission' {
             New-AzDoGitPermission @params
 
             Assert-MockCalled -CommandName ConvertTo-ACLHashtable -Exactly 1
-            Assert-MockCalled -CommandName Set-xAzDoPermission -Exactly 1
+            Assert-MockCalled -CommandName Set-AzDoPermission -Exactly 1
         }
     }
 
@@ -76,12 +76,12 @@ Describe 'New-AzDoGitPermission' {
 
             Assert-MockCalled -CommandName Get-CacheItem -Times 2
             Assert-MockCalled -CommandName ConvertTo-ACLHashtable -Exactly 1
-            Assert-MockCalled -CommandName Set-xAzDoPermission -Exactly 1
+            Assert-MockCalled -CommandName Set-AzDoPermission -Exactly 1
         }
     }
 
     Context 'When Get-CacheItem returns nothing' {
-        It 'should not call ConvertTo-ACLHashtable or Set-xAzDoPermission' {
+        It 'should not call ConvertTo-ACLHashtable or Set-AzDoPermission' {
 
             Mock -CommandName Get-CacheItem -ParameterFilter { $Type -eq 'SecurityNamespaces' } -MockWith { return $null }
             Mock -CommandName Get-CacheItem -ParameterFilter { $Type -eq 'LiveProjects' } -MockWith { return $null }
@@ -95,7 +95,7 @@ Describe 'New-AzDoGitPermission' {
             New-AzDoGitPermission @params
 
             Assert-MockCalled -CommandName ConvertTo-ACLHashtable -Exactly 0
-            Assert-MockCalled -CommandName Set-xAzDoPermission -Exactly 0
+            Assert-MockCalled -CommandName Set-AzDoPermission -Exactly 0
             Assert-VerifiableMock
         }
     }

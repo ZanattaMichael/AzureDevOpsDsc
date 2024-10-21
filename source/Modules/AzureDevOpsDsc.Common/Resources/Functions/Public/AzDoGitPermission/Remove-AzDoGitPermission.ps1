@@ -84,7 +84,7 @@ Function Remove-AzDoGitPermission
         }
 
         # Remove the ACLs
-        Remove-xAzDoPermission @params
+        Remove-AzDoPermission @params
 
     }
 

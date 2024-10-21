@@ -31,7 +31,7 @@ Describe 'Set-AzDoGitPermission' {
 
         Mock -CommandName Get-CacheItem -MockWith { return @{ namespaceId = 'SampleNamespaceId' } }
         Mock -CommandName ConvertTo-ACLHashtable -MockWith { return 'SerializedACLs' }
-        Mock -CommandName Set-xAzDoPermission
+        Mock -CommandName Set-AzDoPermission
 
         $ProjectName = 'TestProject'
         $RepositoryName = 'TestRepo'
@@ -63,7 +63,7 @@ Describe 'Set-AzDoGitPermission' {
         Mock ConvertTo-ACLHashtable -MockWith {
             return 'SerializedACLs'
         }
-        Mock Set-xAzDoPermission -MockWith {
+        Mock Set-AzDoPermission -MockWith {
             return $null
         }
 
@@ -79,9 +79,9 @@ Describe 'Set-AzDoGitPermission' {
         Assert-MockCalled Get-CacheItem -Exactly 1 -ParameterFilter { ($Key -eq $ProjectName) -and ($Type -eq 'LiveProjects') }
     }
 
-    It 'Calls Set-xAzDoPermission with the correct parameters' {
+    It 'Calls Set-AzDoPermission with the correct parameters' {
         Set-AzDoGitPermission @params
-        Assert-MockCalled Set-xAzDoPermission -Exactly 1 -ParameterFilter {
+        Assert-MockCalled Set-AzDoPermission -Exactly 1 -ParameterFilter {
             ($OrganizationName -eq 'TestOrg') -and
             ($SecurityNamespaceID -eq 'SampleNamespaceId') -and
             ($SerializedACLs -eq 'SerializedACLs')

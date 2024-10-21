@@ -22,7 +22,6 @@ This example retrieves the identity associated with the subject descriptor "subj
 #>
 Function Get-DevOpsDescriptorIdentity
 {
-
     [CmdletBinding(DefaultParameterSetName = 'Default')]
     param(
         [Parameter(Mandatory, ParameterSetName = 'Default')]

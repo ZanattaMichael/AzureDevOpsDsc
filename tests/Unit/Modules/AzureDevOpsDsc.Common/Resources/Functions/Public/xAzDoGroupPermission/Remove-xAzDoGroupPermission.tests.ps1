@@ -44,7 +44,7 @@ Describe 'Remove-AzDoGroupPermission' -skip {
             }
         }
 
-        Mock -CommandName Remove-xAzDoPermission -MockWith {}
+        Mock -CommandName Remove-AzDoPermission -MockWith {}
 
     }
 
@@ -55,7 +55,7 @@ Describe 'Remove-AzDoGroupPermission' -skip {
         Assert-MockCalled -CommandName Get-CacheItem -Parameters @{ Key = 'Project'; Type = 'LiveProjects' } -Times 1
         Assert-MockCalled -CommandName Get-CacheItem -Parameters @{ Key = 'Project\Repository'; Type = 'LiveRepositories' } -Times 1
         Assert-MockCalled -CommandName Get-CacheItem -Parameters @{ Key = 'mockNamespaceId'; Type = 'LiveACLList' } -Times 1
-        Assert-MockCalled -CommandName Remove-xAzDoPermission -Times 1
+        Assert-MockCalled -CommandName Remove-AzDoPermission -Times 1
     }
 
     It 'Should throw a warning when GroupName is invalid' {
@@ -78,10 +78,10 @@ Describe 'Remove-AzDoGroupPermission' -skip {
 
         Remove-AzDoGroupPermission -GroupName 'Project\Repository' -isInherited $true -Ensure 'Present' -Force:$true
 
-        Assert-MockCalled -CommandName Remove-xAzDoPermission -Times 0
+        Assert-MockCalled -CommandName Remove-AzDoPermission -Times 0
     }
 
-    It 'Should not call Remove-xAzDoPermission if no ACLs are found' {
+    It 'Should not call Remove-AzDoPermission if no ACLs are found' {
         Mock -CommandName Get-CacheItem -MockWith {
             param ($Key, $Type)
             if ($Type -eq 'LiveACLList') {
@@ -95,6 +95,6 @@ Describe 'Remove-AzDoGroupPermission' -skip {
 
         Remove-AzDoGroupPermission -GroupName 'Project\Repository' -isInherited $true -Ensure 'Present' -Force:$true
 
-        Assert-MockCalled -CommandName Remove-xAzDoPermission -Times 0
+        Assert-MockCalled -CommandName Remove-AzDoPermission -Times 0
     }
 }

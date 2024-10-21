@@ -90,6 +90,6 @@ Function New-AzDoGitPermission
     #
     # Set the Git Repository Permissions
 
-    Set-xAzDoPermission @params
+    Set-AzDoPermission @params
 
 }

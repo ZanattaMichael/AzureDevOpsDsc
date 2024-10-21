@@ -29,7 +29,7 @@ Describe "Remove-AzDoGitPermission" {
         . (Get-ClassFilePath 'Ensure')
         . (Get-ClassFilePath '002.LocalizedDataAzSerializationPatten')
 
-        Mock -CommandName Remove-xAzDoPermission
+        Mock -CommandName Remove-AzDoPermission
         Mock -CommandName Get-CacheItem -MockWith {
             switch ($Type)
             {
@@ -65,7 +65,7 @@ Describe "Remove-AzDoGitPermission" {
 
         Remove-AzDoGitPermission @params
 
-        Assert-MockCalled -CommandName Remove-xAzDoPermission -Times 1
+        Assert-MockCalled -CommandName Remove-AzDoPermission -Times 1
         Assert-VerifiableMock
 
     }
@@ -82,7 +82,7 @@ Describe "Remove-AzDoGitPermission" {
 
         Remove-AzDoGitPermission @params
 
-        Assert-MockCalled -CommandName Remove-xAzDoPermission -Exactly 0
+        Assert-MockCalled -CommandName Remove-AzDoPermission -Exactly 0
         Assert-VerifiableMock
 
     }
@@ -99,7 +99,7 @@ Describe "Remove-AzDoGitPermission" {
 
         Remove-AzDoGitPermission @params
 
-        Assert-MockCalled -CommandName Remove-xAzDoPermission -Exactly 0
+        Assert-MockCalled -CommandName Remove-AzDoPermission -Exactly 0
         Assert-VerifiableMock
 
     }
@@ -116,7 +116,7 @@ Describe "Remove-AzDoGitPermission" {
 
         Remove-AzDoGitPermission @params
 
-        Assert-MockCalled -CommandName Remove-xAzDoPermission -Exactly 0
+        Assert-MockCalled -CommandName Remove-AzDoPermission -Exactly 0
         Assert-VerifiableMock
 
     }
@@ -133,7 +133,7 @@ Describe "Remove-AzDoGitPermission" {
 
         Remove-AzDoGitPermission @params
 
-        Assert-MockCalled -CommandName Remove-xAzDoPermission -Exactly 0
+        Assert-MockCalled -CommandName Remove-AzDoPermission -Exactly 0
         Assert-VerifiableMock
 
     }
@@ -150,7 +150,7 @@ Describe "Remove-AzDoGitPermission" {
 
         Remove-AzDoGitPermission @params
 
-        Assert-MockCalled -CommandName Remove-xAzDoPermission -Exactly 0
+        Assert-MockCalled -CommandName Remove-AzDoPermission -Exactly 0
         Assert-VerifiableMock
 
     }

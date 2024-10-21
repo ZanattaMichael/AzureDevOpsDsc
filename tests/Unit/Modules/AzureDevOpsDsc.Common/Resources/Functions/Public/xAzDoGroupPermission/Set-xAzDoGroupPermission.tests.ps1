@@ -64,7 +64,7 @@ Describe 'Set-AzDoGroupPermission' -skip {
             return @{ serializedACLs = 'mockSerializedACLs' }
         }
 
-        Mock -CommandName Set-xAzDoPermission
+        Mock -CommandName Set-AzDoPermission
 
     }
 
@@ -86,7 +86,7 @@ Describe 'Set-AzDoGroupPermission' -skip {
             $Key -eq $ProjectName -and $Type -eq 'LiveProjects'
         }
         Assert-MockCalled -CommandName ConvertTo-ACLHashtable -Exactly -Times 1 -Scope It
-        Assert-MockCalled -CommandName Set-xAzDoPermission -Exactly -Times 1 -Scope It
+        Assert-MockCalled -CommandName Set-AzDoPermission -Exactly -Times 1 -Scope It
     }
 
     It 'Should call ConvertTo-ACLHashtable with correct parameters' {
@@ -103,7 +103,7 @@ Describe 'Set-AzDoGroupPermission' -skip {
         }
     }
 
-    It 'Should not call Set-xAzDoPermission if no ACLs are found' {
+    It 'Should not call Set-AzDoPermission if no ACLs are found' {
         Mock -CommandName Get-CacheItem -MockWith {
             param (
                 [string]$Key,
@@ -124,6 +124,6 @@ Describe 'Set-AzDoGroupPermission' -skip {
 
         Set-AzDoGroupPermission -GroupName 'Project\Repository' -isInherited $true -Permissions @{} -LookupResult $LookupResult -Ensure 'Present' -Force:$true
 
-        Assert-MockCalled -CommandName Set-xAzDoPermission -Exactly -Times 0 -Scope It
+        Assert-MockCalled -CommandName Set-AzDoPermission -Exactly -Times 0 -Scope It
     }
 }

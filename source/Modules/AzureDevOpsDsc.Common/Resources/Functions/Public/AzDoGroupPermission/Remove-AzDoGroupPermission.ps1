@@ -67,7 +67,7 @@ Function Remove-AzDoGroupPermission
         }
 
         # Remove the ACLs
-        Remove-xAzDoPermission @params
+        Remove-AzDoPermission @params
 
     }
 

@@ -60,7 +60,7 @@ Describe 'New-AzDoGroupPermission' -skip {
             }
         }
 
-        Mock -CommandName Set-xAzDoPermission
+        Mock -CommandName Set-AzDoPermission
 
     }
 
@@ -82,7 +82,7 @@ Describe 'New-AzDoGroupPermission' -skip {
         Assert-MockCalled -CommandName Get-CacheItem -Parameters @{ Key = '[Project]\Group'; Type = 'LiveGroups' } -Times 1
         Assert-MockCalled -CommandName Get-CacheItem -Parameters @{ Key = 'mockNamespaceId'; Type = 'LiveACLList' } -Times 1
         Assert-MockCalled -CommandName ConvertTo-ACLHashtable -Times 1
-        Assert-MockCalled -CommandName Set-xAzDoPermission -Times 1
+        Assert-MockCalled -CommandName Set-AzDoPermission -Times 1
     }
 
     It 'Should throw a warning when GroupName is invalid' {
@@ -97,10 +97,10 @@ Describe 'New-AzDoGroupPermission' -skip {
         Assert-MockCalled -CommandName Get-CacheItem -Parameters @{ Key = '[Project]\Group'; Type = 'LiveGroups' } -Times 1
         Assert-MockCalled -CommandName Get-CacheItem -Parameters @{ Key = 'mockNamespaceId'; Type = 'LiveACLList' } -Times 1
         Assert-MockCalled -CommandName ConvertTo-ACLHashtable -Times 1
-        Assert-MockCalled -CommandName Set-xAzDoPermission -Times 1
+        Assert-MockCalled -CommandName Set-AzDoPermission -Times 1
     }
 
-    It 'Should not call Set-xAzDoPermission if no ACLs are found' {
+    It 'Should not call Set-AzDoPermission if no ACLs are found' {
         Mock -CommandName ConvertTo-ACLHashtable -MockWith {
             return @{
                 aces = @{
@@ -115,6 +115,6 @@ Describe 'New-AzDoGroupPermission' -skip {
 
         New-AzDoGroupPermission -GroupName 'Project\Group' -isInherited $true -LookupResult $LookupResult -Ensure 'Present' -Force:$true
 
-        Assert-MockCalled -CommandName Set-xAzDoPermission -Times 0
+        Assert-MockCalled -CommandName Set-AzDoPermission -Times 0
     }
 }

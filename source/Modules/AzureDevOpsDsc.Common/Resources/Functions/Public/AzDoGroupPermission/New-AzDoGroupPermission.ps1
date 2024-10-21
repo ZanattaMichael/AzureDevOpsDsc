@@ -65,6 +65,6 @@ Function New-AzDoGroupPermission
     #
     # Set the Git Repository Permissions
 
-    Set-xAzDoPermission @params
+    Set-AzDoPermission @params
 
 }

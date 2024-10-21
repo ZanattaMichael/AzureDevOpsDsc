@@ -25,7 +25,7 @@ Function Set-AzDoGitPermission
         $Force
     )
 
-    Write-Verbose "[Set-xAzDoPermission] Started."
+    Write-Verbose "[Set-AzDoPermission] Started."
 
     #
     # Security Namespace ID
@@ -34,12 +34,12 @@ Function Set-AzDoGitPermission
     $Project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
 
     if ($SecurityNamespace -eq $null) {
-        Write-Error "[Set-xAzDoPermission] Security Namespace not found."
+        Write-Error "[Set-AzDoPermission] Security Namespace not found."
         return
     }
 
     if ($Project -eq $null) {
-        Write-Error "[Set-xAzDoPermission] Project not found."
+        Write-Error "[Set-AzDoPermission] Project not found."
         return
     }
 
@@ -61,6 +61,6 @@ Function Set-AzDoGitPermission
     #
     # Set the Git Repository Permissions
 
-    Set-xAzDoPermission @params
+    Set-AzDoPermission @params
 
 }
