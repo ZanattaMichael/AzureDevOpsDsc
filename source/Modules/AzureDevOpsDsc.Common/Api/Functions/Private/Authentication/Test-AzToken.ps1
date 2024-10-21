@@ -13,7 +13,8 @@
 
 #>
 
-Function Test-AzToken {
+Function Test-AzToken
+{
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
@@ -35,9 +36,12 @@ Function Test-AzToken {
     }
 
     # Call the Azure DevOps REST API with the Managed Identity Bearer token
-    try {
+    try
+    {
         $null = Invoke-AzDevOpsApiRestMethod @params
-    } catch {
+    }
+    catch
+    {
         return $false
     }
 

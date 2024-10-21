@@ -1,4 +1,5 @@
-Function Set-AzPersonalAccessToken {
+Function Set-AzPersonalAccessToken
+{
     [CmdletBinding(DefaultParameterSetName = 'PersonalAccessToken')]
     param (
         # Organization Name

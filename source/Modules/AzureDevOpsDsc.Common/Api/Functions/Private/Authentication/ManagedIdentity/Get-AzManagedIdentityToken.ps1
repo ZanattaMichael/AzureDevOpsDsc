@@ -19,7 +19,8 @@ Obtains the access token for the managed identity associated with the organizati
 This function does not require the Azure PowerShell module.
 #>
 
-Function Get-AzManagedIdentityToken {
+Function Get-AzManagedIdentityToken
+{
     [CmdletBinding()]
     param (
         # Organization Name
@@ -65,10 +66,12 @@ Function Get-AzManagedIdentityToken {
     Write-Verbose "[Get-AzManagedIdentityToken] Invoking the Azure Instance Metadata Service to get the access token."
 
     # Invoke the RestAPI
-    try {
+    try
+    {
         $response = Invoke-AzDevOpsApiRestMethod @ManagedIdentityParams
-    } catch {
-
+    }
+    catch
+    {
         # If there is an error it could be because it's an arc machine, and we need to use the secret file:
         $wwwAuthHeader = $_.Exception.Response.Headers.WwwAuthenticate
         if ($wwwAuthHeader -notmatch "Basic realm=.+")
@@ -87,10 +90,12 @@ Function Get-AzManagedIdentityToken {
 
         # Retry the request. Silently continue to suppress the error message, since we will handle it below.
         $response = Invoke-AzDevOpsApiRestMethod @ManagedIdentityParams -ErrorAction SilentlyContinue
-
     }
+
     # Test the response
-    if ($null -eq $response.access_token) { throw "Error. Access token not returned from Azure Instance Metadata Service. Please ensure that the Azure Instance Metadata Service is available." }
+    if ($null -eq $response.access_token) {
+        throw "Error. Access token not returned from Azure Instance Metadata Service. Please ensure that the Azure Instance Metadata Service is available."
+    }
 
     Write-Verbose "[Get-AzManagedIdentityToken] Managed Identity Token Retrival Successful."
 
