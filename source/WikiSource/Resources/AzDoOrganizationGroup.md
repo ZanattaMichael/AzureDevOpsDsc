@@ -56,7 +56,7 @@ $properties = @{
 Invoke-DSCResource -Name 'AzDoOrganizationGroup' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
 ```
 
-## Example 3: Sample Configuration using xAzDoDSCDatum
+## Example 3: Sample Configuration using AzDO-DSC-LCM
 
 ``` YAML
 parameters: {}

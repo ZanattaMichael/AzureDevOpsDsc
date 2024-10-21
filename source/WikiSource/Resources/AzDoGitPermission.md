@@ -149,7 +149,7 @@ $properties = @{
 Invoke-DSCResource -Name 'AzDoGitPermission' -Method Set -Property $properties -ModuleName 'AzureDevOpsDsc'
 ```
 
-## Example 4: Sample Configuration using xAzDoDSCDatum
+## Example 4: Sample Configuration using AzDO-DSC-LCM
 
 ``` YAML
 parameters: {}

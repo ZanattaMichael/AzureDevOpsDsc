@@ -78,9 +78,9 @@ Here is an example of how to invoke a resource using the module:
 
 By following these steps, you can successfully set up and use the module with Azure DevOps.
 
-## Implementation using `xAzDoDSCDatum`
+## Implementation using `AzDO-DSC-LCM`
 
-[Current Source](https://github.com/ZanattaMichael/xAzDoDSCDatum)
+[Current Source](https://github.com/ZanattaMichael/AzDO-DSC-LCM)
 
 This module includes a custom Local Configuration Manager (LCM) built on Datum. By utilizing YAML resource files, similar to Ansible playbooks, administrators can manage their environment using Configuration as Code (CaC).
 
