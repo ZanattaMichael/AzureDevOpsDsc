@@ -1,26 +1,27 @@
-Function Add-CacheItem {
-    <#
-    .SYNOPSIS
-    Add a cache item to the cache.
+<#
+.SYNOPSIS
+Add a cache item to the cache.
 
-    .DESCRIPTION
-    Adds a cache item to the cache with a specified key, value, and type.
+.DESCRIPTION
+Adds a cache item to the cache with a specified key, value, and type.
 
-    .PARAMETER Key
-    The key of the cache item to add.
+.PARAMETER Key
+The key of the cache item to add.
 
-    .PARAMETER Value
-    The value of the cache item to add.
+.PARAMETER Value
+The value of the cache item to add.
 
-    .PARAMETER Type
-    The type of the cache item to add. Valid values are 'Project', 'Team', 'Group', 'SecurityDescriptor'.
+.PARAMETER Type
+The type of the cache item to add. Valid values are 'Project', 'Team', 'Group', 'SecurityDescriptor'.
 
-    .EXAMPLE
-    Add-CacheItem -Key 'MyKey' -Value 'MyValue' -Type 'Project'
+.EXAMPLE
+Add-CacheItem -Key 'MyKey' -Value 'MyValue' -Type 'Project'
 
-    .NOTES
-    This function is private and should not be used directly.
-    #>
+.NOTES
+This function is private and should not be used directly.
+#>
+Function Add-CacheItem
+{
     [CmdletBinding()]
     param (
         # The key of the cache item to add
@@ -46,7 +47,6 @@ Function Add-CacheItem {
 
     Write-Verbose "[Add-CacheItem] Retrieving the current cache."
     [System.Collections.Generic.List[CacheItem]]$cache = Get-CacheObject -CacheType $Type
-    #Get-AzDevOpsCache -CacheType $Type
 
     # If the cache is empty, create a new cache
     if ($cache.count -eq 0) {

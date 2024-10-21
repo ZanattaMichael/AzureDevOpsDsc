@@ -32,7 +32,8 @@ This function is part of the AzureDevOpsDsc module.
 https://github.com/Azure/AzureDevOpsDsc
 
 #>
-function Get-CacheObject {
+function Get-CacheObject
+{
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
@@ -50,7 +51,8 @@ function Get-CacheObject {
         Throw "The environment variable 'AZDODSC_CACHE_DIRECTORY' is not set. Please set the variable to the path of the cache directory."
     }
 
-    try {
+    try
+    {
         # Attempt to get the variable from the global scope
         $var = Get-Variable -Name "AzDo$CacheType" -Scope Global -ErrorAction SilentlyContinue
 
@@ -67,8 +69,9 @@ function Get-CacheObject {
         Write-Verbose "[Get-ObjectCache] Returning imported cache object for type: $CacheDirectoryPath"
         return $var
 
-    } catch {
-        Write-Error "[Get-ObjectCache] Failed to get cache for Azure DevOps API: $_"
-        throw
+    }
+    catch
+    {
+        throw "[Get-ObjectCache] Failed to get cache for Azure DevOps API: $_"
     }
 }

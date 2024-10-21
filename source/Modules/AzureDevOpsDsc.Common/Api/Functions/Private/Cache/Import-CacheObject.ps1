@@ -32,7 +32,6 @@ function Import-CacheObject
         [Parameter(Mandatory = $true)]
         [ValidateScript({$_ -in (Get-AzDoCacheObjects)})]
         [string]$CacheType
-
     )
 
     # Write initial verbose message
@@ -84,9 +83,9 @@ function Import-CacheObject
         Set-Variable -Name "AzDo$CacheType" -Value $newCache -Scope Global -Force
         Write-Verbose "[Import-CacheObject] Cache object imported successfully for '$CacheType'."
 
-    } catch
+    }
+    catch
     {
-        Write-Error "[Import-CacheObject] Failed to import cache for Azure DevOps API: $_"
-        throw $_
+        throw "[Import-CacheObject] Failed to import cache for Azure DevOps API: $_"
     }
 }

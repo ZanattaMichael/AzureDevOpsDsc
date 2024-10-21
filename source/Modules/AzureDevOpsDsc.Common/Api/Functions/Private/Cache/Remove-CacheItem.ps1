@@ -19,8 +19,8 @@ Removes the item with the key "myKey" from the Project cache.
 Remove-CacheItem -Key "anotherKey" -Type "Group"
 Removes the item with the key "anotherKey" from the Group cache.
 #>
-
-Function Remove-CacheItem {
+Function Remove-CacheItem
+{
     param (
         [Parameter(Mandatory = $true)]
         [string]

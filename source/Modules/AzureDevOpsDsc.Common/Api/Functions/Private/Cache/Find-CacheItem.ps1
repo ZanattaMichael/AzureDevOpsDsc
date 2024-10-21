@@ -25,7 +25,6 @@ $filteredCacheItem
 Author: Your Name
 Date: Today's Date
 #>
-
 Function Find-CacheItem
 {
     [CmdletBinding()]
@@ -40,11 +39,9 @@ Function Find-CacheItem
         [ScriptBlock]$Filter
     )
 
-    #
     # Logging
     Write-Verbose "[Find-CacheItem] Searching for the CacheItem with filter '$Filter'."
 
-    #
     # Get the CacheItem
     $cacheItem = $null
     $cacheItem = $CacheList | Where-Object -FilterScript $Filter

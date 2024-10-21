@@ -14,7 +14,8 @@
 
 .NOTES
 #>
-Function Initialize-CacheObject {
+Function Initialize-CacheObject
+{
     [CmdletBinding()]
     param(
         # Specifies the type of cache to initialize. Valid values are 'Project', 'Team', 'Group', and 'SecurityDescriptor'.
@@ -26,7 +27,8 @@ Function Initialize-CacheObject {
         [Switch]$BypassFileCheck
     )
 
-    try {
+    try
+    {
 
         # Use the Enviroment Variables to set the Cache Directory Path
         if ($ENV:AZDODSC_CACHE_DIRECTORY) {
@@ -78,8 +80,9 @@ Function Initialize-CacheObject {
 
         }
 
-    } catch {
-        Write-Verbose "An error occurred: $_"
+    }
+    catch
+    {
         throw "[Initialize-CacheObject] Failed to import cache for Azure DevOps API: $_"
     }
 

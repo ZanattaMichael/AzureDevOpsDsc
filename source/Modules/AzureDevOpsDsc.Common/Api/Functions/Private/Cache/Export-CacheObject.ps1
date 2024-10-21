@@ -30,7 +30,8 @@ None.
 .NOTES
 This function is part of the AzureDevOpsDsc module and is used for caching Azure DevOps API responses.
 #>
-Function Export-CacheObject {
+Function Export-CacheObject
+{
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
@@ -55,8 +56,8 @@ Function Export-CacheObject {
         Throw "The environment variable 'AZDODSC_CACHE_DIRECTORY' is not set. Please set the variable to the path of the cache directory."
     }
 
-    try {
-
+    try
+    {
         $cacheFilePath = Join-Path -Path $CacheDirectoryPath -ChildPath "$CacheType.clixml"
 
         # Create cache directory if it does not exist
@@ -72,8 +73,9 @@ Function Export-CacheObject {
         # Confirm completion of export process
         Write-Verbose "[Export-ObjectCache] Export process completed successfully for cache type: $CacheType"
 
-    } catch {
-        Write-Error "[Export-ObjectCache] Failed to create cache for Azure DevOps API: $_"
-        throw
+    }
+    catch
+    {
+        throw "[Export-ObjectCache] Failed to create cache for Azure DevOps API: $_"
     }
 }

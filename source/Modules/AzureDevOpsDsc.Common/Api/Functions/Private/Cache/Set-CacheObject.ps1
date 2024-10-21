@@ -67,8 +67,7 @@ function Set-CacheObject
     }
     catch
     {
-        Write-Error "[Set-ObjectCache] Failed to create cache for Azure DevOps API: $_"
-        throw
+        throw "[Set-ObjectCache] Failed to create cache for Azure DevOps API: $_"
     }
 
 }
