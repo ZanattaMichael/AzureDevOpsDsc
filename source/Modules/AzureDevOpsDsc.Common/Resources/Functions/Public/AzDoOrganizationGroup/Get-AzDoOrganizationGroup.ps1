@@ -24,8 +24,8 @@ Retrieves the organization group named 'Developers' from the Azure DevOps instan
 
 #>
 
-Function Get-AzDoOrganizationGroup {
-
+Function Get-AzDoOrganizationGroup
+{
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
     param
@@ -43,7 +43,6 @@ Function Get-AzDoOrganizationGroup {
 
         [Parameter()]
         [Ensure]$Ensure
-
     )
 
     # Logging

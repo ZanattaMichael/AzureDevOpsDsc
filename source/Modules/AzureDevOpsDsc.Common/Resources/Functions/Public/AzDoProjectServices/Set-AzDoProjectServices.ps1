@@ -1,5 +1,51 @@
-Function Set-AzDoProjectServices {
+<#
+.SYNOPSIS
+    Configures the services for an Azure DevOps project.
 
+.DESCRIPTION
+    The Set-AzDoProjectServices function enables or disables various services for a specified Azure DevOps project.
+    It retrieves the project details from the live cache and updates the service status based on the provided parameters.
+
+.PARAMETER ProjectName
+    The name of the Azure DevOps project. This parameter is mandatory.
+
+.PARAMETER GitRepositories
+    Specifies whether Git repositories should be enabled or disabled. Default is 'Enabled'.
+    Acceptable values are 'Enabled' and 'Disabled'.
+
+.PARAMETER WorkBoards
+    Specifies whether work boards should be enabled or disabled. Default is 'Enabled'.
+    Acceptable values are 'Enabled' and 'Disabled'.
+
+.PARAMETER BuildPipelines
+    Specifies whether build pipelines should be enabled or disabled. Default is 'Enabled'.
+    Acceptable values are 'Enabled' and 'Disabled'.
+
+.PARAMETER TestPlans
+    Specifies whether test plans should be enabled or disabled. Default is 'Enabled'.
+    Acceptable values are 'Enabled' and 'Disabled'.
+
+.PARAMETER AzureArtifact
+    Specifies whether Azure artifacts should be enabled or disabled. Default is 'Enabled'.
+    Acceptable values are 'Enabled' and 'Disabled'.
+
+.PARAMETER LookupResult
+    A hashtable containing the lookup results for the project services.
+
+.PARAMETER Ensure
+    Specifies whether to ensure the services are in the desired state.
+
+.PARAMETER Force
+    A switch parameter to force the operation.
+
+.EXAMPLE
+    Set-AzDoProjectServices -ProjectName "MyProject" -GitRepositories "Enabled" -WorkBoards "Disabled"
+
+.NOTES
+    This function requires the Get-CacheItem and Set-ProjectServiceStatus functions to be defined.
+#>
+Function Set-AzDoProjectServices
+{
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
     param

@@ -1,5 +1,50 @@
-Function Get-AzDoProjectServices {
+<#
+.SYNOPSIS
+    Retrieves the status of various Azure DevOps project services.
 
+.DESCRIPTION
+    The Get-AzDoProjectServices function retrieves the status of various services (Git Repositories, Work Boards, Build Pipelines, Test Plans, and Azure Artifacts) for a specified Azure DevOps project. It compares the current state of these services with the desired state and returns a summary of the differences.
+
+.PARAMETER ProjectName
+    The name of the Azure DevOps project.
+
+.PARAMETER GitRepositories
+    The desired state of Git Repositories service. Valid values are 'Enabled' or 'Disabled'. Default is 'Enabled'.
+
+.PARAMETER WorkBoards
+    The desired state of Work Boards service. Valid values are 'Enabled' or 'Disabled'. Default is 'Enabled'.
+
+.PARAMETER BuildPipelines
+    The desired state of Build Pipelines service. Valid values are 'Enabled' or 'Disabled'. Default is 'Enabled'.
+
+.PARAMETER TestPlans
+    The desired state of Test Plans service. Valid values are 'Enabled' or 'Disabled'. Default is 'Enabled'.
+
+.PARAMETER AzureArtifact
+    The desired state of Azure Artifacts service. Valid values are 'Enabled' or 'Disabled'. Default is 'Enabled'.
+
+.PARAMETER LookupResult
+    A hashtable to store lookup results.
+
+.PARAMETER Ensure
+    Specifies whether the project services should be present or absent.
+
+.PARAMETER Force
+    Forces the command to run without asking for user confirmation.
+
+.OUTPUTS
+    [System.Management.Automation.PSObject[]]
+    Returns a hashtable containing the status of the project services and any properties that have changed.
+
+.EXAMPLE
+    PS C:\> Get-AzDoProjectServices -ProjectName "MyProject" -GitRepositories "Enabled" -WorkBoards "Enabled" -BuildPipelines "Enabled" -TestPlans "Enabled" -AzureArtifact "Enabled"
+    Retrieves the status of the specified project services for the project "MyProject" and compares them with the desired state.
+
+.NOTES
+    This function relies on the presence of a live cache and specific global variables and localized data parameters.
+#>
+Function Get-AzDoProjectServices
+{
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
     param

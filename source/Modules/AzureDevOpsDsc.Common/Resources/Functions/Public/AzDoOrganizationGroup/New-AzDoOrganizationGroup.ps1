@@ -1,5 +1,35 @@
-Function New-AzDoOrganizationGroup {
+<#
+.SYNOPSIS
+Creates a new Azure DevOps organization group.
 
+.DESCRIPTION
+The New-AzDoOrganizationGroup function creates a new group in an Azure DevOps organization.
+It accepts parameters for the group name, description, lookup result, ensure, and force.
+The function logs verbose messages during the creation process and updates the cache with the new group information.
+
+.PARAMETER GroupName
+Specifies the name of the group to be created. This parameter is mandatory.
+
+.PARAMETER GroupDescription
+Specifies the description of the group to be created. This parameter is optional.
+
+.PARAMETER LookupResult
+Specifies a hashtable for lookup results. This parameter is optional.
+
+.PARAMETER Ensure
+Specifies the desired state of the group. This parameter is optional.
+
+.PARAMETER Force
+Forces the creation of the group without confirmation. This parameter is optional.
+
+.EXAMPLE
+PS C:\> New-AzDoOrganizationGroup -GroupName "Developers" -GroupDescription "Development Team"
+
+This command creates a new Azure DevOps group named "Developers" with the description "Development Team".
+
+#>
+Function New-AzDoOrganizationGroup
+{
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
     param
@@ -22,7 +52,6 @@ Function New-AzDoOrganizationGroup {
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
         $Force
-
     )
 
     # Define parameters for creating a new DevOps group

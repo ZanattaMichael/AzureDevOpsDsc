@@ -1,7 +1,40 @@
+<#
+.SYNOPSIS
+Retrieves an Azure DevOps Git repository from the live and local cache.
 
+.DESCRIPTION
+The Get-AzDoGitRepository function attempts to retrieve an Azure DevOps Git repository based on the provided project and repository names. It first checks the live cache for the repository and returns the repository object if found. If the repository is not found in the live cache, it returns a status indicating that the repository was not found.
 
-Function Get-AzDoGitRepository {
+.PARAMETER ProjectName
+The name of the Azure DevOps project.
 
+.PARAMETER RepositoryName
+The name of the Azure DevOps Git repository.
+
+.PARAMETER SourceRepository
+(Optional) The source repository name.
+
+.PARAMETER LookupResult
+(Optional) A hashtable to store lookup results.
+
+.PARAMETER Ensure
+(Optional) Specifies the desired state of the repository.
+
+.PARAMETER Force
+(Optional) A switch parameter to force the operation.
+
+.OUTPUTS
+System.Management.Automation.PSObject[]
+Returns a hashtable detailing the repository status and properties.
+
+.EXAMPLE
+PS C:\> Get-AzDoGitRepository -ProjectName "MyProject" -RepositoryName "MyRepo"
+
+This command retrieves the "MyRepo" repository from the "MyProject" project.
+
+#>
+Function Get-AzDoGitRepository
+{
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
     param

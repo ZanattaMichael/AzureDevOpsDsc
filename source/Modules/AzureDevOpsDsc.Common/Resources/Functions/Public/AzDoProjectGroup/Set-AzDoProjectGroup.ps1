@@ -1,7 +1,41 @@
-Function Set-AzDoProjectGroup {
+<#
+.SYNOPSIS
+Sets or updates an Azure DevOps project group.
 
+.DESCRIPTION
+The Set-AzDoProjectGroup function sets or updates an Azure DevOps project group based on the provided parameters.
+It handles renaming, updating group details, and managing cache for the group.
+
+.PARAMETER GroupName
+The name of the Azure DevOps project group. This parameter is mandatory.
+
+.PARAMETER GroupDescription
+The description of the Azure DevOps project group. This parameter is optional.
+
+.PARAMETER ProjectName
+The name of the Azure DevOps project. This parameter is mandatory.
+
+.PARAMETER LookupResult
+A hashtable containing the lookup result for the group. This parameter is optional.
+
+.PARAMETER Ensure
+Specifies whether the group should be present or absent. This parameter is optional.
+
+.PARAMETER Force
+A switch parameter to force the operation. This parameter is optional.
+
+.EXAMPLE
+Set-AzDoProjectGroup -GroupName "Developers" -ProjectName "MyProject" -GroupDescription "Development Team"
+
+This example sets or updates the "Developers" group in the "MyProject" Azure DevOps project with the description "Development Team".
+
+.NOTES
+If the group has been renamed, a warning is issued and the function returns without making changes.
+The function updates both the live and local cache with the new group details.
+#>
+Function Set-AzDoProjectGroup
+{
     param(
-
         [Parameter(Mandatory)]
         [Alias('Name')]
         [System.String]$GroupName,
@@ -24,7 +58,6 @@ Function Set-AzDoProjectGroup {
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
         $Force
-
     )
 
     #

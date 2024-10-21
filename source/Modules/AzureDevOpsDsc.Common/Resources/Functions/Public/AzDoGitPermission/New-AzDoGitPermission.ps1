@@ -1,4 +1,39 @@
-Function New-AzDoGitPermission {
+<#
+.SYNOPSIS
+Creates new Git repository permissions in Azure DevOps.
+
+.DESCRIPTION
+The New-AzDoGitPermission function sets up new permissions for a specified Git repository within a given project in Azure DevOps. It uses cached security namespace and project information to serialize ACLs and apply the permissions.
+
+.PARAMETER ProjectName
+The name of the Azure DevOps project.
+
+.PARAMETER RepositoryName
+The name of the Git repository within the Azure DevOps project.
+
+.PARAMETER isInherited
+Indicates whether the permissions are inherited.
+
+.PARAMETER Permissions
+A hashtable array of permissions to be applied.
+
+.PARAMETER LookupResult
+A hashtable containing the lookup result properties.
+
+.PARAMETER Ensure
+Specifies whether to ensure the permissions are set.
+
+.PARAMETER Force
+A switch parameter to force the operation.
+
+.EXAMPLE
+New-AzDoGitPermission -ProjectName "MyProject" -RepositoryName "MyRepo" -isInherited $true -Permissions $permissions -LookupResult $lookupResult -Ensure "Present" -Force
+
+.NOTES
+This function relies on cached items for security namespace and project information. Ensure that the cache is populated before calling this function.
+#>
+Function New-AzDoGitPermission
+{
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]

@@ -1,5 +1,42 @@
-Function Remove-AzDoGroupMember {
+<#
+.SYNOPSIS
+Removes members from an Azure DevOps group.
 
+.DESCRIPTION
+The Remove-AzDoGroupMember function removes specified members from an Azure DevOps group.
+It looks up the group identity, checks the cache for existing group members, and removes the specified members.
+
+.PARAMETER GroupName
+The name of the Azure DevOps group from which members will be removed.
+
+.PARAMETER GroupMembers
+An array of group members to be removed. This parameter is optional.
+
+.PARAMETER LookupResult
+A hashtable containing lookup results. This parameter is optional.
+
+.PARAMETER Ensure
+Specifies whether to ensure the removal of the group members. This parameter is optional.
+
+.PARAMETER Force
+A switch parameter to force the removal of group members without confirmation.
+
+.EXAMPLE
+Remove-AzDoGroupMember -GroupName "Developers" -GroupMembers "user1@example.com", "user2@example.com"
+
+This command removes the specified members from the "Developers" group.
+
+.EXAMPLE
+Remove-AzDoGroupMember -GroupName "Developers" -Force
+
+This command forces the removal of all members from the "Developers" group without confirmation.
+
+.NOTES
+This function requires the Azure DevOps module and appropriate permissions to manage group memberships.
+
+#>
+Function Remove-AzDoGroupMember
+{
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
     param
@@ -21,7 +58,6 @@ Function Remove-AzDoGroupMember {
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
         $Force
-
     )
 
     # Group Identity
@@ -47,9 +83,6 @@ Function Remove-AzDoGroupMember {
     Write-Verbose "[Remove-AzDoGroupMember] Starting group member removal process for group '$GroupName'."
     Write-Verbose "[Remove-AzDoGroupMember] Group members: $($LiveGroupMembers.principalName -join ',')."
 
-    # Define the members
-    #$members = [System.Collections.Generic.List[object]]::new()
-
     # Fetch the group members and perform a lookup of the members
     ForEach ($MemberIdentity in $LiveGroupMembers) {
 
@@ -69,14 +102,6 @@ Function Remove-AzDoGroupMember {
         $result = Remove-DevOpsGroupMember @params -MemberIdentity $identity
 
     }
-
-    <#
-    # If the group members are not found, write a warning message to the console and return.
-    if ($members.Count -eq 0) {
-        Write-Warning "[Remove-AzDoGroupMember] No group members found: $($GroupMembers -join ',')."
-        return
-    }
-    #>
 
     # Add the group to the cache
     Write-Verbose "[Remove-AzDoGroupMember] Removed group '$GroupName' with members to the cache."

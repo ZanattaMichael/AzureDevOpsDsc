@@ -1,4 +1,5 @@
-Function New-AzDoGroupPermission {
+Function New-AzDoGroupPermission
+{
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -20,7 +21,6 @@ Function New-AzDoGroupPermission {
         [System.Management.Automation.SwitchParameter]
         $Force
     )
-
 
     Write-Verbose "[New-AzDoProjectGroupPermission] Started."
 

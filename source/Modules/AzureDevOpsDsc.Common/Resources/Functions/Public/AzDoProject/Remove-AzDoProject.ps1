@@ -1,3 +1,42 @@
+<#
+.SYNOPSIS
+Removes an Azure DevOps project.
+
+.DESCRIPTION
+The Remove-AzDoProject function removes a specified project from Azure DevOps. It performs a lookup to check if the project exists in the cache, removes it from Azure DevOps, and updates the local cache accordingly.
+
+.PARAMETER ProjectName
+Specifies the name of the Azure DevOps project to be removed. This parameter is validated using the Test-AzDevOpsProjectName function.
+
+.PARAMETER ProjectDescription
+Specifies the description of the Azure DevOps project.
+
+.PARAMETER SourceControlType
+Specifies the type of source control for the project. Valid values are 'Git' and 'Tfvc'. The default value is 'Git'.
+
+.PARAMETER ProcessTemplate
+Specifies the process template for the project. Valid values are 'Agile', 'Scrum', 'CMMI', and 'Basic'. The default value is 'Agile'.
+
+.PARAMETER Visibility
+Specifies the visibility of the project. Valid values are 'Public' and 'Private'. The default value is 'Private'.
+
+.PARAMETER LookupResult
+Specifies a hashtable to store the lookup result.
+
+.PARAMETER Ensure
+Specifies the desired state of the project.
+
+.PARAMETER Force
+Forces the removal of the project without prompting for confirmation.
+
+.EXAMPLE
+Remove-AzDoProject -ProjectName "MyProject" -Force
+
+This command removes the Azure DevOps project named "MyProject" without prompting for confirmation.
+
+.NOTES
+The function uses global variable $Global:DSCAZDO_OrganizationName to get the organization name.
+#>
 function Remove-AzDoProject
 {
     [CmdletBinding()]

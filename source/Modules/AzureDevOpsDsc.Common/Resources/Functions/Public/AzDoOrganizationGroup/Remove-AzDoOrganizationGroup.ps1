@@ -1,10 +1,42 @@
-Function Remove-AzDoOrganizationGroup {
+<#
+.SYNOPSIS
+Removes an Azure DevOps organization group.
 
+.DESCRIPTION
+The Remove-AzDoOrganizationGroup function removes a specified Azure DevOps organization group.
+It uses the provided group name, description, and lookup result to identify and remove the group
+from the Azure DevOps API and local cache.
+
+.PARAMETER GroupName
+The name of the group to be removed. This parameter is mandatory.
+
+.PARAMETER GroupDescription
+The description of the group to be removed. This parameter is optional.
+
+.PARAMETER LookupResult
+A hashtable containing the lookup result for the group. This parameter is optional.
+
+.PARAMETER Ensure
+Specifies whether the group should be present or absent. This parameter is optional.
+
+.PARAMETER Force
+A switch parameter to force the removal of the group without confirmation. This parameter is optional.
+
+.EXAMPLE
+Remove-AzDoOrganizationGroup -GroupName "Developers" -Force
+
+This example removes the "Developers" group from the Azure DevOps organization without confirmation.
+
+.NOTES
+This function relies on the global variables $Global:DSCAZDO_OrganizationName, $Global:AZDOLiveGroups,
+and $Global:AzDoGroup to interact with the Azure DevOps API and manage cache objects.
+#>
+Function Remove-AzDoOrganizationGroup
+{
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
     param
     (
-
         [Parameter(Mandatory)]
         [Alias('Name')]
         [System.String]$GroupName,

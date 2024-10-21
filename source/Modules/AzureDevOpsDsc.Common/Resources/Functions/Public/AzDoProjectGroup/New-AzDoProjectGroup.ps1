@@ -1,4 +1,48 @@
-Function New-AzDoProjectGroup {
+<#
+.SYNOPSIS
+Creates a new Azure DevOps project group.
+
+.DESCRIPTION
+The New-AzDoProjectGroup function creates a new group within a specified Azure DevOps project.
+It requires the project name and group name as mandatory parameters. Optionally, a description
+for the group and a lookup result can be provided. The function also supports a force switch
+parameter to override existing settings.
+
+.PARAMETER GroupName
+The name of the new group to be created. This parameter is mandatory.
+
+.PARAMETER GroupDescription
+An optional description for the new group.
+
+.PARAMETER ProjectName
+The name of the Azure DevOps project where the group will be created. This parameter is mandatory.
+
+.PARAMETER LookupResult
+An optional hashtable containing lookup results.
+
+.PARAMETER Ensure
+An optional parameter to specify the desired state of the group.
+
+.PARAMETER Force
+A switch parameter to force the creation of the group, overriding any existing settings.
+
+.EXAMPLE
+PS> New-AzDoProjectGroup -GroupName "Developers" -ProjectName "MyProject"
+
+Creates a new group named "Developers" in the "MyProject" Azure DevOps project.
+
+.EXAMPLE
+PS> New-AzDoProjectGroup -GroupName "Testers" -GroupDescription "QA Team" -ProjectName "MyProject" -Force
+
+Creates a new group named "Testers" with the description "QA Team" in the "MyProject" Azure DevOps project,
+forcing the creation even if the group already exists.
+
+.NOTES
+This function relies on the global variable $Global:DSCAZDO_OrganizationName to construct the API URI.
+It also interacts with cache functions like Get-CacheItem, Refresh-CacheIdentity, Add-CacheItem, and Set-CacheObject.
+#>
+Function New-AzDoProjectGroup
+{
 
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
@@ -26,7 +70,6 @@ Function New-AzDoProjectGroup {
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
         $Force
-
     )
 
     # Define parameters for creating a new DevOps group

@@ -1,4 +1,5 @@
-Function Remove-AzDoGroupPermission {
+Function Remove-AzDoGroupPermission
+{
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]

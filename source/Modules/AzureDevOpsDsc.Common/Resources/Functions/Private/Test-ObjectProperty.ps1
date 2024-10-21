@@ -28,7 +28,8 @@ Test-ObjectProperty -Object $object -PropertyName "Email"
 # Returns $false
 #>
 
-Function Test-ObjectProperty {
+Function Test-ObjectProperty
+{
     [CmdletBinding()]
     [OutputType([System.Boolean])]
     param

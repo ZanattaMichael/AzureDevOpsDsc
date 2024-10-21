@@ -1,23 +1,49 @@
 <#
-    [DscProperty(Key, Mandatory)]
-    [Alias('Name')]
-    [System.String]$ProjectName
+.SYNOPSIS
+Retrieves the Git repository permissions for a specified Azure DevOps project and repository.
 
-    [DscProperty(Mandatory)]
-    [Alias('Repository')]
-    [System.String]$RepositoryName
+.DESCRIPTION
+The Get-AzDoGitPermission function retrieves the Git repository permissions for a specified Azure DevOps project and repository.
+It performs a lookup within the cache for the repository and retrieves the Access Control List (ACL) for the repository.
+The function then compares the retrieved ACLs with the provided permissions and returns the result.
 
-    [DscProperty()]
-    [Alias('Inherited')]
-    [System.Boolean]$isInherited=$true
+.PARAMETER ProjectName
+The name of the Azure DevOps project.
 
-    [DscProperty()]
-    [Alias('Permissions')]
-    [Permission[]]$PermissionsList
+.PARAMETER RepositoryName
+The name of the Git repository within the Azure DevOps project.
+
+.PARAMETER isInherited
+A boolean value indicating whether the permissions are inherited.
+
+.PARAMETER Permissions
+An optional hashtable array of permissions to compare against the retrieved ACLs.
+
+.PARAMETER LookupResult
+An optional hashtable to store the lookup result.
+
+.PARAMETER Ensure
+An optional parameter to specify the desired state of the permissions.
+
+.PARAMETER Force
+A switch parameter to force the operation.
+
+.EXAMPLE
+Get-AzDoGitPermission -ProjectName "MyProject" -RepositoryName "MyRepo" -isInherited $true
+
+This example retrieves the Git repository permissions for the "MyRepo" repository in the "MyProject" Azure DevOps project,
+considering inherited permissions.
+
+.NOTES
+The function relies on cached items for the repository and security namespace.
+It uses helper functions like Get-CacheItem, Get-DevOpsACL, ConvertTo-FormattedACL, ConvertTo-ACL, and Test-ACLListforChanges.
 
 #>
-Function Get-AzDoGitPermission {
+
+Function Get-AzDoGitPermission
+{
     [CmdletBinding()]
+    [OutputType([System.Management.Automation.PSObject[]])]
     param (
         [Parameter(Mandatory)]
         [string]$ProjectName,

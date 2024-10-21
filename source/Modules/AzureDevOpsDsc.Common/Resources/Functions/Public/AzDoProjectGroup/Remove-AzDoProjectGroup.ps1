@@ -1,10 +1,41 @@
-Function Remove-AzDoProjectGroup {
+<#
+.SYNOPSIS
+Removes an Azure DevOps project group.
 
+.DESCRIPTION
+The Remove-AzDoProjectGroup function removes a specified Azure DevOps project group by its name and project.
+It also updates the cache to reflect the removal.
+
+.PARAMETER GroupName
+The name of the group to be removed. This parameter is mandatory.
+
+.PARAMETER GroupDescription
+The description of the group to be removed. This parameter is optional.
+
+.PARAMETER ProjectName
+The name of the project that the group belongs to. This parameter is mandatory.
+
+.PARAMETER LookupResult
+A hashtable containing the lookup results for the group. This parameter is optional.
+
+.PARAMETER Ensure
+Specifies whether the group should be present or absent. This parameter is optional.
+
+.PARAMETER Force
+A switch parameter to force the removal of the group without confirmation. This parameter is optional.
+
+.EXAMPLE
+Remove-AzDoProjectGroup -GroupName "Developers" -ProjectName "MyProject"
+
+This command removes the "Developers" group from the "MyProject" project.
+
+#>
+Function Remove-AzDoProjectGroup
+{
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
     param
     (
-
         [Parameter(Mandatory)]
         [Alias('Name')]
         [System.String]$GroupName,

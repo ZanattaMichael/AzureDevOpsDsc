@@ -1,3 +1,36 @@
+<#
+.SYNOPSIS
+Removes a Git repository from an Azure DevOps project.
+
+.DESCRIPTION
+The Remove-AzDoGitRepository function removes a specified Git repository from a given Azure DevOps project.
+It checks the existence of the project and repository in the LiveProjects and LiveRepositories cache before attempting the removal.
+
+.PARAMETER ProjectName
+The name of the Azure DevOps project containing the repository to be removed.
+
+.PARAMETER RepositoryName
+The name of the repository to be removed.
+
+.PARAMETER SourceRepository
+An optional parameter specifying the source repository.
+
+.PARAMETER LookupResult
+An optional hashtable parameter for lookup results.
+
+.PARAMETER Ensure
+An optional parameter to ensure the state of the repository.
+
+.PARAMETER Force
+A switch parameter to force the removal of the repository.
+
+.EXAMPLE
+Remove-AzDoGitRepository -ProjectName "MyProject" -RepositoryName "MyRepo" -Force
+
+.NOTES
+This function relies on the existence of certain global variables and cache items.
+Ensure that the necessary cache items and global variables are properly set before invoking this function.
+#>
 Function Remove-AzDoGitRepository
 {
     [CmdletBinding()]
@@ -26,7 +59,6 @@ Function Remove-AzDoGitRepository
         [System.Management.Automation.SwitchParameter]
         $Force
     )
-
 
     Write-Verbose "[Remove-AzDoGitRepository] Removing repository '$($RepositoryName)' in project '$($ProjectName)'"
 

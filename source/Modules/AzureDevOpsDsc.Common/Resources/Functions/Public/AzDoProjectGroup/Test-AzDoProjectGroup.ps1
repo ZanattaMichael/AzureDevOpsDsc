@@ -30,8 +30,8 @@
     using the specified personal access token and API URI.
 
 #>
-Function Test-AzDoProjectGroup {
-
+Function Test-AzDoProjectGroup
+{
     param(
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
@@ -49,7 +49,6 @@ Function Test-AzDoProjectGroup {
         [Parameter()]
         [Alias('Name')]
         [hashtable]$GetResult
-
     )
 
     #

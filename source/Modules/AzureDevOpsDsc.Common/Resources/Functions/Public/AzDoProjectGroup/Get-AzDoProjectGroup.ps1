@@ -24,13 +24,12 @@ Retrieves the organization group named 'Developers' from the Azure DevOps instan
 
 #>
 
-Function Get-AzDoProjectGroup {
-
+Function Get-AzDoProjectGroup
+{
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
     param
     (
-
         [Parameter(Mandatory)]
         [Alias('Project')]
         [System.String]$ProjectName,
@@ -48,7 +47,6 @@ Function Get-AzDoProjectGroup {
 
         [Parameter()]
         [Ensure]$Ensure
-
     )
 
     # Logging

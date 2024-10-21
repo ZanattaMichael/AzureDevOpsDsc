@@ -1,7 +1,40 @@
-Function Set-AzDoGroupMember {
+<#
+.SYNOPSIS
+    Manages Azure DevOps group members by adding or removing members based on the provided lookup result.
 
+.PARAMETER GroupName
+    The name of the Azure DevOps group to manage.
+
+.PARAMETER GroupMembers
+    An array of group members to be managed. Defaults to an empty array.
+
+.PARAMETER LookupResult
+    A hashtable containing the propertiesChanged key which indicates the action to be performed (Add or Remove).
+
+.PARAMETER Ensure
+    Specifies whether the group members should be present or absent.
+
+.PARAMETER Force
+    A switch parameter to force the operation.
+
+.DESCRIPTION
+    The Set-AzDoGroupMember function manages Azure DevOps group members by adding or removing members based on the provided lookup result.
+    It checks for circular references and updates the internal cache with the new group member information.
+
+.EXAMPLE
+    Set-AzDoGroupMember -GroupName "Developers" -GroupMembers @("user1", "user2") -LookupResult $lookupResult -Ensure "Present"
+
+    This example adds the specified members to the "Developers" group based on the lookup result.
+
+.NOTES
+    The function relies on several helper functions such as Find-AzDoIdentity, Format-AzDoProjectName, Get-CacheItem, New-DevOpsGroupMember, Remove-DevOpsGroupMember, Add-CacheItem, and Set-CacheObject.
+    Ensure that these functions are defined and available in the scope where Set-AzDoGroupMember is called.
+
+#>
+
+Function Set-AzDoGroupMember
+{
     param(
-
         [Parameter(Mandatory)]
         [Alias('Name')]
         [System.String]$GroupName,
@@ -20,7 +53,6 @@ Function Set-AzDoGroupMember {
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
         $Force
-
     )
 
     # Group Identity

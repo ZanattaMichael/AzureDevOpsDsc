@@ -1,4 +1,5 @@
-Function Remove-AzDoGitPermission {
+Function Remove-AzDoGitPermission
+{
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
@@ -39,7 +40,7 @@ Function Remove-AzDoGitPermission {
     }
 
     # Get the Project
-    $Project            = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
+    $Project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
 
     # If the Project is null, return
     if (-not $Project) {

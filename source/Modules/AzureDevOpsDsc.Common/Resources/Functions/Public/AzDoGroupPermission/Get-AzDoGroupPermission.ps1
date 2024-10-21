@@ -1,6 +1,48 @@
+<#
+.SYNOPSIS
+Retrieves the permissions for a specified Azure DevOps group.
 
-Function Get-AzDoGroupPermission {
+.DESCRIPTION
+The Get-AzDoGroupPermission function retrieves the permissions for a specified Azure DevOps group.
+It performs a lookup within the cache for the group and its associated project, retrieves the
+security namespace, and constructs a hashtable detailing the group. It then performs a lookup
+of the permissions for the group, formats the ACLs, and compares the reference ACLs to the
+difference ACLs to determine any changes.
+
+.PARAMETER GroupName
+The name of the Azure DevOps group. This parameter is mandatory.
+
+.PARAMETER isInherited
+A boolean value indicating whether the permissions are inherited. This parameter is mandatory.
+
+.PARAMETER Permissions
+An array of hashtables representing the permissions to be checked. This parameter is optional.
+
+.PARAMETER LookupResult
+A hashtable representing the lookup result. This parameter is optional.
+
+.PARAMETER Ensure
+Specifies the desired state of the group permissions. This parameter is optional.
+
+.PARAMETER Force
+A switch parameter to force the operation. This parameter is optional.
+
+.OUTPUTS
+System.Management.Automation.PSObject[]
+Returns a hashtable detailing the group permissions, including the reference ACLs, difference ACLs,
+properties changed, status, and reason.
+
+.EXAMPLE
+PS C:\> Get-AzDoGroupPermission -GroupName "ProjectName\GroupName" -isInherited $true
+
+Retrieves the permissions for the specified Azure DevOps group with inheritance.
+
+#>
+
+Function Get-AzDoGroupPermission
+{
     [CmdletBinding()]
+    [OutputType([System.Management.Automation.PSObject[]])]
     param (
         [Parameter(Mandatory)]
         [string]$GroupName,

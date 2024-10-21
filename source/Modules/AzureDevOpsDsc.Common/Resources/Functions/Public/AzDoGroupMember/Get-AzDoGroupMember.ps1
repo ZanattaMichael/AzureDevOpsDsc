@@ -1,7 +1,40 @@
+<#
+.SYNOPSIS
+Retrieves the members of an Azure DevOps group and compares them with the provided parameters.
 
+.DESCRIPTION
+The Get-AzDoGroupMember function retrieves the members of an Azure DevOps group from the live cache and compares them with the provided parameters. It returns a hashtable detailing the group status, including any differences between the live group members and the provided parameters.
 
-Function Get-AzDoGroupMember {
+.PARAMETER GroupName
+The name of the Azure DevOps group to retrieve.
 
+.PARAMETER GroupMembers
+An array of group members to compare against the live group members. Default is an empty array.
+
+.PARAMETER LookupResult
+A hashtable to store lookup results.
+
+.PARAMETER Ensure
+Specifies whether the group should be present or absent.
+
+.PARAMETER Force
+A switch parameter to force the operation.
+
+.OUTPUTS
+System.Management.Automation.PSObject[]
+A hashtable detailing the group status, including any differences between the live group members and the provided parameters.
+
+.EXAMPLE
+PS C:\> Get-AzDoGroupMember -GroupName "Developers" -GroupMembers @("user1", "user2")
+
+This command retrieves the members of the "Developers" group and compares them with the provided members "user1" and "user2".
+
+.NOTES
+This function uses verbose logging to provide detailed information about its operations.
+#>
+
+Function Get-AzDoGroupMember
+{
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
     param
@@ -23,12 +56,10 @@ Function Get-AzDoGroupMember {
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
         $Force
-
     )
 
     # Logging
     Write-Verbose "[Get-AzDoGroupMember] Retriving the GroupName from the Live and Local Cache."
-
 
     # Format the  According to the Group Name
     $Key = Format-AzDoGroupMember -GroupName $GroupName
@@ -54,7 +85,8 @@ Function Get-AzDoGroupMember {
 
     #
     # Test if the group is present in the live cache
-    if ($null -eq $livegroupMembers) {
+    if ($null -eq $livegroupMembers)
+    {
 
         Write-Verbose "[Get-AzDoGroupMember] Group '$GroupName' not found in the live cache."
 
@@ -72,7 +104,8 @@ Function Get-AzDoGroupMember {
 
     #
     # Test if there are no group members in parameters
-    if ($GroupMembers.Count -eq 0) {
+    if ($GroupMembers.Count -eq 0)
+    {
 
         Write-Verbose "[Get-AzDoGroupMember] Group '$GroupName' not found in the parameters."
 

@@ -1,7 +1,46 @@
+<#
+.SYNOPSIS
+Creates a new Azure DevOps Git repository within a specified project.
 
+.DESCRIPTION
+The New-AzDoGitRepository function creates a new Git repository in an Azure DevOps project.
+It uses the provided project name and repository name to create the repository.
+Optionally, a source repository can be specified to initialize the new repository.
 
-Function New-AzDoGitRepository {
+.PARAMETER ProjectName
+The name of the Azure DevOps project where the new repository will be created.
 
+.PARAMETER RepositoryName
+The name of the new Git repository to be created.
+
+.PARAMETER SourceRepository
+(Optional) The name of the source repository to initialize the new repository.
+
+.PARAMETER LookupResult
+(Optional) A hashtable to store lookup results.
+
+.PARAMETER Ensure
+(Optional) Specifies whether to ensure the repository exists or does not exist.
+
+.PARAMETER Force
+(Optional) Forces the creation of the repository even if it already exists.
+
+.EXAMPLE
+PS> New-AzDoGitRepository -ProjectName "MyProject" -RepositoryName "MyRepo"
+
+Creates a new Git repository named "MyRepo" in the "MyProject" Azure DevOps project.
+
+.EXAMPLE
+PS> New-AzDoGitRepository -ProjectName "MyProject" -RepositoryName "MyRepo" -SourceRepository "TemplateRepo"
+
+Creates a new Git repository named "MyRepo" in the "MyProject" Azure DevOps project, initialized with the contents of "TemplateRepo".
+
+.NOTES
+This function requires the Azure DevOps organization name to be set in the global variable $Global:DSCAZDO_OrganizationName.
+#>
+
+Function New-AzDoGitRepository
+{
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
     param

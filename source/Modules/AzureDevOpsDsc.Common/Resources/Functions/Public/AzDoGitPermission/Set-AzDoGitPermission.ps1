@@ -1,4 +1,5 @@
-Function Set-AzDoGitPermission {
+Function Set-AzDoGitPermission
+{
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]

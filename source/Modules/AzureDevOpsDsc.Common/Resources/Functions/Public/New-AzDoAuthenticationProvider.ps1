@@ -14,8 +14,8 @@ New-AzDoAuthenticationProvider -OrganizationName "Contoso"
 This example creates a new Azure Managed Identity for the organization named "Contoso".
 
 #>
-Function New-AzDoAuthenticationProvider {
-
+Function New-AzDoAuthenticationProvider
+{
     [CmdletBinding(DefaultParameterSetName = 'PersonalAccessToken')]
     param (
         # Organization Name

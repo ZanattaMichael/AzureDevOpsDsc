@@ -1,6 +1,47 @@
+<#
+.SYNOPSIS
+    Retrieves information about an Azure DevOps project.
+
+.DESCRIPTION
+    The Get-AzDoProject function retrieves details about an Azure DevOps project, including its name, description, source control type, process template, and visibility. It performs lookups to check if the project and process template exist and returns the project's status and any properties that have changed.
+
+.PARAMETER ProjectName
+    The name of the Azure DevOps project. This parameter is validated using the Test-AzDevOpsProjectName function.
+
+.PARAMETER ProjectDescription
+    The description of the Azure DevOps project. Defaults to an empty string if not specified.
+
+.PARAMETER SourceControlType
+    The source control type of the Azure DevOps project. Valid values are 'Git' and 'Tfvc'. Defaults to 'Git'.
+
+.PARAMETER ProcessTemplate
+    The process template used by the Azure DevOps project. Valid values are 'Agile', 'Scrum', 'CMMI', and 'Basic'. Defaults to 'Agile'.
+
+.PARAMETER Visibility
+    The visibility of the Azure DevOps project. Valid values are 'Public' and 'Private'. Defaults to 'Private'.
+
+.PARAMETER LookupResult
+    A hashtable to store the lookup result.
+
+.PARAMETER Ensure
+    Specifies the desired state of the project.
+
+.OUTPUTS
+    [System.Management.Automation.PSObject[]]
+    Returns a hashtable containing the project's details and status.
+
+.EXAMPLE
+    Get-AzDoProject -ProjectName "MyProject" -ProjectDescription "Sample project" -SourceControlType "Git" -ProcessTemplate "Agile" -Visibility "Private"
+
+    Retrieves information about the Azure DevOps project named "MyProject" with the specified parameters.
+
+.NOTES
+    This function relies on global variables and other functions such as Get-CacheItem and Test-AzDevOpsProjectName to perform lookups and validations.
+#>
 function Get-AzDoProject
 {
     [CmdletBinding()]
+    [OutputType([System.Management.Automation.PSObject[]])]
     param (
         [Parameter()]
         [ValidateScript({ Test-AzDevOpsProjectName -ProjectName $_ -IsValid -AllowWildcard })]

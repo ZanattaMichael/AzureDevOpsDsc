@@ -1,4 +1,5 @@
-Function Set-AzDoGroupPermission {
+Function Set-AzDoGroupPermission
+{
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
