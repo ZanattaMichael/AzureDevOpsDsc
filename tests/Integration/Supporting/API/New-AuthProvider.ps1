@@ -31,7 +31,7 @@ Function New-AuthProvider {
     if ($PSCmdlet.ParameterSetName -eq 'PersonalAccessToken') {
         Write-Verbose "[New-AuthProvider] Creating a new Personal Access Token with OrganizationName $OrganizationName."
         $Global:DSCAZDO_AuthenticationToken = @{
-            'token' = ":{0}" -f (ConvertTo-Base64String $PersonalAccessToken)
+            'token' = ':{0}' -f (ConvertTo-Base64String $PersonalAccessToken)
             'type' = 'PAT'
         }
     }

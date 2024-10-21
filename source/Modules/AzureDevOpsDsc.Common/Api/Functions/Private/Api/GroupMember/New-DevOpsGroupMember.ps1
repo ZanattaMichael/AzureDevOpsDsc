@@ -59,7 +59,7 @@ Function New-DevOpsGroupMember
     $params = @{
         # Construct the Uri using string formatting with the -f operator.
         # It includes the API endpoint, group identity, member identity, and the API version.
-        Uri = "{0}/_apis/graph/memberships/{1}/{2}?api-version={3}" -f  $ApiUri,
+        Uri = '{0}/_apis/graph/memberships/{1}/{2}?api-version={3}' -f  $ApiUri,
                                                                         $MemberIdentity.descriptor,
                                                                         $GroupIdentity.descriptor,
                                                                         $ApiVersion
@@ -78,7 +78,9 @@ Function New-DevOpsGroupMember
         Write-Verbose "[Add-DevOpsGroupMember] Attempting to invoke REST method to add group member."
         $member = Invoke-AzDevOpsApiRestMethod @params
         Write-Verbose "[Add-DevOpsGroupMember] Member added successfully."
-    } catch {
+    }
+    catch
+    {
         # If an exception occurs, write an error message to the console with details about the issue.
         Write-Error "[Add-DevOpsGroupMember] Failed to add member to group: $($_.Exception.Message)"
     }

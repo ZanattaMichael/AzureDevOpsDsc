@@ -55,7 +55,7 @@ Function Remove-DevOpsGroupMember
     $params = @{
         # Construct the Uri using string formatting with the -f operator.
         # It includes the API endpoint, group identity, member identity, and the API version.
-        Uri = "{0}/_apis/graph/memberships/{1}/{2}?api-version={3}" -f  $ApiUri,
+        Uri = '{0}/_apis/graph/memberships/{1}/{2}?api-version={3}' -f  $ApiUri,
                                                                         $MemberIdentity.descriptor,
                                                                         $GroupIdentity.descriptor,
                                                                         $ApiVersion

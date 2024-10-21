@@ -25,7 +25,8 @@ Function Add-AuthenticationHTTPHeader
 {
     # Dertimine the type of token.
     $headerValue = ""
-    switch ($Global:DSCAZDO_AuthenticationToken.tokenType) {
+    switch ($Global:DSCAZDO_AuthenticationToken.tokenType)
+    {
 
         # If the token is null
         {[String]::IsNullOrEmpty($_)} {
@@ -35,7 +36,7 @@ Function Add-AuthenticationHTTPHeader
             # Personal Access Token
 
             # Add the Personal Access Token to the header
-            $headerValue = "Authorization: Basic {0}" -f $Global:DSCAZDO_AuthenticationToken.Get()
+            $headerValue = 'Authorization: Basic {0}' -f $Global:DSCAZDO_AuthenticationToken.Get()
             break
         }
         {$_ -eq 'ManagedIdentity'} {

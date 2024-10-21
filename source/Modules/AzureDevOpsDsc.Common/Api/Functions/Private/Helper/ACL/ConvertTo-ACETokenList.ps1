@@ -1,6 +1,7 @@
 
 
-Function ConvertTo-ACETokenList {
+Function ConvertTo-ACETokenList
+{
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
@@ -27,7 +28,8 @@ Function ConvertTo-ACETokenList {
     # Iterate through each of the ACEs and construct the ACE Object
     Write-Verbose "[ConvertTo-ACETokenList] Iterating through each of the ACE Permissions."
 
-    ForEach ($ACEPermission in $ACEPermissions) {
+    ForEach ($ACEPermission in $ACEPermissions)
+    {
 
         # Check to see if there are any permissions that are not found in the Security Descriptor
         $missingPermissions = $ACEPermission.Keys | Where-Object {

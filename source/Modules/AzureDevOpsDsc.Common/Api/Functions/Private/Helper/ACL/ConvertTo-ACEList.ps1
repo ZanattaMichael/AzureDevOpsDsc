@@ -27,7 +27,8 @@ Author: Your Name
 Date: Today's Date
 #>
 
-Function ConvertTo-ACEList {
+Function ConvertTo-ACEList
+{
     [CmdletBinding()]
     param (
         # Mandatory parameter: the security namespace as a string.
@@ -53,7 +54,8 @@ Function ConvertTo-ACEList {
     $ACEs = [System.Collections.Generic.List[HashTable]]::new()
 
     # Iterate through each of the permissions and construct the ACE token.
-    ForEach ($Permission in $Permissions) {
+    ForEach ($Permission in $Permissions)
+    {
 
         Write-Verbose "[ConvertTo-ACEList] Constructing ACE for $($Permission.Identity)."
 

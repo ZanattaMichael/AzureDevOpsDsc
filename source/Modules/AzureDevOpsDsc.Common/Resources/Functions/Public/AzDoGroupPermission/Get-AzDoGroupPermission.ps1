@@ -159,7 +159,7 @@ Function Get-AzDoGroupPermission
         SecurityNamespace   = $SecurityNamespace
         isInherited         = $isInherited
         OrganizationName    = $OrganizationName
-        TokenName           = "{0}\\{1}" -f $project.id, $group.id
+        TokenName           = '{0}\\{1}' -f $project.id, $group.id
     }
 
     # Convert the Permissions to an ACL Token

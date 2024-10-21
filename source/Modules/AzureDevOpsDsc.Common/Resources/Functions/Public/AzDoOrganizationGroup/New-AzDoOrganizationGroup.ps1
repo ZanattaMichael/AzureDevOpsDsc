@@ -58,7 +58,7 @@ Function New-AzDoOrganizationGroup
     $params = @{
         GroupName = $GroupName
         GroupDescription = $GroupDescription
-        ApiUri = "https://vssps.dev.azure.com/{0}" -f $Global:DSCAZDO_OrganizationName
+        ApiUri = 'https://vssps.dev.azure.com/{0}' -f $Global:DSCAZDO_OrganizationName
     }
 
     # Write verbose log with the parameters used for creating the group

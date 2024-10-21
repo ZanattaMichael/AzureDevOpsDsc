@@ -73,7 +73,7 @@ Function Set-DevOpsGroup
 
     # A hashtable is created to hold parameters that will be used in the REST method invocation.
     $params = @{
-        Uri = "{0}/_apis/graph/groups/{1}?api-version={2}" -f $ApiUri, $GroupDescriptor, $ApiVersion # The API endpoint, formatted with the base URI and API version.
+        Uri = '{0}/_apis/graph/groups/{1}?api-version={2}' -f $ApiUri, $GroupDescriptor, $ApiVersion # The API endpoint, formatted with the base URI and API version.
         Method = 'Patch' # The HTTP method used for the request, indicating an update operation.
         ContentType = 'application/json-patch+json' # The content type of the request body.
         Body = @(
@@ -92,7 +92,7 @@ Function Set-DevOpsGroup
 
     # If ProjectScopeDescriptor is provided, modify the URI to include it in the query parameters.
     if ($ProjectScopeDescriptor) {
-        $params.Uri = "{0}/_apis/graph/groups?scopeDescriptor={1}&api-version={2}" -f $ApiUri, $ProjectScopeDescriptor, $ApiVersion
+        $params.Uri = '{0}/_apis/graph/groups?scopeDescriptor={1}&api-version={2}' -f $ApiUri, $ProjectScopeDescriptor, $ApiVersion
     }
 
     try

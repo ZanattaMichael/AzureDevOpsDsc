@@ -52,7 +52,7 @@ Function Remove-AzDoGroupPermission
     #
     # Filter the ACLs that pertain to the Git Repository
 
-    $searchString = "repoV2/{0}/{1}" -f $Project.id, $Repository.id
+    $searchString = 'repoV2/{0}/{1}' -f $Project.id, $Repository.id
 
     # Test if the Token exists
     $Filtered = $DescriptorACLList | Where-Object { $_.token -eq $searchString }

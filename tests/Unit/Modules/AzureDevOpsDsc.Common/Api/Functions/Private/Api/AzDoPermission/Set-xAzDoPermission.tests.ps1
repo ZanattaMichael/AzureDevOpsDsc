@@ -28,7 +28,7 @@ Describe 'Set-AzDoPermission Tests' -Tags "Unit", "API" {
 
     Context 'When Mandatory Parameters are provided' {
         It 'Should call Invoke-AzDevOpsApiRestMethod with correct parameters' {
-            $expectedUri = "https://dev.azure.com/{0}/_apis/accesscontrollists/{1}?api-version={2}" -f $OrganizationName, $SecurityNamespaceID, $ApiVersion
+            $expectedUri = 'https://dev.azure.com/{0}/_apis/accesscontrollists/{1}?api-version={2}' -f $OrganizationName, $SecurityNamespaceID, $ApiVersion
 
             Set-AzDoPermission -OrganizationName $OrganizationName -SecurityNamespaceID $SecurityNamespaceID -SerializedACLs $SerializedACLs -ApiVersion $ApiVersion
 
@@ -42,7 +42,7 @@ Describe 'Set-AzDoPermission Tests' -Tags "Unit", "API" {
 
     Context 'When ApiVersion is not provided' {
         It 'Should call ExampleFunction and get default ApiVersion' {
-            $expectedUri = "https://dev.azure.com/{0}/_apis/accesscontrollists/{1}?api-version={2}" -f $OrganizationName, $SecurityNamespaceID, "6.0-preview.1"
+            $expectedUri = 'https://dev.azure.com/{0}/_apis/accesscontrollists/{1}?api-version={2}' -f $OrganizationName, $SecurityNamespaceID, "6.0-preview.1"
 
             Set-AzDoPermission -OrganizationName $OrganizationName -SecurityNamespaceID $SecurityNamespaceID -SerializedACLs $SerializedACLs
 

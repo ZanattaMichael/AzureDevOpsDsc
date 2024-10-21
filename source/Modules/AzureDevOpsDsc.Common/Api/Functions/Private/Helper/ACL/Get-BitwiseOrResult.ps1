@@ -24,7 +24,8 @@
     Author: Your Name
     Date:   Current Date
 #>
-Function Get-BitwiseOrResult {
+Function Get-BitwiseOrResult
+{
     [CmdletBinding()]
     param (
         [int[]]$integers

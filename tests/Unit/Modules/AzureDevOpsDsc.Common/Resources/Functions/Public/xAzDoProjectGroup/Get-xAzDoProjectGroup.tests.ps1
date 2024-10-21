@@ -43,7 +43,7 @@ Describe 'Get-AzDoProjectGroup' {
         Mock -CommandName Remove-CacheItem
         Mock -CommandName Add-CacheItem
         Mock -CommandName Format-AzDoGroup -MockWith {
-            return ("{0}:{1}" -f $mockProjectName, $mockGroupName)
+            return ('{0}:{1}' -f $mockProjectName, $mockGroupName)
         }
 
     }
@@ -66,7 +66,7 @@ Describe 'Get-AzDoProjectGroup' {
         Mock -CommandName Find-CacheItem -MockWith { return @{ originId = 1 } }
 
         Mock -CommandName Format-AzDoGroup -MockWith {
-            return ("{0}:{1}" -f $mockProjectName, $mockGroupName)
+            return ('{0}:{1}' -f $mockProjectName, $mockGroupName)
         }
 
         $result = Get-AzDoProjectGroup -ProjectName $mockProjectName -GroupName $mockGroupName
@@ -82,7 +82,7 @@ Describe 'Get-AzDoProjectGroup' {
         }
 
         Mock -CommandName Format-AzDoGroup -MockWith {
-            return ("{0}:{1}" -f $mockProjectName, $mockGroupName)
+            return ('{0}:{1}' -f $mockProjectName, $mockGroupName)
         }
 
         $result = Get-AzDoProjectGroup -ProjectName $mockProjectName -GroupName $mockGroupName
@@ -95,7 +95,7 @@ Describe 'Get-AzDoProjectGroup' {
             return @{description = 'OldDescription'; name = $mockGroupName; originId = 1}
         }
         Mock -CommandName Format-AzDoGroup -MockWith {
-            return ("{0}:{1}" -f $mockProjectName, $mockGroupName)
+            return ('{0}:{1}' -f $mockProjectName, $mockGroupName)
         }
 
         $result = Get-AzDoProjectGroup -ProjectName $mockProjectName -GroupName $mockGroupName -GroupDescription $mockDescription
@@ -109,7 +109,7 @@ Describe 'Get-AzDoProjectGroup' {
             return @{description = $mockDescription; name = $mockGroupName; originId = 1}
         }
         Mock -CommandName Format-AzDoGroup -MockWith {
-            return ("{0}:{1}" -f $mockProjectName, $mockGroupName)
+            return ('{0}:{1}' -f $mockProjectName, $mockGroupName)
         }
 
         $result = Get-AzDoProjectGroup -ProjectName $mockProjectName -GroupName $mockGroupName -GroupDescription $mockDescription
@@ -136,13 +136,13 @@ Describe 'Get-AzDoProjectGroup' {
         }
 
         Mock -CommandName Format-AzDoGroup -MockWith {
-            return ("{0}:{1}" -f $mockProjectName, $mockGroupName)
+            return ('{0}:{1}' -f $mockProjectName, $mockGroupName)
         }
 
         Get-AzDoProjectGroup -ProjectName $mockProjectName -GroupName $mockGroupName -GroupDescription $mockDescription
 
         Assert-MockCalled -CommandName Add-CacheItem -ParameterFilter {
-            ($Key -eq ("{0}:{1}" -f $mockProjectName, $mockGroupName)) -and ($Type -eq 'Group')
+            ($Key -eq ('{0}:{1}' -f $mockProjectName, $mockGroupName)) -and ($Type -eq 'Group')
         } -Times 1
     }
 }

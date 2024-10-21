@@ -55,7 +55,7 @@ Function Set-AzDoPermission
             Construct the Uri using string formatting with the -f operator.
             It includes the API endpoint, group identity, member identity, and the API version.
         #>
-        Uri = "https://dev.azure.com/{0}/_apis/accesscontrollists/{1}?api-version={2}" -f   $OrganizationName,
+        Uri = 'https://dev.azure.com/{0}/_apis/accesscontrollists/{1}?api-version={2}' -f   $OrganizationName,
                                                                                             $SecurityNamespaceID,
                                                                                             $ApiVersion
         # Set the method to PUT.
@@ -66,7 +66,8 @@ Function Set-AzDoPermission
 
     Write-Verbose "[Set-AzDoPermission] Body: $($params.Body)"
 
-    try {
+    try
+    {
         <#
             Call the Invoke-AzDevOpsApiRestMethod function with the parameters defined above.
             The "@" symbol is used to pass the hashtable as splatting parameters.
@@ -74,7 +75,9 @@ Function Set-AzDoPermission
         Write-Verbose "[Set-AzDoPermission] Attempting to invoke REST method to set ACLs."
         $null = Invoke-AzDevOpsApiRestMethod @params
 
-    } catch {
+    }
+    catch
+    {
         # If an exception occurs, write an error message to the console with details about the issue.
         Write-Error "[Set-AzDoPermission] Failed to set ACLs: $($_.Exception.Message)"
     }

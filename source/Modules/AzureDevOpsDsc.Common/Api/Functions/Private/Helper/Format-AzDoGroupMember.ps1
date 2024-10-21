@@ -13,6 +13,6 @@ Function Format-AzDoGroupMember
     # Split the GroupName into the prefix and the group name.
     $prefix, $group = $GroupName -split '\\'
 
-    return "[{0}]\{1}" -f $prefix, $group
+    return '[{0}]\{1}' -f $prefix, $group
 
 }

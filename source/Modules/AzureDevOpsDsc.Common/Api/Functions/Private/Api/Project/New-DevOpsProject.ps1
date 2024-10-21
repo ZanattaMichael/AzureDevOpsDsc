@@ -62,7 +62,7 @@ function New-DevOpsProject
 
     # Validate the parameters
     $params = @{
-        Uri              = "https://dev.azure.com/{0}/_apis/projects?api-version={1}" -f $Organization, $ApiVersion
+        Uri              = 'https://dev.azure.com/{0}/_apis/projects?api-version={1}' -f $Organization, $ApiVersion
         Method           = "POST"
         Body             = @{
             name         = $ProjectName

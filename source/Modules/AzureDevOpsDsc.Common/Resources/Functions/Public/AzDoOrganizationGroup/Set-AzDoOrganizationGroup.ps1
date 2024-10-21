@@ -65,7 +65,7 @@ Function Set-AzDoOrganizationGroup
     #
     # Update the group
     $params = @{
-        ApiUri = "https://vssps.dev.azure.com/{0}" -f $Global:DSCAZDO_OrganizationName
+        ApiUri = 'https://vssps.dev.azure.com/{0}' -f $Global:DSCAZDO_OrganizationName
         GroupName = $GroupName
         GroupDescription = $GroupDescription
         GroupDescriptor = $LookupResult.liveCache.descriptor

@@ -634,7 +634,7 @@ Write-Verbose "[New-GitRepository] Creating new repository '$($RepositoryName)' 
 
 # Define parameters for creating a new DevOps group
 $params = @{
-    ApiUri = "{0}/{1}/_apis/git/repositories?api-version={2}" -f $ApiUri, $Project.name, $ApiVersion
+    ApiUri = '{0}/{1}/_apis/git/repositories?api-version={2}' -f $ApiUri, $Project.name, $ApiVersion
     Method = 'POST'
     ContentType = 'application/json'
     Body = @{

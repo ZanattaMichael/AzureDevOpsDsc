@@ -50,7 +50,7 @@ Function Get-DevOpsDescriptorIdentity
     #
     # Construct the URL for the API call
     $params = @{
-        Uri = "https://vssps.dev.azure.com/{0}/_apis/identities?{1}&api-version={2}" -f $OrganizationName, $query, $ApiVersion
+        Uri = 'https://vssps.dev.azure.com/{0}/_apis/identities?{1}&api-version={2}' -f $OrganizationName, $query, $ApiVersion
         Method = 'Get'
     }
 

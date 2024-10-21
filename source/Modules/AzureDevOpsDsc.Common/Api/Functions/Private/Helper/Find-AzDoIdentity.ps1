@@ -44,7 +44,7 @@ Function Find-AzDoIdentity {
             # If the Identity 'Project\GroupName' does not contain square brackets, add them around the Project.
             if ($Identity -notmatch '\[.*\]') {
                 $split = $Identity -split ('\\|\/')
-                $Identity = "[{0}]\{1}" -f $split[0], $split[1]
+                $Identity = '[{0}]\{1}' -f $split[0], $split[1]
             }
 
             # Perform a lookup using the existing username

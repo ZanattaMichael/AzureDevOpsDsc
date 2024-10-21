@@ -79,7 +79,7 @@ function Update-DevOpsProject
 
     # Construct the Paramters for the Invoke-AzDevOpsApiRestMethod function
     $params = @{
-        Uri = "https://dev.azure.com/{0}/_apis/projects/{1}?api-version={2}" -f $Organization, $ProjectId, $ApiVersion
+        Uri = 'https://dev.azure.com/{0}/_apis/projects/{1}?api-version={2}' -f $Organization, $ProjectId, $ApiVersion
         Body = $body | ConvertTo-Json
         Method = 'PATCH'
     }

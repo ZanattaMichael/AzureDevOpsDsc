@@ -41,7 +41,8 @@ A list of Access Control Lists (ACLs) created from the provided permissions.
 Author: Your Name
 Date: Today's Date
 #>
-Function ConvertTo-ACL {
+Function ConvertTo-ACL
+{
     [CmdletBinding()]
     param (
         # Mandatory parameter: an array of hash tables containing permissions.

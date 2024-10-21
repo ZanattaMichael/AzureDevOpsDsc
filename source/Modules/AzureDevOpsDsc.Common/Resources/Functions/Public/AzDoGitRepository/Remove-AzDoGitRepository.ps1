@@ -64,7 +64,7 @@ Function Remove-AzDoGitRepository
 
     # Define parameters for creating a new DevOps group
     $params = @{
-        ApiUri = "https://dev.azure.com/{0}/" -f $Global:DSCAZDO_OrganizationName
+        ApiUri = 'https://dev.azure.com/{0}/' -f $Global:DSCAZDO_OrganizationName
         Project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
         Repository  = Get-CacheItem -Key "$ProjectName\$RepositoryName" -Type 'LiveRepositories'
     }

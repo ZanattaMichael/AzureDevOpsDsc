@@ -27,7 +27,8 @@ This example converts the security TokenName 'Contoso/Org/Project' to an ACL tok
 This function is part of the AzureDevOpsDsc.Common module and is used internally by other functions in the module.
 #>
 
-Function New-ACLToken {
+Function New-ACLToken
+{
     [CmdletBinding()]
     param
     (
@@ -45,11 +46,11 @@ Function New-ACLToken {
     Write-Verbose "[New-ACLToken] Security Namespace: $SecurityNamespace"
     Write-Verbose "[New-ACLToken] Token Name: $TokenName"
 
-
     $result = @{}
 
     # Create a new ACL Object
-    switch ($SecurityNamespace) {
+    switch ($SecurityNamespace)
+    {
 
         # Git Repositories
         'Git Repositories' {

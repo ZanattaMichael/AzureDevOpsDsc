@@ -55,7 +55,7 @@ Function Get-AzManagedIdentityToken
         }
 
         Write-Verbose "[Get-AzManagedIdentityToken] The machine is an Azure Arc machine. The Uri needs to be updated to $($env:IDENTITY_ENDPOINT):"
-        $ManagedIdentityParams.Uri = "{0}?api-version=2020-06-01&resource=499b84ac-1321-427f-aa17-267ca6975798" -f $env:IDENTITY_ENDPOINT
+        $ManagedIdentityParams.Uri = '{0}?api-version=2020-06-01&resource=499b84ac-1321-427f-aa17-267ca6975798' -f $env:IDENTITY_ENDPOINT
         $ManagedIdentityParams.AzureArcAuthentication = $true
 
     } else {
@@ -76,7 +76,7 @@ Function Get-AzManagedIdentityToken
         $wwwAuthHeader = $_.Exception.Response.Headers.WwwAuthenticate
         if ($wwwAuthHeader -notmatch "Basic realm=.+")
         {
-            Throw "[Get-AzManagedIdentityToken] {0}" -f $_
+            Throw '[Get-AzManagedIdentityToken] {0}' -f $_
         }
 
         Write-Verbose "[Get-AzManagedIdentityToken] Managed Identity Token Retrival Failed. Retrying with secret file."

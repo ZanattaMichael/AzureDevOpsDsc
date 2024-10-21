@@ -16,7 +16,7 @@ Function Add-Header {
             # Personal Access Token
 
             # Add the Personal Access Token to the header
-            $headerValue = "Authorization: Basic {0}" -f $Global:DSCAZDO_AuthenticationToken.Token
+            $headerValue = 'Authorization: Basic {0}' -f $Global:DSCAZDO_AuthenticationToken.Token
             break
         }
         {$_ -eq 'ManagedIdentity'} {

@@ -23,14 +23,14 @@ Function Test-AzToken
     )
 
     # Define the Azure DevOps REST API endpoint to get the list of projects
-    $AZDOProjectUrl = "https://dev.azure.com/{0}/_apis/projects" -f $GLOBAL:DSCAZDO_OrganizationName
-    $FormattedUrl = "{0}?api-version=7.2-preview.4" -f $AZDOProjectUrl
+    $AZDOProjectUrl = 'https://dev.azure.com/{0}/_apis/projects' -f $GLOBAL:DSCAZDO_OrganizationName
+    $FormattedUrl = '{0}?api-version=7.2-preview.4' -f $AZDOProjectUrl
 
     $params = @{
         Uri = $FormattedUrl
         Method = 'Get'
         Headers = @{
-            Authorization ="Bearer {0}" -f $Token.Get()
+            Authorization = 'Bearer {0}' -f $Token.Get()
         }
         NoAuthentication = $true
     }

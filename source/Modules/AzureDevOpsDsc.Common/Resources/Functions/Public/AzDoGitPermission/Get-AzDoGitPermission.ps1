@@ -97,7 +97,7 @@ Function Get-AzDoGitPermission
 
     #
     # Perform a Lookup within the Cache for the Repository
-    $repository = Get-CacheItem -Key $("{0}\{1}" -f $ProjectName, $RepositoryName) -Type 'LiveRepositories'
+    $repository = Get-CacheItem -Key $('{0}\{1}' -f $ProjectName, $RepositoryName) -Type 'LiveRepositories'
 
     # Test if the Repository was found
     if (-not $repository) {
@@ -157,7 +157,7 @@ Function Get-AzDoGitPermission
         SecurityNamespace   = $SecurityNamespace
         isInherited         = $isInherited
         OrganizationName    = $OrganizationName
-        TokenName           = "[{0}]\{1}" -f $ProjectName, $RepositoryName
+        TokenName           = '[{0}]\{1}' -f $ProjectName, $RepositoryName
     }
 
     # Convert the Permissions to an ACL Token

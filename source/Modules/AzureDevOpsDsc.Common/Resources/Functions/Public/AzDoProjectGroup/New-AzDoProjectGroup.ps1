@@ -76,7 +76,7 @@ Function New-AzDoProjectGroup
     $params = @{
         GroupName = $GroupName
         GroupDescription = $GroupDescription
-        ApiUri = "https://vssps.dev.azure.com/{0}" -f $Global:DSCAZDO_OrganizationName
+        ApiUri = 'https://vssps.dev.azure.com/{0}' -f $Global:DSCAZDO_OrganizationName
         ProjectScopeDescriptor = (Get-CacheItem -Key $ProjectName -Type 'LiveProjects').ProjectDescriptor
     }
 

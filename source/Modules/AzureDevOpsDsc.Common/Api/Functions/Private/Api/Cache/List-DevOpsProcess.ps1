@@ -42,7 +42,7 @@ Function List-DevOpsProcess
     )
 
     $params = @{
-        Uri = "https://dev.azure.com/{0}/_apis/process/processes?api-version={1}" -f $Organization, $ApiVersion
+        Uri = 'https://dev.azure.com/{0}/_apis/process/processes?api-version={1}' -f $Organization, $ApiVersion
         Method = 'Get'
     }
 

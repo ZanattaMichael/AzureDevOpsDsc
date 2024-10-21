@@ -36,7 +36,8 @@ Function ConvertTo-FormattedToken {
     $string = ""
 
     # Determine the type of the token and format accordingly
-    switch ($Token) {
+    switch ($Token)
+    {
         # If the token type is 'GitOrganization'
         {$_.type -eq 'GitOrganization'} {
             $string = 'repoV2'

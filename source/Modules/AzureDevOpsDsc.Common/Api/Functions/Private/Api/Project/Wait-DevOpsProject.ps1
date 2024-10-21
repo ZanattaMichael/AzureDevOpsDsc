@@ -38,7 +38,7 @@ Function Wait-DevOpsProject
     )
 
     $params = @{
-        Uri    = "{0}" -f $ProjectURL
+        Uri    = '{0}' -f $ProjectURL
         Method = "GET"
     }
 
@@ -53,7 +53,8 @@ Function Wait-DevOpsProject
         $project = $response
 
         # Check the status of the project
-        switch ($response.status) {
+        switch ($response.status)
+        {
             'creating' {
                 Write-Verbose "[Wait-DevOpsProject] Project is still being created..."
                 Start-Sleep -Seconds 5

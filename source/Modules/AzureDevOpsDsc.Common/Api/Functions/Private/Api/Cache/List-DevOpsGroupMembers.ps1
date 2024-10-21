@@ -39,7 +39,7 @@ function List-DevOpsGroupMembers
     )
 
     $params = @{
-        Uri = "https://vssps.dev.azure.com/{0}/_apis/graph/Memberships/{1}?direction=down" -f $Organization, $GroupDescriptor
+        Uri = 'https://vssps.dev.azure.com/{0}/_apis/graph/Memberships/{1}?direction=down' -f $Organization, $GroupDescriptor
         Method = 'Get'
     }
 

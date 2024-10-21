@@ -1,4 +1,5 @@
-Function Parse-ACLToken {
+Function Parse-ACLToken
+{
     param(
         [Parameter(Mandatory = $true)]
         [String]$Token,

@@ -51,7 +51,7 @@ Function Remove-AzDoPermission
             Construct the Uri using string formatting with the -f operator.
             It includes the API endpoint, group identity, member identity, and the API version.
         #>
-        Uri = "https://dev.azure.com/{0}/_apis/accesscontrollists/{1}?tokens={2}&recurse=False&api-version={3}" -f  $OrganizationName,
+        Uri = 'https://dev.azure.com/{0}/_apis/accesscontrollists/{1}?tokens={2}&recurse=False&api-version={3}' -f  $OrganizationName,
                                                                                                                     $SecurityNamespaceID,
                                                                                                                     $TokenName,
                                                                                                                     $ApiVersion

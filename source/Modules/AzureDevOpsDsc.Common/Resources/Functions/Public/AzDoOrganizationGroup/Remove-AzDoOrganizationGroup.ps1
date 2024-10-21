@@ -64,7 +64,7 @@ Function Remove-AzDoOrganizationGroup
 
     $params = @{
         GroupDescriptor = $LookupResult.liveCache.Descriptor
-        ApiUri = "https://vssps.dev.azure.com/{0}" -f $Global:DSCAZDO_OrganizationName
+        ApiUri = 'https://vssps.dev.azure.com/{0}' -f $Global:DSCAZDO_OrganizationName
     }
 
     $cacheItem = @{

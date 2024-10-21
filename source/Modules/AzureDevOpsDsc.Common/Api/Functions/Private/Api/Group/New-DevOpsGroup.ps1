@@ -66,7 +66,7 @@ Function New-DevOpsGroup
 
     # Hashtable to hold parameters for the API request
     $params = @{
-        Uri = "{0}/_apis/graph/groups?api-version={1}" -f $ApiUri, $ApiVersion
+        Uri = '{0}/_apis/graph/groups?api-version={1}' -f $ApiUri, $ApiVersion
         Method = 'Post'
         ContentType = 'application/json'
         Body = @{
@@ -77,7 +77,7 @@ Function New-DevOpsGroup
 
     # If ProjectScopeDescriptor is provided, modify the URI to include it
     if ($ProjectScopeDescriptor) {
-        $params.Uri = "{0}/_apis/graph/groups?scopeDescriptor={1}&api-version={2}" -f $ApiUri, $ProjectScopeDescriptor, $ApiVersion
+        $params.Uri = '{0}/_apis/graph/groups?scopeDescriptor={1}&api-version={2}' -f $ApiUri, $ProjectScopeDescriptor, $ApiVersion
     }
 
     # Try to invoke the REST method to create the group and return the result
