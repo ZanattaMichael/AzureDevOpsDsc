@@ -41,6 +41,7 @@ Describe "New-AzDoProject" {
         }
 
         Mock -CommandName Test-AzDevOpsProjectName -MockWith { return $true }
+        Mock -CommandName Refresh-AzDoCache
 
     }
 
@@ -55,8 +56,8 @@ Describe "New-AzDoProject" {
             # Mock Wait-DevOpsProject to simulate waiting for project creation
             Mock -CommandName Wait-DevOpsProject
 
-            # Mock AzDoAPI_0_ProjectCache to simulate cache refresh
-            Mock -CommandName AzDoAPI_0_ProjectCache
+            # Mock Refresh-AzDoCache to simulate cache refresh
+            Mock -CommandName Refresh-AzDoCache
 
         }
 
@@ -82,8 +83,8 @@ Describe "New-AzDoProject" {
                 $OrganizationName -eq 'TestOrganization'
             }
 
-            # Validate that AzDoAPI_0_ProjectCache was called with correct parameters
-            Assert-MockCalled -CommandName AzDoAPI_0_ProjectCache -Exactly 1 -ParameterFilter {
+            # Validate that Refresh-AzDoCache was called with correct parameters
+            Assert-MockCalled -CommandName Refresh-AzDoCache -Exactly 1 -ParameterFilter {
                 $OrganizationName -eq 'TestOrganization'
             }
         }
@@ -111,8 +112,8 @@ Describe "New-AzDoProject" {
             # Mock Wait-DevOpsProject to simulate waiting for project creation
             Mock -CommandName Wait-DevOpsProject
 
-            # Mock AzDoAPI_0_ProjectCache to simulate cache refresh
-            Mock -CommandName AzDoAPI_0_ProjectCache
+            # Mock Refresh-AzDoCache to simulate cache refresh
+            Mock -CommandName Refresh-AzDoCache
         }
 
         It "should create a new project even if it already exists when -Force is used" {
@@ -134,8 +135,8 @@ Describe "New-AzDoProject" {
                 $OrganizationName -eq 'TestOrg'
             }
 
-            # Validate that AzDoAPI_0_ProjectCache was called with correct parameters
-            Assert-MockCalled -CommandName AzDoAPI_0_ProjectCache -Exactly 1 -ParameterFilter {
+            # Validate that Refresh-AzDoCache was called with correct parameters
+            Assert-MockCalled -CommandName Refresh-AzDoCache -Exactly 1 -ParameterFilter {
                 $OrganizationName -eq 'TestOrg'
             }
         }
