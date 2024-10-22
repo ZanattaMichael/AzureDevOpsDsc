@@ -50,26 +50,15 @@ Function Get-AzManagedIdentityToken
     if ($env:IDENTITY_ENDPOINT)
     {
 
-        # Validate what type of machine it is.
-        if ($null -eq $IsCoreCLR)
-        {
-            # If the $IsCoreCLR variable is not set, the script is running on Windows PowerShell.
-            Write-Verbose "[Get-AzManagedIdentityToken] The machine is a Windows machine Running Windows PowerShell."
-            $IsWindows = $true
-        }
+        $OSInfo = Get-OperatingSystemInfo
 
         # Test if console is being run as Administrator
-        if ($IsWindows)
+        if ($OSInfo.Windows)
         {
-
-            $currentIdentity = [System.Security.Principal.WindowsIdentity]::GetCurrent()
-            $principal = New-Object System.Security.Principal.WindowsPrincipal($currentIdentity)
-
             # Check if the current user is in the Administrator role
-            if (-not($principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator))) {
+            if (-not(Test-isWindowsAdmin)) {
                 throw "[Get-AzManagedIdentityToken] Error: Authentication to Azure Arc requires Administrator privileges."
             }
-
         }
 
         Write-Verbose "[Get-AzManagedIdentityToken] The machine is an Azure Arc machine. The Uri needs to be updated to $($env:IDENTITY_ENDPOINT):"
