@@ -49,7 +49,7 @@ Describe "Set-AzDoProject" {
         }
 
         Mock -CommandName Wait-DevOpsProject
-        Mock -CommandName AzDoAPI_0_ProjectCache
+        Mock -CommandName Refresh-AzDoCache
 
     }
 
@@ -86,7 +86,7 @@ Describe "Set-AzDoProject" {
                 ($ProjectURL -eq "http://devopsprojecturl") -and
                 ($OrganizationName -eq "TestOrg")
             }
-            Assert-MockCalled -CommandName AzDoAPI_0_ProjectCache -Exactly -Times 1 -ParameterFilter {
+            Assert-MockCalled -CommandName Refresh-AzDoCache -Exactly -Times 1 -ParameterFilter {
                 $OrganizationName -eq "TestOrg"
             }
         }

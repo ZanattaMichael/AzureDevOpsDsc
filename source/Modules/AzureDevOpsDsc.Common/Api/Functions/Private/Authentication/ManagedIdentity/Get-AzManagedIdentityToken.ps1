@@ -59,15 +59,17 @@ Function Get-AzManagedIdentityToken
         }
 
         # Test if console is being run as Administrator
-        if (
-            ($IsWindows) -and
-            (-not (
-                [Security.Principal.WindowsPrincipal]
-                [Security.Principal.WindowsIdentity]::GetCurrent()
-            ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
-        )
+        if ($IsWindows)
         {
-            throw "[Get-AzManagedIdentityToken] Error: Authentication to Azure Arc requires Administrator privileges."
+
+            $currentIdentity = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+            $principal = New-Object System.Security.Principal.WindowsPrincipal($currentIdentity)
+
+            # Check if the current user is in the Administrator role
+            if (-not($principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator))) {
+                throw "[Get-AzManagedIdentityToken] Error: Authentication to Azure Arc requires Administrator privileges."
+            }
+
         }
 
         Write-Verbose "[Get-AzManagedIdentityToken] The machine is an Azure Arc machine. The Uri needs to be updated to $($env:IDENTITY_ENDPOINT):"

@@ -14,7 +14,7 @@ Describe "ConvertTo-ACL" -Tags "Unit", "ACL", "Helper" {
         ForEach ($file in $files) {
             . $file.FullName
         }
-
+        Mock -CommandName Write-Host
         Mock -CommandName Write-Warning
         Mock -CommandName New-ACLToken -MockWith { return @{ Token = "mockToken" } }
         Mock -CommandName ConvertTo-ACEList -MockWith {

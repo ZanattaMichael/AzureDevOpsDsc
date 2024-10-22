@@ -29,6 +29,7 @@ $config = New-PesterConfiguration
 
 $config.Run.Path                        = ".\tests\Unit\Modules\AzureDevOpsDsc.Common"
 $config.Output.CIFormat                 = "GitHubActions"
+$config.Output.Verbosity                = "Detailed"
 $config.CodeCoverage.Enabled            = $true
 $config.CodeCoverage.Path               = @(
                                             '.\source\Modules\AzureDevOpsDsc.Common\Api',

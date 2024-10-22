@@ -39,6 +39,7 @@ Describe "Refresh-AzDoCache Tests" -Tags "Unit", "Cache" {
         Mock -CommandName AzDoAPI_CacheType1
         Mock -CommandName AzDoAPI_CacheType2
         Mock -CommandName Remove-Variable
+        Mock -CommandName Import-CacheObject
 
     }
 
