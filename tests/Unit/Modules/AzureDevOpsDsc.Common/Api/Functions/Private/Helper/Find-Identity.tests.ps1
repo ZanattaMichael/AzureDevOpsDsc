@@ -81,6 +81,50 @@ Describe 'Find-Identity Function Tests' {
 
     }
 
+    Context "when searching the cache with a known name" {
+
+        BeforeAll {
+
+            $params = @(
+                @{
+                    SearchType = 'descriptor'
+                }
+                @{
+                    SearchType = 'descriptorId'
+                }
+                @{
+                    SearchType = 'originId'
+                }
+                @{
+                    SearchType = 'principalName'
+                }
+                @{
+                    SearchType = 'displayName'
+                }
+            )
+
+        }
+
+        it 'Should write a non-terminating error when the SearchType is incorrect' {
+            Mock Write-Error -Verifiable
+            { Find-Identity -Name 'groupDescriptor' -OrganizationName 'TestOrg' -SearchType 'invalidType' } | Should -Throw
+            $result | Should -BeNullOrEmpty
+        }
+
+        it 'Should return a value for the search-type <SearchType>' -TestCases $params {
+            param (
+                [string]$SearchType
+            )
+
+            Wait-Debugger
+
+            $result = Find-Identity -Name 'groupDescriptor' -OrganizationName 'TestOrg' -SearchType $SearchType
+            $result | Should -Not -BeNullOrEmpty
+
+        }
+
+    }
+
     Context "when searching the API" {
 
         It 'Should return null for non-existent descriptor' {
