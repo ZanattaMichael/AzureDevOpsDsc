@@ -1,19 +1,9 @@
-Function Split-RecurivePath
-{
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]$Path,
-        [Parameter(Mandatory = $false)]
-        [int]$Times = 1
-    )
-
-    1 .. $Times | ForEach-Object {
-        $Path = Split-Path -Path $Path -Parent
-    }
-
-    $Path
-}
+[CmdletBinding()]
+param (
+    [Parameter()]
+    [switch]
+    $LoadModulesOnly
+)
 
 # Unload the $Global:RepositoryRoot and $Global:TestPaths variables
 Remove-Variable -Name RepositoryRoot -Scope Global -ErrorAction SilentlyContinue
@@ -24,6 +14,11 @@ $Global:RepositoryRoot = $PSScriptRoot
 Import-Module -Name (Join-Path -Path $Global:RepositoryRoot -ChildPath '/tests/Unit/Modules/TestHelpers/CommonTestCases.psm1')
 Import-Module -Name (Join-Path -Path $Global:RepositoryRoot -ChildPath '/tests/Unit/Modules/TestHelpers/CommonTestHelper.psm1')
 Import-Module -Name (Join-Path -Path $Global:RepositoryRoot -ChildPath '/tests/Unit/Modules/TestHelpers/CommonTestFunctions.psm1')
+
+if ($LoadModulesOnly.IsPresent)
+{
+    return
+}
 
 $config = New-PesterConfiguration
 
