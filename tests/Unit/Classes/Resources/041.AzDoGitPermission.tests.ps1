@@ -12,64 +12,36 @@ if ($Global:ClassesLoaded -eq $null)
 }
 
 Describe 'AzDoGitPermission' {
+
     BeforeAll {
-        # Mock functions that interact with external resources
-        function Get-AzDoGitPermission
-        {
-            param (
-                [string]$ProjectName,
-                [string]$RepositoryName
-            )
-            # Return a mock object representing the current state
+
+        $ENV:AZDODSC_CACHE_DIRECTORY = 'mocked_cache_directory'
+
+        Mock -CommandName Import-Module
+        Mock -CommandName Test-Path -MockWith { $true }
+        Mock -CommandName Import-Clixml -MockWith {
             return @{
-                ProjectName = $ProjectName
-                RepositoryName = $RepositoryName
-                isInherited = $true
-                Permissions = @('Read', 'Contribute')
-                Ensure = 'Present'
+                OrganizationName = 'mock-org'
+                Token = @{
+                    tokenType = 'ManagedIdentity'
+                    access_token = 'mock_access_token'
+                }
+
             }
         }
-
-        function New-AzDoGitPermission
-        {
-            param (
-                [string]$ProjectName,
-                [string]$RepositoryName,
-                [boolean]$isInherited,
-                [hashtable[]]$Permissions,
-                [string]$Pat,
-                [string]$ApiUri
-            )
-            # Mock implementation
-            Write-Output "New Git permissions set for: $ProjectName/$RepositoryName"
+        Mock -CommandName New-AzDoAuthenticationProvider
+        Mock -CommandName Get-AzDoCacheObjects -MockWith {
+            return @('mock-cache-type')
         }
+        Mock -CommandName Initialize-CacheObject
 
-        function Update-AzDoGitPermission
-        {
-            param (
-                [string]$ProjectName,
-                [string]$RepositoryName,
-                [boolean]$isInherited,
-                [hashtable[]]$Permissions,
-                [string]$Pat,
-                [string]$ApiUri
-            )
-            # Mock implementation
-            Write-Output "Git permissions updated for: $ProjectName/$RepositoryName"
-        }
-
-        function Remove-AzDoPermission
-        {
-            param (
-                [string]$ProjectName,
-                [string]$RepositoryName,
-                [string]$Pat,
-                [string]$ApiUri
-            )
-            # Mock implementation
-            Write-Output "Git permissions removed from: $ProjectName/$RepositoryName"
-        }
     }
+    AfterAll {
+
+        $ENV:AZDODSC_CACHE_DIRECTORY = $null
+
+    }
+
 
     Context 'When getting the current state of Git permissions' {
         It 'Should return the current state properties' {

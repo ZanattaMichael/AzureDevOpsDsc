@@ -85,12 +85,11 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
 
         #
         # Initialize the cache objects. Don't delete the cache objects since they are used by other resources.
-        Get-AzDoCacheObjects | ForEach-Object
-        {
+
+        Get-AzDoCacheObjects | ForEach-Object {
             Initialize-CacheObject -CacheType $_ -BypassFileCheck -Debug
             Write-Verbose "[AzDevOpsDscResourceBase] Initialized cache object of type: $_"
         }
-
 
     }
 

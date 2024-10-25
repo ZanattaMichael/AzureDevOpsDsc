@@ -12,61 +12,35 @@ if ($Global:ClassesLoaded -eq $null)
 }
 
 Describe 'AzDoGitRepository' {
+
     BeforeAll {
-        # Mock functions that interact with external resources
-        function Get-AzDoGitRepository
-        {
-            param (
-                [string]$ProjectName,
-                [string]$GitRepositoryName
-            )
-            # Return a mock object representing the current state
+        $ENV:AZDODSC_CACHE_DIRECTORY = 'mocked_cache_directory'
+
+        Mock -CommandName Import-Module
+        Mock -CommandName Test-Path -MockWith { $true }
+        Mock -CommandName Import-Clixml -MockWith {
             return @{
-                ProjectName = $ProjectName
-                GitRepositoryName = $GitRepositoryName
-                SourceRepository = 'https://github.com/MyUser/MyRepository.git'
-                Ensure = 'Present'
+                OrganizationName = 'mock-org'
+                Token = @{
+                    tokenType = 'ManagedIdentity'
+                    access_token = 'mock_access_token'
+                }
+
             }
         }
-
-        function New-AzDoGitRepository
-        {
-            param (
-                [string]$ProjectName,
-                [string]$GitRepositoryName,
-                [string]$SourceRepository,
-                [string]$Pat,
-                [string]$ApiUri
-            )
-            # Mock implementation
-            Write-Output "New Git repository created: $ProjectName/$GitRepositoryName"
+        Mock -CommandName New-AzDoAuthenticationProvider
+        Mock -CommandName Get-AzDoCacheObjects -MockWith {
+            return @('mock-cache-type')
         }
+        Mock -CommandName Initialize-CacheObject
 
-        function Update-AzDoGitRepository
-        {
-            param (
-                [string]$ProjectName,
-                [string]$GitRepositoryName,
-                [string]$SourceRepository,
-                [string]$Pat,
-                [string]$ApiUri
-            )
-            # Mock implementation
-            Write-Output "Git repository updated: $ProjectName/$GitRepositoryName"
-        }
-
-        function Remove-AzDoGitRepository
-        {
-            param (
-                [string]$ProjectName,
-                [string]$GitRepositoryName,
-                [string]$Pat,
-                [string]$ApiUri
-            )
-            # Mock implementation
-            Write-Output "Git repository removed: $ProjectName/$GitRepositoryName"
-        }
     }
+    AfterAll {
+
+        $ENV:AZDODSC_CACHE_DIRECTORY = $null
+
+    }
+
 
     Context 'When getting the current state of a Git repository' {
         It 'Should return the current state properties' {

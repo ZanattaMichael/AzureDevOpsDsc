@@ -12,56 +12,33 @@ if ($Global:ClassesLoaded -eq $null)
 }
 
 Describe 'AzDoGroupMember' {
+
     BeforeAll {
-        # Mock functions that interact with external resources
-        function Get-AzDoGroupMember
-        {
-            param (
-                [string]$GroupName,
-                [string[]]$GroupMembers
-            )
-            # Return a mock object representing the current state
+        $ENV:AZDODSC_CACHE_DIRECTORY = 'mocked_cache_directory'
+
+        Mock -CommandName Import-Module
+        Mock -CommandName Test-Path -MockWith { $true }
+        Mock -CommandName Import-Clixml -MockWith {
             return @{
-                GroupName = $GroupName
-                GroupMembers = $GroupMembers
-                Ensure = 'Present'
+                OrganizationName = 'mock-org'
+                Token = @{
+                    tokenType = 'ManagedIdentity'
+                    access_token = 'mock_access_token'
+                }
+
             }
         }
-
-        function New-AzDoGroupMember
-        {
-            param (
-                [string]$GroupName,
-                [string[]]$GroupMembers,
-                [string]$Pat,
-                [string]$ApiUri
-            )
-            # Mock implementation
-            Write-Output "New group member added to: $GroupName"
+        Mock -CommandName New-AzDoAuthenticationProvider
+        Mock -CommandName Get-AzDoCacheObjects -MockWith {
+            return @('mock-cache-type')
         }
+        Mock -CommandName Initialize-CacheObject
 
-        function Update-AzDoGroupMember
-        {
-            param (
-                [string]$GroupName,
-                [string[]]$GroupMembers,
-                [string]$Pat,
-                [string]$ApiUri
-            )
-            # Mock implementation
-            Write-Output "Group members updated in: $GroupName"
-        }
+    }
+    AfterAll {
 
-        function Remove-AzDoGroupMember
-        {
-            param (
-                [string]$GroupName,
-                [string]$Pat,
-                [string]$ApiUri
-            )
-            # Mock implementation
-            Write-Output "Group members removed from: $GroupName"
-        }
+        $ENV:AZDODSC_CACHE_DIRECTORY = $null
+
     }
 
     Context 'When getting the current state of group members' {

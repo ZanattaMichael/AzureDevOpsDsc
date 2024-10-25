@@ -12,61 +12,33 @@ if ($Global:ClassesLoaded -eq $null)
 }
 
 Describe 'AzDoProjectGroup' {
+
     BeforeAll {
-        # Mock functions that interact with external resources
-        function Get-AzDoProjectGroup
-        {
-            param (
-                [string]$GroupName,
-                [string]$GroupDescription,
-                [string]$ProjectName
-            )
-            # Return a mock object representing the current state
+        $ENV:AZDODSC_CACHE_DIRECTORY = 'mocked_cache_directory'
+
+        Mock -CommandName Import-Module
+        Mock -CommandName Test-Path -MockWith { $true }
+        Mock -CommandName Import-Clixml -MockWith {
             return @{
-                GroupName = $GroupName
-                GroupDescription = $GroupDescription
-                ProjectName = $ProjectName
-                Ensure = 'Present'
+                OrganizationName = 'mock-org'
+                Token = @{
+                    tokenType = 'ManagedIdentity'
+                    access_token = 'mock_access_token'
+                }
+
             }
         }
-
-        function New-AzDoProjectGroup
-        {
-            param (
-                [string]$ProjectName,
-                [string]$GroupName,
-                [string]$GroupDescription,
-                [string]$Pat,
-                [string]$ApiUri
-            )
-            # Mock implementation
-            Write-Output "New project group created: $GroupName in project $ProjectName"
+        Mock -CommandName New-AzDoAuthenticationProvider
+        Mock -CommandName Get-AzDoCacheObjects -MockWith {
+            return @('mock-cache-type')
         }
+        Mock -CommandName Initialize-CacheObject
 
-        function Update-AzDoProjectGroup
-        {
-            param (
-                [string]$ProjectName,
-                [string]$GroupName,
-                [string]$GroupDescription,
-                [string]$Pat,
-                [string]$ApiUri
-            )
-            # Mock implementation
-            Write-Output "Project group updated: $GroupName in project $ProjectName"
-        }
+    }
+    AfterAll {
 
-        function Remove-AzDoProjectGroup
-        {
-            param (
-                [string]$ProjectName,
-                [string]$GroupName,
-                [string]$Pat,
-                [string]$ApiUri
-            )
-            # Mock implementation
-            Write-Output "Project group removed: $GroupName in project $ProjectName"
-        }
+        $ENV:AZDODSC_CACHE_DIRECTORY = $null
+
     }
 
     Context 'When getting the current state of a project group' {

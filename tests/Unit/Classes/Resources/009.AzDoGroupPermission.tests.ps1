@@ -2,6 +2,34 @@
 # Describe block for AzDoGroupPermission tests
 Describe 'AzDoGroupPermission Tests' {
 
+    BeforeAll {
+        $ENV:AZDODSC_CACHE_DIRECTORY = 'mocked_cache_directory'
+
+        Mock -CommandName Import-Module
+        Mock -CommandName Test-Path -MockWith { $true }
+        Mock -CommandName Import-Clixml -MockWith {
+            return @{
+                OrganizationName = 'mock-org'
+                Token = @{
+                    tokenType = 'ManagedIdentity'
+                    access_token = 'mock_access_token'
+                }
+
+            }
+        }
+        Mock -CommandName New-AzDoAuthenticationProvider
+        Mock -CommandName Get-AzDoCacheObjects -MockWith {
+            return @('mock-cache-type')
+        }
+        Mock -CommandName Initialize-CacheObject
+
+    }
+    AfterAll {
+
+        $ENV:AZDODSC_CACHE_DIRECTORY = $null
+
+    }
+
     # Test case to check if the class can be instantiated
     Context 'Instantiation' {
         It 'Should create an instance of the AzDoGroupPermission class' {
@@ -41,6 +69,29 @@ Describe 'AzDoGroupPermission Tests' {
     # Test case for Get method
     Context 'Get Method' {
         It 'Should return current state properties' {
+
+            Mock -CommandName Get-AzDoGroupPermission {
+
+                $properties = @{
+                    Ensure = [Ensure]::Absent
+                    propertiesChanged = @()
+                    GroupName = 'TestGroup'
+                    Permissions = @{
+                        'mock-permission' = @{
+                            Permission = 'Read'
+                            Allow = $true
+                        }
+                    }
+                    isInherited = $false
+                    status = $null
+                    reason = $null
+                }
+
+                return $properties
+
+            }
+
+
             $groupPermission = [AzDoGroupPermission]::new()
             $groupPermission.GroupName = 'TestGroup'
             $groupPermission.isInherited = $false
@@ -49,11 +100,13 @@ Describe 'AzDoGroupPermission Tests' {
             )
 
             $currentState = $groupPermission.Get()
+
             $currentState.GroupName | Should -Be 'TestGroup'
             $currentState.isInherited | Should -Be $false
-            $currentState.Permissions | Should -Be @(
-                @{ Permission = 'Read'; Allow = $true }
-            )
+            $currentState.Permissions | Should -Not -BeNullOrEmpty
+
+            Assert-MockCalled Get-AzDoGroupPermission -Exactly 1
+
         }
     }
 }

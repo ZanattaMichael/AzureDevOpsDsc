@@ -12,6 +12,7 @@ Remove-Variable -Name RepositoryRoot -Scope Global -ErrorAction SilentlyContinue
 $Global:RepositoryRoot = $PSScriptRoot
 $ClassesDirectory = "$Global:RepositoryRoot\source\Classes"
 $EnumsDirectory = "$Global:RepositoryRoot\source\Enum"
+$PublicDirectory = "$Global:RepositoryRoot\source\Modules\AzureDevOpsDsc.Common\Resources\Functions\Public"
 $Global:ClassesLoaded = $true
 
 #
@@ -45,6 +46,12 @@ Get-ChildItem -LiteralPath "$($Global:RepositoryRoot)\source\Modules\AzureDevOps
     . $_.FullName
 }
 
+# Load all the Public Functions from the AzureDevOpsDsc.Common Module into Memory
+Get-ChildItem -LiteralPath $PublicDirectory -File -Recurse -Filter *.ps1 | ForEach-Object {
+    Write-Verbose "Dot Sourcing $($_.FullName)"
+    . $_.FullName
+}
+
 if ($LoadModulesOnly.IsPresent)
 {
     return
@@ -66,3 +73,9 @@ $config.CodeCoverage.OutputEncoding     = 'utf8'
 # Get the path to the function being tested
 
 Invoke-Pester -Configuration $config
+
+
+
+
+
+

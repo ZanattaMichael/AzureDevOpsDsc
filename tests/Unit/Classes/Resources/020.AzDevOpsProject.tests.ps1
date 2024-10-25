@@ -13,11 +13,32 @@ if ($Global:ClassesLoaded -eq $null)
 
 Describe 'xAzDevOpsProject' {
     # Mocking AzDevOpsDscResourceBase class since it's not provided
-    Class AzDevOpsDscResourceBase {
-        [String]$Pat
-        [String]$ApiUri
-        [String]$Ensure
-        [PSObject] GetDscCurrentStateProperties() { return $null }
+    BeforeAll {
+        $ENV:AZDODSC_CACHE_DIRECTORY = 'mocked_cache_directory'
+
+        Mock -CommandName Import-Module
+        Mock -CommandName Test-Path -MockWith { $true }
+        Mock -CommandName Import-Clixml -MockWith {
+            return @{
+                OrganizationName = 'mock-org'
+                Token = @{
+                    tokenType = 'ManagedIdentity'
+                    access_token = 'mock_access_token'
+                }
+
+            }
+        }
+        Mock -CommandName New-AzDoAuthenticationProvider
+        Mock -CommandName Get-AzDoCacheObjects -MockWith {
+            return @('mock-cache-type')
+        }
+        Mock -CommandName Initialize-CacheObject
+
+    }
+    AfterAll {
+
+        $ENV:AZDODSC_CACHE_DIRECTORY = $null
+
     }
 
     Context 'Constructor' {
