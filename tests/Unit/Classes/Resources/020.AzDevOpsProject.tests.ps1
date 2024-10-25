@@ -2,16 +2,15 @@
 # Requires -Module DscResource.Common
 
 # Test if the class is defined
-if ($Global:ClassesLoaded -eq $null)
+if ($null -eq $Global:ClassesLoaded)
 {
     # Attempt to find the root of the repository
     $RepositoryRoot = (Get-Item -Path $PSScriptRoot).Parent.Parent.Parent.Parent.FullName
-    # Load the classes
-    $preInitialize = Get-ChildItem -Path "$RepositoryRoot" -Recurse -Filter '*.ps1' | Where-Object { $_.Name -eq 'Classes.BeforeAll.ps1' }
-    . $preInitialize.FullName -RepositoryPath $RepositoryRoot
+    # Load the Dependencies
+    . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
 }
 
-Describe 'xAzDevOpsProject' {
+Describe 'AzDevOpsProject' {
     # Mocking AzDevOpsDscResourceBase class since it's not provided
     BeforeAll {
         $ENV:AZDODSC_CACHE_DIRECTORY = 'mocked_cache_directory'
@@ -43,7 +42,7 @@ Describe 'xAzDevOpsProject' {
 
     Context 'Constructor' {
         It 'should initialize properties correctly when given valid parameters' {
-            $project = [xAzDevOpsProject]::new()
+            $project = [AzDevOpsProject]::new()
             $project.ProjectId = "12345"
             $project.ProjectName = "TestProject"
             $project.ProjectDescription = "This is a test project"
@@ -58,7 +57,7 @@ Describe 'xAzDevOpsProject' {
 
     Context 'GetDscResourcePropertyNamesWithNoSetSupport Method' {
         It 'should return SourceControlType as property with no set support' {
-            $project = [xAzDevOpsProject]::new()
+            $project = [AzDevOpsProject]::new()
             $result = $project.GetDscResourcePropertyNamesWithNoSetSupport()
 
             $result | Should -Contain "SourceControlType"
@@ -68,7 +67,7 @@ Describe 'xAzDevOpsProject' {
     Context 'GetDscCurrentStateProperties Method' {
 
         It 'should return correct properties when CurrentResourceObject is not null' {
-            $project = [xAzDevOpsProject]::new()
+            $project = [AzDevOpsProject]::new()
             $currentResourceObject = [PSCustomObject]@{
                 id = "12345"
                 name = "TestProject"

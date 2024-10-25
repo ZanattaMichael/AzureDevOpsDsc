@@ -2,7 +2,7 @@
 # Requires -Module DscResource.Common
 
 # Test if the class is defined
-if ($Global:ClassesLoaded -eq $null)
+if ($null -eq $Global:ClassesLoaded)
 {
     # Attempt to find the root of the repository
     $RepositoryRoot = (Get-Item -Path $PSScriptRoot).Parent.Parent.Parent.Parent.FullName
