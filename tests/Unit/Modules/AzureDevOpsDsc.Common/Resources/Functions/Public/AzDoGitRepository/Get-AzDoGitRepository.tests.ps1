@@ -16,7 +16,7 @@ Describe "Get-AzDoGitRepository Tests" {
         }
 
         # Load the functions to test
-        $files = Get-FunctionItem (Find-Functions -TestFilePath $currentFile)
+        $files = Get-FunctionItem (Find-MockedFunctions -TestFilePath $currentFile)
 
         ForEach ($file in $files) {
             . $file.FullName

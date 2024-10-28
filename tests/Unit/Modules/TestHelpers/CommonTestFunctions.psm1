@@ -44,7 +44,7 @@ Function Get-FunctionItem {
 
 }
 
-Function Find-Functions {
+Function Find-MockedFunctions {
     param(
         [String]$TestFilePath
     )
@@ -106,4 +106,4 @@ Function Import-Enums {
     return ($Global:TestPaths | Where-Object { $_.Directory.Name -eq 'Enum' })
 }
 
-Export-ModuleMember -Function Split-RecurivePath, Get-FunctionItem, Find-Functions, Get-ClassFilePath, Import-Enums
+Export-ModuleMember -Function Split-RecurivePath, Get-FunctionItem, Find-MockedFunctions, Get-ClassFilePath, Import-Enums

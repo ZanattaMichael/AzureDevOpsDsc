@@ -17,6 +17,7 @@ Describe "AzDoProject Class" {
         $ENV:AZDODSC_CACHE_DIRECTORY = 'mocked_cache_directory'
 
         $TestProjectNameFunctionpath = Get-FunctionItem 'Test-AzDevOpsProjectName.ps1'
+        . $TestProjectNameFunctionpath
 
         Mock -CommandName Import-Module
         Mock -CommandName Test-Path -MockWith { $true }
