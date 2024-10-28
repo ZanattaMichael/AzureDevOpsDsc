@@ -9,7 +9,7 @@ if ($null -eq $Global:ClassesLoaded)
     . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
 }
 
-Describe "GetResourceFunctionName() Tests" -Tag 'Unit', 'AzDevOpsApiDscResourceBase' {
+Describe "[AzDevOpsApiDscResourceBase]::GetResourceFunctionName() Tests" -Tag 'Unit', 'AzDevOpsApiDscResourceBase' {
 
     $testCasesValidRequiredActionWithFunctions = @(
         @{

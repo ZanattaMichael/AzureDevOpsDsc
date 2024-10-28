@@ -7,7 +7,7 @@ if ($null -eq $Global:ClassesLoaded)
     . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
 }
 
-Describe "GetResourceKeyPropertyName() tests" -Tag 'Unit', 'AzDevOpsApiDscResourceBase'  {
+Describe "[AzDevOpsApiDscResourceBase]::GetResourceKeyPropertyName() tests" -Tag 'Unit', 'AzDevOpsApiDscResourceBase'  {
 
 
     Context 'When called from instance of the class with the correct/expected, DSC Resource prefix' {

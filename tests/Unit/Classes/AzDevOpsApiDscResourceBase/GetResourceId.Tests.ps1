@@ -9,7 +9,7 @@ if ($null -eq $Global:ClassesLoaded)
     . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
 }
 
-Describe "GetResourceId() Tests" -Tag 'Unit', 'AzDevOpsApiDscResourceBase' {
+Describe "[AzDevOpsApiDscResourceBase]::GetResourceId() Tests" -Tag 'Unit', 'AzDevOpsApiDscResourceBase' {
 
     class AzDevOpsApiDscResourceBaseExample : AzDevOpsApiDscResourceBase # Note: Ignore 'TypeNotFound' warning (it is available at runtime)
     {
