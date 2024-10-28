@@ -12,6 +12,11 @@ if ($null -eq $Global:ClassesLoaded)
 }
 
 Describe 'APIRateLimit' {
+
+    BeforeAll {
+        Mock Write-Warning
+    }
+
     Context 'Constructor with HashTable parameter' {
         It 'should initialize properties correctly when given a valid hashtable' {
             $validHashTable = @{
