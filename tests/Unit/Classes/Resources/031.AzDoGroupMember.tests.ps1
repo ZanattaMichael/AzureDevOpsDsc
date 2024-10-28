@@ -41,6 +41,18 @@ Describe 'AzDoGroupMember' {
     }
 
     Context 'When getting the current state of group members' {
+
+        BeforeAll {
+            Mock -CommandName Get-AzDoGroupMember -MockWith {
+                return @{
+                    Ensure = [Ensure]::Absent
+                    propertiesChanged = @()
+                    GroupName = "MyGroup"
+                    GroupMembers = @("User1", "User2")
+                }
+            }
+        }
+
         It 'Should return the current state properties' {
             # Arrange
             $groupMember = [AzDoGroupMember]::new()

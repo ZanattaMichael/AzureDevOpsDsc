@@ -37,6 +37,7 @@ Describe "AzDoProject Class" {
         }
         Mock -CommandName Initialize-CacheObject
         Mock -CommandName Test-AzDevOpsProjectName -MockWith { return $true }
+
     }
 
     Context "Initialization" {
@@ -95,7 +96,7 @@ Describe "AzDoProject Class" {
     Context "Get Method" {
         It "Should return an instance of AzDoProject" {
 
-            Mock -CommandName Test-AzDevOpsProjectName
+            Mock -CommandName Test-AzDevOpsProjectName -MockWith { return $true }
             Mock -CommandName Get-AzDoProject -MockWith {
                 return @{
                     Ensure             = [Ensure]::Absent
@@ -110,6 +111,7 @@ Describe "AzDoProject Class" {
             }
 
             $project = [AzDoProject]::new()
+            $project.ProjectName = 'MyProject'
             $result = $project.Get()
 
             $result | Should -BeOfType 'AzDoProject'

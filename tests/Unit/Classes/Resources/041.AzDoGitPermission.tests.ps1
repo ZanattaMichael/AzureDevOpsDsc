@@ -43,6 +43,20 @@ Describe 'AzDoGitPermission' {
 
 
     Context 'When getting the current state of Git permissions' {
+
+        BeforeAll {
+            Mock -CommandName Get-AzDoGitPermission -MockWith {
+                return @{
+                    Ensure = [Ensure]::Absent
+                    propertiesChanged = @()
+                    ProjectName = "MyProject"
+                    RepositoryName = "MyRepository"
+                    isInherited = $true
+                    Permissions = @('Read', 'Contribute')
+                }
+            }
+        }
+
         It 'Should return the current state properties' {
             # Arrange
             $gitPermission = [AzDoGitPermission]::new()
@@ -56,7 +70,7 @@ Describe 'AzDoGitPermission' {
             $currentState.ProjectName | Should -Be "MyProject"
             $currentState.RepositoryName | Should -Be "MyRepository"
             $currentState.isInherited | Should -Be $true
-            $currentState.Permissions | Should -Be @('Read', 'Contribute')
+            $currentState.LookupResult.Permissions | Should -Be @('Read', 'Contribute')
         }
     }
 }

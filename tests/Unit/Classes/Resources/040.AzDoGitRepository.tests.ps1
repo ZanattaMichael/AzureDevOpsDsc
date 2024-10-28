@@ -42,6 +42,19 @@ Describe 'AzDoGitRepository' {
 
 
     Context 'When getting the current state of a Git repository' {
+
+        BeforeAll {
+            Mock -CommandName Get-AzDoGitRepository -MockWith {
+                return @{
+                    Ensure = [Ensure]::Absent
+                    propertiesChanged = @()
+                    ProjectName = "MyProject"
+                    RepositoryName = "MyRepository"
+                    SourceRepository = 'https://github.com/MyUser/MyRepository.git'
+                }
+            }
+        }
+
         It 'Should return the current state properties' {
             # Arrange
             $gitRepository = [AzDoGitRepository]::new()
@@ -53,8 +66,12 @@ Describe 'AzDoGitRepository' {
 
             # Assert
             $currentState.ProjectName | Should -Be "MyProject"
-            $currentState.GitRepositoryName | Should -Be "MyRepository"
-            $currentState.SourceRepository | Should -Be 'https://github.com/MyUser/MyRepository.git'
+            $currentState.RepositoryName | Should -Be "MyRepository"
+            $currentState.SourceRepository | Should -BeNullOrEmpty
+            $currentState.LookupResult | Should -Not -BeNullOrEmpty
+            $currentState.LookupResult.ProjectName | Should -Be "MyProject"
+            $currentState.LookupResult.RepositoryName | Should -Be "MyRepository"
+            $currentState.LookupResult.SourceRepository | Should -Be 'https://github.com/MyUser/MyRepository.git'
         }
     }
 }

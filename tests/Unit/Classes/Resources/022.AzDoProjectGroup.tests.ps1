@@ -41,6 +41,19 @@ Describe 'AzDoProjectGroup' {
     }
 
     Context 'When getting the current state of a project group' {
+
+        BeforeAll {
+            Mock -CommandName Get-AzDoProjectGroup -MockWith {
+                return @{
+                    Ensure = [Ensure]::Absent
+                    propertiesChanged = @()
+                    ProjectName = "MyProject"
+                    GroupName = "MyGroup"
+                    GroupDescription = "This is my project group."
+                }
+            }
+        }
+
         It 'Should return the current state properties' {
             # Arrange
             $projectGroup = [AzDoProjectGroup]::new()
