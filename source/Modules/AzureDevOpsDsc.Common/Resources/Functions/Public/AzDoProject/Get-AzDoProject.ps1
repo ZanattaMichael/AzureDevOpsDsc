@@ -88,6 +88,7 @@ function Get-AzDoProject
         propertiesChanged  = @()
         status             = $null
     }
+
     Write-Verbose "[Get-AzDoProject] Initial result hashtable constructed."
 
     # Perform a lookup to see if the project exists in Azure DevOps

@@ -16,6 +16,11 @@ $PublicDirectory = "$Global:RepositoryRoot\source\Modules\AzureDevOpsDsc.Common\
 $Global:ClassesLoaded = $true
 
 #
+# Load the Helper Modules
+Import-Module -Name (Join-Path -Path $Global:RepositoryRoot -ChildPath 'tests\Unit\Modules\TestHelpers\CommonTestFunctions.psm1')
+
+
+#
 # Load all the Enums
 
 Get-ChildItem -LiteralPath $EnumsDirectory -File | ForEach-Object {
@@ -51,6 +56,7 @@ Get-ChildItem -LiteralPath $PublicDirectory -File -Recurse -Filter *.ps1 | ForEa
     Write-Verbose "Dot Sourcing $($_.FullName)"
     . $_.FullName
 }
+
 
 if ($LoadModulesOnly.IsPresent)
 {

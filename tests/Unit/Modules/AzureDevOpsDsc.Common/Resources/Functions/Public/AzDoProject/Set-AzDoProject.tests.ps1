@@ -17,7 +17,7 @@ Describe "Set-AzDoProject" {
         }
 
         # Load the functions to test
-        $files = Invoke-BeforeEachFunctions (Find-Functions -TestFilePath $currentFile)
+        $files = Get-FunctionItem (Find-Functions -TestFilePath $currentFile)
 
         ForEach ($file in $files) {
             . $file.FullName
