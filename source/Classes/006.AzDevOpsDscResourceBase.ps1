@@ -134,7 +134,11 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
         }
 
         $props.LookupResult = $this.GetDscCurrentStateResourceObject($getParameters)
-        $props.Ensure       = $props.LookupResult.Ensure
+        $props.Ensure       = $(
+            if ($null -eq $props.LookupResult.Ensure) { [Ensure]::Absent }
+            else { $props.LookupResult.Ensure }
+        )
+        $props.LookupResult.Ensure
 
         return $props
 

@@ -1,15 +1,6 @@
-# Test if the class is defined
-if ($null -eq $Global:ClassesLoaded)
-{
-    # Attempt to find the root of the repository
-    $RepositoryRoot = (Get-Item -Path $PSScriptRoot).Parent.Parent.Parent.Parent.FullName
-    # Load the Dependencies
-    . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
-}
-
 Describe "[AzDevOpsDscResourceBase]::GetDscCurrentStateObject() Tests" -Tag 'Unit', 'AzDevOpsDscResourceBase' {
 
-    Context 'When no "DscCurrentStateResourceObject" object returned'{
+    Context 'When no "DscCurrentStateResourceObject" object returned' {
 
         class AzDevOpsDscResourceBaseExample : AzDevOpsDscResourceBase # Note: Ignore 'TypeNotFound' warning (it is available at runtime)
         {
@@ -45,14 +36,13 @@ Describe "[AzDevOpsDscResourceBase]::GetDscCurrentStateObject() Tests" -Tag 'Uni
 
         It 'Should return an object with "Ensure" property value of "Absent"' {
             $azDevOpsDscResourceBaseExample = [AzDevOpsDscResourceBaseExample]::new()
-
             $azDevOpsDscResourceBaseExample.GetDscCurrentStateObject().Ensure | Should -Be 'Absent'
         }
 
     }
 
 
-    Context 'When no "DscCurrentStateResourceObject" object returned'{
+    Context 'When no "DscCurrentStateResourceObject" object returned' {
 
         class AzDevOpsDscResourceBaseExample : AzDevOpsDscResourceBase # Note: Ignore 'TypeNotFound' warning (it is available at runtime)
         {
@@ -90,7 +80,6 @@ Describe "[AzDevOpsDscResourceBase]::GetDscCurrentStateObject() Tests" -Tag 'Uni
 
         It 'Should return an object with "Ensure" property value of "Present"' {
             $azDevOpsDscResourceBaseExample = [AzDevOpsDscResourceBaseExample]::new()
-
             $azDevOpsDscResourceBaseExample.GetDscCurrentStateObject().Ensure | Should -Be 'Present'
         }
 
