@@ -6,7 +6,6 @@ Describe "[DscResourceBase]::GetDscResourceKey() Tests" -Tag 'Unit', 'DscResourc
         It 'Should throw' {
 
             $dscResourceBase = [DscResourceBase]::new()
-
             {$dscResourceBase.GetDscResourceKey()} | Should -Throw
         }
 
@@ -52,7 +51,6 @@ Describe "[DscResourceBase]::GetDscResourceKey() Tests" -Tag 'Unit', 'DscResourc
                 [string]$DscKey2
             }
             $dscResourceWith2Keys = [DscResourceBase2DscKeys]@{}
-
             {$dscResourceWith2Keys.GetDscResourceKey()} | Should -Throw
         }
 
@@ -61,18 +59,21 @@ Describe "[DscResourceBase]::GetDscResourceKey() Tests" -Tag 'Unit', 'DscResourc
 
     Context 'When called from instance of class with a DSC key' {
 
-        class DscResourceBase1DscKey : DscResourceBase # Note: Ignore 'TypeNotFound' warning (it is available at runtime)
-        {
-            [DscProperty(Key)]
-            [string]$DscKey1
-        }
+        BeforeAll {
+            class DscResourceBase1DscKey : DscResourceBase # Note: Ignore 'TypeNotFound' warning (it is available at runtime)
+            {
+                [DscProperty(Key)]
+                [string]$DscKey1
+            }
 
-        $dscResourceWith1Key = [DscResourceBase1DscKey]@{
-            DscKey1='DscKey1Value'
+            $dscResourceWith1Key = [DscResourceBase1DscKey]@{
+                DscKey1='DscKey1Value'
+            }
         }
 
         It 'Should not throw' {
 
+            $dscResourceWith1Key.GetDscResourceKey()
             {$dscResourceWith1Key.GetDscResourceKey()} | Should -Not -Throw
         }
 
