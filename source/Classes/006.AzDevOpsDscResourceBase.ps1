@@ -234,6 +234,11 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
                             $dscRequiredAction = [RequiredAction]::Remove
                             Write-Verbose "Resource missing. Setting action to Remove."
                         }
+                        default {
+                            $errorMessage = "Could not obtain a valid 'LookupResult.Status' value within '$($this.GetResourceName())' Test() function. Value was '$($currentProperties.LookupResult.Status)'"
+                            Write-Verbose $errorMessage
+                            New-InvalidOperationException -Message $errorMessage -Throw
+                        }
                     }
 
                     Write-Verbose "DscActionRequired='$dscRequiredAction'"
@@ -280,14 +285,6 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
 
             return $desiredStateParameters
 
-            return @{
-                    ApiUri                      = $DesiredStateProperties.ApiUri
-                    Pat                         = $DesiredStateProperties.Pat
-                    Force                       = $true
-
-                    # Set this from the 'Current' state as we would expect this to have an existing key/ID value to use
-                    "$IdPropertyName" = $CurrentStateProperties."$IdPropertyName"
-                }
         }
         # If the desired state/action is to add/new or update/set  the resource, start with the values in the $DesiredStateProperties variable, and amend
         elseif ($RequiredAction -in @([RequiredAction]::New, [RequiredAction]::Set))

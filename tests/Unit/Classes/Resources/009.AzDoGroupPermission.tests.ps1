@@ -1,14 +1,3 @@
-# Import the module containing the AzDoGroupPermission class
-# Describe block for AzDoGroupPermission tests
-
-# Test if the class is defined
-if ($null -eq $Global:ClassesLoaded)
-{
-    # Attempt to find the root of the repository
-    $RepositoryRoot = (Get-Item -Path $PSScriptRoot).Parent.Parent.Parent.Parent.FullName
-    # Load the Dependencies
-    . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
-}
 
 Describe 'AzDoGroupPermission Tests' {
 
@@ -78,7 +67,125 @@ Describe 'AzDoGroupPermission Tests' {
 
     # Test case for Get method
     Context 'Get Method' {
+
+        BeforeAll {
+            Mock -CommandName Get-AzDoGroupPermission {
+
+                $properties = @{
+                    Ensure = [Ensure]::Absent
+                    propertiesChanged = @()
+                    GroupName = 'TestGroup'
+                    Permissions = @{
+                        'mock-permission' = @{
+                            Permission = 'Read'
+                            Allow = $true
+                        }
+                    }
+                    isInherited = $false
+                    status = $null
+                    reason = $null
+                }
+
+                return $properties
+
+            }
+
+        }
+
         It 'Should return current state properties' {
+
+            $groupPermission = [AzDoGroupPermission]::new()
+            $groupPermission.GroupName = 'TestGroup'
+            $groupPermission.isInherited = $false
+            $groupPermission.Permissions = @(
+                @{ Permission = 'Read'; Allow = $true }
+            )
+
+            $currentState = $groupPermission.Get()
+
+            $currentState.GroupName | Should -Be 'TestGroup'
+            $currentState.isInherited | Should -Be $false
+            $currentState.Permissions | Should -Not -BeNullOrEmpty
+
+            Assert-MockCalled Get-AzDoGroupPermission -Exactly 1
+
+        }
+    }
+
+    Context 'Test Method' {
+
+        BeforeAll {
+
+        }
+
+        It 'Should return $true when calling the test method - when the current state is unchanged' {
+
+            Mock -CommandName Get-AzDoGroupPermission {
+
+                $properties = @{
+                    Ensure = [Ensure]::Present
+                    propertiesChanged = @()
+                    GroupName = 'TestGroup'
+                    Permissions = @{
+                        'mock-permission' = @{
+                            Permission = 'Read'
+                            Allow = $true
+                        }
+                    }
+                    isInherited = $false
+                    status = [DSCGetSummaryState]::Unchanged
+                    reason = $null
+                }
+
+                return $properties
+
+            }
+
+            $groupPermission = [AzDoGroupPermission]::new()
+            $groupPermission.GroupName = 'TestGroup'
+            $groupPermission.Permissions = @(
+                @{ Permission = 'Read'; Allow = $true }
+            )
+
+            $groupPermission.Test() | Should -Be $true
+
+
+        }
+
+        It 'Should return $false when calling the test method - when the current state is changed' {
+
+            Mock -CommandName Get-AzDoGroupPermission {
+
+                $properties = @{
+                    Ensure = [Ensure]::Absent
+                    propertiesChanged = @()
+                    GroupName = 'TestGroup'
+                    Permissions = @{
+                        'mock-permission' = @{
+                            Permission = 'Read'
+                            Allow = $true
+                        }
+                    }
+                    isInherited = $false
+                    status = [DSCGetSummaryState]::Missing
+                    reason = $null
+                }
+
+                return $properties
+
+            }
+
+            $groupPermission = [AzDoGroupPermission]::new()
+            $groupPermission.GroupName = 'DifferentGroup'
+            $groupPermission.Permissions = @(
+                @{ Permission = 'Read'; Allow = $true }
+            )
+
+            $groupPermission.Test() | Should -Be $false
+
+        }
+
+        It 'Should return $false when calling the test method - when the status is null' {
 
             Mock -CommandName Get-AzDoGroupPermission {
 
@@ -101,27 +208,11 @@ Describe 'AzDoGroupPermission Tests' {
 
             }
 
-
-            $groupPermission = [AzDoGroupPermission]::new()
-            $groupPermission.GroupName = 'TestGroup'
-            $groupPermission.isInherited = $false
-            $groupPermission.Permissions = @(
-                @{ Permission = 'Read'; Allow = $true }
-            )
-
-            $currentState = $groupPermission.Get()
-
-            $currentState.GroupName | Should -Be 'TestGroup'
-            $currentState.isInherited | Should -Be $false
-            $currentState.Permissions | Should -Not -BeNullOrEmpty
-
-            Assert-MockCalled Get-AzDoGroupPermission -Exactly 1
-
-        }
-    }
-
-    Context 'Test Method' {
-        It 'Should return the correct object' {
+            Mock -CommandName New-InvalidOperationException {
+                throw 'Invalid Operation Exception'
+            } -ParameterFilter {
+                $Message -like "*Could not obtain a valid 'LookupResult.Status' value within*"
+            }
 
             $groupPermission = [AzDoGroupPermission]::new()
             $groupPermission.GroupName = 'TestGroup'
@@ -129,13 +220,13 @@ Describe 'AzDoGroupPermission Tests' {
                 @{ Permission = 'Read'; Allow = $true }
             )
 
-            Wait-Debugger
-            $groupPermission.Test()
+            { $groupPermission.Test() } | Should -Not -Throw
+            $groupPermission.Test() | Should -Be $false
+            Assert-MockCalled New-InvalidOperationException -Times 1
 
-            $groupPermission | Should -BeOfType 'AzDoGroupPermission'
-            $groupPermission.GroupName | Should -Be 'TestGroup'
-            $groupPermission.Permissions | Should -Not -BeNullOrEmpty
         }
+
+
     }
 
 }

@@ -116,8 +116,6 @@ Describe 'Find-Identity Function Tests' {
                 [string]$SearchType
             )
 
-            Wait-Debugger
-
             $result = Find-Identity -Name 'groupDescriptor' -OrganizationName 'TestOrg' -SearchType $SearchType
             $result | Should -Not -BeNullOrEmpty
 
