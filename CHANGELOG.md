@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - AzureDevOpsDsc
-  - Azure Managed Identity supporting classes. These classes are used by 'AzureDevOpsDsc.Common'.
+  - Added Resources: 
   - Updated pipeline files to support change of default branch to main.
   - Added GitHub issue templates and pull request template
   ([issue #1](https://github.com/dsccommunity/AzureDevOpsDsc/issues/1))
@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     file `Home.md` will be updated with the correct module version on each
     publish to gallery (including preview).
 - AzureDevOpsDsc.Common
-  - Managed Identity has been added to the system. This feature can be used before invoking Invoke-DSCResource. With New-AzManagedIdentity, the bearer token is automatically authenticated, retrieved, and managed. It's worth noting that bearer tokens take precedence over basic tokens. When using Invoke-AzDevOpsApiRestMethod, the token is automatically interpolated as required.
+  - Added New-AzDoAuthenticationProvider. This is invoked prior to the execution of the 
   - Added 'wrapper' functionality around the [Azure DevOps REST API](https://docs.microsoft.com/en-us/rest/api/azure/devops/)
   - Added Supporting Functions for Azure Managed Identity.
 
@@ -42,12 +42,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     for more information).
   - Updated pipeline file `RequiredModules.ps1` to latest pipeline pattern.
   - Updated pipeline file `build.yaml` to latest pipeline pattern.
+  - Enhanced Authentication Mechanisms.
+    The classes have been refactored to accommodate a variety of authentication methods.
+    This refactoring allows the system to support multiple authentication
+    protocols, enhancing security and providing flexibility in integrating with
+    different identity providers.
+  - Added LookupResult Property to classes. A new property, LookupResult,
+    has been introduced to the classes. This addition enables the classes to
+    efficiently store and retrieve lookup results, improving data handling
+    capabilities and streamlining processes that depend on quick access
+    to these results.
+  - Added [DSCGetSummaryState] class. : Introduced an additional class,
+    [DSCGetSummaryState], which serves to represent the changes that have been detected.
+  - The Get() and Test() methods have undergone a redesign.
+    The Get-* commands now efficiently retrieve and identify complex changes,
+    which are then depicted within the [DSCGetSummaryState] class.
 - AzDevOpsProject
   - Added a validate set to the parameter `SourceControlType` to (for now)
     limit the parameter to the values `Git` and `Tfvc`.
   - Update comment-based help to remove text which the valid values are
     since that is now add automatically to the documentation (conceptual
     help and wiki documentation).
+- Update build.yaml tests reference:
+  - Added: ./azuredevopsdsc.common.tests.ps1
+  - Added: ./azuredevopsdsc.tests.ps1
 
 ### Fixed
 

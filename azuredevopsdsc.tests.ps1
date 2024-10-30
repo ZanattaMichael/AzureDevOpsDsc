@@ -67,7 +67,7 @@ $config = New-PesterConfiguration
 
 $config.Run.Path                        = ".\tests\Unit\Classes"
 $config.Output.CIFormat                 = "GitHubActions"
-$config.Output.Verbosity                = "Detailed"
+#$config.Output.Verbosity                = "Detailed"
 $config.CodeCoverage.Enabled            = $true
 $config.CodeCoverage.Path               = @(
                                             '.\source\Classes\'

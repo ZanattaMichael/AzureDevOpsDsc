@@ -36,7 +36,7 @@ Configuration Example
 }
 
 # Create a new Azure Managed Identity and store the token in a global variable
-New-AzManagedIdentity -OrganizationName "Contoso"
+New-AzDoAuthenticationProvider -OrganizationName "Contoso"
 
 # Using Invoke-DSCResource, invoke the 'Test' method of the 'AzDevOpsProject' resource.
 # The global variable will be used to authenticate to Azure DevOps.

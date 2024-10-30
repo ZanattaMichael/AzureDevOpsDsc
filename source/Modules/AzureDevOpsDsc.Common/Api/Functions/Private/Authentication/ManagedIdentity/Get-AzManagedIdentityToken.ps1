@@ -3,7 +3,7 @@
 Obtains a managed identity token from Azure AD.
 
 .DESCRIPTION
-The Get-AzManagedIdentityToken function is used to obtain an access token from Azure AD using a managed identity. It can only be called from the New-AzManagedIdentity or Update-AzManagedIdentity functions.
+The Get-AzManagedIdentityToken function is used to obtain an access token from Azure AD using a managed identity. It can only be called from the New-AzDoAuthenticationProvider or Update-AzManagedIdentity functions.
 
 .PARAMETER OrganizationName
 Specifies the name of the organization.
