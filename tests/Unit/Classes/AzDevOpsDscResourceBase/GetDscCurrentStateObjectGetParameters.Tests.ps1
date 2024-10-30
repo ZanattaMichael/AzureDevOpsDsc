@@ -5,18 +5,19 @@ Describe "[AzDevOpsDscResourceBase]::GetDscCurrentStateObjectGetParameters() Tes
 
         class AzDevOpsDscResourceBaseExample : AzDevOpsDscResourceBase # Note: Ignore 'TypeNotFound' warning (it is available at runtime)
         {
+            [DscProperty(Key)]
             [string]$ApiUri = 'https://some.api/_apis/'
+
+            [DscProperty(Key)]
             [string]$Pat = '1234567890123456789012345678901234567890123456789012'
 
+            [DscProperty(Key)]
+            [string]$AzDevOpsDscResourceBaseExampleKey = 'AzDevOpsDscResourceBaseExampleKeyValue'
 
             [string]GetResourceName()
             {
                 return 'AzDevOpsDscResourceBaseExample'
             }
-
-
-            [DscProperty(Key)]
-            [string]$AzDevOpsDscResourceBaseExampleKey = 'AzDevOpsDscResourceBaseExampleKeyValue'
 
             [string]GetResourceKeyPropertyName()
             {
@@ -47,20 +48,16 @@ Describe "[AzDevOpsDscResourceBase]::GetDscCurrentStateObjectGetParameters() Tes
 
         It 'Should not throw' {
             $azDevOpsDscResourceBaseExample = [AzDevOpsDscResourceBaseExample]::new()
-
             {$azDevOpsDscResourceBaseExample.GetDscCurrentStateObjectGetParameters()} | Should -Not -Throw
         }
 
         It 'Should return an object with "ApiUri" property value equal to object instance "ApiUri" value' {
             $azDevOpsDscResourceBaseExample = [AzDevOpsDscResourceBaseExample]::new()
-
-            Wait-Debugger
             $azDevOpsDscResourceBaseExample.GetDscCurrentStateObjectGetParameters().ApiUri | Should -Be $azDevOpsDscResourceBaseExample.ApiUri
         }
 
         It 'Should return an object with "Pat" property value equal to object instance "Pat" value' {
             $azDevOpsDscResourceBaseExample = [AzDevOpsDscResourceBaseExample]::new()
-
             $azDevOpsDscResourceBaseExample.GetDscCurrentStateObjectGetParameters().Pat | Should -Be $azDevOpsDscResourceBaseExample.Pat
         }
 
@@ -92,7 +89,9 @@ Describe "[AzDevOpsDscResourceBase]::GetDscCurrentStateObjectGetParameters() Tes
 
         class AzDevOpsDscResourceBaseExample : AzDevOpsDscResourceBase # Note: Ignore 'TypeNotFound' warning (it is available at runtime)
         {
+            [DscProperty(Key)]
             [string]$ApiUri = 'https://some.api/_apis/'
+            [DscProperty(Key)]
             [string]$Pat = '1234567890123456789012345678901234567890123456789012'
 
 

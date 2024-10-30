@@ -21,18 +21,22 @@ Describe "[DscResourceBase]::GetDscResourcePropertyNames() Tests" -Tag 'Unit', '
 
     Context 'When called from instance of a class with multiple DSC properties' {
 
-        class DscResourceBase2Properties : DscResourceBase # Note: Ignore 'TypeNotFound' warning (it is available at runtime)
-        {
-            [DscProperty()]
-            [string]$ADscProperty
+        BeforeAll {
+            class DscResourceBase2Properties : DscResourceBase # Note: Ignore 'TypeNotFound' warning (it is available at runtime)
+            {
+                [DscProperty()]
+                [string]$ADscProperty
 
-            [DscProperty()]
-            [string]$AnotherDscProperty
-        }
+                [DscProperty()]
+                [string]$AnotherDscProperty
+            }
 
-        $dscResourceWith2DscProperties = [DscResourceBase2Properties]@{
-            ADscProperty = 'ADscPropertyValue'
-            AnotherDscProperty = 'AnotherDscPropertyValue'
+
+            $dscResourceWith2DscProperties = [DscResourceBase2Properties]@{
+                ADscProperty = 'ADscPropertyValue'
+                AnotherDscProperty = 'AnotherDscPropertyValue'
+            }
+
         }
 
         It 'Should not throw' {

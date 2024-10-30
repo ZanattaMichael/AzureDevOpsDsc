@@ -37,18 +37,20 @@ Describe "[DscResourceBase]::GetDscResourceKeyPropertyName() Tests" -Tag 'Unit',
 
     Context 'When called from instance of class with a DSC key' {
 
-        class DscResourceBase1Key : DscResourceBase
-        {
-            [DscProperty(Key)]
-            [string]$DscKey1
-        }
+        BeforeAll {
+            class DscResourceBase1Key : DscResourceBase
+            {
+                [DscProperty(Key)]
+                [string]$DscKey1
+            }
 
-        $dscResourceWith1Key = [DscResourceBase1Key]@{
-            DscKey1 = 'DscKey1Value'
+            $dscResourceWith1Key = [DscResourceBase1Key]@{
+                DscKey1 = 'DscKey1Value'
+            }
         }
 
         It 'Should not throw' {
-
+            $dscResourceWith1Key.GetDscResourceKeyPropertyName()
             {$dscResourceWith1Key.GetDscResourceKeyPropertyName()} | Should -Not -Throw
         }
 
