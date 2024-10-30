@@ -119,4 +119,23 @@ Describe 'AzDoGroupPermission Tests' {
 
         }
     }
+
+    Context 'Test Method' {
+        It 'Should return the correct object' {
+
+            $groupPermission = [AzDoGroupPermission]::new()
+            $groupPermission.GroupName = 'TestGroup'
+            $groupPermission.Permissions = @(
+                @{ Permission = 'Read'; Allow = $true }
+            )
+
+            Wait-Debugger
+            $groupPermission.Test()
+
+            $groupPermission | Should -BeOfType 'AzDoGroupPermission'
+            $groupPermission.GroupName | Should -Be 'TestGroup'
+            $groupPermission.Permissions | Should -Not -BeNullOrEmpty
+        }
+    }
+
 }
