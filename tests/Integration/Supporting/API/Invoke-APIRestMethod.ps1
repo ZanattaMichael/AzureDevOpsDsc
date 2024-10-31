@@ -190,6 +190,6 @@ function Invoke-APIRestMethod
 
     # If all retry attempts have failed, throw an exception
     $errorMessage = $script:localizedData.AzDevOpsApiRestMethodException -f $MyInvocation.MyCommand, $RetryAttempts, $restMethodExceptionMessage
-    New-InvalidOperationException -Message $errorMessage -Throw
+    throw (New-InvalidOperationException -Message $errorMessage)
 
 }

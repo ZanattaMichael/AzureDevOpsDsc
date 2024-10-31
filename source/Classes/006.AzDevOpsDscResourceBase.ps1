@@ -237,7 +237,7 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
                         default {
                             $errorMessage = "Could not obtain a valid 'LookupResult.Status' value within '$($this.GetResourceName())' Test() function. Value was '$($currentProperties.LookupResult.Status)'"
                             Write-Verbose $errorMessage
-                            New-InvalidOperationException -Message $errorMessage -Throw
+                            throw (New-InvalidOperationException -Message $errorMessage)
                         }
                     }
 
@@ -262,7 +262,7 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
             default {
                 $errorMessage = "Could not obtain a valid 'Ensure' value within '$($this.GetResourceName())' Test() function. Value was '$($desiredProperties.Ensure)'."
                 Write-Verbose $errorMessage
-                New-InvalidOperationException -Message $errorMessage
+                throw (New-InvalidOperationException -Message $errorMessage)
             }
         }
 
