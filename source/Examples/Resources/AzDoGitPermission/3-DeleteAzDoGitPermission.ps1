@@ -1,9 +1,6 @@
-
 <#
     .DESCRIPTION
-        This example shows how to ensure that an Azure DevOps project
-        with a ProjectName of 'Test Project' can have it's description
-        updated to 'A Test Project with a new description'.
+        This example shows how to remove Git repository permissions.
 #>
 
 # Refer to Authentication\1-NewAuthenticationPAT.ps1 for the New-AzDoAuthenticationProvider command
@@ -16,14 +13,15 @@ Configuration Example
 
     node localhost
     {
-        AzDevOpsProject 'UpdateProject'
+        AzDoGitPermission 'DeleteGitPermission'
         {
             Ensure               = 'Present'
             ProjectName          = 'Test Project'
-            ProjectDescription   = 'A Test Project with a new description'  # Updated property
-            #SourceControlType    = 'Git'  # Note: Update of this property is not supported
-
+            RepositoryName       = 'Test Repository'
+            isInherited          = $true
+            # Note: Permissions can be empty to remove all permissions
+            # Ensure = 'Absent' is not required.
+            Permissions          = @()
         }
-
     }
 }
