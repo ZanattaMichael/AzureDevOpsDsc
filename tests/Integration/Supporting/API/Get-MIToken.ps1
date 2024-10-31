@@ -30,22 +30,22 @@ Function Get-MIToken {
         {
             # Check if the current user is in the Administrator role
             if (-not(Test-isWindowsAdmin)) {
-                throw "[Get-AzManagedIdentityToken] Error: Authentication to Azure Arc requires Administrator privileges."
+                throw "[Get-MIToken] Error: Authentication to Azure Arc requires Administrator privileges."
             }
         }
 
-        Write-Verbose "[Get-AzManagedIdentityToken] The machine is an Azure Arc machine. The Uri needs to be updated to $($env:IDENTITY_ENDPOINT):"
+        Write-Verbose "[Get-MIToken] The machine is an Azure Arc machine. The Uri needs to be updated to $($env:IDENTITY_ENDPOINT):"
         $ManagedIdentityParams.Uri = '{0}?api-version=2020-06-01&resource=499b84ac-1321-427f-aa17-267ca6975798' -f $env:IDENTITY_ENDPOINT
         $ManagedIdentityParams.AzureArcAuthentication = $true
 
     }
 
-    Write-Verbose "[Get-AzManagedIdentityToken] Invoking the Azure Instance Metadata Service to get the access token."
+    Write-Verbose "[Get-MIToken] Invoking the Azure Instance Metadata Service to get the access token."
 
     # Invoke the RestAPI
     try
     {
-        $response = Invoke-AzDevOpsApiRestMethod @ManagedIdentityParams
+        $response = Invoke-APIRestMethod @ManagedIdentityParams
     }
     catch
     {
@@ -53,10 +53,10 @@ Function Get-MIToken {
         $wwwAuthHeader = $_.Exception.Response.Headers.WwwAuthenticate
         if ($wwwAuthHeader -notmatch "Basic realm=.+")
         {
-            Throw ('[Get-AzManagedIdentityToken] {0}' -f $_)
+            Throw ('[Get-MIToken] {0}' -f $_)
         }
 
-        Write-Verbose "[Get-AzManagedIdentityToken] Managed Identity Token Retrival Failed. Retrying with secret file."
+        Write-Verbose "[Get-MIToken] Managed Identity Token Retrival Failed. Retrying with secret file."
 
         # Extract the secret file path from the WWW-Authenticate header
         $secretFile = ($wwwAuthHeader -split "Basic realm=")[1]
@@ -66,7 +66,7 @@ Function Get-MIToken {
         $ManagedIdentityParams.Headers.Authorization = "Basic $token"
 
         # Retry the request. Silently continue to suppress the error message, since we will handle it below.
-        $response = Invoke-AzDevOpsApiRestMethod @ManagedIdentityParams -ErrorAction SilentlyContinue
+        $response = Invoke-APIRestMethod @ManagedIdentityParams -ErrorAction SilentlyContinue
     }
 
     # Test the response
