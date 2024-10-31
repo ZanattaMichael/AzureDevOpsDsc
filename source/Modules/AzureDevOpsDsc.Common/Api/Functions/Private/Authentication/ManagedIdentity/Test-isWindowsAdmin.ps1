@@ -24,6 +24,6 @@ Function Test-isWindowsAdmin
     $principal = New-Object System.Security.Principal.WindowsPrincipal($currentIdentity)
 
     # Check if the current user is in the Administrator role
-    (-not($principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)))
+    ($principal.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator))
 
 }
