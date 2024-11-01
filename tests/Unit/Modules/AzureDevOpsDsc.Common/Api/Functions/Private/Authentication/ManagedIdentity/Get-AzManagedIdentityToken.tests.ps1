@@ -44,6 +44,7 @@ Describe "Get-AzManagedIdentityToken Tests" -Tags "Unit", "Authentication" {
         Mock -CommandName Test-AzToken -MockWith { return $true }
         Mock -CommandName Get-OperatingSystemInfo -MockWith { return @{ Windows = $true; Linux = $false; MacOS = $false } }
         Mock -CommandName Get-Content -MockWith { return "mock-data" }
+        Mock -CommandName Test-isWindowsAdmin -MockWith { return $true }
 
         class CustomException : Exception {
             [hashtable] $response

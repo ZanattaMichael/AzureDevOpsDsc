@@ -55,7 +55,7 @@ Describe "Get-AzDoProject" {
 
         It "should return the project details with status unchanged" {
             $result = Get-AzDoProject -ProjectName 'ExistingProject' -ProjectDescription 'ExistingDescription' -SourceControlType 'Git' -ProcessTemplate 'Agile' -Visibility 'Private'
-            $result.Status | Should -BeNullOrEmpty
+            $result.Status | Should -Be 'Unchanged'
             $result.ProjectName | Should -Be 'ExistingProject'
             $result.ProjectDescription | Should -Be 'ExistingDescription'
         }
@@ -109,7 +109,7 @@ Describe "Get-AzDoProject" {
 
         It "should warn about source control type conflict" {
             $result = Get-AzDoProject -ProjectName 'ExistingProject' -ProjectDescription 'ExistingDescription' -SourceControlType 'Git' -ProcessTemplate 'Agile' -Visibility 'Private'
-            $result.Status | Should -BeNullOrEmpty
+            $result.Status | Should -Be 'UnChanged'
             $result.ProjectName | Should -Be 'ExistingProject'
             $result.SourceControlType | Should -Be 'Git'
         }

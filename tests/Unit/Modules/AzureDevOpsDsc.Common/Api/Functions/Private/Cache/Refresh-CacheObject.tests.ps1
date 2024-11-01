@@ -16,7 +16,7 @@ Describe "Refresh-CacheObject" -tags Unit, Cache {
 
         # Load the functions to test
         if ($null -eq $currentFile) {
-            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'Remove-CacheItem.tests.ps1'
+            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'Refresh-CacheObject.tests.ps1'
         }
 
         # Load the functions to test
