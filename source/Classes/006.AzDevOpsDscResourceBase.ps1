@@ -208,45 +208,41 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
         [System.String[]]$dscPropertyNamesWithNoSetSupport = $this.GetDscResourcePropertyNamesWithNoSetSupport()
         [System.String[]]$dscPropertyNamesToCompare = $this.GetDscResourcePropertyNames()
 
+
         switch ($desiredProperties.Ensure)
         {
             ([Ensure]::Present) {
 
                 Write-Verbose "Desired state is Present."
 
-                if ($currentProperties.Ensure -eq [Ensure]::Absent)
+                switch ($currentProperties.LookupResult.Status)
                 {
-                    Write-Verbose "Current state is Absent."
-
-                    switch ($currentProperties.LookupResult.Status)
-                    {
-                        ([DSCGetSummaryState]::NotFound) {
-                            $dscRequiredAction = [RequiredAction]::New
-                            Write-Verbose "Resource not found. Setting action to New."
-                        }([DSCGetSummaryState]::Changed) {
-                            $dscRequiredAction = [RequiredAction]::Set
-                            Write-Verbose "Resource Changed. Setting action to Set."
-                        }([DSCGetSummaryState]::Renamed) {
-                            $dscRequiredAction = [RequiredAction]::Set
-                            Write-Verbose "Resource Renamed. Setting action to Set."
-                        }
-                        ([DSCGetSummaryState]::Missing) {
-                            $dscRequiredAction = [RequiredAction]::Remove
-                            Write-Verbose "Resource missing. Setting action to Remove."
-                        }
-                        default {
-                            $errorMessage = "Could not obtain a valid 'LookupResult.Status' value within '$($this.GetResourceName())' Test() function. Value was '$($currentProperties.LookupResult.Status)'"
-                            Write-Verbose $errorMessage
-                            throw (New-InvalidOperationException -Message $errorMessage)
-                        }
+                    ([DSCGetSummaryState]::NotFound) {
+                        $dscRequiredAction = [RequiredAction]::New
+                        Write-Verbose "Resource not found. Setting action to New."
+                    }([DSCGetSummaryState]::Changed) {
+                        $dscRequiredAction = [RequiredAction]::Set
+                        Write-Verbose "Resource Changed. Setting action to Set."
+                    }([DSCGetSummaryState]::Renamed) {
+                        $dscRequiredAction = [RequiredAction]::Set
+                        Write-Verbose "Resource Renamed. Setting action to Set."
+                    }([DSCGetSummaryState]::Missing) {
+                        $dscRequiredAction = [RequiredAction]::Remove
+                        Write-Verbose "Resource missing. Setting action to Remove."
+                    }([DSCGetSummaryState]::Unchanged) {
+                        $dscRequiredAction = [RequiredAction]::None
+                        Write-Verbose "Resource Not Changed. Setting action to Remove."
                     }
-
-                    Write-Verbose "DscActionRequired='$dscRequiredAction'"
-                    return $dscRequiredAction
+                    default {
+                        $errorMessage = "Could not obtain a valid 'LookupResult.Status' value within '$($this.GetResourceName())' Test() function. Value was '$($currentProperties.LookupResult.Status)'"
+                        Write-Verbose $errorMessage
+                        throw (New-InvalidOperationException -Message $errorMessage)
+                    }
                 }
 
-                Write-Verbose "No changes required. Desired state already achieved."
+                Write-Verbose "DscActionRequired='$dscRequiredAction'"
                 return $dscRequiredAction
+
             }
 
             ([Ensure]::Absent) {

@@ -15,24 +15,13 @@ Function Get-MIToken {
         # Define the Azure instance metadata endpoint to get the access token
         Uri = "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=499b84ac-1321-427f-aa17-267ca6975798"
         Method = 'Get'
-        Headers = @{ Metadata="true" }
+        HttpHeaders = @{ Metadata="true" }
         ContentType = 'Application/json'
     }
 
     # Dertimine if the machine is an arc machine
     if ($env:IDENTITY_ENDPOINT)
     {
-
-        $OSInfo = Get-OperatingSystemInfo
-
-        # Test if console is being run as Administrator
-        if ($OSInfo.Windows)
-        {
-            # Check if the current user is in the Administrator role
-            if (-not(Test-isWindowsAdmin)) {
-                throw "[Get-MIToken] Error: Authentication to Azure Arc requires Administrator privileges."
-            }
-        }
 
         Write-Verbose "[Get-MIToken] The machine is an Azure Arc machine. The Uri needs to be updated to $($env:IDENTITY_ENDPOINT):"
         $ManagedIdentityParams.Uri = '{0}?api-version=2020-06-01&resource=499b84ac-1321-427f-aa17-267ca6975798' -f $env:IDENTITY_ENDPOINT
@@ -63,7 +52,7 @@ Function Get-MIToken {
         # Read the secret file to get the token
         $token = Get-Content -LiteralPath $secretFile -Raw
         # Add the token to the headers
-        $ManagedIdentityParams.Headers.Authorization = "Basic $token"
+        $ManagedIdentityParams.HttpHeaders.Authorization = "Basic $token"
 
         # Retry the request. Silently continue to suppress the error message, since we will handle it below.
         $response = Invoke-APIRestMethod @ManagedIdentityParams -ErrorAction SilentlyContinue

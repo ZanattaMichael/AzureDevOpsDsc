@@ -81,7 +81,6 @@ Describe "AzDoGitPermission Integration Tests" {
 
             # Set up the parameters for the DSC resource invocation.
             $parameters.Method = 'Test'
-
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
         }
