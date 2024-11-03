@@ -1,4 +1,7 @@
 {
     "Organization" : "your-org-name-here",
-    "AuthenticationType" : "ManagedIdentity"
+    "AuthenticationType" : "ManagedIdentity",
+    "excludedProjectsFromTeardown": [
+        "DSC Pipeline Services"
+    ]
 }
