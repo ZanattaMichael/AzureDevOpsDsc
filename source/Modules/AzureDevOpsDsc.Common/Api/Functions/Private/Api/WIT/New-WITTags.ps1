@@ -1,4 +1,4 @@
-Function New-WITTag {
+Function New-WITTags {
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
     param

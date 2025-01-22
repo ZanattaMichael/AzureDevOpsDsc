@@ -23,15 +23,45 @@ Function Get-AzDoWIPTags
         $Force
     )
 
+    $Organization =  $Global:DSCAZDO_OrganizationName
+
+    $Result = @{
+        #Reasons = $()
+        Ensure = [Ensure]::Absent
+        propertiesChanged = @()
+        status = [DSCGetSummaryState]::Unchanged
+    }
+
     # Get the current state of the WIT tags
+    $currentList = List-WITTags -Organization $Organization -ProjectName $ProjectName
 
-    # Match the current state of the WIT tags with the desired state.
+    # Compare the current state with the desired state
+    $desiredList = Compare-Object -ReferenceObject $WorkItemTrackingTagList -DifferenceObject $currentList
 
-    # Items that are missing in the current state, check if it has been misspelled or had additional whitespaces.
-    # Also recheck to see if there are other items that are missing that also matches the misspelled or additional whitespaces.
-    # - These tags will be
+    # Items flagged on the left side are items that are missing in the current state.
+    $toDelete = $desiredList | Where-Object { $_.SideIndicator -eq '<=' }
+    # Items flagged on the right side are items that are missing in the desired state.
+    $toAdd = $desiredList | Where-Object { $_.SideIndicator -eq '=>' }
 
+    # If $toDelete and $toAdd is not empty, set the Ensure property to Present.
+    if (($toDelete.count -ne 0) -and ($toAdd.count -ne 0)) {
+        $Result.status = [DSCGetSummaryState]::Changed
+    }
+    # If $toDelete is not empty, set the status to NotFound
+    elseif ($toDelete.count -ne 0) {
+        $Result.status = [DSCGetSummaryState]::NotFound
+    }
+    # If $toAdd is not empty, set the status to Missing
+    elseif ($toAdd.count -ne 0) {
+        $Result.status = [DSCGetSummaryState]::Missing
+    }
 
-    # If the current state does not match the desired state, return the current state and the desired state.
+    # If the Ensure property is set to Present, set the Ensure property to Present.
+    $Result.propertiesChanged = @{
+        toDelete = $toDelete
+        toAdd = $toAdd
+    }
+
+    return $Result
 
 }

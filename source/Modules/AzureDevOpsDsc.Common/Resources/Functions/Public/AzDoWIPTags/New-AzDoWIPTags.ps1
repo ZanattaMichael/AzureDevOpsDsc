@@ -23,4 +23,9 @@ Function New-AzDoWIPTags
         $Force
     )
 
+    $Organization =  $Global:DSCAZDO_OrganizationName
+
+    # Create the WIT tags
+    New-WITTags -Organization $Organization -ProjectName $ProjectName -WorkItemTrackingNames $LookupResult.propertiesChanged.ToAdd
+
 }
