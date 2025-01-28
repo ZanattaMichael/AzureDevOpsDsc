@@ -26,9 +26,8 @@ Function List-WITTags {
 
     try
     {
-        $params | Export-CLixml C:\Temp\aaaa.clixml
         # Invoke the Azure DevOps REST API to create the project
-        return (Invoke-AzDevOpsApiRestMethod @params)
+        return (Invoke-AzDevOpsApiRestMethod @params).value
     }
     catch
     {

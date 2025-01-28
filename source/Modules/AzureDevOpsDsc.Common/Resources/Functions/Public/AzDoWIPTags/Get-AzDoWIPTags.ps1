@@ -32,12 +32,11 @@ Function Get-AzDoWIPTags
         status = [DSCGetSummaryState]::Unchanged
     }
 
-    # TODO: Confirm that List-WITTags is correctly returning tags when the tags exist.
     # Get the current state of the WIT tags
     $currentList = List-WITTags -Organization $Organization -ProjectName $ProjectName
 
     # Compare the current state with the desired state
-    $desiredList = Compare-Object -ReferenceObject $WorkItemTrackingTagList -DifferenceObject $currentList
+    $desiredList = Compare-Object -ReferenceObject $WorkItemTrackingTagList -DifferenceObject $currentList.name
 
     # Items flagged on the left side are items that are missing in the current state.
     $toAdd = ($desiredList | Where-Object { $_.SideIndicator -eq '<=' }).InputObject
@@ -59,7 +58,7 @@ Function Get-AzDoWIPTags
 
     # If the Ensure property is set to Present, set the Ensure property to Present.
     $Result.propertiesChanged = @{
-        toDelete = $toDelete
+        toDelete = $currentList | Where-Object { $_.name -in $toDelete }
         toAdd = $toAdd
     }
 

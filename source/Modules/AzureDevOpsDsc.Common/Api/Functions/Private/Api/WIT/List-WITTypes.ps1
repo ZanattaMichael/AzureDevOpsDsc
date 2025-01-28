@@ -21,7 +21,7 @@ Function List-WITTypes {
     # Validate the parameters
     $params = @{
         # GET https://dev.azure.com/{organization}/{project}/_apis/wit/workitemtypes?api-version=7.1
-        Uri              = 'https://dev.azure.com/{0}/{1}/_apis/wit/workitemtypes?api-version={2}' -f $Organization, $ProjectName, $ApiVersion
+        Uri              = 'https://dev.azure.com/{0}/{1}/_apis/wit/workitemtypes?api-version={2}' -f $Organization, $ProjectName, $ApiVersino
         Method           = "GET"
     }
 
