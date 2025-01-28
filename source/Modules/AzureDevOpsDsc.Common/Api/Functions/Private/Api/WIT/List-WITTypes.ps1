@@ -15,7 +15,7 @@ Function List-WITTypes {
         # Get the latest API version. 7.1 is not supported by the API endpoint.
         [Parameter()]
         [String]
-        $ApiVersion = $(Get-AzDevOpsApiVersion | Select-Object -Last 1)
+        $ApiVersion = $(Get-AzDevOpsApiVersion | Where-Object { $_ -eq '7.1' } | Select-Object -Last 1)
     )
 
     # Validate the parameters
@@ -28,7 +28,14 @@ Function List-WITTypes {
     try
     {
         # Invoke the Azure DevOps REST API to create the project
-        return (Invoke-AzDevOpsApiRestMethod @params)
+        $response = Invoke-AzDevOpsApiRestMethod @params
+        # Test if the Response if a string. If a string, then the API call has bad data that needs to be handled.
+        if ($response -is [string]) {
+            $response = $response | ConvertFrom-Json -AsHashtable
+        }
+
+        return $response.value
+
     }
     catch
     {

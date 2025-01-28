@@ -44,7 +44,7 @@ class AzDoWIPTags : AzDevOpsDscResourceBase
 
     [AzDoWIPTags] Get()
     {
-        return [AzDoProject]$($this.GetDscCurrentStateProperties())
+        return [AzDoWIPTags]$($this.GetDscCurrentStateProperties())
     }
 
 

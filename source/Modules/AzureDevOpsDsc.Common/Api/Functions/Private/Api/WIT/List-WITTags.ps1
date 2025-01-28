@@ -15,7 +15,7 @@ Function List-WITTags {
         # Get the latest API version. 7.1 is not supported by the API endpoint.
         [Parameter()]
         [String]
-        $ApiVersion = $(Get-AzDevOpsApiVersion | Select-Object -Last 1)
+        $ApiVersion = $(Get-AzDevOpsApiVersion | Where-Object { $_ -eq '7.1' } | Select-Object -Last 1)
     )
 
     # Validate the parameters
@@ -26,6 +26,7 @@ Function List-WITTags {
 
     try
     {
+        $params | Export-CLixml C:\Temp\aaaa.clixml
         # Invoke the Azure DevOps REST API to create the project
         return (Invoke-AzDevOpsApiRestMethod @params)
     }

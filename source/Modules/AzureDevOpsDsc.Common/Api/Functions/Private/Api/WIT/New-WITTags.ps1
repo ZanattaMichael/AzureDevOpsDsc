@@ -20,21 +20,23 @@ Function New-WITTags {
         # Get the latest API version. 7.1 is not supported by the API endpoint.
         [Parameter()]
         [String]
-        $ApiVersion = $(Get-AzDevOpsApiVersion | Select-Object -Last 1)
+        $ApiVersion = $(Get-AzDevOpsApiVersion | Where-Object { $_ -eq '7.1' } | Select-Object -Last 1)
     )
 
     # Get the Work Item Type Tag ID
-    $WorkItemType = (List-WITTypes -Organization $Organization -ProjectName $ProjectName)[0].Name
+    $WorkItemType = (List-WITTypes -Organization $Organization -ProjectName $ProjectName)[0].name
 
     # Validate the parameters
     $NewWIPTagParams = @{
         # https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/${type}?api-version=7.1
-        Uri              = 'https://dev.azure.com/{0}/{1}/_apis/wit/workitems/{2}?api-version={3}' -f $Organization, $ProjectName, $WorkItemType, $ApiVersion
-        Method           = "POST"
+        Uri              = 'https://dev.azure.com/{0}/{1}/_apis/wit/workitems/${2}?api-version={3}' -f $Organization, $ProjectName, $WorkItemType, $ApiVersion
+        HttpContentType  =  "application/json-patch+json"
+        Method           =  "POST"
         Body             = @(
             @{
                 "op" = "add"
-                "path" = "/fields/System.Tags"
+                "path" = "/fields/System.Title"
+                "from" = $null
                 "value" = 'DSC Temp Work Item Tag'
             },
             @{
@@ -42,7 +44,7 @@ Function New-WITTags {
                 "path" = "/fields/System.Tags"
                 "value" = $WorkItemTrackingNames -join '; '
             }
-        )
+        ) | ConvertTo-Json
     }
 
     #
@@ -50,8 +52,8 @@ Function New-WITTags {
 
     try
     {
-        # Invoke the Azure DevOps REST API to create the project
-        $createdWorkItem = Invoke-AzDevOpsApiRestMethod @WorkItemTrackingNames
+        # Invoke the Azure DevOps REST API to create the project]
+        $createdWorkItem = Invoke-AzDevOpsApiRestMethod @NewWIPTagParams
     }
     catch
     {
@@ -59,23 +61,13 @@ Function New-WITTags {
         return $null
     }
 
+    return
+
     # Validate the parameters
     $DeleteWIPTagParams = @{
         # https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/{id}?api-version=7.1
         Uri              = 'https://dev.azure.com/{0}/{1}/_apis/wit/workitems/{2}?api-version={3}' -f $Organization, $ProjectName, $createdWorkItem.Id, $ApiVersion
         Method           = "DELETE"
-        Body             = @(
-            @{
-                "op" = "add"
-                "path" = "/fields/System.Tags"
-                "value" = 'DSC Temp Work Item Tag'
-            },
-            @{
-                "op" = "add"
-                "path" = "/fields/System.Tags"
-                "value" = $WorkItemTrackingNames -join '; '
-            }
-        )
     }
 
     #

@@ -20,7 +20,7 @@ Function Remove-WITTags {
         # Get the latest API version. 7.1 is not supported by the API endpoint.
         [Parameter()]
         [String]
-        $ApiVersion = $(Get-AzDevOpsApiVersion | Select-Object -Last 1)
+        $ApiVersion = $(Get-AzDevOpsApiVersion | Where-Object { $_ -eq '7.1' } | Select-Object -Last 1)
     )
 
     # Iterate through each Tag ID and delete it
