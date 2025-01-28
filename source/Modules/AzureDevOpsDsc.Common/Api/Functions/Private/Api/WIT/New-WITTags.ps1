@@ -37,7 +37,7 @@ Function New-WITTags {
                 "op" = "add"
                 "path" = "/fields/System.Title"
                 "from" = $null
-                "value" = 'DSC Temp Work Item Tag'
+                "value" = 'System - POWERSHELL DSC - Temp Work Item for Tag Creation'
             },
             @{
                 "op" = "add"
@@ -61,8 +61,7 @@ Function New-WITTags {
         return $null
     }
 
-    return
-
+    # TODO: Test the deletion of the WIP Work Item so that it does not remain in the system.
     # Validate the parameters
     $DeleteWIPTagParams = @{
         # https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/{id}?api-version=7.1

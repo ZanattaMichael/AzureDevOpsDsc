@@ -32,6 +32,7 @@ Function Get-AzDoWIPTags
         status = [DSCGetSummaryState]::Unchanged
     }
 
+    # TODO: Confirm that List-WITTags is correctly returning tags when the tags exist.
     # Get the current state of the WIT tags
     $currentList = List-WITTags -Organization $Organization -ProjectName $ProjectName
 
