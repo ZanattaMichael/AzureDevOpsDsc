@@ -232,6 +232,10 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
                     }([DSCGetSummaryState]::Unchanged) {
                         $dscRequiredAction = [RequiredAction]::None
                         Write-Verbose "Resource Not Changed. Setting action to Remove."
+                    }([DSCGetSummaryState]::Error) {
+                        $dscRequiredAction = [RequiredAction]::Error
+                        Write-Verbose "Resource in Error state. Setting action to Error."
+                        throw $currentProperties.LookupResult.Reason
                     }
                     default {
                         $errorMessage = "Could not obtain a valid 'LookupResult.Status' value within '$($this.GetResourceName())' Test() function. Value was '$($currentProperties.LookupResult.Status)'"

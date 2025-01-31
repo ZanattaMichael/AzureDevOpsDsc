@@ -5,7 +5,7 @@ Function Set-AzDoGitPermission
         [Parameter(Mandatory = $true)]
         [string]$ProjectName,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $false)]
         [string]$RepositoryName,
 
         [Parameter(Mandatory = $true)]
@@ -48,6 +48,7 @@ Function Set-AzDoGitPermission
     #
     # Serialize the ACLs
 
+    # More work is needed here.
     $serializeACLParams = @{
         ReferenceACLs = $LookupResult.propertiesChanged
         DescriptorACLList = Get-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'

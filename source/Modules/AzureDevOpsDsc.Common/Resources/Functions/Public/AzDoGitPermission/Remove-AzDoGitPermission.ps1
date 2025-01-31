@@ -5,7 +5,7 @@ Function Remove-AzDoGitPermission
         [Parameter(Mandatory = $true)]
         [string]$ProjectName,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $false)]
         [string]$RepositoryName,
 
         [Parameter(Mandatory = $true)]
@@ -26,6 +26,15 @@ Function Remove-AzDoGitPermission
     )
 
     Write-Verbose "[New-AzDoGitPermission] Started."
+
+    #
+    # Test if the Repository is specified
+    if ([String]::IsNullOrEmpty($RepositoryName))
+    {
+        Write-Warning "[New-AzDoGitPermission] Repository Name not specified. Defaulting to top-level Project permissions."
+        Write-Warning "[New-AzDoGitPermission] STOPPING. It is not possible to remove permissions from a top-level Project."
+        return
+    }
 
     #
     # Security Namespace ID
