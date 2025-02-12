@@ -24,7 +24,7 @@ Function Remove-WITTags {
     )
 
     # Iterate through each Tag ID and delete it
-    ForEach ($TagId in $WorkItemTrackingTagId)
+    ForEach ($TagId in @($WorkItemTrackingTagId))
     {
         # Validate the parameters
         $params = @{
@@ -35,7 +35,7 @@ Function Remove-WITTags {
         try
         {
             # Invoke the Azure DevOps REST API to create the project
-            return (Invoke-AzDevOpsApiRestMethod @params)
+            $null = Invoke-AzDevOpsApiRestMethod @params
         }
         catch
         {

@@ -36,12 +36,24 @@ Function Get-AzDoWIPTags
     $currentList = List-WITTags -Organization $Organization -ProjectName $ProjectName
 
     # Compare the current state with the desired state
-    $desiredList = Compare-Object -ReferenceObject $WorkItemTrackingTagList -DifferenceObject $currentList.name
+    $desiredList = Compare-Object -ReferenceObject $WorkItemTrackingTagList -DifferenceObject $currentList.name -IncludeEqual
 
-    # Items flagged on the left side are items that are missing in the current state.
-    $toAdd = ($desiredList | Where-Object { $_.SideIndicator -eq '<=' }).InputObject
-    # Items flagged on the right side are items that are missing in the desired state.
-    $toDelete = ($desiredList | Where-Object { $_.SideIndicator -eq '=>' }).InputObject
+    if ($Ensure -eq [Ensure]::Absent) {
+        # If Absent was specified, test to see if the items already exist. If so, remove them.
+
+        # Items flagged on the right side are items that are missing in the desired state.
+        $toDelete = ($desiredList | Where-Object {
+            ($_.SideIndicator -eq '==')
+        }).InputObject
+
+    } else {
+        # Use the standard Side Indicators
+
+        # Items flagged on the left side are items that are missing in the current state.
+        $toAdd = ($desiredList | Where-Object { $_.SideIndicator -eq '<=' }).InputObject
+        # Items flagged on the right side are items that are missing in the desired state.
+        $toDelete = ($desiredList | Where-Object { $_.SideIndicator -eq '=>' }).InputObject
+    }
 
     # If $toDelete and $toAdd is not empty, set the Ensure property to Present.
     if (($toDelete.count -ne 0) -and ($toAdd.count -ne 0)) {
