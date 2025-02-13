@@ -35,8 +35,34 @@ Function Get-AzDoWIPTags
     # Get the current state of the WIT tags
     $currentList = List-WITTags -Organization $Organization -ProjectName $ProjectName
 
-    # Compare the current state with the desired state
-    $desiredList = Compare-Object -ReferenceObject $WorkItemTrackingTagList -DifferenceObject $currentList.name -IncludeEqual
+    # If the currentList is empty and WorkItemTrackingTagList is empty, set the status to Unchanged
+    if (($currentList.count -eq 0) -and ($WorkItemTrackingTagList.count -eq 0)) {
+        return $Result
+    }
+
+    # If the currentList is empty and WorkItemTrackingTagList is not empty, set the difference operation to Add
+    if (($currentList.count -eq 0) -and ($WorkItemTrackingTagList.count -ne 0)) {
+        $desiredList = $WorkItemTrackingTagList | ForEach-Object {
+            @{
+                SideIndicator = '<='
+                InputObject = $_
+            }
+        }
+
+    }
+    # If the currentList is not empty and WorkItemTrackingTagList is empty, set the difference operation to Delete
+    elseif ($currentList.count -ne 0 -and $WorkItemTrackingTagList.count -eq 0) {
+        $desiredList = $currentList | ForEach-Object {
+            @{
+                SideIndicator = '=>'
+                InputObject = $_.name
+            }
+        }
+    }
+    # else, compare the current state with the desired state
+    else {
+        $desiredList = Compare-Object -ReferenceObject $WorkItemTrackingTagList -DifferenceObject $currentList.name -IncludeEqual
+    }
 
     if ($Ensure -eq [Ensure]::Absent) {
         # If Absent was specified, test to see if the items already exist. If so, remove them.

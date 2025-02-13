@@ -56,9 +56,36 @@ Describe "Get-AzDoWIPTags" {
             $result = Get-AzDoWIPTags -ProjectName "TestProject" -WorkItemTrackingTagList @() -Ensure ([Ensure]::Absent)
             $result.status | Should -Be Unchanged
         }
+
+        It "Should handle an empty currentList" {
+            Mock -CommandName List-WITTags { return @() }
+
+            $result = Get-AzDoWIPTags -ProjectName "TestProject" -WorkItemTrackingTagList @('Tag1') -Ensure ([Ensure]::Absent)
+            $result.status | Should -Be Unchanged
+        }
     }
 
     Context "When Ensure is Present" {
+
+        It "Should be handled when no tags need to be added or deleted" {
+            $result = Get-AzDoWIPTags -ProjectName "TestProject" -WorkItemTrackingTagList @('Tag1', 'Tag2') -Ensure ([Ensure]::Present)
+            $result.status | Should -Be Unchanged
+        }
+
+        It "Should handle when no tags are returned from List-WITTags" {
+            Mock -CommandName List-WITTags { return @() }
+
+            $result = Get-AzDoWIPTags -ProjectName "TestProject" -WorkItemTrackingTagList @('Tag1', 'Tag2') -Ensure ([Ensure]::Present)
+            $result.status | Should -Be NotFound
+        }
+
+        It "Should handle when no tags are defined in the current state" {
+            Mock -CommandName List-WITTags { return @() }
+
+            $result = Get-AzDoWIPTags -ProjectName "TestProject" -WorkItemTrackingTagList @() -Ensure ([Ensure]::Present)
+            $result.status | Should -Be Unchanged
+        }
+
         It "Should set status to Changed when tags need to be added and deleted" {
             $result = Get-AzDoWIPTags -ProjectName "TestProject" -WorkItemTrackingTagList @('Tag3') -Ensure ([Ensure]::Present)
             $result.status | Should -Be Changed
