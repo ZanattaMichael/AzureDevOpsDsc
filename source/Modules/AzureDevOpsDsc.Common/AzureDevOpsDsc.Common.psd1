@@ -81,7 +81,13 @@
         'Get-AzDoProjectServices',
         'Set-AzDoProjectServices',
         'Test-AzDoProjectServices',
-        'Remove-AzDoProjectServices'
+        'Remove-AzDoProjectServices',
+
+        'Get-AzDoWIPTags',
+        'New-AzDoWIPTags',
+        'Remove-AzDoWIPTags',
+        'Set-AzDoWIPTags',
+        'Test-AzDoWIPTags'
 
     )
 
