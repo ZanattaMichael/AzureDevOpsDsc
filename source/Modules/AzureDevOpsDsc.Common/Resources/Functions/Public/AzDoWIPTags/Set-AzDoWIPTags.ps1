@@ -25,10 +25,18 @@ Function Set-AzDoWIPTags
 
     $Organization =  $Global:DSCAZDO_OrganizationName
 
-    # Create the WIT tags
-    New-WITTags -Organization $Organization -ProjectName $ProjectName -WorkItemTrackingNames $LookupResult.propertiesChanged.ToAdd
+    if ($null -eq $LookupResult) {
+        Throw "The parameter 'LookupResult' cannot be null."
+    }
 
-    # Delete the WIT tags
-    Remove-WITTags -Organization $Organization -ProjectName $ProjectName -WorkItemTrackingNames $LookupResult.propertiesChanged.ToDelete
+    if ($LookupResult.propertiesChanged.ToAdd.Count -ne 0) {
+        # Create the WIT tags
+        New-WITTags -Organization $Organization -ProjectName $ProjectName -WorkItemTrackingNames $LookupResult.propertiesChanged.ToAdd
+    }
+
+    if ($LookupResult.propertiesChanged.ToDelete.Count -ne 0) {
+        # Delete the WIT tags
+        Remove-WITTags -Organization $Organization -ProjectName $ProjectName -WorkItemTrackingTagId $LookupResult.propertiesChanged.ToDelete.id
+    }
 
 }
