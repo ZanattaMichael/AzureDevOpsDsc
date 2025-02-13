@@ -208,7 +208,6 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
         [System.String[]]$dscPropertyNamesWithNoSetSupport = $this.GetDscResourcePropertyNamesWithNoSetSupport()
         [System.String[]]$dscPropertyNamesToCompare = $this.GetDscResourcePropertyNames()
 
-
         switch ($desiredProperties.Ensure)
         {
             ([Ensure]::Present) {
@@ -231,7 +230,7 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
                         Write-Verbose "Resource missing. Setting action to Remove."
                     }([DSCGetSummaryState]::Unchanged) {
                         $dscRequiredAction = [RequiredAction]::None
-                        Write-Verbose "Resource Not Changed. Setting action to Remove."
+                        Write-Verbose "Resource Not Changed. Setting action to None."
                     }
                     default {
                         $errorMessage = "Could not obtain a valid 'LookupResult.Status' value within '$($this.GetResourceName())' Test() function. Value was '$($currentProperties.LookupResult.Status)'"
@@ -249,9 +248,21 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
 
                 Write-Verbose "Desired state is Absent."
 
-                $dscRequiredAction = ($currentProperties.LookupResult.Status -eq [DSCGetSummaryState]::NotFound) ? [RequiredAction]::None : [RequiredAction]::Remove
+                $dscRequiredAction = $(
 
-                Write-Verbose "DscActionRequired='$dscRequiredAction'"
+                    if ($currentProperties.LookupResult.Status -eq [DSCGetSummaryState]::NotFound)
+                    {
+                        [RequiredAction]::None
+                    } elseif ($currentProperties.LookupResult.Status -eq [DSCGetSummaryState]::Unchanged)
+                    {
+                        [RequiredAction]::None
+                    } else
+                    {
+                        [RequiredAction]::Remove
+                    }
+
+                )
+
                 return $dscRequiredAction
             }
 
@@ -263,6 +274,7 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
         }
 
         return $dscRequiredAction
+
     }
 
     hidden [Hashtable]GetDesiredStateParameters([Hashtable]$CurrentStateProperties, [Hashtable]$DesiredStateProperties, [RequiredAction]$RequiredAction)
