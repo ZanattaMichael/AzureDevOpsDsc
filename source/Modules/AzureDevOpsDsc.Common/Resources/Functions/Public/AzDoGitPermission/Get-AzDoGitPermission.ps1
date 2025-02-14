@@ -76,12 +76,14 @@ Function Get-AzDoGitPermission
 
     Write-Verbose "[Get-AzDoGitPermission] Security Namespace: $SecurityNamespace"
     Write-Verbose "[Get-AzDoGitPermission] Organization Name: $OrganizationName"
+    Write-Verbose "[Get-AzDoGitPermission] Project Name: $ProjectName"
 
-    if ([String]::IsNullOrEmpty($ProjectName)) {
-        Write-Warning "[Get-AzDoGitPermission] Project Name not specified. Defaulting to top-level Project permissions"
-        $ProjectName = $null
+
+    if ([String]::IsNullOrEmpty($RepositoryName)) {
+        Write-Warning "[Get-AzDoGitPermission] RepositoryName not specified. Defaulting to top-level Project permissions"
+        $RepositoryName = $null
     } else {
-        Write-Verbose "[Get-AzDoGitPermission] Project Name: $ProjectName"
+        Write-Verbose "[Get-AzDoGitPermission] Repository Name: $RepositoryName"
     }
 
     #
@@ -115,8 +117,11 @@ Function Get-AzDoGitPermission
         return $getGroupResult
     }
 
-    # Test if the ProjectName was specified
-    if ($null -ne $ProjectName) {
+    # Test if the RepositoryName was specified
+    if ($RepositoryName) {
+
+        #
+        Write-Verbose "[Get-AzDoGitPermission] Repository Name: $RepositoryName is not null."
 
         #
         # Perform a Lookup within the Cache for the Repository
@@ -174,9 +179,11 @@ Function Get-AzDoGitPermission
 
     # Filter the ACLs for the Repository
     # If the Repository is not specified, return the GitProject ACLs
-    if ($null -eq $ProjectName) {
+    if (-not $RepositoryName) {
         # Filter the ACLs for the top-level GitProject
-        $DifferenceACLs = $DifferenceACLs | Where-Object { ($_.Token.Type -eq 'GitProject') -and ($_.Token.ProjectId -eq $projectCache.id) }
+        $DifferenceACLs = $DifferenceACLs | Where-Object {
+            ($_.Token.Type -eq 'GitProject') -and ($_.Token.ProjectId -eq $projectCache.id)
+        }
     } else {
         # Filter the ACLs for the GitRepository
         $DifferenceACLs = $DifferenceACLs | Where-Object {
@@ -195,7 +202,7 @@ Function Get-AzDoGitPermission
         isInherited         = $isInherited
         OrganizationName    = $OrganizationName
         TokenName           = $(
-                                if ($null -eq $ProjectName) {
+                                if (-not $RepositoryName) {
                                     'repoV2\{0}' -f $ProjectName
                                 } else {
                                     '[{0}]\{1}' -f $ProjectName, $RepositoryName

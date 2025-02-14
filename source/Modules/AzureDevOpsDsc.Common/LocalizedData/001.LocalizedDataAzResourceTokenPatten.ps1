@@ -28,7 +28,7 @@ data LocalizedDataAzResourceTokenPatten
     @{
         # Git ACL Token Patterns
         OrganizationGit     = '^azdoorg$'
-        GitProject          = '^\(repoV2\)\\/\(\?<ProjectId>[A-Za-z0-9-]+\)$'
+        GitProject          = '^(repoV2)(\/|\\)(?<ProjectName>[A-Za-z0-9-_]+)'
         GitRepository       = '(?<ProjectName>[A-Za-z0-9-_]+)(\/|\\)(?<GitRepoName>[A-Za-z0-9-_]+)'
         # Identity ACL Token Patterns
         GroupPermission     = '^(?<ProjectId>[A-Za-z0-9-_]+)\\(?<GroupId>[A-Za-z0-9-_]+)$'
