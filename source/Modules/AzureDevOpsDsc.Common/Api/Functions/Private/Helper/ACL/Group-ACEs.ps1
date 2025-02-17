@@ -24,6 +24,8 @@
 #>
 Function Group-ACEs
 {
+    [CmdletBinding()]
+    [OutputType([System.Collections.ArrayList])]
     param(
         # Mandatory parameter: an array of ACE objects.
         [Parameter()]
@@ -59,7 +61,16 @@ Function Group-ACEs
     # Add the single identities to the ACE list
     $Single | ForEach-Object {
         Write-Verbose "[Group-ACE] Adding single identity: $($_.Group[0].Identity)"
-        $ACEList.Add($_.Group[0])
+        $ACEList.Add(
+            @{
+                Identity    = $_.Group[0].Identity
+                Permissions = @{
+                    Deny            = $_.Group[0].Permissions.Deny
+                    Allow           = $_.Group[0].Permissions.Allow
+                    DescriptorType  = $_.Group[0].Permissions.DescriptorType
+                }
+            }
+        )
     }
 
     Write-Verbose "[Group-ACE] Grouping multiple identities by permissions."
@@ -85,6 +96,8 @@ Function Group-ACEs
     }
 
     Write-Verbose "[Group-ACE] Completed."
-    $ACEList
+
+    # Return the list of ACEs
+    return $ACEList
 
 }

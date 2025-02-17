@@ -80,8 +80,10 @@ Function Get-AzDoGitPermission
 
 
     if ([String]::IsNullOrEmpty($RepositoryName)) {
+
         Write-Warning "[Get-AzDoGitPermission] RepositoryName not specified. Defaulting to top-level Project permissions"
         $RepositoryName = $null
+
     } else {
         Write-Verbose "[Get-AzDoGitPermission] Repository Name: $RepositoryName"
     }

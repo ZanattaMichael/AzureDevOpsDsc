@@ -106,7 +106,7 @@ Function ConvertTo-ACL
     }
 
     # Group the ACEs by the identity removing any duplicates.
-    $ACL.aces = Group-ACEs -ACEs $ACL.aces
+    $ACL.aces = @(Group-ACEs -ACEs $ACL.aces)
 
     Write-Verbose "[ConvertTo-ACL] Created ACL: $($ACL | Out-String)"
 
