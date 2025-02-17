@@ -31,22 +31,41 @@ an error message is written to the console.
 
 Function Set-AzDoPermission
 {
+    [CmdletBinding(DefaultParameterSetName = 'Default')]
     param(
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Default')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ClearACE')]
         [string]$OrganizationName,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Default')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ClearACE')]
         [string]$SecurityNamespaceID,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ParameterSetName = 'Default')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'ClearACE')]
         [Object]$SerializedACLs,
 
-        [Parameter()]
+        [Parameter(ParameterSetName = 'ClearACE')]
+        [Switch]$ClearACEs,
+
+        [Parameter(ParameterSetName = 'ClearACE')]
+        [Object]$DifferenceACLs,
+
+        [Parameter(ParameterSetName = 'Default')]
+        [Parameter(ParameterSetName = 'ClearACE')]
         [String]
         $ApiVersion = $(Get-AzDevOpsApiVersion -Default)
     )
 
     Write-Verbose "[Set-AzDoPermission] Started."
+
+    # Check if the ClearACEs switch is set to true. If so clear the ACEs prior to setting the new ACLs.
+    if ($ClearACEs.IsPresent)
+    {
+        Write-Verbose "[Set-AzDoPermission] Clearing ACEs."
+        Clear-AzDoACE -OrganizationName $OrganizationName -SecurityNamespaceID $SecurityNamespaceID -DifferenceACLs $DifferenceACLs
+    }
+
 
     # Define a hashtable to store parameters for the Invoke-AzDevOpsApiRestMethod function.
 

@@ -19,7 +19,7 @@ function Get-AzDevOpsApiVersion
         $Default
     )
 
-    [string]$defaultApiVersion = '7.0-preview.1'
+    [string]$defaultApiVersion = '7.1'
 
     [string[]]$apiVersions = @(
 
@@ -27,11 +27,9 @@ function Get-AzDevOpsApiVersion
         #'5.0', # Not supported
         #'5.1', # Not supported
         '6.0',
+        '7.0',
         '7.1',
-        '7.0-preview.1',
-        '7.1-preview.1',
-        '7.1-preview.4',
-        '7.2-preview.4'
+        '7.2-preview.1'
 
     )
 

@@ -24,7 +24,7 @@ Describe "ConvertTo-ACL" -Tags "Unit", "ACL", "Helper" {
             )
         }
         Mock -CommandName Group-ACEs -MockWith { param($ACEs) return $ACEs }
-
+        Mock -CommandName
         $permissions = @(
             @{
                 Identity    = 'User1'

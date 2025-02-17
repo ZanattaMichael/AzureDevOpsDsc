@@ -5,7 +5,7 @@ Function Set-AzDoGitPermission
         [Parameter(Mandatory = $true)]
         [string]$ProjectName,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $false)]
         [string]$RepositoryName,
 
         [Parameter(Mandatory = $true)]
@@ -48,6 +48,7 @@ Function Set-AzDoGitPermission
     #
     # Serialize the ACLs
 
+    # More work is needed here.
     $serializeACLParams = @{
         ReferenceACLs = $LookupResult.propertiesChanged
         DescriptorACLList = Get-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'
@@ -61,8 +62,18 @@ Function Set-AzDoGitPermission
     }
 
     #
+    # If the Repository is not specified, this dictates that the permissions are for the Project.
+    # Because of this we need to remove the ACE's that need to be removed prior to setting the new permissions.
+    if (-not $RepositoryName) {
+        Write-Verbose "[Set-AzDoPermission] Clearing ACEs."
+        $params.ClearACEs = $true
+        $params.DifferenceACLs = $LookupResult.DifferenceACLs
+    }
+
+    #
     # Set the Git Repository Permissions
 
+    Write-Verbose "[Set-AzDoPermission] Parameters: $($params | ConvertTo-Json -Depth 5)"
     Set-AzDoPermission @params
 
 }

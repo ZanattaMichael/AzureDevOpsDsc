@@ -62,7 +62,8 @@ Describe 'Group-ACEs' -Tags "Unit", "ACL", "Helper" {
     }
 
     It 'Processes single identity ACE' {
-        $result = Group-ACEs -ACEs @($ace1)
+        $result = @(Group-ACEs -ACEs @($ace1))
+        $result.Count | Should -Be 1
         $result.Identity.value.originId | Should -Be "user1"
         $result.Permissions.Deny | Should -Be 0,1
         $result.Permissions.Allow | Should -Be 2,3
@@ -70,7 +71,7 @@ Describe 'Group-ACEs' -Tags "Unit", "ACL", "Helper" {
 
     It 'Groups multiple identities correctly' {
 
-        $result = Group-ACEs -ACEs @($ace1, $ace2, $ace3)
+        $result = @(Group-ACEs -ACEs @($ace1, $ace2, $ace3))
         $result.Count | Should -Be 2
         $user1 = $result | Where-Object { $_.Identity.value.originId -eq "user1" }
         $user2 = $result | Where-Object { $_.Identity.value.originId -eq "user2" }
@@ -83,7 +84,7 @@ Describe 'Group-ACEs' -Tags "Unit", "ACL", "Helper" {
     }
 
     It "Doesn't group single identity ACE" {
-        $result = Group-ACEs -ACEs @($ace1)
+        $result = @(Group-ACEs -ACEs @($ace1))
         @($result).Count | Should -Be 1
     }
 

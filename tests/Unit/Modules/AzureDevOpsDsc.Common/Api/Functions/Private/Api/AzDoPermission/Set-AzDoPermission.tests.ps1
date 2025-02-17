@@ -17,6 +17,7 @@ Describe 'Set-AzDoPermission Tests' -Tags "Unit", "API" {
 
         Mock -CommandName Get-AzDevOpsApiVersion { return '6.0-preview.1' }
         Mock -CommandName Invoke-AzDevOpsApiRestMethod { return $null }
+        Mock -CommandName Clear-AzDoACE { return $null }
 
         $OrganizationName = "TestOrg"
         $SecurityNamespaceID = "TestNamespace"
@@ -37,6 +38,14 @@ Describe 'Set-AzDoPermission Tests' -Tags "Unit", "API" {
                 $Method -eq 'POST'
                 $Body -eq $SerializedACLs
             }
+        }
+    }
+
+    Context 'When ClearACEs switch is provided' {
+        It 'Should call Clear-AzDoACE' {
+            Set-AzDoPermission -OrganizationName $OrganizationName -SecurityNamespaceID $SecurityNamespaceID -SerializedACLs $SerializedACLs -ClearACEs -DifferenceACLs $SerializedACLs
+
+            Assert-MockCalled -CommandName Clear-AzDoACE -Exactly 1
         }
     }
 
