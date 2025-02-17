@@ -6,11 +6,13 @@
 AzDoGitPermission [string] #ResourceName
 {
     ProjectName = [String]$ProjectName
-    RepositoryName = [String]$RepositoryName
+    [ RepositoryName = [String]$RepositoryName ]
     Permissions = [HashTable]$Permissions # See Permissions Syntax
     [ Ensure = [String] {'Present', 'Absent'}]
 }
 ```
+
+The `RepositoryName` property is optional. If it is not provided, the Git permissions will be applied at the project-level.
 
 ## Permissions Syntax
 
@@ -192,4 +194,30 @@ $params = @{
 
 Invoke-AzDoLCM @params
 
+```
+
+## Example 5: Sample Configuration using AzDO-DSC-LCM setting Project Permissions
+
+``` YAML
+parameters: {}
+
+variables: {
+  ProjectName: SampleProject,
+  RepositoryName: SampleRepository
+}
+
+resources:
+
+  - name: Project-Level Git Permissions Sample
+    type: AzureDevOpsDsc/AzDoGitPermission
+    dependsOn: 
+        - AzureDevOpsDsc/AzDoProjectGroup/SampleGroupReadAccess
+    properties:
+      projectName: $ProjectName
+      isInherited: false
+      Permissions:
+        - Identity: '[$ProjectName]\SampleGroupReadAccess'
+          Permission:
+            Read: "Allow"
+            ManageNote: "Allow"   
 ```
