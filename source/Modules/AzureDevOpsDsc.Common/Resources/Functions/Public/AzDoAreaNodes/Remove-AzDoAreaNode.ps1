@@ -30,17 +30,18 @@ Function Remove-AzDoAreaNode
     {
         Write-Verbose "[Remove-AzDoAreaNode] Attempting to remove Area Node: $($node)"
         $params = @{
-            OrganizationName = $OrganizationName
-            ProjectName
-            StructureType = 'Area'
-            Path = $node
-            ReclassificationId = $projectArea.value.id
+            OrganizationName    = $OrganizationName
+            ProjectName         = $ProjectName
+            StructureType       = 'Area'
+            Path                = $node
+            ReclassificationId  = $projectArea.value.id
         }
 
         Remove-ClassificationNode @params
 
         # Remove the node from the live cache
-        Remove-CacheObject -CacheType 'LiveAreaNodes' -Key "$ProjectName\Area\$node"
+        #TODO: Remove the node from the live cache.
+        #Remove-CacheObject -CacheType 'LiveAreaNodes' -Key "$ProjectName\Area\$node"
     }
 
 
