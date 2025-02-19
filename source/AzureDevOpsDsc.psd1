@@ -44,7 +44,8 @@
       'AzDevOpsProject',
       'AzDoOrganizationGroup',
       'AzDoProjectGroup',
-      'AzDoWIPTags'
+      'AzDoWIPTags',
+      'AzDoAreaNodes'
     )
 
     RequiredAssemblies = @()

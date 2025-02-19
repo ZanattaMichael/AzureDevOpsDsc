@@ -1,4 +1,4 @@
-Function Remove-AzDoAreaNode
+Function Remove-AzDoAreaNodes
 {
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
@@ -20,10 +20,14 @@ Function Remove-AzDoAreaNode
         $Force
     )
 
+    Write-Verbose "[Remove-AzDoAreaNode] ProjectName $($ProjectName)"
+
     # Get the ID of the top-level area. This is needed to get the id so all the work items can be reassigned to the top level area.
     $projectArea = $LookupResult.cachedAreaNodes | Where-Object { $_.Key -eq "$ProjectName\Area" }
-
     $OrganizationName = $Global:DSCAZDO_OrganizationName
+
+    Write-Verbose "[Remove-AzDoAreaNode] projectArea $($projectArea | Out-String)"
+    Write-Verbose "[Remove-AzDoAreaNode] AreaPaths $($AreaPaths | Out-String)"
 
     # Iterate through each of the LookupResult nodes and remove them
     ForEach($node in $LookupResult.ToRemove)
@@ -33,17 +37,18 @@ Function Remove-AzDoAreaNode
             OrganizationName    = $OrganizationName
             ProjectName         = $ProjectName
             StructureType       = 'Area'
-            Path                = $node
+            Path                = $node.path -replace '\\', '/'
             ReclassificationId  = $projectArea.value.id
         }
 
         Remove-ClassificationNode @params
+        Remove-CacheItem -Key "$ProjectName\Area\$($node.path)" -Type 'LiveAreaNodes'
 
-        # Remove the node from the live cache
-        #TODO: Remove the node from the live cache.
-        #Remove-CacheObject -CacheType 'LiveAreaNodes' -Key "$ProjectName\Area\$node"
     }
 
+    Write-Verbose "[Remove-AzDoAreaNode] Writing to the updated cache"
 
+    # Write the updated cache to the global cache and export to the cache file.
+    Set-CacheObject -Content $Global:AzDoGroup -CacheType 'LiveAreaNodes'
 
 }

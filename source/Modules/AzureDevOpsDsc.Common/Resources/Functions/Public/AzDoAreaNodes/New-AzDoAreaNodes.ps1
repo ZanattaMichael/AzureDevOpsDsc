@@ -1,4 +1,4 @@
-Function New-AzDoAreaNode
+Function New-AzDoAreaNodes
 {
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]

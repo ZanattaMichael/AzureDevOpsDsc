@@ -40,6 +40,7 @@
 
         #
         # DSC Class Based Resources
+
         'Get-AzDoProject',
         'New-AzDoProject',
         'Set-AzDoProject',
@@ -88,6 +89,16 @@
         'Remove-AzDoWIPTags',
         'Set-AzDoWIPTags',
         'Test-AzDoWIPTags'
+
+        'Get-AzDoAreaNodes',
+        'New-AzDoAreaNodes',
+        'Remove-AzDoAreaNodes',
+        'Set-AzDoAreaNodes'
+
+        'Get-AzDoWIPTags',
+        'New-AzDoWIPTags',
+        'Remove-AzDoWIPTags',
+        'Set-AzDoWIPTags'
 
     )
 
