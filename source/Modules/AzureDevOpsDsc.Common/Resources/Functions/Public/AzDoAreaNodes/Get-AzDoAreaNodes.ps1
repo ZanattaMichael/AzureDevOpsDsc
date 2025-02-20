@@ -1,33 +1,41 @@
 Function Get-AzDoAreaNodes {
     [CmdletBinding()]
     param (
+        # Mandatory parameter for the project name
         [Parameter(Mandatory = $true)]
         [string]$ProjectName,
 
+        # Optional parameter for specifying area paths
         [Parameter(Mandatory = $false)]
         [System.String[]]$AreaPaths,
 
+        # Optional hashtable for lookup results
         [Parameter()]
         [HashTable]$LookupResult,
 
+        # Optional parameter to ensure state
         [Parameter()]
         [Ensure]$Ensure,
 
+        # Switch parameter to force execution
         [Parameter()]
         [System.Management.Automation.SwitchParameter]
         $Force
     )
 
+    # Log the start of function execution with verbose output
     Write-Verbose "[Get-AzDoAreaNodes] Start function execution"
     Write-Verbose "[Get-AzDoAreaNodes] ProjectName: $ProjectName"
     Write-Verbose "[Get-AzDoAreaNodes] AreaPaths: $($AreaPaths | Out-String)"
-    # Format the Area Paths
-    $AreaPaths = $AreaPaths | Format-AzDoAreaPath -ProjectName $ProjectName
+
+    # Format the provided area paths for the specified project. Add missing classification node paths
+    $AreaPaths = $AreaPaths | Format-AzDoAreaPath -ProjectName $ProjectName | Get-AllAzDoClassificationNodePaths
     Write-Verbose "[Get-AzDoAreaNodes] FormattedAreaPaths $($AreaPaths | Out-String)"
 
+    # Retrieve the global organization name
     $OrganizationName = $Global:DSCAZDO_OrganizationName
 
-    # Initialize the result object
+    # Initialize the result object with default values
     $getAreaResult = @{
         Ensure = [Ensure]::Absent
         propertiesChanged = @{
@@ -35,25 +43,27 @@ Function Get-AzDoAreaNodes {
             toRemove = @()
         }
         ProjectName = $ProjectName
-        AreaPath = $AreaPaths
+        AreaPaths = $AreaPaths
         Status = [DSCGetSummaryState]::Unchanged
         Reason = $null
         CachedAreaNodes = $null
     }
 
+    # Retrieve cached area nodes from cache
+    $cachedAreaNodes = (Get-CacheObject -CacheType 'LiveAreaNodes' | Where-Object { $_.Key -like "\$ProjectName\Area*" }).Value
 
-
-    # Retrieve the cached Area Nodes
-    $cachedAreaNodes = Get-CacheObject -CacheType 'LiveAreaNodes' | Where-Object { $_.Key -like "\$ProjectName\Area*" }
-    $cachedAreaNodes | Export-CLIXML C:\Temp\Cache.clixml
-    # Set the cachedAreaNodes to the result object. This will be needed for other functions.
+    # Set the cached area nodes in the result object for use by other functions
     $getAreaResult.cachedAreaNodes = $cachedAreaNodes
 
-    $isTopLevel = $cachedAreaNodes | Where-Object { $_.Key -eq "\$ProjectName\Area" }
+    # We only need the path to perform the comparison.
+    $cachedAreaNodesPath = $cachedAreaNodes.path
 
-    # If the AreaPaths is count is 0, and the cachedAreaNodes is 1, but it's the top level, then the Area Node does not exist.
-    # Set to unchanged and return.
-    if ($AreaPaths.Count -eq 0 -and $cachedAreaNodes.Count -eq 1 -and $isTopLevel) {
+
+    # Check if the cached area nodes contain a top-level node
+    $isTopLevel = $cachedAreaNodesPath | Where-Object { $_ -eq "\$ProjectName\Area" }
+
+    # Handle case where no area paths are specified and only top-level node exists
+    if ($AreaPaths.Count -eq 0 -and $cachedAreaNodesPath.Count -eq 1 -and $isTopLevel) {
         Write-Verbose "[Get-AzDoAreaNodes] AreaPaths is not specified and no Area Nodes exist in cache"
 
         $getAreaResult.status = [DSCGetSummaryState]::Unchanged
@@ -62,85 +72,81 @@ Function Get-AzDoAreaNodes {
         return $getAreaResult
     }
 
-    # If the $AreaPaths.Count -eq 0, then the Area Node does not exist. Set to missing and return.
+    # Handle case where no area paths are specified
     if ($AreaPaths.Count -eq 0) {
         Write-Verbose "[Get-AzDoAreaNodes] AreaPaths is not specified"
 
         $getAreaResult.status = [DSCGetSummaryState]::Missing
         $getAreaResult.reason = 'Area Node does not exist'
 
+        if ($Ensure -eq [Ensure]::Absent) {
+            $getAreaResult.status = [DSCGetSummaryState]::NotFound
+            $getAreaResult.propertiesChanged.toAdd = $cachedAreaNodesPath | Where-Object { $_ -ne "\$ProjectName\Area" }
+        } else {
+            $getAreaResult.propertiesChanged.Delete = $cachedAreaNodesPath | Where-Object { $_ -ne "\$ProjectName\Area" }
+        }
+
         return $getAreaResult
     }
 
-    # If the $cachedAreaNodes.Count -eq 1 and it's the top level, then the Area Node does not exist. Set to NotFound and return.
-    if ($cachedAreaNodes.Count -eq 1 -and $isTopLevel) {
-        Write-Verbose "[Get-AzDoAreaNodes] Area Node does not exist"
+    # Handle case where only top-level node exists
+    if ($cachedAreaNodesPath.Count -eq 1 -and $isTopLevel) {
 
+        Write-Verbose "[Get-AzDoAreaNodes] Area Node does not exist"
         $getAreaResult.status = [DSCGetSummaryState]::NotFound
+
+        if ($Ensure -eq [Ensure]::Absent) {
+            $getAreaResult.status = [DSCGetSummaryState]::Missing
+            $getAreaResult.propertiesChanged.toDelete = $AreaPaths | Where-Object { $_ -ne "\$ProjectName\Area" }
+        } else {
+            $getAreaResult.propertiesChanged.toAdd = $AreaPaths | Where-Object { $_ -ne "\$ProjectName\Area" }
+        }
+
         $getAreaResult.reason = 'Area Node does not exist'
 
         return $getAreaResult
     }
 
-    # Compare the AreaPaths to the cachedAreaNodes.Name
-    $differenceObject = $cachedAreaNodes | ForEach-Object { $_.Value.path }
+    # Extract paths from cached area nodes for comparison
+    $differenceObject = $cachedAreaNodesPath
 
-    @{
-        ReferenceObject = $AreaPaths
-        DifferenceObject = $differenceObject
-    } | Export-CLIXML C:\Temp\compare.clixml
-
-    # Compare the two lists. Exclude the top-level areas
+    # Compare current and desired area paths, excluding top-level areas
     $currentList = Compare-Object -ReferenceObject $AreaPaths -DifferenceObject $differenceObject -IncludeEqual | Where-Object {
         $_.InputObject -ne "\$ProjectName\Area"
     }
 
-    $currentList | Export-Clixml C:\Temp\currentList.clixml
-    $ensure | Export-CLixml C:\Temp\ensure.clixml
-
-    # If the Ensure is Absent, then remove the Area Nodes
+    # Determine actions based on Ensure parameter
     if ($Ensure -eq [Ensure]::Absent) {
-        # If Absent was specified, test to see if the items already exist. If so, remove them.
-
-        # Items flagged on the right side are items that are missing in the desired state.
+        # Identify items present in both lists for removal
         $toDelete = ($currentList | Where-Object {
             ($_.SideIndicator -eq '==')
         }).InputObject
 
     } else {
-        # Use the standard Side Indicators
-
-        # Items flagged on the left side are items that are missing in the current state.
+        # Identify items missing in current or desired state
         $toAdd = ($currentList | Where-Object { $_.SideIndicator -eq '<=' }).InputObject
-        # Items flagged on the right side are items that are missing in the desired state.
         $toDelete = ($currentList | Where-Object { $_.SideIndicator -eq '=>' }).InputObject
-
-        $toAdd | Export-CLixml 'C:\Temp\toAdd1.clixml'
-        $toDelete | Export-Clixml 'C:\Temp\toDelete1.clixml'
     }
 
-    # If $toDelete and $toAdd is not empty, set the Ensure property to Present.
+    # Update status based on differences between current and desired states
     if (($toDelete.count -ne 0) -and ($toAdd.count -ne 0)) {
         $getAreaResult.status = [DSCGetSummaryState]::Changed
     }
-    # If $toDelete is not empty, set the status to NotFound
     elseif ($toDelete.count -ne 0) {
         $getAreaResult.status = [DSCGetSummaryState]::Missing
     }
-    # If $toAdd is not empty, set the status to Missing
     elseif ($toAdd.count -ne 0) {
         $getAreaResult.status = [DSCGetSummaryState]::NotFound
     }
 
-    $toAdd | Export-CLixml 'C:\Temp\toAdd.clixml'
-    $toDelete | Export-Clixml 'C:\Temp\toDelete.clixml'
-
-    # If the Ensure property is set to Present, set the Ensure property to Present.
+    # Update propertiesChanged with determined additions and deletions
     $getAreaResult.propertiesChanged = @{
-        toDelete = ($cachedAreaNodes | Where-Object { $_.value.path -in $toDelete }).Value
+        toDelete = $toDelete
         toAdd = $toAdd
     }
 
+    # Return the result object with all computed information
     return $getAreaResult
 
 }
+

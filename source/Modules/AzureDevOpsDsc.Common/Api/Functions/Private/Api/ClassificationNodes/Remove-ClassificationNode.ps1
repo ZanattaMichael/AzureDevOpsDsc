@@ -7,7 +7,7 @@ Function Remove-ClassificationNode {
         [String]$ProjectName,
 
         [Parameter(Mandatory)]
-        [ValidateSet('Area', 'Iteration')]
+        [ValidateSet('Areas', 'Iterations')]
         [String]$StructureType,
 
         [Parameter(Mandatory)]
@@ -47,14 +47,14 @@ Function Remove-ClassificationNode {
             Call the Invoke-AzDevOpsApiRestMethod function with the parameters defined above.
             The "@" symbol is used to pass the hashtable as splatting parameters.
         #>
-        Write-Verbose "[Remove-ClassificationNode] Attempting to invoke REST method to clear ACEs from $Token Token."
+        Write-Verbose "[Remove-ClassificationNode] Attempting to invoke REST method remove classification node:"
         $null = Invoke-AzDevOpsApiRestMethod @params
 
     }
     catch
     {
         # If an exception occurs, write an error message to the console with details about the issue.
-        Write-Error "[Remove-ClassificationNode] Failed to set ACLs: $($_.Exception.Message)"
+        Write-Error "[Remove-ClassificationNode] Failed to remove classification node: $($_.Exception.Message)"
     }
 
 }

@@ -20,35 +20,51 @@ Function Remove-AzDoAreaNodes
         $Force
     )
 
-    Write-Verbose "[Remove-AzDoAreaNode] ProjectName $($ProjectName)"
+    Write-Verbose "[Remove-AzDoAreaNodes] Starting function execution for Project: $ProjectName."
 
-    # Get the ID of the top-level area. This is needed to get the id so all the work items can be reassigned to the top level area.
-    $projectArea = $LookupResult.cachedAreaNodes | Where-Object { $_.Key -eq "$ProjectName\Area" }
     $OrganizationName = $Global:DSCAZDO_OrganizationName
+    # Get the ID of the top-level area. This is needed to get the id so all the work items can be reassigned to the top level area.
+    $projectAreaId = ($LookupResult.cachedAreaNodes | Where-Object { $_.path -eq "\$ProjectName\Area" }).id
 
-    Write-Verbose "[Remove-AzDoAreaNode] projectArea $($projectArea | Out-String)"
-    Write-Verbose "[Remove-AzDoAreaNode] AreaPaths $($AreaPaths | Out-String)"
+    Write-Verbose "[Remove-AzDoAreaNodes] Retrieved top-level area node for Project: $ProjectName."
+    Write-Verbose "[Remove-AzDoAreaNodes] Project ID: $($projectAreaId)"
+
+    # If the ProjectAreaId is missing, log an error and stop.
+    if ($null -eq $projectAreaId) {
+        Write-Error "[Remove-AzDoAreaNodes] Stopping. Cannot Enumerate ProjectAreaId for \$ProjectName\Area"
+        return
+    }
 
     # Iterate through each of the LookupResult nodes and remove them
-    ForEach($node in $LookupResult.ToRemove)
-    {
-        Write-Verbose "[Remove-AzDoAreaNode] Attempting to remove Area Node: $($node)"
+    ForEach($node in (@($LookupResult.propertiesChanged.ToDelete) | Sort-Object -Descending)) {
+
+        # Reformat the Path
+        $reformat = $node.Replace('\', '/')
+        $Path = $reformat.Replace("/$ProjectName/Area/", '')
+
+        Write-Verbose "[Remove-AzDoAreaNodes] Attempting to remove Area Node: $($node)."
+        Write-Verbose "[Remove-AzDoAreaNodes] Formatted Path: $Path"
         $params = @{
             OrganizationName    = $OrganizationName
             ProjectName         = $ProjectName
-            StructureType       = 'Area'
-            Path                = $node.path -replace '\\', '/'
-            ReclassificationId  = $projectArea.value.id
+            StructureType       = 'Areas'
+            Path                = $path
+            ReclassificationId  = $projectAreaId
         }
 
         Remove-ClassificationNode @params
-        Remove-CacheItem -Key "$ProjectName\Area\$($node.path)" -Type 'LiveAreaNodes'
+
+        Write-Verbose "[Remove-AzDoAreaNodes] Key To Remove: $($node)"
+        Remove-CacheItem -Key $node -Type 'LiveAreaNodes'
+
+        Write-Verbose "[Remove-AzDoAreaNodes] Successfully removed Area Node: $($node)."
 
     }
 
     Write-Verbose "[Remove-AzDoAreaNode] Writing to the updated cache"
 
     # Write the updated cache to the global cache and export to the cache file.
-    Set-CacheObject -Content $Global:AzDoGroup -CacheType 'LiveAreaNodes'
+    Set-CacheObject -Content $Global:AzDoLiveAreaNodes -CacheType 'LiveAreaNodes'
+    Refresh-CacheObject -CacheType 'LiveAreaNodes'
 
 }

@@ -7,7 +7,7 @@ Function New-ClassificationNode {
         [String]$ProjectName,
 
         [Parameter(Mandatory)]
-        [ValidateSet('Area', 'Iteration')]
+        [ValidateSet('Areas', 'Iterations')]
         [String]$StructureType,
 
         [Parameter()]
@@ -44,6 +44,8 @@ Function New-ClassificationNode {
     }
 
     Write-Verbose "[New-ClassificationNode] Uri: $($params.Uri)"
+    Write-Verbose "[New-ClassificationNode] Body:"
+    Write-Verbose "[New-ClassificationNode] $($params.Body)"
 
     try
     {
@@ -51,14 +53,14 @@ Function New-ClassificationNode {
             Call the Invoke-AzDevOpsApiRestMethod function with the parameters defined above.
             The "@" symbol is used to pass the hashtable as splatting parameters.
         #>
-        Write-Verbose "[New-ClassificationNode] Attempting to invoke REST method to clear ACEs from $Token Token."
+        Write-Verbose "[New-ClassificationNode] Attempting to invoke REST method create classification node."
         return (Invoke-AzDevOpsApiRestMethod @params)
 
     }
     catch
     {
         # If an exception occurs, write an error message to the console with details about the issue.
-        Write-Error "[New-ClassificationNode] Failed to set ACLs: $($_.Exception.Message)"
+        Write-Error "[New-ClassificationNode] Failed to create classification node: $($_.Exception.Message)"
     }
 
 

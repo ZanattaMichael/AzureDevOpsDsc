@@ -24,18 +24,23 @@ Function New-AzDoAreaNodes
 
     # Iterate through the LookupResult hashtable and process the values.
     # Sort the values to ensure that the parent nodes are created before the child nodes.
-    ForEach ($areaPathToAdd in ($LookupResult.ToAdd | Sort-Object)) {
+    ForEach ($areaPathToAdd in (@($LookupResult.propertiesChanged.ToAdd) | Sort-Object)) {
+
+        Write-Verbose "[New-AzDoAreaNodes] Adding: $($areaPathToAdd)"
+
+        # Switch the path slashes
+        $formattedAreaPathToAdd = $areaPathToAdd.Replace('\', '/')
 
         # Remove the Project and Area prefix from the path
-        $removedPrefix = $areaPathToAdd -replace "\\$Project\\Area\\", ''
+        $removedPrefix = $formattedAreaPathToAdd.Replace("/$ProjectName/Area/", '')
         # Split the path into an array
-        $SplitPath = $removedPrefix -split '\\'
+        $SplitPath = $removedPrefix.Split('/')
 
         # Construct the parameters for the New-ClassificationNode function
         $params = @{
             OrganizationName = $OrganizationName
             ProjectName = $ProjectName
-            StructureType = 'Area'
+            StructureType = 'Areas'
             Path = $(
                 if ($SplitPath.Count -eq 1) {
                     $null
@@ -47,17 +52,28 @@ Function New-AzDoAreaNodes
             Body = @{
                 name = $SplitPath[-1]
             }
-
         }
 
-        Write-Verbose "[New-AzDoAreaNode] Attempting to create Area Node: $($areaPathToAdd)"
+        Write-Verbose "[New-AzDoAreaNodes] Attempting to create Area Node: $($areaPathToAdd)."
         $response = New-ClassificationNode @params
 
         # If the response contains a value, add it to the live cache
         if ($response) {
-            Add-CacheObject -CacheType 'LiveAreaNodes' -Key "$ProjectName\Area\$areaPathToAdd" -Value $response
+            Write-Verbose "[New-AzDoAreaNodes] Successfully created Area Node: $($areaPathToAdd), updating live cache."
+            Add-CacheItem -Type 'LiveAreaNodes' -Key $areaPathToAdd -Value $response
+        } else {
+            Write-Error "[New-AzDoAreaNodes] Failed to create Area Node: $($areaPathToAdd)."
+            # Stop and Return
+            return
         }
 
     }
+
+    # Write the updated cache to the global cache and export to the cache file.
+    Write-Verbose "[New-AzDoAreaNodes] Updating global cache for LiveAreaNodes."
+    Set-CacheObject -Content $Global:AzDoLiveAreaNodes -CacheType 'LiveAreaNodes'
+    Refresh-CacheObject -CacheType 'LiveAreaNodes'
+
+    Write-Verbose "[New-AzDoAreaNodes] Function execution completed for Project: $ProjectName."
 
 }
