@@ -23,14 +23,6 @@ Function Get-AzDoIterationNode {
         $Force
     )
 
-    [DscProperty(Key, Mandatory)]
-    [Alias('Name')]
-    [System.String]$ProjectName
-
-    [DscProperty(Mandatory)]
-    [Alias('Attributes')]
-    [HashTable[]]$IterationAttributes
-
     # Log the start of function execution with verbose output
     Write-Verbose "[Get-AzDoIterationNode] Start function execution"
     Write-Verbose "[Get-AzDoIterationNode] ProjectName: $ProjectName"
@@ -78,7 +70,7 @@ Function Get-AzDoIterationNode {
             toRemove = @()
         }
         ProjectName = $ProjectName
-        AreaPaths = $AreaPaths
+        IterationAttributes = $IterationAttributes
         Status = [DSCGetSummaryState]::Unchanged
         Reason = $null
         CachedAreaNodes = $null
