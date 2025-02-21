@@ -43,7 +43,7 @@ class AzDoIterationNodes : AzDevOpsDscResourceBase
     [Alias('Name')]
     [System.String]$ProjectName
 
-    [DscProperty(Mandatory)]
+    [DscProperty()]
     [Alias('Attributes')]
     [HashTable[]]$IterationAttributes
 
@@ -75,7 +75,6 @@ class AzDoIterationNodes : AzDevOpsDscResourceBase
         }
 
         $properties.ProjectName                 = $CurrentResourceObject.ProjectName
-        $properties.IterationPath               = $CurrentResourceObject.IterationPath
         $properties.IterationAttributes         = $CurrentResourceObject.IterationAttributes
         $properties.LookupResult                = $CurrentResourceObject.LookupResult
         $properties.Ensure                      = $CurrentResourceObject.Ensure
