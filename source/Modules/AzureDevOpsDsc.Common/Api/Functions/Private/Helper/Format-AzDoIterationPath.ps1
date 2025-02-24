@@ -1,3 +1,29 @@
+<#
+.SYNOPSIS
+Formats the Azure DevOps iteration path.
+
+.DESCRIPTION
+This function takes an iteration hash table and a project name as input and formats the iteration path according to specific rules.
+It ensures the path starts with the project name and "Area", removes any trailing slashes, and replaces backslashes with forward slashes.
+
+.PARAMETER Iteration
+A hash table containing the iteration details, including StartDate, EndDate, and path.
+
+.PARAMETER ProjectName
+The name of the Azure DevOps project.
+
+.EXAMPLE
+$iteration = @{
+    StartDate = '2023-01-01'
+    EndDate = '2023-01-31'
+    path = 'Iteration1'
+}
+$projectName = 'MyProject'
+Format-AzDoIterationPath -Iteration $iteration -ProjectName $projectName
+
+.NOTES
+This function is intended for internal use within the AzureDevOpsDsc module.
+#>
 Function Format-AzDoIterationPath {
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]

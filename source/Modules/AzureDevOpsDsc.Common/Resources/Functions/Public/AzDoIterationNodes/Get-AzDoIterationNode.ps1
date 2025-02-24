@@ -23,13 +23,16 @@ Function Get-AzDoIterationNode {
         $Force
     )
 
+    # Retrieve the global organization name
+    $OrganizationName = $Global:DSCAZDO_OrganizationName
+
     # Log the start of function execution with verbose output
     Write-Verbose "[Get-AzDoIterationNode] Start function execution"
     Write-Verbose "[Get-AzDoIterationNode] ProjectName: $ProjectName"
     Write-Verbose "[Get-AzDoIterationNode] IterationAttributes: $($IterationAttributes | Out-String)"
 
     <#
-        Iteration Attributoes
+        Iteration Attributes
 
         @{
             Path = ''
@@ -38,142 +41,179 @@ Function Get-AzDoIterationNode {
         }
     #>
 
-    # Test the Attribute State. Errors will be flagged in the function
-    $result = Test-IterationNodeHashTable -IterationAttributes $IterationAttributes
-    if (-not $result) { return }
+    $FormattedIterationAttributes = Format-AzDoIterationNodes -IterationAttributes $IterationAttributes -ProjectName $ProjectName
+    $FormattedIterationAttributesPath = $FormattedIterationAttributes.Path
 
-    # Format the provided area paths for the specified project. Add missing classification node paths
-    $FormattedIterationAttributes = $IterationAttributes | Format-AzDoIterationPath -ProjectName $ProjectName
-    # Extract all Classification Node Paths and match the output to IterationAttributes. If there are any missing, add them.
-    $IterationAttributes = $FormattedIterationAttributes.Path | Get-AllAzDoClassificationNodePaths | ForEach-Object {
-        $path = $_
-        $state = @($FormattedIterationAttributes | Where-Object { $_.path -eq $path })
-        if ($state.count -eq 0) {
-            # Add the entry
-            $FormattedIterationAttributes += @{
-                Path = $path
-            }
-        }
-    } | Sort-Object -Property Path
+    Write-Verbose "[Get-AzDoIterationNode] FormattedIterationAttributesPath $($IterationAttributesPath | Out-String)"
 
-    $classificationNodes = $ | Get-AllAzDoClassificationNodePaths
-    Write-Verbose "[Get-AzDoIterationNode] FormattedAreaPaths $($AreaPaths | Out-String)"
-
-    # Retrieve the global organization name
-    $OrganizationName = $Global:DSCAZDO_OrganizationName
 
     # Initialize the result object with default values
-    $getAreaResult = @{
+    $getIterationResult = @{
         Ensure = [Ensure]::Absent
         propertiesChanged = @{
             toAdd = @()
             toRemove = @()
+            toUpdate = @()
         }
         ProjectName = $ProjectName
-        IterationAttributes = $IterationAttributes
+        IterationAttributes = $FormattedIterationAttributes
+        CachedIterationNodes = $null
         Status = [DSCGetSummaryState]::Unchanged
         Reason = $null
-        CachedAreaNodes = $null
     }
 
     # Retrieve cached area nodes from cache
-    $cachedAreaNodes = (Get-CacheObject -CacheType 'LiveAreaNodes' | Where-Object { $_.Key -like "\$ProjectName\Area*" }).Value
+    $cachedIterationNodes = (Get-CacheObject -CacheType 'LiveIterationNodes' | Where-Object { $_.Key -like "\$ProjectName\Iteration*" }).Value
+    $cachedIterationNodesPath = $cachedIterationNodes.Path
 
     # Set the cached area nodes in the result object for use by other functions
-    $getAreaResult.cachedAreaNodes = $cachedAreaNodes
-
-    # We only need the path to perform the comparison.
-    $cachedAreaNodesPath = $cachedAreaNodes.path
-
+    $getIterationResult.CachedIterationNodes = $cachedIterationNodes
 
     # Check if the cached area nodes contain a top-level node
-    $isTopLevel = $cachedAreaNodesPath | Where-Object { $_ -eq "\$ProjectName\Area" }
+    $isTopLevel = $cachedIterationNodesPath | Where-Object { $_ -eq "\$ProjectName\Iteration" }
 
     # Handle case where no area paths are specified and only top-level node exists
-    if ($AreaPaths.Count -eq 0 -and $cachedAreaNodesPath.Count -eq 1 -and $isTopLevel) {
-        Write-Verbose "[Get-AzDoIterationNode] AreaPaths is not specified and no Area Nodes exist in cache"
+    if ($FormattedIterationAttributesPath.Count -eq 0 -and $cachedIterationNodesPath.Count -eq 1 -and $isTopLevel) {
+        Write-Verbose "[Get-AzDoIterationNode] IterationAttributesPath is not specified and no Area Nodes exist in cache"
 
-        $getAreaResult.status = [DSCGetSummaryState]::Unchanged
-        $getAreaResult.reason = 'Area Node does not exist and only the top level Area Node exists'
+        $getIterationResult.status = [DSCGetSummaryState]::Unchanged
+        $getIterationResult.reason = 'Iteration Node does not exist and only the top level Area Node exists'
 
-        return $getAreaResult
+        return $getIterationResult
     }
 
     # Handle case where no area paths are specified
-    if ($AreaPaths.Count -eq 0) {
-        Write-Verbose "[Get-AzDoIterationNode] AreaPaths is not specified"
+    if ($IterationAttributesPath.Count -eq 0) {
+        Write-Verbose "[Get-AzDoIterationNode] IterationAttributesPath is not specified"
 
-        $getAreaResult.status = [DSCGetSummaryState]::Missing
-        $getAreaResult.reason = 'Area Node does not exist'
+        $getIterationResult.status = [DSCGetSummaryState]::Missing
+        $getIterationResult.reason = 'Area Node does not exist'
 
         if ($Ensure -eq [Ensure]::Absent) {
-            $getAreaResult.status = [DSCGetSummaryState]::NotFound
-            $getAreaResult.propertiesChanged.toAdd = $cachedAreaNodesPath | Where-Object { $_ -ne "\$ProjectName\Area" }
+            $getIterationResult.status = [DSCGetSummaryState]::NotFound
+            $getIterationResult.propertiesChanged.toAdd = $cachedIterationNodes | Where-Object { $_.value.Path -ne "\$ProjectName\Iteration" }
         } else {
-            $getAreaResult.propertiesChanged.Delete = $cachedAreaNodesPath | Where-Object { $_ -ne "\$ProjectName\Area" }
+            $getIterationResult.propertiesChanged.Delete = $cachedIterationNodes | Where-Object { $_.value.Path -ne "\$ProjectName\Iteration" }
         }
 
-        return $getAreaResult
+        return $getIterationResult
     }
 
     # Handle case where only top-level node exists
-    if ($cachedAreaNodesPath.Count -eq 1 -and $isTopLevel) {
+    if ($cachedIterationNodesPath.Count -eq 1 -and $isTopLevel) {
 
         Write-Verbose "[Get-AzDoIterationNode] Area Node does not exist"
-        $getAreaResult.status = [DSCGetSummaryState]::NotFound
+        $getIterationResult.status = [DSCGetSummaryState]::NotFound
 
         if ($Ensure -eq [Ensure]::Absent) {
-            $getAreaResult.status = [DSCGetSummaryState]::Missing
-            $getAreaResult.propertiesChanged.toDelete = $AreaPaths | Where-Object { $_ -ne "\$ProjectName\Area" }
+            $getIterationResult.status = [DSCGetSummaryState]::Missing
+            $getIterationResult.propertiesChanged.toDelete = $FormattedIterationAttributes | Where-Object { $_.path -ne "\$ProjectName\Iteration" }
         } else {
-            $getAreaResult.propertiesChanged.toAdd = $AreaPaths | Where-Object { $_ -ne "\$ProjectName\Area" }
+            $getIterationResult.propertiesChanged.toAdd = $FormattedIterationAttributes | Where-Object { $_.path -ne "\$ProjectName\Iteration" }
         }
 
-        $getAreaResult.reason = 'Area Node does not exist'
+        $getIterationResult.reason = 'Area Node does not exist'
 
-        return $getAreaResult
+        return $getIterationResult
     }
 
-    # Extract paths from cached area nodes for comparison
-    $differenceObject = $cachedAreaNodesPath
+    #
+    # Iterate Through the Cached Iteration Nodes
 
-    # Compare current and desired area paths, excluding top-level areas
-    $currentList = Compare-Object -ReferenceObject $AreaPaths -DifferenceObject $differenceObject -IncludeEqual | Where-Object {
-        $_.InputObject -ne "\$ProjectName\Area"
+    ForEach ($node in $cachedIterationNodes.value) {
+
+        # Attempt to perform a lookup and find the corrosponding path in FormattedIterationAttributes
+        $matched = @($FormattedIterationAttributes | Where-Object { $_.Path -eq $node.Path })
+        # Test if the result has been matched.
+        if ($matched.Count -eq 1) {
+
+            # If ensure is absent and it's present in the source list. Delete!
+            if ($Ensure -eq [Ensure]::Absent) {
+                $getIterationResult.propertiesChanged.toDelete += $node
+                continue
+            }
+
+            # Only process the following if ensure is set to present.
+            $params = @{
+                ReferenceHashTable = $node
+                DifferenceHashTable = $matched
+                Keys = @('StartDate','EndDate')
+            }
+
+            # If the Properties are different, flag and move on.
+            if (-not(Compare-HashtableProperties @params)) {
+                $getIterationResult.propertiesChanged.ToUpdate += $node
+                # Move on
+                continue
+            }
+
+            # Format the DateTime into a common format and compare
+            $cachedStartDate    = ($ReferenceHashTable.StartDate -as [datetime]).ToString('yyyyMMdd')
+            $cachedEndDate      = ($ReferenceHashTable.EndDate -as [datetime]).ToString('yyyyMMdd')
+            $matchedStartDate   = ($matched.StartDate -as [datetime]).ToString('yyyyMMdd')
+            $matchedEndDate     = ($matched.EndDate -as [datetime]).ToString('yyyyMMdd')
+
+            # If the datetime's (dates in this case) have changed, it needs to be updated.
+            if (
+                ($cachedStartDate -xor $matchedStartDate) -or
+                ($cachedEndDate -xor $matchedEndDate)
+            ) {
+                $getIterationResult.propertiesChanged.ToUpdate += $node
+            }
+            # Move to the next item
+            continue
+        }
+
+        # Depending on what ensure is doing will depend on the outcome
+        if ($Ensure -eq [Ensrue]::Absent) {
+            # It's not present in the source list so it's unchanged
+            continue
+        } else {
+            # It's not present in the source list but it's active - delete it.
+            $getIterationResult.propertiesChanged.toDelete += $node
+            continue
+        }
+
     }
 
-    # Determine actions based on Ensure parameter
-    if ($Ensure -eq [Ensure]::Absent) {
-        # Identify items present in both lists for removal
-        $toDelete = ($currentList | Where-Object {
-            ($_.SideIndicator -eq '==')
-        }).InputObject
+    #
+    # Switch and compare the Desired Input list with the cache.
 
-    } else {
-        # Identify items missing in current or desired state
-        $toAdd = ($currentList | Where-Object { $_.SideIndicator -eq '<=' }).InputObject
-        $toDelete = ($currentList | Where-Object { $_.SideIndicator -eq '=>' }).InputObject
+    ForEach ($node in $FormattedIterationAttributes) {
+
+        # Attempt to perform a lookup and find the corrosponding path in FormattedIterationAttributes
+        $matched = @($cachedIterationNodes.value | Where-Object { $_.Path -eq $node.Path })
+        # Test if the result has been matched.
+        if ($matched.Count -eq 1) {
+            # We don't need to test the properties since they were tested in the earlier look. Continue
+            continue
+        }
+
+        # Depending on what ensure is doing will depend on the outcome
+        if ($Ensure -eq [Ensrue]::Absent) {
+            # It's present in the source list but not online
+            continue
+        } else {
+            # It's not present online but defined in the source list. Add it.
+            $getIterationResult.propertiesChanged.toAdd += $node
+            continue
+        }
+
     }
 
     # Update status based on differences between current and desired states
-    if (($toDelete.count -ne 0) -and ($toAdd.count -ne 0)) {
-        $getAreaResult.status = [DSCGetSummaryState]::Changed
+    if ($getIterationResult.propertiesChanged.ToUpdate.count -ge 0) {
+        $getIterationResult.status = [DSCGetSummaryState]::Changed
     }
-    elseif ($toDelete.count -ne 0) {
-        $getAreaResult.status = [DSCGetSummaryState]::Missing
+    elseif ($getIterationResult.propertiesChanged.toDelete.count -ne 0) {
+        $getIterationResult.status = [DSCGetSummaryState]::Missing
     }
-    elseif ($toAdd.count -ne 0) {
-        $getAreaResult.status = [DSCGetSummaryState]::NotFound
-    }
-
-    # Update propertiesChanged with determined additions and deletions
-    $getAreaResult.propertiesChanged = @{
-        toDelete = $toDelete
-        toAdd = $toAdd
+    elseif ($getIterationResult.propertiesChanged.toAdd.count -ne 0) {
+        $getIterationResult.status = [DSCGetSummaryState]::NotFound
     }
 
     # Return the result object with all computed information
-    return $getAreaResult
+    return $getIterationResult
 
 }
 
