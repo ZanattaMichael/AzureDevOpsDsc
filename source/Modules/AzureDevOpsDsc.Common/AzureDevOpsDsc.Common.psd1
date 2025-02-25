@@ -95,10 +95,10 @@
         'Remove-AzDoAreaNodes',
         'Set-AzDoAreaNodes'
 
-        'Get-AzDoWIPTags',
-        'New-AzDoWIPTags',
-        'Remove-AzDoWIPTags',
-        'Set-AzDoWIPTags'
+        'Get-AzDoIterationNodes',
+        'New-AzDoIterationNodes',
+        'Remove-AzDoIterationNodes',
+        'Set-AzDoIterationNodes'
 
     )
 

@@ -1,4 +1,4 @@
-Function Remove-AzDoIterationNode {
+Function Set-AzDoIterationNodes {
     [CmdletBinding()]
     param (
         # Mandatory parameter for the project name

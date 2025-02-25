@@ -119,6 +119,78 @@ Describe "Format-AzDoIterationPath Tests" {
         }
     }
 
+    Context "When called with explicit parameters" {
+
+        It "Should format path correctly when no leading slash is present when defining the -StructureType is 'area'" {
+            $iteration = @{
+                StartDate = '2023-01-01'
+                EndDate = '2023-01-31'
+                path = 'Iteration1'
+            }
+            $projectName = 'MyProject'
+
+            $result = Format-AzDoIterationPath -Iteration $iteration -ProjectName $projectName -StructureType 'Area'
+
+            $expectedResult = @(
+                @{
+                    Path = '\MyProject\Area'
+                    StartDate = $null
+                    EndDate = $null
+                },
+                @{
+                    Path = '\MyProject\Area\Iteration1'
+                    StartDate = '2023-01-01'
+                    EndDate = '2023-01-31'
+                }
+
+            )
+
+            $result[0].Path | Should -Be $expectedResult[0].Path
+            $result[0].StartDate | Should -Be $expectedResult[0].StartDate
+            $result[0].EndDate | Should -Be $expectedResult[0].EndDate
+
+            $result[1].Path | Should -Be $expectedResult[1].Path
+            $result[1].StartDate | Should -Be $expectedResult[1].StartDate
+            $result[1].EndDate | Should -Be $expectedResult[1].EndDate
+
+        }
+
+        It "Should format path correctly when no leading slash is present when defining the -StructureType is 'Iteration'" {
+            $iteration = @{
+                StartDate = '2023-01-01'
+                EndDate = '2023-01-31'
+                path = 'Iteration1'
+            }
+            $projectName = 'MyProject'
+
+            $result = Format-AzDoIterationPath -Iteration $iteration -ProjectName $projectName -StructureType 'Iteration'
+
+            $expectedResult = @(
+                @{
+                    Path = '\MyProject\Iteration'
+                    StartDate = $null
+                    EndDate = $null
+                },
+                @{
+                    Path = '\MyProject\Iteration\Iteration1'
+                    StartDate = '2023-01-01'
+                    EndDate = '2023-01-31'
+                }
+
+            )
+
+            $result[0].Path | Should -Be $expectedResult[0].Path
+            $result[0].StartDate | Should -Be $expectedResult[0].StartDate
+            $result[0].EndDate | Should -Be $expectedResult[0].EndDate
+
+            $result[1].Path | Should -Be $expectedResult[1].Path
+            $result[1].StartDate | Should -Be $expectedResult[1].StartDate
+            $result[1].EndDate | Should -Be $expectedResult[1].EndDate
+
+        }
+
+    }
+
     Context "Edge Cases" {
 
         It "Should add ProjectName/Area if missing" {

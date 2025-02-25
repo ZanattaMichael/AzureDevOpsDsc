@@ -29,7 +29,10 @@ Function Format-AzDoIterationPath {
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [HashTable]$Iteration,
         [Parameter(Mandatory = $true)]
-        [string]$ProjectName
+        [string]$ProjectName,
+        [Parameter()]
+        [ValidateSet('Area','Iteration')]
+        [string]$StructureType = 'Area'
     )
 
     Begin {
@@ -61,8 +64,8 @@ Function Format-AzDoIterationPath {
 
         # Check to see if the area path contains /ProjectName/Area at the beginning.
         # If it doesn't add it.
-        if (-not $Path.StartsWith("\$ProjectName\Area")) {
-            $Path = "\$ProjectName\Area\$Path"
+        if (-not $Path.StartsWith("\$ProjectName\$StructureType")) {
+            $Path = "\$ProjectName\$StructureType\$Path"
         }
 
         # Remove any additional slashes
@@ -77,14 +80,14 @@ Function Format-AzDoIterationPath {
 
     End {
 
-        $exists = @($array | Where-Object { $_.Path -in "\$ProjectName\Area" })
+        $exists = @($array | Where-Object { $_.Path -in "\$ProjectName\$StructureType" })
 
         # Test if the array contains the top-level area.
         # Add it to the list
         if ($exists.count -eq 0) {
 
             $array += @{
-                Path = "\$ProjectName\Area"
+                Path = "\$ProjectName\$StructureType"
                 StartDate = $null
                 EndDate = $null
             }

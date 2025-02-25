@@ -4,7 +4,6 @@ $currentFile = $MyInvocation.MyCommand.Path
 Describe 'Compare-HashtableProperties Function Tests' {
 
     BeforeAll {
-
         # Load the functions to test
         if ($null -eq $currentFile) {
             $currentFile = Join-Path -Path $PSScriptRoot -ChildPath "Compare-HashtableProperties.tests.ps1"
@@ -15,7 +14,6 @@ Describe 'Compare-HashtableProperties Function Tests' {
         ForEach ($file in $files) {
             . $file.FullName
         }
-        #TODO: TEST ME!
     }
 
     It 'Returns false when both hashtables are identical' {
@@ -81,6 +79,29 @@ Describe 'Compare-HashtableProperties Function Tests' {
         $result = Compare-HashtableProperties -ReferenceHashTable $refHashTable -DifferenceHashTable $diffHashTable -Keys $keys
 
         # Assert that the result is false (no differences)
+        $result | Should -BeFalse
+    }
+
+    # Additional tests can be added here
+    It 'Returns true when only one key is different' {
+        $refHashTable = @{ Key1 = "Value1"; Key2 = "Value2"; Key3 = "Value3" }
+        $diffHashTable = @{ Key1 = "Value1"; Key2 = "DifferentValue"; Key3 = "Value3" }
+        $keys = @("Key1", "Key2", "Key3")
+
+        $result = Compare-HashtableProperties -ReferenceHashTable $refHashTable -DifferenceHashTable $diffHashTable -Keys $keys
+
+        # Assert that the result is true (one key has different value)
+        $result | Should -BeTrue
+    }
+
+    It 'Returns false when all keys are the same but in different order' {
+        $refHashTable = @{ Key1 = "Value1"; Key2 = "Value2"; Key3 = "Value3" }
+        $diffHashTable = @{ Key3 = "Value3"; Key1 = "Value1"; Key2 = "Value2" }
+        $keys = @("Key1", "Key2", "Key3")
+
+        $result = Compare-HashtableProperties -ReferenceHashTable $refHashTable -DifferenceHashTable $diffHashTable -Keys $keys
+
+        # Assert that the result is false (order does not matter for hashtables)
         $result | Should -BeFalse
     }
 

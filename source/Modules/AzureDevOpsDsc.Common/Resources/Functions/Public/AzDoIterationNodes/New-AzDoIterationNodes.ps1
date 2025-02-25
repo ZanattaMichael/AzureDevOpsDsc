@@ -1,4 +1,4 @@
-Function Set-AzDoIterationNode {
+Function New-AzDoIterationNodes {
     [CmdletBinding()]
     param (
         # Mandatory parameter for the project name
@@ -25,6 +25,7 @@ Function Set-AzDoIterationNode {
 
     # Retrieve the global organization name
     $OrganizationName = $Global:DSCAZDO_OrganizationName
+
 
 
 }

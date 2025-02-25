@@ -37,7 +37,7 @@ Function Format-AzDoIterationNodes {
     if (-not $result) { return }
 
     # Format the provided area paths for the specified project by adding missing classification node paths
-    $FormattedIterationAttributes = $IterationAttributes | Format-AzDoIterationPath -ProjectName $ProjectName
+    $FormattedIterationAttributes = $IterationAttributes | Format-AzDoIterationPath -ProjectName $ProjectName -StructureType 'Iteration'
 
     # Extract all Classification Node Paths and match the output to IterationAttributes. If there are any missing, add them.
     $FormattedIterationAttributes.Path | Get-AllAzDoClassificationNodePaths | ForEach-Object {

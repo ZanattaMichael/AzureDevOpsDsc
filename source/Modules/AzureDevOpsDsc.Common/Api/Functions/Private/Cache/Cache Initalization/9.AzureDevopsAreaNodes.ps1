@@ -22,7 +22,9 @@ function AzDoAPI_8_DevOpsClassificationNodes {
 
         # List the Classification Nodes
         Write-Verbose "[AzDoAPI_8_DevOpsClassificationNodes] Listing classification nodes for project: $($Project.value.name)."
+
         $ClassificationNodes = List-DevOpsClassificationNodes -ProjectName $Project.value.name -OrganizationName $OrganizationName
+        $ClassificationNodes | Export-Clixml C:\Temp\ClassificationNodes.clixml
 
         # Split the Classification Nodes into Area and Iteration Classification Nodes
         ForEach ($ClassificationNode in $ClassificationNodes) {
@@ -36,6 +38,7 @@ function AzDoAPI_8_DevOpsClassificationNodes {
             }
 
             Write-Verbose "[AzDoAPI_8_DevOpsClassificationNodes] Formatting classification node: $($ClassificationNode.path) as $CacheType."
+            Write-Verbose "[AzDoAPI_8_DevOpsClassificationNodes] Classification Node: $($ClassificationNode | ConvertTo-Json -Depth 2)."
 
             # Add the top-level node to the cache
             $cacheParams = @{
@@ -52,6 +55,16 @@ function AzDoAPI_8_DevOpsClassificationNodes {
                 SuppressWarning = $true
             }
 
+            Write-Verbose "[AzDoAPI_8_DevOpsClassificationNodes] Attributes $($ClassificationNode.attributes)."
+
+            if ($ClassificationNode.attributes) {
+
+                Write-Verbose "[AzDoAPI_8_DevOpsClassificationNodes] Attributes found. Including attributes."
+
+                $cacheParams.Value.startDate = $ClassificationNode.attributes.startDate
+                $cacheParams.Value.endDate = $ClassificationNode.attributes.finishDate
+            }
+
             # Add to the cache
             Add-CacheItem @cacheParams
 
@@ -64,13 +77,13 @@ function AzDoAPI_8_DevOpsClassificationNodes {
 
         }
 
-        # Export the Cache
-        Write-Verbose "[AzDoAPI_8_DevOpsClassificationNodes] Exporting area nodes cache."
-        Export-CacheObject -CacheType 'LiveAreaNodes' -Content $AzDoLiveAreaNodes
-
-        Write-Verbose "[AzDoAPI_8_DevOpsClassificationNodes] Exporting iterations cache."
-        Export-CacheObject -CacheType 'LiveIterations' -Content $AzDoLiveIterations
-
     }
+
+    # Export the Cache
+    Write-Verbose "[AzDoAPI_8_DevOpsClassificationNodes] Exporting area nodes cache."
+    Export-CacheObject -CacheType 'LiveAreaNodes' -Content $AzDoLiveAreaNodes
+
+    Write-Verbose "[AzDoAPI_8_DevOpsClassificationNodes] Exporting iterations cache."
+    Export-CacheObject -CacheType 'LiveIterations' -Content $AzDoLiveIterations
 
 }
