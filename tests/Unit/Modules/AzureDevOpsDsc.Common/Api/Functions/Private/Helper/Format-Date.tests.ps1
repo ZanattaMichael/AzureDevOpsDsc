@@ -18,43 +18,50 @@ Describe 'Format-Date Function Tests' {
 
     }
 
+    It 'Should return correctly formatted date when the input is a [DateTime] type' {
+        $dateTime = Get-Date '2023/10/15'
+        $expectedOutput = "20231015"
+        $actualOutput = Format-Date -object $dateTime
+        $actualOutput | Should -BeExactly $expectedOutput
+    }
+
     # Test case: Valid date string input
     It 'Should return correctly formatted date for valid input' {
-        $input = "2023-10-15"
+        $string = "2023-10-15"
         $expectedOutput = "20231015"
-        $actualOutput = Format-Date -string $input
+        $actualOutput = Format-Date -object $string
         $actualOutput | Should -BeExactly $expectedOutput
     }
 
     # Test case: Invalid date string input (should default to 19000101)
     It 'Should return default date for invalid input' {
-        $input = "invalid-date"
+        $string = "invalid-date"
         $expectedOutput = "19000101"
-        $actualOutput = Format-Date -string $input
+        $actualOutput = Format-Date -object $string
         $actualOutput | Should -BeExactly $expectedOutput
     }
 
     # Test case: Empty string input (should default to 19000101)
     It 'Should return default date for empty string input' {
-        $input = ""
+        $string = ""
         $expectedOutput = "19000101"
-        $actualOutput = Format-Date -string $input
+        $actualOutput = Format-Date -object $string
         $actualOutput | Should -BeExactly $expectedOutput
     }
 
     # Test case: Null input (should default to 19000101)
     It 'Should return default date for null input' {
-        $input = $null
+        $string = $null
         $expectedOutput = "19000101"
-        $actualOutput = Format-Date -string $input
+        $actualOutput = Format-Date -object $string
         $actualOutput | Should -BeExactly $expectedOutput
     }
 
     # Test case: Date with time component (should ignore time and format date only)
     It 'Should correctly format date part of date-time input' {
-        $input = "2023-10-15T14:30:00"
+        $string = "2023-10-15T14:30:00"
         $expectedOutput = "20231015"
-        $actualOutput = Format-Date -string $input
+        $actualOutput = Format-Date -object $string
         $actualOutput | Should -BeExactly $expectedOutput
     }
 }

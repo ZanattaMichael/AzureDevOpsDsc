@@ -147,8 +147,6 @@ Function Get-AzDoIterationNodes {
                 Keys = @('StartDate','EndDate')
             }
 
-            $params | Export-Clixml C:\Temp\params.clixml
-
             # If the Properties are different, flag and move on.
             if (-not(Compare-HashtableProperties @params)) {
                 Write-Verbose "[Get-AzDoIterationNode] Properties differ, updating node: $($node.Path)"
@@ -158,19 +156,26 @@ Function Get-AzDoIterationNodes {
             }
 
             Write-Verbose "[Get-AzDoIterationNode] Formatting Start and End Dates"
+
             # Format the DateTime into a common format and compare
-            $cachedStartDate    = Format-Date $ReferenceHashTable.StartDate
-            $cachedEndDate      = Format-Date $ReferenceHashTable.StartDate
+            $cachedStartDate    = Format-Date $node.StartDate
+            $cachedEndDate      = Format-Date $node.EndDate
             $matchedStartDate   = Format-Date $matched.StartDate
-            $matchedEndDate     = Format-Date $matched.StartDate
+            $matchedEndDate     = Format-Date $matched.EndDate
 
             # If the datetime's (dates in this case) have changed, it needs to be updated.
             if (
-                ($cachedStartDate -xor $matchedStartDate) -or
-                ($cachedEndDate -xor $matchedEndDate)
+                ($cachedStartDate -ne $matchedStartDate) -or
+                ($cachedEndDate -ne $matchedEndDate)
             ) {
                 Write-Verbose "[Get-AzDoIterationNode] DateTimes differ, updating node: $($node.Path)"
-                $getIterationResult.propertiesChanged.ToUpdate += $node
+
+                $getIterationResult.propertiesChanged.ToUpdate += @{
+                    StartDate = $matched.StartDate
+                    EndDate = $matched.EndDate
+                    Path = $matched.Path
+                }
+
             }
             # Move to the next item
             continue

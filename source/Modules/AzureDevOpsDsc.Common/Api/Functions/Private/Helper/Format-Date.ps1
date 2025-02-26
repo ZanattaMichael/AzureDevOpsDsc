@@ -18,8 +18,15 @@ If the input string cannot be cast to a valid date, the function defaults to '01
 #>
 Function Format-Date {
     param(
-        [String]$string  # Define a parameter to accept a string input
+        [Object]$object  # Define a parameter to accept a string input
     )
+
+    # Test if the object is a string type.
+    if ($object -is [string]) {
+        $string = $object
+    } elseif ($object -is [datetime]) {
+        return $object.ToString('yyyyMMdd')
+    }
 
     # Type cast the input string as a DateTime object
     $dateTime = $string -as [datetime]
