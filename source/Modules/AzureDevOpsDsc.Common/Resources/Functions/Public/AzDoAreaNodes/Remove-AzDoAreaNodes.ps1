@@ -36,7 +36,7 @@ Function Remove-AzDoAreaNodes
     }
 
     # Iterate through each of the LookupResult nodes and remove them
-    ForEach($node in (@($LookupResult.propertiesChanged.ToDelete) | Sort-Object -Descending)) {
+    ForEach($node in (@($LookupResult.propertiesChanged.ToRemove) | Sort-Object -Descending)) {
 
         # Reformat the Path
         $reformat = $node.Replace('\', '/')

@@ -35,83 +35,16 @@ Function Set-AzDoAreaNodes {
         return
     }
 
-    # Iterate through the LookupResult hashtable and process the values.
-    # Sort the values to ensure that the parent nodes are created before the child nodes.
-    ForEach ($areaPathToAdd in (@($LookupResult.propertiesChanged.ToAdd) | Sort-Object)) {
-
-        Write-Verbose "[Set-AzDoAreaNodes] Adding: $($areaPathToAdd)"
-
-        # Switch the path slashes
-        $formattedAreaPathToAdd = $areaPathToAdd.Replace('\', '/')
-
-        # Remove the Project and Area prefix from the path
-        $removedPrefix = $formattedAreaPathToAdd.Replace("/$ProjectName/Area/", '')
-        # Split the path into an array
-        $SplitPath = $removedPrefix.Split('/')
-
-        # Construct the parameters for the New-ClassificationNode function
-        $params = @{
-            OrganizationName = $OrganizationName
-            ProjectName = $ProjectName
-            StructureType = 'Areas'
-            Path = $(
-                if ($SplitPath.Count -eq 1) {
-                    $null
-                }
-                else {
-                    $SplitPath[0..($SplitPath.Length - 2)] -join '/'
-                }
-            )
-            Body = @{
-                name = $SplitPath[-1]
-            }
-        }
-
-        Write-Verbose "[Set-AzDoAreaNodes] Attempting to create Area Node: $($areaPathToAdd)."
-        $response = New-ClassificationNode @params
-
-        # If the response contains a value, add it to the live cache
-        if ($response) {
-            Write-Verbose "[Set-AzDoAreaNodes] Successfully created Area Node: $($areaPathToAdd), updating live cache."
-            Add-CacheItem -Type 'LiveAreaNodes' -Key $areaPathToAdd -Value $response
-        } else {
-            Write-Error "[Set-AzDoAreaNodes] Failed to create Area Node: $($areaPathToAdd)."
-            # Stop and Return
-            return
-        }
-
+    # If there are properties to add, call New-AzDoIterationNodes
+    # If there are properties to remove, call Remove-AzDoIterationNodes
+    if ($LookupResult.propertiesChanged.toAdd.count -ne 0) {
+        # Call New-AzDoIterationNodes
+        New-AzDoAreaNodes @PSBoundParameters
     }
-
-    # Iterate through each of the LookupResult nodes and remove them
-    ForEach($node in (@($LookupResult.propertiesChanged.ToDelete) | Sort-Object -Property Path -Descending)) {
-
-        # Reformat the Path
-        $reformat = $node.Replace('\', '/')
-        $Path = $reformat.Replace("/$ProjectName/Area/", '')
-
-        Write-Verbose "[Set-AzDoAreaNodes] Attempting to remove Area Node: $($node)."
-        Write-Verbose "[Set-AzDoAreaNodes] Formatted Path: $Path"
-        $params = @{
-            OrganizationName    = $OrganizationName
-            ProjectName         = $ProjectName
-            StructureType       = 'Areas'
-            Path                = $path
-            ReclassificationId  = $projectArea.value.id
-        }
-
-        Remove-ClassificationNode @params
-
-        Write-Verbose "[Set-AzDoAreaNodes] Key To Remove: $($node)"
-        Remove-CacheItem -Key $node -Type 'LiveAreaNodes'
-
-        Write-Verbose "[Set-AzDoAreaNodes] Successfully removed Area Node: $($node)."
-
+    if ($LookupResult.propertiesChanged.toRemove.count -ne 0) {
+        # Call Remove-AzDoIterationNodes
+        Remove-AzDoAreaNodes @PSBoundParameters
     }
-
-    # Write the updated cache to the global cache and export to the cache file.
-    Write-Verbose "[Set-AzDoAreaNodes] Updating global cache for LiveAreaNodes."
-    Set-CacheObject -Content $Global:AzDoLiveAreaNodes -CacheType 'LiveAreaNodes'
-    Refresh-CacheObject -CacheType 'LiveAreaNodes'
 
     Write-Verbose "[Set-AzDoAreaNodes] Function execution completed for Project: $ProjectName."
 }

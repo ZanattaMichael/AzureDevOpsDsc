@@ -27,9 +27,9 @@ Function Get-AzDoIterationNodes {
     $OrganizationName = $Global:DSCAZDO_OrganizationName
 
     # Log the start of function execution with verbose output
-    Write-Verbose "[Get-AzDoIterationNode] Start function execution"
-    Write-Verbose "[Get-AzDoIterationNode] ProjectName: $ProjectName"
-    Write-Verbose "[Get-AzDoIterationNode] IterationAttributes: $($IterationAttributes | Out-String)"
+    Write-Verbose "[Get-AzDoIterationNodes] Start function execution"
+    Write-Verbose "[Get-AzDoIterationNodes] ProjectName: $ProjectName"
+    Write-Verbose "[Get-AzDoIterationNodes] IterationAttributes: $($IterationAttributes | Out-String)"
 
     <#
         Iteration Attributes
@@ -42,7 +42,7 @@ Function Get-AzDoIterationNodes {
     #>
 
     $FormattedIterationAttributes = Format-AzDoIterationNodes -IterationAttributes $IterationAttributes -ProjectName $ProjectName
-    Write-Verbose "[Get-AzDoIterationNode] FormattedIterationAttributesPath $($FormattedIterationAttributes | ConvertTo-Json)"
+    Write-Verbose "[Get-AzDoIterationNodes] FormattedIterationAttributesPath $($FormattedIterationAttributes | ConvertTo-Json)"
 
     # Initialize the result object with default values
     $getIterationResult = @{
@@ -60,7 +60,7 @@ Function Get-AzDoIterationNodes {
     }
 
     # Retrieve cached Iteration nodes from cache
-    Write-Verbose "[Get-AzDoIterationNode] Retrieving cached Iteration nodes"
+    Write-Verbose "[Get-AzDoIterationNodes] Retrieving cached Iteration nodes"
     $cachedIterationNodes = (Get-CacheObject -CacheType 'LiveIterations' | Where-Object { $_.Key -like "\$ProjectName\Iteration*" }).Value
     $cachedIterationNodesPath = $cachedIterationNodes.Path
 
@@ -72,7 +72,7 @@ Function Get-AzDoIterationNodes {
 
     # Handle case where no Iteration paths are specified and only top-level node exists
     if ($FormattedIterationAttributes.Count -eq 0 -and $cachedIterationNodesPath.Count -eq 1 -and $isTopLevel) {
-        Write-Verbose "[Get-AzDoIterationNode] IterationAttributesPath is not specified and no Iteration Nodes exist in cache"
+        Write-Verbose "[Get-AzDoIterationNodes] IterationAttributesPath is not specified and no Iteration Nodes exist in cache"
 
         $getIterationResult.status = [DSCGetSummaryState]::Unchanged
         $getIterationResult.reason = 'Iteration Node does not exist and only the top level Iteration Node exists'
@@ -83,7 +83,7 @@ Function Get-AzDoIterationNodes {
     # Handle case where no Iteration paths are specified
     if ($FormattedIterationAttributes.Count -eq 0) {
 
-        Write-Verbose "[Get-AzDoIterationNode] IterationAttributesPath is not specified"
+        Write-Verbose "[Get-AzDoIterationNodes] IterationAttributesPath is not specified"
         $getIterationResult.status = [DSCGetSummaryState]::Missing
         $getIterationResult.reason = 'Desired State Iterations Node does not exist'
 
@@ -101,7 +101,7 @@ Function Get-AzDoIterationNodes {
     # Handle case where only top-level node exists
     if ($cachedIterationNodes.Count -eq 1 -and $isTopLevel) {
 
-        Write-Verbose "[Get-AzDoIterationNode] Cached Iteration Nodes does not exist"
+        Write-Verbose "[Get-AzDoIterationNodes] Cached Iteration Nodes does not exist"
         $getIterationResult.status = [DSCGetSummaryState]::NotFound
 
         if ($Ensure -eq [Ensure]::Absent) {
@@ -121,14 +121,14 @@ Function Get-AzDoIterationNodes {
 
     # Iterate Through the Cached Iteration Nodes
     ForEach ($node in $formattedCachedIterationNodes) {
-        Write-Verbose "[Get-AzDoIterationNode] Processing cached node: $($node.Path)"
+        Write-Verbose "[Get-AzDoIterationNodes] Processing cached node: $($node.Path)"
 
         # Attempt to perform a lookup and find the corresponding path in FormattedIterationAttributes
         $matched = @($formattedIterationNodes | Where-Object { $_.Path -eq $node.Path })
         # Test if the result has been matched.
 
         if ($matched.Count -eq 1) {
-            Write-Verbose "[Get-AzDoIterationNode] Found matching node: $($matched.Path)"
+            Write-Verbose "[Get-AzDoIterationNodes] Found matching node: $($matched.Path)"
 
             # If ensure is absent and it's present in the source list. Delete!
             if ($Ensure -eq [Ensure]::Absent) {
@@ -149,13 +149,13 @@ Function Get-AzDoIterationNodes {
 
             # If the Properties are different, flag and move on.
             if (-not(Compare-HashtableProperties @params)) {
-                Write-Verbose "[Get-AzDoIterationNode] Properties differ, updating node: $($node.Path)"
+                Write-Verbose "[Get-AzDoIterationNodes] Properties differ, updating node: $($node.Path)"
                 $getIterationResult.propertiesChanged.ToUpdate += $node
                 # Move on
                 continue
             }
 
-            Write-Verbose "[Get-AzDoIterationNode] Formatting Start and End Dates"
+            Write-Verbose "[Get-AzDoIterationNodes] Formatting Start and End Dates"
 
             # Format the DateTime into a common format and compare
             $cachedStartDate    = Format-Date $node.StartDate
@@ -168,7 +168,7 @@ Function Get-AzDoIterationNodes {
                 ($cachedStartDate -ne $matchedStartDate) -or
                 ($cachedEndDate -ne $matchedEndDate)
             ) {
-                Write-Verbose "[Get-AzDoIterationNode] DateTimes differ, updating node: $($node.Path)"
+                Write-Verbose "[Get-AzDoIterationNodes] DateTimes differ, updating node: $($node.Path)"
 
                 $getIterationResult.propertiesChanged.ToUpdate += @{
                     StartDate = $matched.StartDate
@@ -187,7 +187,7 @@ Function Get-AzDoIterationNodes {
             continue
         } else {
             # It's not present in the source list but it's active - delete it.
-            Write-Verbose "[Get-AzDoIterationNode] Node not in source list, deleting: $($node.Path)"
+            Write-Verbose "[Get-AzDoIterationNodes] Node not in source list, deleting: $($node.Path)"
             $getIterationResult.propertiesChanged.toRemove += $node
             continue
         }
@@ -195,7 +195,7 @@ Function Get-AzDoIterationNodes {
 
     # Switch and compare the Desired Input list with the cache.
     ForEach ($node in $formattedIterationNodes) {
-        Write-Verbose "[Get-AzDoIterationNode] Processing formatted node: $($node.Path)"
+        Write-Verbose "[Get-AzDoIterationNodes] Processing formatted node: $($node.Path)"
 
         # Attempt to perform a lookup and find the corresponding path in FormattedIterationAttributes
         $matched = @($formattedCachedIterationNodes | Where-Object { $_.Path -eq $node.Path })
@@ -211,28 +211,32 @@ Function Get-AzDoIterationNodes {
             continue
         } else {
             # It's not present online but defined in the source list. Add it.
-            Write-Verbose "[Get-AzDoIterationNode] Node not online, adding: $($node.Path)"
+            Write-Verbose "[Get-AzDoIterationNodes] Node not online, adding: $($node.Path)"
             $getIterationResult.propertiesChanged.toAdd += $node
             continue
         }
     }
 
     # Update status based on differences between current and desired states
-    if ($getIterationResult.propertiesChanged.ToUpdate.count -ge 0) {
-        Write-Verbose "[Get-AzDoIterationNode] Changes detected, status set to Changed"
+    if ($getIterationResult.propertiesChanged.ToUpdate.count -ne 0) {
+        Write-Verbose "[Get-AzDoIterationNodes] Changes detected, status set to Changed."
+        $getIterationResult.status = [DSCGetSummaryState]::Changed
+    }
+    elseif (($getIterationResult.propertiesChanged.toRemove.count -ne 0) -and ($getIterationResult.propertiesChanged.toAdd.count -ne 0)) {
+        Write-Verbose "[Get-AzDoIterationNodes] Both ToAdd to ToRemove properties contain values."
         $getIterationResult.status = [DSCGetSummaryState]::Changed
     }
     elseif ($getIterationResult.propertiesChanged.toRemove.count -ne 0) {
-        Write-Verbose "[Get-AzDoIterationNode] Some nodes missing, status set to Missing"
+        Write-Verbose "[Get-AzDoIterationNodes] Some nodes missing, status set to Missing."
         $getIterationResult.status = [DSCGetSummaryState]::Missing
     }
     elseif ($getIterationResult.propertiesChanged.toAdd.count -ne 0) {
-        Write-Verbose "[Get-AzDoIterationNode] Some nodes not found, status set to NotFound"
+        Write-Verbose "[Get-AzDoIterationNodes] Some nodes not found, status set to NotFound."
         $getIterationResult.status = [DSCGetSummaryState]::NotFound
     }
 
     # Return the result object with all computed information
-    Write-Verbose "[Get-AzDoIterationNode] Function execution completed"
+    Write-Verbose "[Get-AzDoIterationNodes] Function execution completed"
     return $getIterationResult
 
 
