@@ -1,3 +1,42 @@
+<#
+.SYNOPSIS
+    Retrieves and processes Azure DevOps Iteration Nodes for a specified project.
+
+.DESCRIPTION
+    The Get-AzDoIterationNodes function retrieves and processes Azure DevOps Iteration Nodes for a specified project.
+    It compares the current state of iteration nodes with the desired state and returns the differences.
+
+.PARAMETER ProjectName
+    The name of the Azure DevOps project. This parameter is mandatory.
+
+.PARAMETER IterationAttributes
+    An optional hashtable array specifying the attributes of the iterations, such as Path, StartDate, and EndDate.
+
+.PARAMETER LookupResult
+    An optional hashtable for lookup results.
+
+.PARAMETER Ensure
+    An optional parameter to specify the desired state of the iteration nodes.
+    Possible values are 'Present' or 'Absent'.
+
+.PARAMETER Force
+    A switch parameter to force the execution of the function.
+
+.EXAMPLE
+    Get-AzDoIterationNodes -ProjectName "MyProject" -IterationAttributes @(@{Path="Iteration1"; StartDate="2023-01-01"; EndDate="2023-01-31"})
+
+    Retrieves and processes the iteration nodes for the project "MyProject" with the specified iteration attributes.
+
+.EXAMPLE
+    Get-AzDoIterationNodes -ProjectName "MyProject" -Ensure Present
+
+    Ensures that the iteration nodes for the project "MyProject" are present.
+
+.NOTES
+    This function requires the global variable $Global:DSCAZDO_OrganizationName to be set with the organization name.
+    The function uses cached iteration nodes and compares them with the desired state to determine the necessary changes.
+
+#>
 Function Get-AzDoIterationNodes {
     [CmdletBinding()]
     param (

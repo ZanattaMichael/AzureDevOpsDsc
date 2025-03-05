@@ -1,3 +1,34 @@
+<#
+.SYNOPSIS
+    Sets Azure DevOps Iteration Nodes for a specified project.
+
+.DESCRIPTION
+    The Set-AzDoIterationNodes function manages Azure DevOps Iteration Nodes by adding, removing, or updating them based on the provided parameters. It ensures the state of iteration nodes in a project.
+
+.PARAMETER ProjectName
+    The name of the Azure DevOps project. This parameter is mandatory.
+
+.PARAMETER IterationAttributes
+    A hashtable array specifying the attributes of the iteration nodes. This parameter is optional.
+
+.PARAMETER LookupResult
+    A hashtable containing the lookup results for properties to add, remove, or update. This parameter is optional.
+
+.PARAMETER Ensure
+    Ensures the state of the iteration nodes. This parameter is optional.
+
+.PARAMETER Force
+    A switch parameter to force the execution of the function. This parameter is optional.
+
+.EXAMPLE
+    Set-AzDoIterationNodes -ProjectName "MyProject" -IterationAttributes $attributes -LookupResult $lookupResult -Ensure "Present" -Force
+
+    This example sets the iteration nodes for the project "MyProject" with the specified attributes and lookup results, ensuring the state is present and forcing the execution.
+
+.NOTES
+    This function retrieves the global organization name from the variable $Global:DSCAZDO_OrganizationName and updates the iteration nodes accordingly. It also updates the live cache and global cache for live iterations.
+
+#>
 Function Set-AzDoIterationNodes {
     [CmdletBinding()]
     param (
@@ -26,15 +57,36 @@ Function Set-AzDoIterationNodes {
     # Retrieve the global organization name
     $OrganizationName = $Global:DSCAZDO_OrganizationName
 
+    Write-Verbose "[Set-AzDoIterationNodes] Started"
+
     # If there are properties to add, call Set-AzDoIterationNodes
     # If there are properties to remove, call Remove-AzDoIterationNodes
     if ($LookupResult.propertiesChanged.toAdd.count -ne 0) {
-        # Call Set-AzDoIterationNodes
-        Get-AzDoIterationNodes @PSBoundParameters
+
+        $params = @{
+            ProjectName = $ProjectName
+            NodeType = 'Iterations'
+            LookupResult = $LookupResult
+            IterationAttributes = $IterationAttributes
+            OrganizationName = $Global:DSCAZDO_OrganizationName
+        }
+
+        New-ClassificationNodeResource @params
+
     }
+
+    # Iterate through each of the Properties
     if ($LookupResult.propertiesChanged.toRemove.count -ne 0) {
-        # Call Remove-AzDoIterationNodes
-        Remove-AzDoIterationNodes @PSBoundParameters
+
+        $params = @{
+            ProjectName = $ProjectName
+            NodeType = 'Iterations'
+            LookupResult = $LookupResult
+            OrganizationName = $Global:DSCAZDO_OrganizationName
+        }
+
+        Remove-ClassificationNodeResource @params
+
     }
 
     # Iterate through each of the toUpdate properties.
@@ -67,6 +119,9 @@ Function Set-AzDoIterationNodes {
                 }
             }
         }
+
+        Write-Verbose "[Set-AzDoIterationNodes] startDate: $($params.Body.attributes.startDate)."
+        Write-Verbose "[Set-AzDoIterationNodes] finishDate $($params.Body.attributes.finishDate)."
 
         # If there is a startdate and endDate update the body.
         if ((-not($params.Body.attributes.startDate)) -or (-not($params.Body.attributes.startDate))) {

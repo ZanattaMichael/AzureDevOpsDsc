@@ -1,3 +1,32 @@
+<#
+.SYNOPSIS
+Sets the Azure DevOps area nodes for a specified project.
+
+.DESCRIPTION
+The Set-AzDoAreaNodes function sets the Azure DevOps area nodes for a specified project.
+It can add or remove area nodes based on the provided parameters.
+
+.PARAMETER ProjectName
+The name of the Azure DevOps project.
+
+.PARAMETER AreaPaths
+An array of area paths to be set for the project.
+
+.PARAMETER LookupResult
+A hashtable containing the lookup results for the area nodes.
+
+.PARAMETER Ensure
+Specifies whether the area nodes should be present or absent.
+
+.PARAMETER Force
+Forces the operation to proceed without prompting for confirmation.
+
+.EXAMPLE
+Set-AzDoAreaNodes -ProjectName "MyProject" -AreaPaths @("Area1", "Area2") -LookupResult $lookupResult -Ensure Present -Force
+
+.NOTES
+This function requires the global variable $Global:DSCAZDO_OrganizationName to be set.
+#>
 Function Set-AzDoAreaNodes {
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
@@ -35,15 +64,30 @@ Function Set-AzDoAreaNodes {
         return
     }
 
-    # If there are properties to add, call New-AzDoIterationNodes
-    # If there are properties to remove, call Remove-AzDoIterationNodes
+    # If there are properties to add, call New-ClassificationNodeResource
+    # If there are properties to remove, call Remove-ClassificationNodeResource
     if ($LookupResult.propertiesChanged.toAdd.count -ne 0) {
-        # Call New-AzDoIterationNodes
-        New-AzDoAreaNodes @PSBoundParameters
+        # Call New-ClassificationNodeResource
+        $params = @{
+            ProjectName = $ProjectName
+            NodeType = 'Areas'
+            LookupResult = $LookupResult
+            OrganizationName = $Global:DSCAZDO_OrganizationName
+        }
+
+        New-ClassificationNodeResource @params
     }
+
     if ($LookupResult.propertiesChanged.toRemove.count -ne 0) {
-        # Call Remove-AzDoIterationNodes
-        Remove-AzDoAreaNodes @PSBoundParameters
+        # Call Remove-ClassificationNodeResource
+        $params = @{
+            ProjectName = $ProjectName
+            NodeType = 'Areas'
+            LookupResult = $LookupResult
+            OrganizationName = $Global:DSCAZDO_OrganizationName
+        }
+
+        Remove-ClassificationNodeResource @params
     }
 
     Write-Verbose "[Set-AzDoAreaNodes] Function execution completed for Project: $ProjectName."

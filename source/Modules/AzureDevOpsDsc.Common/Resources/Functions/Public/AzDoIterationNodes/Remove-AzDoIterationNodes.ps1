@@ -1,3 +1,36 @@
+<#
+.SYNOPSIS
+Removes iteration nodes from an Azure DevOps project.
+
+.DESCRIPTION
+The Remove-AzDoIterationNodes function removes iteration nodes from a specified Azure DevOps project.
+It allows specifying iteration attributes and lookup results, and can force execution if needed.
+
+.PARAMETER ProjectName
+Specifies the name of the Azure DevOps project. This parameter is mandatory.
+
+.PARAMETER IterationAttributes
+Optional. Specifies the attributes of the iterations to be removed as a hashtable array.
+
+.PARAMETER LookupResult
+Optional. A hashtable for lookup results.
+
+.PARAMETER Ensure
+Optional. Ensures the state of the operation.
+
+.PARAMETER Force
+Optional. A switch parameter to force the execution of the function.
+
+.EXAMPLE
+Remove-AzDoIterationNodes -ProjectName "MyProject" -Force
+
+.EXAMPLE
+$iterationAttributes = @(@{Name="Iteration1"; Path="Path1"}, @{Name="Iteration2"; Path="Path2"})
+Remove-AzDoIterationNodes -ProjectName "MyProject" -IterationAttributes $iterationAttributes
+
+.NOTES
+This function requires the global variable $Global:DSCAZDO_OrganizationName to be set with the organization name.
+#>
 Function Remove-AzDoIterationNodes {
     [CmdletBinding()]
     param (
@@ -26,37 +59,18 @@ Function Remove-AzDoIterationNodes {
     # Retrieve the global organization name
     $OrganizationName = $Global:DSCAZDO_OrganizationName
 
-    # Iterate through each of the LookupResult nodes and remove them
-    ForEach($node in (@($LookupResult.propertiesChanged.ToRemove) | Sort-Object -Descending)) {
+    Write-Verbose "[Remove-AzDoIterationNodes] Started."
 
-        # Reformat the Path
-        $reformat = $node.path.Replace('\', '/')
-        $Path = $reformat.Replace("/$ProjectName/Iteration/", '')
-
-        Write-Verbose "[Remove-AzDoIterationNodes] Attempting to remove Iteration Node: $($node)."
-        Write-Verbose "[Remove-AzDoIterationNodes] Formatted Path: $Path"
-
-        $params = @{
-            OrganizationName    = $OrganizationName
-            ProjectName         = $ProjectName
-            StructureType       = 'Iterations'
-            Path                = $path
-            ReclassificationId  = $projectAreaId
-        }
-
-        Remove-ClassificationNode @params
-
-        Write-Verbose "[Remove-AzDoIterationNodes] Key To Remove: $($node)"
-        Remove-CacheItem -Key $node -Type 'LiveIterations'
-
-        Write-Verbose "[Remove-AzDoIterationNodes] Successfully removed Iteration Node: $($node)."
-
+    $params = @{
+        ProjectName = $ProjectName
+        NodeType = 'Iterations'
+        LookupResult = $LookupResult
+        OrganizationName = $Global:DSCAZDO_OrganizationName
     }
 
-    Write-Verbose "[Remove-AzDoAreaNode] Writing to the updated cache"
+    Remove-ClassificationNodeResource @params
 
-    # Write the updated cache to the global cache and export to the cache file.
-    Set-CacheObject -Content $Global:AzDoLiveIterations -CacheType 'LiveIterations'
-    Refresh-CacheObject -CacheType 'LiveIterations'
+    Write-Verbose "[Remove-AzDoIterationNodes] Function execution completed for Project: $ProjectName."
+
 
 }

@@ -1,3 +1,35 @@
+<#
+.SYNOPSIS
+    Creates new Azure DevOps area nodes for a specified project.
+
+.DESCRIPTION
+    The New-AzDoAreaNodes function creates new area nodes within a specified Azure DevOps project.
+    It allows specifying area paths and other parameters to customize the creation process.
+
+.PARAMETER ProjectName
+    The name of the Azure DevOps project where the area nodes will be created. This parameter is mandatory.
+
+.PARAMETER AreaPaths
+    An array of strings specifying the paths of the area nodes to be created. This parameter is optional.
+
+.PARAMETER LookupResult
+    A hashtable containing lookup results used during the creation of area nodes. This parameter is optional.
+
+.PARAMETER Ensure
+    Specifies whether to ensure the presence or absence of the area nodes. This parameter is optional.
+
+.PARAMETER Force
+    A switch parameter to force the creation of area nodes even if they already exist. This parameter is optional.
+
+.EXAMPLE
+    PS C:\> New-AzDoAreaNodes -ProjectName "MyProject" -AreaPaths @("Area1", "Area2") -Force
+
+    This example creates two new area nodes, "Area1" and "Area2", in the "MyProject" Azure DevOps project,
+    forcing the creation even if the nodes already exist.
+
+.NOTES
+    This function requires the global variable $Global:DSCAZDO_OrganizationName to be set with the organization name.
+#>
 Function New-AzDoAreaNodes
 {
     [CmdletBinding()]
@@ -20,59 +52,16 @@ Function New-AzDoAreaNodes
         $Force
     )
 
-    $OrganizationName = $Global:DSCAZDO_OrganizationName
+    Write-Verbose "[New-AzDoAreaNodes] Started."
 
-    # Iterate through the LookupResult hashtable and process the values.
-    # Sort the values to ensure that the parent nodes are created before the child nodes.
-    ForEach ($areaPathToAdd in (@($LookupResult.propertiesChanged.ToAdd) | Sort-Object)) {
-
-        Write-Verbose "[New-AzDoAreaNodes] Adding: $($areaPathToAdd)"
-
-        # Switch the path slashes
-        $formattedAreaPathToAdd = $areaPathToAdd.Replace('\', '/')
-
-        # Remove the Project and Area prefix from the path
-        $removedPrefix = $formattedAreaPathToAdd.Replace("/$ProjectName/Area/", '')
-        # Split the path into an array
-        $SplitPath = $removedPrefix.Split('/')
-
-        # Construct the parameters for the New-ClassificationNode function
-        $params = @{
-            OrganizationName = $OrganizationName
-            ProjectName = $ProjectName
-            StructureType = 'Areas'
-            Path = $(
-                if ($SplitPath.Count -eq 1) {
-                    $null
-                }
-                else {
-                    $SplitPath[0..($SplitPath.Length - 2)] -join '/'
-                }
-            )
-            Body = @{
-                name = $SplitPath[-1]
-            }
-        }
-
-        Write-Verbose "[New-AzDoAreaNodes] Attempting to create Area Node: $($areaPathToAdd)."
-        $response = New-ClassificationNode @params
-
-        # If the response contains a value, add it to the live cache
-        if ($response) {
-            Write-Verbose "[New-AzDoAreaNodes] Successfully created Area Node: $($areaPathToAdd), updating live cache."
-            Add-CacheItem -Type 'LiveAreaNodes' -Key $areaPathToAdd -Value $response
-        } else {
-            Write-Error "[New-AzDoAreaNodes] Failed to create Area Node: $($areaPathToAdd)."
-            # Stop and Return
-            return
-        }
-
+    $params = @{
+        ProjectName = $ProjectName
+        NodeType = 'Areas'
+        LookupResult = $LookupResult
+        OrganizationName = $Global:DSCAZDO_OrganizationName
     }
 
-    # Write the updated cache to the global cache and export to the cache file.
-    Write-Verbose "[New-AzDoAreaNodes] Updating global cache for LiveAreaNodes."
-    Set-CacheObject -Content $Global:AzDoLiveAreaNodes -CacheType 'LiveAreaNodes'
-    Refresh-CacheObject -CacheType 'LiveAreaNodes'
+    New-ClassificationNodeResource @params
 
     Write-Verbose "[New-AzDoAreaNodes] Function execution completed for Project: $ProjectName."
 

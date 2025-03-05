@@ -1,3 +1,41 @@
+<#
+.SYNOPSIS
+    Retrieves Azure DevOps area nodes for a specified project.
+
+.DESCRIPTION
+    The Get-AzDoAreaNodes function retrieves Azure DevOps area nodes for a specified project.
+    It formats the provided area paths, retrieves cached area nodes, and compares the current
+    and desired area paths to determine the necessary actions based on the Ensure parameter.
+
+.PARAMETER ProjectName
+    The name of the Azure DevOps project. This parameter is mandatory.
+
+.PARAMETER AreaPaths
+    An optional array of strings specifying the area paths to be retrieved.
+
+.PARAMETER LookupResult
+    An optional hashtable for lookup results.
+
+.PARAMETER Ensure
+    An optional parameter to ensure the state of the area nodes. Possible values are 'Present' or 'Absent'.
+
+.PARAMETER Force
+    A switch parameter to force the execution of the function.
+
+.EXAMPLE
+    Get-AzDoAreaNodes -ProjectName "MyProject" -AreaPaths @("Area1", "Area2")
+
+    Retrieves the area nodes for the specified project "MyProject" with the specified area paths "Area1" and "Area2".
+
+.EXAMPLE
+    Get-AzDoAreaNodes -ProjectName "MyProject" -Ensure Absent
+
+    Ensures that the area nodes for the specified project "MyProject" are absent.
+
+.NOTES
+    This function uses cached area nodes to determine the current state and compares it with the desired state.
+    It returns a result object containing the status, reason, and propertiesChanged based on the comparison.
+#>
 Function Get-AzDoAreaNodes {
     [CmdletBinding()]
     param (
@@ -81,9 +119,9 @@ Function Get-AzDoAreaNodes {
 
         if ($Ensure -eq [Ensure]::Absent) {
             $getAreaResult.status = [DSCGetSummaryState]::NotFound
-            $getAreaResult.propertiesChanged.toAdd = $cachedAreaNodesPath | Where-Object { $_ -ne "\$ProjectName\Area" }
+            $getAreaResult.propertiesChanged.toAdd = $cachedAreaNodesPath | Where-Object { $_ -ne "\$ProjectName\Area" } | ForEach-Object { @{ Path = $_ } }
         } else {
-            $getAreaResult.propertiesChanged.Delete = $cachedAreaNodesPath | Where-Object { $_ -ne "\$ProjectName\Area" }
+            $getAreaResult.propertiesChanged.Delete = $cachedAreaNodesPath | Where-Object { $_ -ne "\$ProjectName\Area" } | ForEach-Object { @{ Path = $_ } }
         }
 
         return $getAreaResult
@@ -97,9 +135,9 @@ Function Get-AzDoAreaNodes {
 
         if ($Ensure -eq [Ensure]::Absent) {
             $getAreaResult.status = [DSCGetSummaryState]::Missing
-            $getAreaResult.propertiesChanged.toDelete = $AreaPaths | Where-Object { $_ -ne "\$ProjectName\Area" }
+            $getAreaResult.propertiesChanged.toDelete = $AreaPaths | Where-Object { $_ -ne "\$ProjectName\Area" } | ForEach-Object { @{ Path = $_ } }
         } else {
-            $getAreaResult.propertiesChanged.toAdd = $AreaPaths | Where-Object { $_ -ne "\$ProjectName\Area" }
+            $getAreaResult.propertiesChanged.toAdd = $AreaPaths | Where-Object { $_ -ne "\$ProjectName\Area" } | ForEach-Object { @{ Path = $_ } }
         }
 
         $getAreaResult.reason = 'Area Node does not exist'
@@ -141,8 +179,8 @@ Function Get-AzDoAreaNodes {
 
     # Update propertiesChanged with determined additions and deletions
     $getAreaResult.propertiesChanged = @{
-        toDelete = $toDelete
-        toAdd = $toAdd
+        toDelete = $toDelete | ForEach-Object { @{ Path = $_ } }
+        toAdd = $toAdd | ForEach-Object { @{ Path = $_ } }
     }
 
     # Return the result object with all computed information

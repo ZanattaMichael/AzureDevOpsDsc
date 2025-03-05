@@ -13,7 +13,7 @@ Function Remove-ClassificationNode {
         [Parameter(Mandatory)]
         [String]$Path,
 
-        [Parameter(Mandatory)]
+        [Parameter()]
         [String]$ReclassificationId,
 
         [Parameter()]
@@ -29,13 +29,24 @@ Function Remove-ClassificationNode {
     Write-Verbose "[Remove-ClassificationNode] Reclassification Id: $ReclassificationId"
     Write-Verbose "[Remove-ClassificationNode] API Version: $ApiVersion"
 
-    $params = @{
-        Uri = 'https://dev.azure.com/{0}/{1}/_apis/wit/classificationnodes/{2}/{3}?api-version={4}&$reclassifyId={5}' -f $OrganizationName,
+    # If the ReclassificationId exists, amend the ReclassificationId to the URI
+    if ($ReclassificationId) {
+        $Uri = 'https://dev.azure.com/{0}/{1}/_apis/wit/classificationnodes/{2}/{3}?api-version={4}&$reclassifyId={5}' -f $OrganizationName,
                                                                                             $ProjectName,
                                                                                             $StructureType,
                                                                                             $Path,
                                                                                             $ApiVersion,
                                                                                             $ReclassificationId
+    } else {
+        $Uri = 'https://dev.azure.com/{0}/{1}/_apis/wit/classificationnodes/{2}/{3}?api-version={4}' -f $OrganizationName,
+                                                                                            $ProjectName,
+                                                                                            $StructureType,
+                                                                                            $Path,
+                                                                                            $ApiVersion
+    }
+
+    $params = @{
+        Uri = $Uri
         Method = 'DELETE'
     }
 

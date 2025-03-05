@@ -1,4 +1,4 @@
-function AzDoAPI_8_DevOpsClassificationNodes {
+function AzDoAPI_9_DevOpsClassificationNodes {
 
     [CmdletBinding()]
     param(
