@@ -61,7 +61,6 @@ Function New-ClassificationNodeResource {
     $cacheType = $( if ($NodeType -eq 'Iterations') { 'LiveIterations' } else { 'AzDoLiveAreaNodes' } )
     $nodePathType = $( if ($NodeType -eq 'Iterations') { 'Iteration' } else { 'Area' } )
 
-    $LookupResult.propertiesChanged | Export-CLixml 'C:\Temp\propertiesChanged.clixml'
 
     # Iterate Through Each of the LookupResult ToAdd Properties
     ForEach ($node in ($LookupResult.propertiesChanged.ToAdd | Sort-Object -Property Path)) {

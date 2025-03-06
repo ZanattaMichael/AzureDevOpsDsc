@@ -10,7 +10,7 @@ Function Update-ClassificationNode {
         [ValidateSet('Areas', 'Iterations')]
         [String]$StructureType,
 
-        [Parameter(Mandatory)]
+        [Parameter()]
         [String]$Path,
 
         [Parameter(Mandatory)]
@@ -30,7 +30,7 @@ Function Update-ClassificationNode {
 
 
     $params = @{
-        Uri = 'https://dev.azure.com/{0}/{1}/_apis/wit/classificationnodes/{2}/{3}?api-version={4}&$reclassifyId={5}' -f $OrganizationName,
+        Uri = 'https://dev.azure.com/{0}/{1}/_apis/wit/classificationnodes/{2}/{3}?api-version={4}' -f $OrganizationName,
                                                                                             $ProjectName,
                                                                                             $StructureType,
                                                                                             $Path,
@@ -48,7 +48,7 @@ Function Update-ClassificationNode {
             The "@" symbol is used to pass the hashtable as splatting parameters.
         #>
         Write-Verbose "[Update-ClassificationNode] Attempting to invoke REST method to update classification node:"
-        $null = Invoke-AzDevOpsApiRestMethod @params
+        $response = Invoke-AzDevOpsApiRestMethod @params
 
     }
     catch
@@ -57,5 +57,6 @@ Function Update-ClassificationNode {
         Write-Error "[Update-ClassificationNode] Failed to update the classification node: $($_.Exception.Message)"
     }
 
+    return $response
 
 }

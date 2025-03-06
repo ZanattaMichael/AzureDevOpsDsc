@@ -60,8 +60,8 @@ Function Set-AzDoIterationNodes {
     Write-Verbose "[Set-AzDoIterationNodes] Started"
 
     # If there are properties to add, call Set-AzDoIterationNodes
-    # If there are properties to remove, call Remove-AzDoIterationNodes
     if ($LookupResult.propertiesChanged.toAdd.count -ne 0) {
+        Write-Verbose "[Set-AzDoIterationNodes] Properties to add detected."
 
         $params = @{
             ProjectName = $ProjectName
@@ -72,11 +72,12 @@ Function Set-AzDoIterationNodes {
         }
 
         New-ClassificationNodeResource @params
-
+        Write-Verbose "[Set-AzDoIterationNodes] Added new iteration nodes."
     }
 
-    # Iterate through each of the Properties
+    # Iterate through each of the Properties to remove
     if ($LookupResult.propertiesChanged.toRemove.count -ne 0) {
+        Write-Verbose "[Set-AzDoIterationNodes] Properties to remove detected."
 
         $params = @{
             ProjectName = $ProjectName
@@ -86,11 +87,13 @@ Function Set-AzDoIterationNodes {
         }
 
         Remove-ClassificationNodeResource @params
-
+        Write-Verbose "[Set-AzDoIterationNodes] Removed iteration nodes."
     }
 
     # Iterate through each of the toUpdate properties.
     ForEach ($node in $LookupResult.propertiesChanged.toUpdate) {
+
+        Write-Verbose "[Set-AzDoIterationNodes] Properties to update detected for node: $($node.Path)."
 
         # Switch the path slashes
         $areaPath = $node.Path.Replace('\', '/')
@@ -99,6 +102,11 @@ Function Set-AzDoIterationNodes {
         # Split the path into an array
         $SplitPath = $removedPrefix.Split('/')
 
+        Write-Verbose "[Set-AzDoIterationNodes] Area Path $areaPath"
+        Write-Verbose "[Set-AzDoIterationNodes] Removed Prefix: $removedPrefix"
+        Write-Verbose "[Set-AzDoIterationNodes] StartDate $($node.StartDate)"
+        Write-Verbose "[Set-AzDoIterationNodes] EndDate $($node.EndDate)"
+
         # Define the parameters
         $params = @{
             OrganizationName    = $OrganizationName
@@ -106,28 +114,28 @@ Function Set-AzDoIterationNodes {
             StructureType       = 'Iterations'
             Path = $(
                 if ($SplitPath.Count -eq 1) {
-                    $null
+                    $SplitPath[-1]
                 }
                 else {
                     $SplitPath[0..($SplitPath.Length - 2)] -join '/'
                 }
             )
             Body = @{
-                attributes = @{
-                    startDate  = (Get-Date $node.StartDate).ToString('yyyy-MM-ddT00:00:00Z')
-                    finishDate = (Get-Date $node.EndDate).ToString('yyyy-MM-ddT00:00:00Z')
-                }
+                attributes = @{}
             }
         }
 
-        Write-Verbose "[Set-AzDoIterationNodes] startDate: $($params.Body.attributes.startDate)."
-        Write-Verbose "[Set-AzDoIterationNodes] finishDate $($params.Body.attributes.finishDate)."
+        #TODO: more work is needed here
 
         # If there is a startdate and endDate update the body.
-        if ((-not($params.Body.attributes.startDate)) -or (-not($params.Body.attributes.startDate))) {
-            # Write an error. There should of been a start and end date here
-            Write-Error "[Set-AzDoIterationNodes] Error. startDate and finishDate properties are missing. Skipping."
-            continue
+        if (($node.StartDate) -or ($node.EndDate)) {
+            Write-Verbose "[Set-AzDoIterationNodes] Updating startDate and finishDate."
+            $params.Body.attributes.startDate  = (Get-Date $node.StartDate).ToString('yyyy-MM-ddT00:00:00Z')
+            $params.Body.attributes.finishDate = (Get-Date $node.EndDate).ToString('yyyy-MM-ddT00:00:00Z')
+        } else {
+            Write-Verbose "[Set-AzDoIterationNodes] Clearing startDate and finishDate."
+            $params.Body.attributes.startDate  = $null
+            $params.Body.attributes.finishDate = $null
         }
 
         Write-Verbose "[Set-AzDoIterationNodes] Attempting to update Iteration Node: $($node.Path)."
@@ -144,7 +152,6 @@ Function Set-AzDoIterationNodes {
             # Stop and Return
             return
         }
-
     }
 
     # Write the updated cache to the global cache and export to the cache file.
@@ -153,6 +160,4 @@ Function Set-AzDoIterationNodes {
     Refresh-CacheObject -CacheType 'LiveIterations'
 
     Write-Verbose "[Set-AzDoIterationNodes] Function execution completed for Project: $ProjectName."
-
-
 }
