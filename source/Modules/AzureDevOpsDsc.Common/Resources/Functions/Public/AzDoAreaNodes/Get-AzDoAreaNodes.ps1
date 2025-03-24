@@ -72,6 +72,7 @@ Function Get-AzDoAreaNodes {
 
     # Retrieve the global organization name
     $OrganizationName = $Global:DSCAZDO_OrganizationName
+    Write-Verbose "[Get-AzDoAreaNodes] OrganizationName: $OrganizationName"
 
     # Initialize the result object with default values
     $getAreaResult = @{
@@ -89,16 +90,18 @@ Function Get-AzDoAreaNodes {
 
     # Retrieve cached area nodes from cache
     $cachedAreaNodes = (Get-CacheObject -CacheType 'LiveAreaNodes' | Where-Object { $_.Key -like "\$ProjectName\Area*" }).Value
+    Write-Verbose "[Get-AzDoAreaNodes] Retrieved cached area nodes: $($cachedAreaNodes | Out-String)"
 
     # Set the cached area nodes in the result object for use by other functions
     $getAreaResult.cachedAreaNodes = $cachedAreaNodes
 
     # We only need the path to perform the comparison.
     $cachedAreaNodesPath = $cachedAreaNodes.path
-
+    Write-Verbose "[Get-AzDoAreaNodes] Cached area nodes paths: $($cachedAreaNodesPath | Out-String)"
 
     # Check if the cached area nodes contain a top-level node
     $isTopLevel = $cachedAreaNodesPath | Where-Object { $_ -eq "\$ProjectName\Area" }
+    Write-Verbose "[Get-AzDoAreaNodes] Is top-level node present: $isTopLevel"
 
     # Handle case where no area paths are specified and only top-level node exists
     if ($AreaPaths.Count -eq 0 -and $cachedAreaNodesPath.Count -eq 1 -and $isTopLevel) {
@@ -121,7 +124,7 @@ Function Get-AzDoAreaNodes {
             $getAreaResult.status = [DSCGetSummaryState]::NotFound
             $getAreaResult.propertiesChanged.toAdd = $cachedAreaNodesPath | Where-Object { $_ -ne "\$ProjectName\Area" } | ForEach-Object { @{ Path = $_ } }
         } else {
-            $getAreaResult.propertiesChanged.Delete = $cachedAreaNodesPath | Where-Object { $_ -ne "\$ProjectName\Area" } | ForEach-Object { @{ Path = $_ } }
+            $getAreaResult.propertiesChanged.ToRemove = $cachedAreaNodesPath | Where-Object { $_ -ne "\$ProjectName\Area" } | ForEach-Object { @{ Path = $_ } }
         }
 
         return $getAreaResult
@@ -129,13 +132,13 @@ Function Get-AzDoAreaNodes {
 
     # Handle case where only top-level node exists
     if ($cachedAreaNodesPath.Count -eq 1 -and $isTopLevel) {
+        Write-Verbose "[Get-AzDoAreaNodes] Only top-level node exists"
 
-        Write-Verbose "[Get-AzDoAreaNodes] Area Node does not exist"
         $getAreaResult.status = [DSCGetSummaryState]::NotFound
 
         if ($Ensure -eq [Ensure]::Absent) {
             $getAreaResult.status = [DSCGetSummaryState]::Missing
-            $getAreaResult.propertiesChanged.toDelete = $AreaPaths | Where-Object { $_ -ne "\$ProjectName\Area" } | ForEach-Object { @{ Path = $_ } }
+            $getAreaResult.propertiesChanged.toRemove = $AreaPaths | Where-Object { $_ -ne "\$ProjectName\Area" } | ForEach-Object { @{ Path = $_ } }
         } else {
             $getAreaResult.propertiesChanged.toAdd = $AreaPaths | Where-Object { $_ -ne "\$ProjectName\Area" } | ForEach-Object { @{ Path = $_ } }
         }
@@ -147,44 +150,50 @@ Function Get-AzDoAreaNodes {
 
     # Extract paths from cached area nodes for comparison
     $differenceObject = $cachedAreaNodesPath
+    Write-Verbose "[Get-AzDoAreaNodes] Difference object for comparison: $($differenceObject | Out-String)"
 
     # Compare current and desired area paths, excluding top-level areas
     $currentList = Compare-Object -ReferenceObject $AreaPaths -DifferenceObject $differenceObject -IncludeEqual | Where-Object {
         $_.InputObject -ne "\$ProjectName\Area"
     }
+    Write-Verbose "[Get-AzDoAreaNodes] Comparison result: $($currentList | Out-String)"
 
     # Determine actions based on Ensure parameter
     if ($Ensure -eq [Ensure]::Absent) {
         # Identify items present in both lists for removal
-        $toDelete = ($currentList | Where-Object {
+        $toRemove = ($currentList | Where-Object {
             ($_.SideIndicator -eq '==')
         }).InputObject
-
+        Write-Verbose "[Get-AzDoAreaNodes] Items to delete: $($toRemove | Out-String)"
     } else {
         # Identify items missing in current or desired state
         $toAdd = ($currentList | Where-Object { $_.SideIndicator -eq '<=' }).InputObject
-        $toDelete = ($currentList | Where-Object { $_.SideIndicator -eq '=>' }).InputObject
+        $toRemove = ($currentList | Where-Object { $_.SideIndicator -eq '=>' }).InputObject
+        Write-Verbose "[Get-AzDoAreaNodes] Items to add: $($toAdd | Out-String)"
+        Write-Verbose "[Get-AzDoAreaNodes] Items to delete: $($toRemove | Out-String)"
     }
 
     # Update status based on differences between current and desired states
-    if (($toDelete.count -ne 0) -and ($toAdd.count -ne 0)) {
+    if (($toRemove.count -ne 0) -and ($toAdd.count -ne 0)) {
         $getAreaResult.status = [DSCGetSummaryState]::Changed
+        Write-Verbose "[Get-AzDoAreaNodes] Status changed: Both additions and deletions detected"
     }
-    elseif ($toDelete.count -ne 0) {
+    elseif ($toRemove.count -ne 0) {
         $getAreaResult.status = [DSCGetSummaryState]::Missing
+        Write-Verbose "[Get-AzDoAreaNodes] Status missing: Deletions detected"
     }
     elseif ($toAdd.count -ne 0) {
         $getAreaResult.status = [DSCGetSummaryState]::NotFound
+        Write-Verbose "[Get-AzDoAreaNodes] Status not found: Additions detected"
     }
 
     # Update propertiesChanged with determined additions and deletions
     $getAreaResult.propertiesChanged = @{
-        toDelete = $toDelete | ForEach-Object { @{ Path = $_ } }
+        toRemove = $toRemove | ForEach-Object { @{ Path = $_ } }
         toAdd = $toAdd | ForEach-Object { @{ Path = $_ } }
     }
 
     # Return the result object with all computed information
+    Write-Verbose "[Get-AzDoAreaNodes] Final result: $($getAreaResult | Out-String)"
     return $getAreaResult
-
 }
-

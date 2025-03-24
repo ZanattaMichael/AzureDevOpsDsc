@@ -58,7 +58,7 @@ Function New-ClassificationNodeResource {
 
     Write-Verbose "[New-ClassificationNodeResource] Started"
 
-    $cacheType = $( if ($NodeType -eq 'Iterations') { 'LiveIterations' } else { 'AzDoLiveAreaNodes' } )
+    $cacheType = $( if ($NodeType -eq 'Iterations') { 'LiveIterations' } else { 'LiveAreaNodes' } )
     $nodePathType = $( if ($NodeType -eq 'Iterations') { 'Iteration' } else { 'Area' } )
 
 

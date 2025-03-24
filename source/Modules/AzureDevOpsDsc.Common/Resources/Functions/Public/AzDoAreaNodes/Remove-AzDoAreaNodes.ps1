@@ -55,7 +55,6 @@ Function Remove-AzDoAreaNodes
         ProjectName = $ProjectName
         NodeType = 'Areas'
         LookupResult = $LookupResult
-        IterationAttributes = $IterationAttributes
         OrganizationName = $Global:DSCAZDO_OrganizationName
     }
 

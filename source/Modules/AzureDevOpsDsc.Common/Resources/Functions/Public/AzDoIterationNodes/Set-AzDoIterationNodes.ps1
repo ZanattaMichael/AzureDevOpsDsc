@@ -125,8 +125,6 @@ Function Set-AzDoIterationNodes {
             }
         }
 
-        #TODO: more work is needed here
-
         # If there is a startdate and endDate update the body.
         if (($node.StartDate) -or ($node.EndDate)) {
             Write-Verbose "[Set-AzDoIterationNodes] Updating startDate and finishDate."

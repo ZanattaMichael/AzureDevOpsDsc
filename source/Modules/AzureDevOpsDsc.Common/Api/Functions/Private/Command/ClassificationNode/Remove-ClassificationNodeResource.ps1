@@ -47,7 +47,7 @@ Function Remove-ClassificationNodeResource {
 
     Write-Verbose "[Remove-ClassificationNodeResource] Started processing for Project: $ProjectName."
 
-    $cacheType = $( if ($NodeType -eq 'Iterations') { 'LiveIterations' } else { 'AzDoLiveAreaNodes' } )
+    $cacheType = $( if ($NodeType -eq 'Iterations') { 'LiveIterations' } else { 'LiveAreaNodes' } )
     $nodePathType = $( if ($NodeType -eq 'Iterations') { 'Iteration' } else { 'Area' } )
 
     # If the Node type is an area, it's expected to retrive the top-level area path to copy the work items to.
