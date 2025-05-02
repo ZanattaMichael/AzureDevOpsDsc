@@ -26,6 +26,8 @@ Describe 'Get-AzDoOrganizationGroup' {
         . (Get-ClassFilePath 'DSCGetSummaryState')
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         Mock -CommandName Format-AzDoGroup -MockWith { return "[$Global:DSCAZDO_OrganizationName]_$GroupName" }
         Mock -CommandName Get-CacheItem -MockWith {

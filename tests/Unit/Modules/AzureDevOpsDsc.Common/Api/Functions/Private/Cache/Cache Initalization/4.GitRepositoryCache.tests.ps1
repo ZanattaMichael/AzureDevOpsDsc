@@ -15,6 +15,9 @@ Describe "AzDoAPI_4_GitRepositoryCache Tests" -Tags "Unit", "Cache" {
             . $file.FullName
         }
 
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
+
         Mock -CommandName Get-CacheObject
         Mock -CommandName List-DevOpsGitRepository
         Mock -CommandName Add-CacheItem

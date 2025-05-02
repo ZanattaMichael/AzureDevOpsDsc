@@ -15,6 +15,9 @@ Describe "AzDoAPI_7_IdentitySubjectDescriptors" -Tags "Unit", "Cache" {
             . $file.FullName
         }
 
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
+
         Mock -CommandName Get-AzDoCacheObjects -MockWith {
             @('LiveGroups', 'LiveUsers', 'LiveServicePrinciples')
         }

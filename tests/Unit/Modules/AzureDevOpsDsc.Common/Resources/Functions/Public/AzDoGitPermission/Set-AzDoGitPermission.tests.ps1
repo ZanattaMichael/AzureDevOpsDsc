@@ -22,6 +22,8 @@ Describe 'Set-AzDoGitPermission' {
         ForEach ($file in $files) {
             . $file.FullName
         }
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         # Load the summary state
         . (Get-ClassFilePath 'DSCGetSummaryState')

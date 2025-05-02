@@ -26,6 +26,8 @@ Describe "Get-AzDoGroupMember Tests" {
         . (Get-ClassFilePath 'DSCGetSummaryState')
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         # Mock dependencies
         Mock -CommandName Format-AzDoGroupMember -MockWith { return "MockKey" }

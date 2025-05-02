@@ -13,7 +13,7 @@ Describe "New-AzDoWIPTags" {
         # Load the functions to test
         if ($null -eq $currentFile)
         {
-            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'New-AzDoWIPTags.tests.tests.ps1'
+            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'New-AzDoWIPTags.tests.ps1'
         }
 
         # Load the functions to test
@@ -25,6 +25,8 @@ Describe "New-AzDoWIPTags" {
 
         . (Get-ClassFilePath 'Ensure')
         . (Get-ClassFilePath 'DSCGetSummaryState')
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         # Mock New-WITTags to simulate its behavior without making actual changes
         Mock -CommandName New-WITTags {}

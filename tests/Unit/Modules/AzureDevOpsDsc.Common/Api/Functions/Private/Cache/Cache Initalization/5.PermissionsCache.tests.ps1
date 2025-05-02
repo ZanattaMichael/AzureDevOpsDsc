@@ -15,6 +15,9 @@ Describe 'AzDoAPI_5_PermissionsCache Tests' -Tags "Unit", "Cache" {
             . $file.FullName
         }
 
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
+
         Mock -CommandName List-DevOpsSecurityNamespaces -MockWith {
             return @(
                 [PSCustomObject]@{ name = 'Namespace1'; namespaceId = 1; writePermission = $true; readPermission = $true; dataspaceCategory = 'category1'; actions = @('Action1','Action2') },

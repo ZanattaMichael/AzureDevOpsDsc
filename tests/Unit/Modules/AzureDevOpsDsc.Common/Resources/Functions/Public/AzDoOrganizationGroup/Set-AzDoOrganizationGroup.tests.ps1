@@ -24,6 +24,8 @@ Describe 'Set-AzDoOrganizationGroup' {
         . (Get-ClassFilePath 'DSCGetSummaryState')
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         # Mock the external functions used within Set-AzDoOrganizationGroup
         Mock -CommandName Set-DevOpsGroup -MockWith {
