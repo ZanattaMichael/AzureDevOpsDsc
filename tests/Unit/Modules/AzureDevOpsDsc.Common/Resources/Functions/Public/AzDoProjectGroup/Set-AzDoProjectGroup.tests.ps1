@@ -32,6 +32,8 @@ Describe 'Set-AzDoProjectGroup' {
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
 
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         # Mocking external functions that are called within the function
         Mock -CommandName Set-DevOpsGroup -MockWith {

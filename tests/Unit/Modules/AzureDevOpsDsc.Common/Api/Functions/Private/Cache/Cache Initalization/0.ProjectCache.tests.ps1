@@ -18,6 +18,9 @@ Describe 'AzDoAPI_0_ProjectCache' -Tags "Unit", "Cache" {
             . $file.FullName
         }
 
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
+
         Mock -CommandName List-DevOpsProjects -MockWith {
             param ($Organization)
             return @(

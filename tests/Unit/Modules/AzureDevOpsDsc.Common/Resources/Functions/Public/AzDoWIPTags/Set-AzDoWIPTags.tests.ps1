@@ -25,6 +25,8 @@ Describe "Set-AzDoWIPTags" {
 
         . (Get-ClassFilePath 'Ensure')
         . (Get-ClassFilePath 'DSCGetSummaryState')
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         # Mock New-WITTags and Remove-WITTags to simulate their behavior without making actual changes
         Mock -CommandName New-WITTags

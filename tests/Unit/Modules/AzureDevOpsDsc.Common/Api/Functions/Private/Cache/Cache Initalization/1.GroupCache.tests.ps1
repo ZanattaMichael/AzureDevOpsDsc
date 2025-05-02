@@ -19,6 +19,9 @@ Describe 'AzDoAPI_1_GroupCache' -Tags "Unit", "Cache" {
             $currentFile = Join-Path -Path $PSScriptRoot -ChildPath '1.GroupCache.tests.ps1'
         }
 
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
+
         # Load the functions to test
         $files = Get-FunctionItem (Find-MockedFunctions -TestFilePath $currentFile)
         ForEach ($file in $files) {

@@ -67,7 +67,10 @@ Function Get-AzDoAreaNodes {
     Write-Verbose "[Get-AzDoAreaNodes] AreaPaths: $($AreaPaths | Out-String)"
 
     # Format the provided area paths for the specified project. Add missing classification node paths
-    $AreaPaths = $AreaPaths | Format-AzDoAreaPath -ProjectName $ProjectName | Get-AllAzDoClassificationNodePaths
+    if ($AreaPaths.Count -ne 0) {
+        $AreaPaths = $AreaPaths | Format-AzDoAreaPath -ProjectName $ProjectName | Get-AllAzDoClassificationNodePaths
+    }
+
     Write-Verbose "[Get-AzDoAreaNodes] FormattedAreaPaths $($AreaPaths | Out-String)"
 
     # Retrieve the global organization name

@@ -18,6 +18,8 @@ Describe 'AzDoAPI_2_UserCache' -Tags "Unit", "Cache" {
             . $file.FullName
         }
 
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         Mock -CommandName List-UserCache -MockWith {
             return @(
