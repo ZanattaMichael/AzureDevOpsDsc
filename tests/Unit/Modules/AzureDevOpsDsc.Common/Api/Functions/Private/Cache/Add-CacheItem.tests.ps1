@@ -23,6 +23,8 @@ Describe "Add-CacheItem" -Tags "Unit", "Cache" {
         }
 
         . (Get-ClassFilePath '000.CacheItem')
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         # Mock dependencies
         Mock -CommandName Get-CacheObject -MockWith { return @() }

@@ -14,7 +14,7 @@ Describe "Remove-WITTags" {
         # Load the functions to test
         if ($null -eq $currentFile)
         {
-            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'Get-AzDoWIPTags.tests.ps1'
+            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'Remove-AzDoWIPTags.tests.ps1'
         }
 
         # Load the functions to test
@@ -26,6 +26,8 @@ Describe "Remove-WITTags" {
 
         . (Get-ClassFilePath 'Ensure')
         . (Get-ClassFilePath 'DSCGetSummaryState')
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         # Mock Get-AzDevOpsApiVersion and Invoke-AzDevOpsApiRestMethod to simulate their behavior
         Mock -CommandName Get-AzDevOpsApiVersion { return @('7.0', '7.1') }

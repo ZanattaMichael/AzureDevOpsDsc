@@ -18,7 +18,7 @@ Describe 'Get-AzDoCacheObjects' {
 
     It 'Returns an array with 13 elements' {
         $result = Get-AzDoCacheObjects
-        $result.Length | Should -Be 13
+        $result.Length | Should -Be 15
     }
 
     It 'Contains expected elements' {
@@ -27,6 +27,8 @@ Describe 'Get-AzDoCacheObjects' {
             'Team',
             'Group',
             'SecurityDescriptor',
+            'LiveAreaNodes',
+            'LiveIterations',
             'LiveGroups',
             'LiveProjects',
             'LiveUsers',

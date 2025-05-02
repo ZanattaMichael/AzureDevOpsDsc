@@ -14,6 +14,8 @@ Describe "Get-DevOpsACL" -Tags "Unit", "API" {
         ForEach ($file in $files) {
             . $file.FullName
         }
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         # Mock the required functions
         Mock -CommandName Get-AzDevOpsApiVersion { return "6.0" }
