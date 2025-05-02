@@ -15,6 +15,8 @@ Describe 'Find-Identity Function Tests' {
         ForEach ($file in $files) {
             . $file.FullName
         }
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         # Mock Get-CacheObject to return test data
         Mock -CommandName Get-CacheObject -MockWith {
