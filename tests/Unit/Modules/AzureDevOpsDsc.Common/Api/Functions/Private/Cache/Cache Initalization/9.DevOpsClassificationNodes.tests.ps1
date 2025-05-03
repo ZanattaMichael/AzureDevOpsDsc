@@ -9,7 +9,7 @@ Describe 'AzDoAPI_9_DevOpsClassificationNodes Tests' -Tags "Unit", "Cache" {
 
         # Load the functions to test
         if ($null -eq $currentFile) {
-            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath '8.ProcessTemplates.tests.ps1'
+            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath '9.DevOpsClassificationNodes.tests.ps1'
         }
 
         # Load the functions to test
