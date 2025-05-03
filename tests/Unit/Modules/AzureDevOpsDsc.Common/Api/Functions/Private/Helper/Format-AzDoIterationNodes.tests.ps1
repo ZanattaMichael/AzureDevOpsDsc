@@ -26,7 +26,9 @@ Describe "Format-AzDoIterationNodes Tests" {
             param (
                 [Parameter(Mandatory = $true)]
                 [string]$ProjectName,
-
+                [Parameter()]
+                [ValidateSet('Area','Iteration')]
+                [string]$StructureType = 'Area',
                 [Parameter()]
                 [HashTable[]]$IterationAttributes
             )

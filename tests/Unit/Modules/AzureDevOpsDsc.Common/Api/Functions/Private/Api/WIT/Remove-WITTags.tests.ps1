@@ -14,7 +14,7 @@ Describe "Remove-WITTags" {
         # Load the functions to test
         if ($null -eq $currentFile)
         {
-            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'Remove-AzDoWIPTags.tests.ps1'
+            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'Remove-WITTags.tests.ps1'
         }
 
         # Load the functions to test
