@@ -53,6 +53,11 @@ Function ConvertTo-FormattedToken {
             $string = 'repoV2/{0}/{1}' -f $Token.projectId, $Token.RepoId
             break
         }
+        # If the token type is 'AreaPathPermission'
+        {$_.type -eq 'AreaPathPermission'} {
+            $string = $(($Token.Identifiers | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_.identifier }) -join ':')
+            break
+        }
     }
 
     # Output verbose message with the token value
