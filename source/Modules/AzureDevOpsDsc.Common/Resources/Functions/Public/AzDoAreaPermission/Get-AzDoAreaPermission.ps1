@@ -51,13 +51,14 @@ Function Get-AzDoAreaPermission
     #
     # Construct a hashtable detailing the group
 
-    $getGroupResult = @{
+    $results = @{
         Ensure = [Ensure]::Absent
         propertiesChanged = @()
         project = $ProjectName
         areaPath = $AreaPath
         status = $null
         reason = $null
+        identifiers = $null
     }
 
     Write-Verbose "[Get-AzDoAreaPermission] Group result hashtable constructed."
@@ -73,39 +74,46 @@ Function Get-AzDoAreaPermission
     if (-not $projectCache)
     {
         Write-Warning "[Get-AzDoAreaPermission] Project not found: $ProjectName"
-        $getGroupResult.status = [DSCGetSummaryState]::Error
-        $getGroupResult.reason = "Project not found: $ProjectName"
+        $results.status = [DSCGetSummaryState]::Error
+        $results.reason = "Project not found: $ProjectName"
 
-        return $getGroupResult
+        return $results
     }
 
     # Test if the AreaPath was specified
     if ($AreaPath) {
-
-        #
         Write-Verbose "[Get-AzDoAreaPermission] AreaPath Name: $AreaPath is not null."
-
         # Format the AreaPath to retrieve all of the AreaPath nodes
-        $AreaPaths = Format-AzDoAreaPath -AreaPath $AreaPath -ProjectName $ProjectName | ForEach-Object {
-            # Get the cached item for the AreaPath and add it to the list
-            Get-CacheItem -Key $_ -Type 'LiveAreaNodes'
-        }
-
-        # Test if the AreaPath was found, however only if the ProjectName was specified
-        if ($AreaPaths.count -eq 0)
-        {
-            Write-Warning "[Get-AzDoAreaPermission] AreaPath not found: $AreaPath"
-            $getGroupResult.status = [DSCGetSummaryState]::NotFound
-            $getGroupResult.reason = "AreaPath not found: $AreaPath"
-            return $getGroupResult
-        }
-
+        $FormattedAreaPaths = Format-AzDoAreaPath -AreaPath $AreaPath -ProjectName $ProjectName | Get-AllAzDoClassificationNodePaths
     } else {
+        Write-Verbose "[Get-AzDoAreaPermission] AreaPath Name: $AreaPath is null."
         # If AreaPath is not specified, get the top-level area path
-        $AreaPaths = @(
-            Get-CacheItem -Key "$ProjectName\Area" -Type 'LiveAreaNodes'
-        )
+        $FormattedAreaPaths = @("$ProjectName\Area")
     }
+
+    # Perform a Lookup within the Cache for the AreaPath
+    $AreaPaths = $FormattedAreaPaths | ForEach-Object {
+        # Get the cached item for the AreaPath and add it to the list
+        Get-CacheItem -Key $_ -Type 'LiveAreaNodes'
+    }
+
+    # Ensure that the number of cached area path nodes is the same as the formatted nodes.
+    if ($AreaPaths.count -ne $FormattedAreaPaths.Count)
+    {
+        Write-Warning "[Get-AzDoAreaPermission] The area path nodes do not match the formatted area path nodes."
+        $results.status = [DSCGetSummaryState]::Error
+        $results.reason = "The area path nodes do not match the formatted area path nodes."
+        return $results
+    }
+
+    # Once the AreaPath is found, we can get the identifiers
+    $identifierArr = $AreaPaths | ForEach-Object { $_.identifier }
+    # Update the results. This is used to construct regex expressions.
+    $results.identifiers = $identifierArr
+
+    $results | Export-CLixml C:\Temp\results.clixml
+    $AreaPaths | Export-CLixml C:\Temp\AreaPaths.clixml
+    $identifierArr | Export-CLixml C:\Temp\identifierArr.clixml
 
     #
     # Perform Lookup of the Permissions
@@ -114,7 +122,7 @@ Function Get-AzDoAreaPermission
     Write-Verbose "[Get-AzDoAreaPermission] Retrieved namespace: $($namespace.namespaceId)"
 
     # Add to the ACL Lookup Params
-    $getGroupResult.namespace = $namespace
+    $results.namespace = $namespace
 
     $ACLLookupParams = @{
         OrganizationName        = $OrganizationName
@@ -131,9 +139,9 @@ Function Get-AzDoAreaPermission
     if ($DevOpsACLs -eq $null)
     {
         Write-Error "[Get-AzDoAreaPermission] No ACLs were found within the Security Namespace."
-        $getGroupResult.status = [DSCGetSummaryState]::Error
-        $getGroupResult.reason = "No ACLs were found within the Security Namespace."
-        return $getGroupResult
+        $results.status = [DSCGetSummaryState]::Error
+        $results.reason = "No ACLs were found within the Security Namespace."
+        return $results
     }
 
     # Convert the ACLs to a formatted ACL
@@ -143,16 +151,14 @@ Function Get-AzDoAreaPermission
     if ($DifferenceACLs -eq $null)
     {
         Write-Warning "[Get-AzDoAreaPermission] No ACLs found for the AreaPath."
-        $getGroupResult.status = [DSCGetSummaryState]::NotFound
-        return $getGroupResult
+        $results.status = [DSCGetSummaryState]::NotFound
+        return $results
     }
 
     #TODO: NEEDS WORK TO DISTINGUISH BETWEEN TOP LEVEL AND REPOSITORY ACLS
 
     # Filter the ACLs for the AreaPath
     if (-not $AreaPath) {
-
-        $identifierArr = $areaNodes | ForEach-Object { $_.value.identifier }
 
         # Construct the AreaPath Token
         $DifferenceACLs = $DifferenceACLs | Where-Object { $_.Token.Type -eq 'AreaPathPermission' } | Where-Object {
@@ -175,14 +181,12 @@ Function Get-AzDoAreaPermission
         if ($DifferenceACLs -eq $null)
         {
             Write-Warning "[Get-AzDoAreaPermission] No ACLs found for the AreaPath."
-            $getGroupResult.status = [DSCGetSummaryState]::Error
-            $getGroupResult.reason = "No ACLs found for the AreaPath."
-            return $getGroupResult
+            $results.status = [DSCGetSummaryState]::Error
+            $results.reason = "No ACLs found for the AreaPath."
+            return $results
         }
 
     }
-
-    #TODO: START WORK HERE
 
     Write-Verbose "[Get-AzDoAreaPermission] ACL List retrieved and formatted."
 
@@ -194,36 +198,35 @@ Function Get-AzDoAreaPermission
         SecurityNamespace   = $SecurityNamespace
         isInherited         = $isInherited
         OrganizationName    = $OrganizationName
-        TokenName           = $(
-                                if (-not $RepositoryName) {
-                                    'repoV2\{0}' -f $ProjectName
-                                } else {
-                                    '[{0}]\{1}' -f $ProjectName, $RepositoryName
-                                })
+        TokenName           = $(($identifierArr | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_ }) -join ':')
     }
 
     # Convert the Permissions to an ACL Token
-    $ReferenceACLs = ConvertTo-ACL @params | Where-Object { $_.token.Type -ne 'GitUnknown' }
+    $ReferenceACLs = ConvertTo-ACL @params
+    #| Where-Object { $_.token.Type -ne 'GitUnknown' }
+
+    #TODO: START WORK HERE
+
 
     # Compare the Reference ACLs to the Difference ACLs
     $compareResult = Test-ACLListforChanges -ReferenceACLs $ReferenceACLs -DifferenceACLs $DifferenceACLs
-    $getGroupResult.propertiesChanged = $compareResult.propertiesChanged
-    $getGroupResult.status = [DSCGetSummaryState]::"$($compareResult.status)"
-    $getGroupResult.reason = $compareResult.reason
+    $results.propertiesChanged = $compareResult.propertiesChanged
+    $results.status = [DSCGetSummaryState]::"$($compareResult.status)"
+    $results.reason = $compareResult.reason
 
     Write-Verbose "[Get-AzDoAreaPermission] ACL Token converted."
-    Write-Verbose "[Get-AzDoAreaPermission] ACL Token Comparison Result: $($getGroupResult.status)"
+    Write-Verbose "[Get-AzDoAreaPermission] ACL Token Comparison Result: $($results.status)"
 
     # Export the ACL List to a file
-    $getGroupResult.ReferenceACLs = $ReferenceACLs
-    $getGroupResult.DifferenceACLs = $DifferenceACLs
+    $results.ReferenceACLs = $ReferenceACLs
+    $results.DifferenceACLs = $DifferenceACLs
 
     # Write
-    Write-Verbose "[Get-AzDoAreaPermission] Result Status: $($getGroupResult.status)"
+    Write-Verbose "[Get-AzDoAreaPermission] Result Status: $($results.status)"
     Write-Verbose "[Get-AzDoAreaPermission] Returning Group Result."
 
     # Return the Group Result
-    return $getGroupResult
+    return $results
 
 }
 

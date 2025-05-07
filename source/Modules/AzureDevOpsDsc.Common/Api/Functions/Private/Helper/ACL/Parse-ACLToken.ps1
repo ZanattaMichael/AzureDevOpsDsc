@@ -5,7 +5,7 @@ Function Parse-ACLToken
         [String]$Token,
 
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Identity', 'Git Repositories')]
+        [ValidateSet('Identity', 'Git Repositories','CSS')]
         [String]$SecurityNamespace
     )
 
