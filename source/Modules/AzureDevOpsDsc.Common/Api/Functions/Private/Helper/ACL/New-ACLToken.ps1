@@ -105,6 +105,35 @@ Function New-ACLToken
             break;
         }
 
+        # CSS
+        'CSS' {
+
+            # Use custom logic to extract the AreaPath from the token.
+            # We cant use the regex variable as it it's a complex regex pattern.
+            $regexMatches = [regex]::Matches($TokenName, $LocalizedDataAzResourceTokenPatten.AreaPathPermission)
+
+            # Check if the match was successful
+            if ($regexMatches.Count -eq 0)
+            {
+                $result.type = 'Unknown CSS'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known Identity ACL Token Patterns."
+                break
+            }
+
+            $result.Identifiers = @()
+            $result.type = 'CSS'
+
+            # Construct the token structure
+            foreach ($match in $regexMatches) {
+                $result.Identifiers += @{
+                    identifier = $match.groups['identifiers'].value
+                }
+            }
+
+            break;
+
+        }
+
         default {
             Write-Warning "[New-ACLToken] SecurityNamespace '$SecurityNamespace' is not recognized."
             $result.type = 'UnknownSecurityNamespace'

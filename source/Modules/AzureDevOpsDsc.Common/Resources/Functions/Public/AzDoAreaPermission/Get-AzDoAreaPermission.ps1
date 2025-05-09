@@ -158,17 +158,17 @@ Function Get-AzDoAreaPermission
     #TODO: NEEDS WORK TO DISTINGUISH BETWEEN TOP LEVEL AND REPOSITORY ACLS
 
     # Filter the ACLs for the AreaPath
-    if (-not $AreaPath) {
+    if ($AreaPath) {
 
         # Construct the AreaPath Token
         $DifferenceACLs = $DifferenceACLs | Where-Object { $_.Token.Type -eq 'AreaPathPermission' } | Where-Object {
 
             # Check if the current array contains all items in the matching list
-            if ($_.Count -ne $identifierArr.Count) { return $false }
+            if ($_.token.Identifiers.Count -ne $identifierArr.Count) { return $false }
 
             # Check if the current array contains all items in the matching list
             foreach ($item in $identifierArr) {
-                if ($_ -notcontains $item) {
+                if ($_.token.Identifiers.identifier -notcontains $item) {
                     return $false
                 }
             }
@@ -203,10 +203,8 @@ Function Get-AzDoAreaPermission
 
     # Convert the Permissions to an ACL Token
     $ReferenceACLs = ConvertTo-ACL @params
-    #| Where-Object { $_.token.Type -ne 'GitUnknown' }
 
     #TODO: START WORK HERE
-
 
     # Compare the Reference ACLs to the Difference ACLs
     $compareResult = Test-ACLListforChanges -ReferenceACLs $ReferenceACLs -DifferenceACLs $DifferenceACLs
