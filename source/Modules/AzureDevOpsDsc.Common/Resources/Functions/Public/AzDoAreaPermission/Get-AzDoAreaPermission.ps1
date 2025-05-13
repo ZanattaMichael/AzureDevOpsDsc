@@ -88,11 +88,12 @@ Function Get-AzDoAreaPermission
     } else {
         Write-Verbose "[Get-AzDoAreaPermission] AreaPath Name: $AreaPath is null."
         # If AreaPath is not specified, get the top-level area path
-        $FormattedAreaPaths = @("$ProjectName\Area")
+        $FormattedAreaPaths = @("\$ProjectName\Area")
     }
 
     # Perform a Lookup within the Cache for the AreaPath
-    $AreaPaths = $FormattedAreaPaths | ForEach-Object {
+    [Array]$AreaPaths = $FormattedAreaPaths | ForEach-Object {
+        Write-Verbose "[Get-AzDoAreaPermission] AreaPath: $_"
         # Get the cached item for the AreaPath and add it to the list
         Get-CacheItem -Key $_ -Type 'LiveAreaNodes'
     }
@@ -110,10 +111,6 @@ Function Get-AzDoAreaPermission
     $identifierArr = $AreaPaths | ForEach-Object { $_.identifier }
     # Update the results. This is used to construct regex expressions.
     $results.identifiers = $identifierArr
-
-    $results | Export-CLixml C:\Temp\results.clixml
-    $AreaPaths | Export-CLixml C:\Temp\AreaPaths.clixml
-    $identifierArr | Export-CLixml C:\Temp\identifierArr.clixml
 
     #
     # Perform Lookup of the Permissions
@@ -154,8 +151,6 @@ Function Get-AzDoAreaPermission
         $results.status = [DSCGetSummaryState]::NotFound
         return $results
     }
-
-    #TODO: NEEDS WORK TO DISTINGUISH BETWEEN TOP LEVEL AND REPOSITORY ACLS
 
     # Filter the ACLs for the AreaPath
     if ($AreaPath) {
@@ -203,8 +198,6 @@ Function Get-AzDoAreaPermission
 
     # Convert the Permissions to an ACL Token
     $ReferenceACLs = ConvertTo-ACL @params
-
-    #TODO: START WORK HERE
 
     # Compare the Reference ACLs to the Difference ACLs
     $compareResult = Test-ACLListforChanges -ReferenceACLs $ReferenceACLs -DifferenceACLs $DifferenceACLs

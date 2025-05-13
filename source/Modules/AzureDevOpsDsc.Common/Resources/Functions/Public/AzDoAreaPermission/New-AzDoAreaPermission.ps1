@@ -26,4 +26,47 @@ Function New-AzDoAreaPermission
         $Force
     )
 
+    Write-Verbose "[New-AzDoAreaPermission] Started."
+
+    #
+    # Test if the Repository is specified
+    if ([String]::IsNullOrEmpty($AreaPath))
+    {
+        Write-Warning "[New-AzDoAreaPermission] Area Path Name not specified. Defaulting to top-level Project permissions."
+        Write-Warning "[New-AzDoAreaPermission] STOPPING. It is not possible add permissions to a top-level Project."
+        return
+    }
+
+    #
+    # Security Namespace ID
+
+    $SecurityNamespace = Get-CacheItem -Key 'CSS' -Type 'SecurityNamespaces'
+    $Project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
+
+    if (($null -eq $SecurityNamespace) -or ($null -eq $Project))
+    {
+        Write-Warning "[New-AzDoAreaPermission] Security Namespace or Project not found."
+        return
+    }
+
+    #
+    # Serialize the ACLs
+
+    $serializeACLParams = @{
+        ReferenceACLs = $LookupResult.propertiesChanged
+        DescriptorACLList = Get-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'
+        DescriptorMatchToken = ($LocalizedDataAzSerializationPatten.GitRepository -f $Project.id)
+    }
+
+    $params = @{
+        OrganizationName = $Global:DSCAZDO_OrganizationName
+        SecurityNamespaceID = $SecurityNamespace.namespaceId
+        SerializedACLs = ConvertTo-ACLHashtable @serializeACLParams
+    }
+
+    #
+    # Set the Git Repository Permissions
+
+    Set-AzDoPermission @params
+
 }
