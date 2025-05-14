@@ -1,36 +1,3 @@
-<#
-.SYNOPSIS
-Sets Azure DevOps group permissions.
-
-.DESCRIPTION
-The Set-AzDoGroupProjectPermission function sets permissions for a specified Azure DevOps group.
-It formats the group name, retrieves necessary security namespace and project information,
-serializes ACLs, and applies the permissions.
-
-.PARAMETER GroupName
-The name of the group for which permissions are being set. This parameter is mandatory.
-
-.PARAMETER isInherited
-A boolean value indicating whether the permissions are inherited. This parameter is mandatory.
-
-.PARAMETER Permissions
-A hashtable array containing the permissions to be set. This parameter is optional.
-
-.PARAMETER LookupResult
-A hashtable containing the lookup results. This parameter is optional.
-
-.PARAMETER Ensure
-Specifies whether the permissions should be ensured. This parameter is optional.
-
-.PARAMETER Force
-A switch parameter to force the operation. This parameter is optional.
-
-.EXAMPLE
-Set-AzDoGroupProjectPermission -GroupName "ProjectName\GroupName" -isInherited $true -Permissions $permissions -LookupResult $lookupResult -Ensure Present -Force
-
-.NOTES
-This function relies on cached items for security namespace and project information.
-#>
 
 Function Set-AzDoGroupProjectPermission
 {
@@ -78,7 +45,7 @@ Function Set-AzDoGroupProjectPermission
     #
     # Security Namespace ID
 
-    $SecurityNamespace = Get-CacheItem -Key 'Project' -Type 'SecurityNamespaces'
+    $SecurityNamespace = Get-CacheItem -Key 'Tagging' -Type 'SecurityNamespaces'
     $Project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
 
     #
