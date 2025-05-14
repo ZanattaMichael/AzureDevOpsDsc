@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     file `Home.md` will be updated with the correct module version on each
     publish to gallery (including preview).
 - Added Resources:
-  - AzDoGroupPermission
+  - AzDoGroupProjectPermission
   - AzDoOrganizationGroup
   - AzDoProjectGroup
   - AzDoGroupMember

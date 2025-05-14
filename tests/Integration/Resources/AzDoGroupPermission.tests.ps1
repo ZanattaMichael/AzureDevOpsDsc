@@ -1,4 +1,4 @@
-Describe "AzDoGroupPermission intergration tests" -skip {
+Describe "AzDoGroupProjectPermission intergration tests" -skip {
 
     BeforeAll {
 
@@ -7,7 +7,7 @@ Describe "AzDoGroupPermission intergration tests" -skip {
         $GroupName = 'TESTGROUP'
 
         $parameters = @{
-            Name = 'AzDoGroupPermission'
+            Name = 'AzDoGroupProjectPermission'
             ModuleName = 'AzureDevOpsDsc'
             property = @{
                 GroupName = "[$PROJECTNAME]\$GroupName"

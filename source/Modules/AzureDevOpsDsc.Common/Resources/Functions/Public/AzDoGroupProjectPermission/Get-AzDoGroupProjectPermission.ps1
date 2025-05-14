@@ -3,7 +3,7 @@
 Retrieves the permissions for a specified Azure DevOps group.
 
 .DESCRIPTION
-The Get-AzDoGroupPermission function retrieves the permissions for a specified Azure DevOps group.
+The Get-AzDoGroupProjectPermission function retrieves the permissions for a specified Azure DevOps group.
 It performs a lookup within the cache for the group and its associated project, retrieves the
 security namespace, and constructs a hashtable detailing the group. It then performs a lookup
 of the permissions for the group, formats the ACLs, and compares the reference ACLs to the
@@ -33,13 +33,13 @@ Returns a hashtable detailing the group permissions, including the reference ACL
 properties changed, status, and reason.
 
 .EXAMPLE
-PS C:\> Get-AzDoGroupPermission -GroupName "ProjectName\GroupName" -isInherited $true
+PS C:\> Get-AzDoGroupProjectPermission -GroupName "ProjectName\GroupName" -isInherited $true
 
 Retrieves the permissions for the specified Azure DevOps group with inheritance.
 
 #>
 
-Function Get-AzDoGroupPermission
+Function Get-AzDoGroupProjectPermission
 {
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
@@ -64,7 +64,7 @@ Function Get-AzDoGroupPermission
         $Force
     )
 
-    Write-Verbose "[Get-AzDoGroupPermission] Started."
+    Write-Verbose "[Get-AzDoGroupProjectPermission] Started."
 
     # Define the Descriptor Type and Organization Name
     $SecurityNamespace = 'Identity'
@@ -75,7 +75,7 @@ Function Get-AzDoGroupPermission
     # Test if the Group Name is valid
     if ($split.Count -ne 2)
     {
-        Write-Warning "[Get-AzDoGroupPermission] Invalid Group Name: $GroupName"
+        Write-Warning "[Get-AzDoGroupProjectPermission] Invalid Group Name: $GroupName"
         return
     }
 
@@ -85,8 +85,8 @@ Function Get-AzDoGroupPermission
 
     # If the Project Name contains 'organization'. Update the Project Name
 
-    Write-Verbose "[Get-AzDoGroupPermission] Security Namespace: $SecurityNamespace"
-    Write-Verbose "[Get-AzDoGroupPermission] Organization Name: $OrganizationName"
+    Write-Verbose "[Get-AzDoGroupProjectPermission] Security Namespace: $SecurityNamespace"
+    Write-Verbose "[Get-AzDoGroupProjectPermission] Organization Name: $OrganizationName"
 
     #
     # Construct a hashtable detailing the group
@@ -100,8 +100,8 @@ Function Get-AzDoGroupPermission
         reason = $null
     }
 
-    Write-Verbose "[Get-AzDoGroupPermission] Group result hashtable constructed."
-    Write-Verbose "[Get-AzDoGroupPermission] Performing lookup of permissions for the group."
+    Write-Verbose "[Get-AzDoGroupProjectPermission] Group result hashtable constructed."
+    Write-Verbose "[Get-AzDoGroupProjectPermission] Performing lookup of permissions for the group."
 
     # Define the ACL List
     $ACLList = [System.Collections.Generic.List[Hashtable]]::new()
@@ -113,7 +113,7 @@ Function Get-AzDoGroupPermission
     # Test if the Group was found
     if (-not $group)
     {
-        Throw "[Get-AzDoGroupPermission] Group not found: $('[{0}]\{1}' -f $ProjectName, $GroupName)"
+        Throw "[Get-AzDoGroupProjectPermission] Group not found: $('[{0}]\{1}' -f $ProjectName, $GroupName)"
         return
     }
 
@@ -121,7 +121,7 @@ Function Get-AzDoGroupPermission
     # Perform Lookup of the Permissions for the Group
 
     $namespace = Get-CacheItem -Key $SecurityNamespace -Type 'SecurityNamespaces'
-    Write-Verbose "[Get-AzDoGroupPermission] Retrieved namespace: $($namespace.namespaceId)"
+    Write-Verbose "[Get-AzDoGroupProjectPermission] Retrieved namespace: $($namespace.namespaceId)"
 
     # Add to the ACL Lookup Params
     $getGroupResult.namespace = $namespace
@@ -132,7 +132,7 @@ Function Get-AzDoGroupPermission
     }
 
     # Get the ACL List and format the ACLS
-    Write-Verbose "[Get-AzDoGroupPermission] ACL Lookup Params: $($ACLLookupParams | Out-String)"
+    Write-Verbose "[Get-AzDoGroupProjectPermission] ACL Lookup Params: $($ACLLookupParams | Out-String)"
 
     $DifferenceACLs = Get-DevOpsACL @ACLLookupParams | ConvertTo-FormattedACL -SecurityNamespace $SecurityNamespace -OrganizationName $OrganizationName
     $DifferenceACLs = $DifferenceACLs | Where-Object {
@@ -151,7 +151,7 @@ Function Get-AzDoGroupPermission
         }
     }
 
-    Write-Verbose "[Get-AzDoGroupPermission] ACL List retrieved and formatted."
+    Write-Verbose "[Get-AzDoGroupProjectPermission] ACL List retrieved and formatted."
 
     #
     # Convert the Permissions into an ACL Token
@@ -170,7 +170,7 @@ Function Get-AzDoGroupPermission
     # if the ACEs are empty, skip
     if ($ReferenceACLs.aces.Count -eq 0)
     {
-        Write-Verbose "[Get-AzDoGroupPermission] No ACEs found for the group."
+        Write-Verbose "[Get-AzDoGroupProjectPermission] No ACEs found for the group."
         return
     }
 
@@ -185,8 +185,8 @@ Function Get-AzDoGroupPermission
     $getGroupResult.DifferenceACLs = $DifferenceACLs
 
     # Write
-    Write-Verbose "[Get-AzDoGroupPermission] Result Status: $($getGroupResult.status)"
-    Write-Verbose "[Get-AzDoGroupPermission] Returning Group Result."
+    Write-Verbose "[Get-AzDoGroupProjectPermission] Result Status: $($getGroupResult.status)"
+    Write-Verbose "[Get-AzDoGroupProjectPermission] Returning Group Result."
 
     # Return the Group Result
     return $getGroupResult

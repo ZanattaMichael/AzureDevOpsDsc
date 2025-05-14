@@ -1,5 +1,5 @@
-# Import the module containing the AzDoGroupPermission class
-# Describe block for AzDoGroupPermission tests
+# Import the module containing the AzDoGroupProjectPermission class
+# Describe block for AzDoGroupProjectPermission tests
 
 # Test if the class is defined
 if ($null -eq $Global:ClassesLoaded)

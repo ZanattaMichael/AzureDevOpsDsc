@@ -1,7 +1,7 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
 # Tests are currently disabled.
-Describe 'Remove-AzDoGroupPermission' -skip {
+Describe 'Remove-AzDoGroupProjectPermission' -skip {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global
@@ -13,7 +13,7 @@ Describe 'Remove-AzDoGroupPermission' -skip {
 
         # Load the functions to test
         if ($null -eq $currentFile) {
-            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'Remove-AzDoGroupPermission.tests.ps1'
+            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'Remove-AzDoGroupProjectPermission.tests.ps1'
         }
 
         # Load the functions to test
@@ -51,7 +51,7 @@ Describe 'Remove-AzDoGroupPermission' -skip {
     }
 
     It 'Should remove permissions when valid GroupName is provided' {
-        Remove-AzDoGroupPermission -GroupName 'Project\Repository' -isInherited $true -Ensure 'Present' -Force:$true
+        Remove-AzDoGroupProjectPermission -GroupName 'Project\Repository' -isInherited $true -Ensure 'Present' -Force:$true
 
         Assert-MockCalled -CommandName Get-CacheItem -Parameters @{ Key = 'Identity'; Type = 'SecurityNamespaces' } -Times 1
         Assert-MockCalled -CommandName Get-CacheItem -Parameters @{ Key = 'Project'; Type = 'LiveProjects' } -Times 1
@@ -61,7 +61,7 @@ Describe 'Remove-AzDoGroupPermission' -skip {
     }
 
     It 'Should throw a warning when GroupName is invalid' {
-        { Remove-AzDoGroupPermission -GroupName 'InvalidGroupName' -isInherited $true } | Should -Throw
+        { Remove-AzDoGroupProjectPermission -GroupName 'InvalidGroupName' -isInherited $true } | Should -Throw
     }
 
     It 'Should handle case where no matching ACLs are found' {
@@ -78,7 +78,7 @@ Describe 'Remove-AzDoGroupPermission' -skip {
             }
         }
 
-        Remove-AzDoGroupPermission -GroupName 'Project\Repository' -isInherited $true -Ensure 'Present' -Force:$true
+        Remove-AzDoGroupProjectPermission -GroupName 'Project\Repository' -isInherited $true -Ensure 'Present' -Force:$true
 
         Assert-MockCalled -CommandName Remove-AzDoPermission -Times 0
     }
@@ -95,7 +95,7 @@ Describe 'Remove-AzDoGroupPermission' -skip {
             }
         }
 
-        Remove-AzDoGroupPermission -GroupName 'Project\Repository' -isInherited $true -Ensure 'Present' -Force:$true
+        Remove-AzDoGroupProjectPermission -GroupName 'Project\Repository' -isInherited $true -Ensure 'Present' -Force:$true
 
         Assert-MockCalled -CommandName Remove-AzDoPermission -Times 0
     }
