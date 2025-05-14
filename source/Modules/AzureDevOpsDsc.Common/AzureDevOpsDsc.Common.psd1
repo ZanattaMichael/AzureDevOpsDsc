@@ -79,6 +79,11 @@
         'Remove-AzDoGroupProjectPermission',
         'Set-AzDoGroupProjectPermission',
 
+        'Get-AzDoGroupTagPermission',
+        'New-AzDoGroupTagPermission',
+        'Remove-AzDoGroupTagPermission',
+        'Set-AzDoGroupTagPermission',
+
         'Get-AzDoProjectServices',
         'Set-AzDoProjectServices',
         'Test-AzDoProjectServices',

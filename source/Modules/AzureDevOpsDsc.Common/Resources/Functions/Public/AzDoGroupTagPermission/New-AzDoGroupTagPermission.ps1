@@ -1,36 +1,4 @@
-<#
-.SYNOPSIS
-Creates a new Azure DevOps group permission.
 
-.DESCRIPTION
-The New-AzDoGroupProjectPermission function creates a new permission set for a specified Azure DevOps group.
-It formats the group name, retrieves necessary security namespace and project information,
-serializes the ACLs, and sets the permissions accordingly.
-
-.PARAMETER GroupName
-Specifies the name of the group for which the permissions are being set. This parameter is mandatory.
-
-.PARAMETER isInherited
-Indicates whether the permissions are inherited. This parameter is mandatory.
-
-.PARAMETER Permissions
-Specifies a hashtable array of permissions to be applied. This parameter is optional.
-
-.PARAMETER LookupResult
-Specifies a hashtable containing lookup results. This parameter is optional.
-
-.PARAMETER Ensure
-Specifies the desired state of the permissions. This parameter is optional.
-
-.PARAMETER Force
-Forces the command to run without asking for user confirmation. This parameter is optional.
-
-.EXAMPLE
-New-AzDoGroupProjectPermission -GroupName "ProjectName\GroupName" -isInherited $true -Permissions $permissions -LookupResult $lookupResult -Ensure Present -Force
-
-.NOTES
-This function requires the Azure DevOps PowerShell module and appropriate permissions to set group permissions.
-#>
 Function New-AzDoGroupProjectPermission
 {
     [CmdletBinding()]
@@ -77,7 +45,7 @@ Function New-AzDoGroupProjectPermission
     #
     # Security Namespace ID
 
-    $SecurityNamespace = Get-CacheItem -Key 'Project' -Type 'SecurityNamespaces'
+    $SecurityNamespace = Get-CacheItem -Key 'Tagging' -Type 'SecurityNamespaces'
     $Project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
     $Group = Get-CacheItem -Key $('[{0}]\{1}' -f $ProjectName, $GroupName) -Type 'LiveGroups'
 

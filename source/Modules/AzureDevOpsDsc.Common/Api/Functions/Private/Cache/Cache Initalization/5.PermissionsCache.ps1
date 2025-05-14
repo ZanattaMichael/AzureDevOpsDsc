@@ -51,6 +51,19 @@ function AzDoAPI_5_PermissionsCache
         $securityNamespaceName = $securityNamespace.name
         $value = $securityNamespace | Select-Object namespaceId, name, displayName, writePermission, readPermision, dataspaceCategory, actions
 
+        #
+        # Exclude namespace actions that are not permitted.
+
+        # Check to see if the namespace is within the list of excluded namespaces
+        if ($securityNamespaceName -in $SecurityNamespaceFilter.Namespace)
+        {
+            $filteredNamespace = $SecurityNamespaceFilter | Where-Object { $_.Namespace -eq $securityNamespaceName }
+            # If it is, get the excluded actions and remove them from the actions list.
+            Write-Verbose "[AzDoAPI_5_PermissionsCache] Filtering out actions for namespace: $securityNamespaceName"
+            $value.actions = $value.actions | Where-Object { $_.name -notin $filteredNamespace.DisabledActions }
+            continue
+        }
+
         # Add the project to the cache with its name as the key
         Add-CacheItem -Key $securityNamespaceName -Value $value -Type 'SecurityNamespaces'
     }
