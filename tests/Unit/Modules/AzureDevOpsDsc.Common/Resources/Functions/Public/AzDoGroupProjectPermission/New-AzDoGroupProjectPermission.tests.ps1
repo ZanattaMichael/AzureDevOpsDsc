@@ -1,7 +1,7 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
 # Resource is currently disabled
-Describe 'New-AzDoGroupPermission' -skip {
+Describe 'New-AzDoGroupProjectPermission' -skip {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global
@@ -77,7 +77,7 @@ Describe 'New-AzDoGroupPermission' -skip {
             }
         )
 
-        New-AzDoGroupPermission -GroupName 'Project\Group' -isInherited $true -Permissions $Permissions -LookupResult $LookupResult -Ensure 'Present' -Force:$true
+        New-AzDoGroupProjectPermission -GroupName 'Project\Group' -isInherited $true -Permissions $Permissions -LookupResult $LookupResult -Ensure 'Present' -Force:$true
 
         Assert-MockCalled -CommandName Get-CacheItem -Parameters @{ Key = 'Identity'; Type = 'SecurityNamespaces' } -Times 1
         Assert-MockCalled -CommandName Get-CacheItem -Parameters @{ Key = 'Project'; Type = 'LiveProjects' } -Times 1
@@ -88,11 +88,11 @@ Describe 'New-AzDoGroupPermission' -skip {
     }
 
     It 'Should throw a warning when GroupName is invalid' {
-        { New-AzDoGroupPermission -GroupName 'InvalidGroupName' -isInherited $true } | Should -Throw
+        { New-AzDoGroupProjectPermission -GroupName 'InvalidGroupName' -isInherited $true } | Should -Throw
     }
 
     It 'Should handle case where no LookupResult is provided' {
-        $result = New-AzDoGroupPermission -GroupName 'Project\Group' -isInherited $true -Ensure 'Present' -Force:$true
+        $result = New-AzDoGroupProjectPermission -GroupName 'Project\Group' -isInherited $true -Ensure 'Present' -Force:$true
 
         Assert-MockCalled -CommandName Get-CacheItem -Parameters @{ Key = 'Identity'; Type = 'SecurityNamespaces' } -Times 1
         Assert-MockCalled -CommandName Get-CacheItem -Parameters @{ Key = 'Project'; Type = 'LiveProjects' } -Times 1
@@ -115,7 +115,7 @@ Describe 'New-AzDoGroupPermission' -skip {
             propertiesChanged = @('property1', 'property2')
         }
 
-        New-AzDoGroupPermission -GroupName 'Project\Group' -isInherited $true -LookupResult $LookupResult -Ensure 'Present' -Force:$true
+        New-AzDoGroupProjectPermission -GroupName 'Project\Group' -isInherited $true -LookupResult $LookupResult -Ensure 'Present' -Force:$true
 
         Assert-MockCalled -CommandName Set-AzDoPermission -Times 0
     }

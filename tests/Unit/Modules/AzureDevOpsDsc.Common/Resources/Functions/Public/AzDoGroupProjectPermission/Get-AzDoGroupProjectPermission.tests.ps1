@@ -2,7 +2,7 @@ $currentFile = $MyInvocation.MyCommand.Path
 
 
 # Tests are currently disabled.
-Describe 'Get-AzDoGroupPermission' -skip {
+Describe 'Get-AzDoGroupProjectPermission' -skip {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global
@@ -108,7 +108,7 @@ Describe 'Get-AzDoGroupPermission' -skip {
 
     It 'Should return group result with correct properties when valid GroupName is provided' {
 
-        $result = Get-AzDoGroupPermission -GroupName 'Project\Group' -isInherited $true
+        $result = Get-AzDoGroupProjectPermission -GroupName 'Project\Group' -isInherited $true
 
         $result | Should -Not -BeNullOrEmpty
         $result.project | Should -Be 'Project'
@@ -119,7 +119,7 @@ Describe 'Get-AzDoGroupPermission' -skip {
     }
 
     It 'Should not throw an error when GroupName is invalid' {
-        $result = Get-AzDoGroupPermission -GroupName 'InvalidGroupName' -isInherited $true
+        $result = Get-AzDoGroupProjectPermission -GroupName 'InvalidGroupName' -isInherited $true
         $result | Should -BeNullOrEmpty
     }
 
@@ -133,7 +133,7 @@ Describe 'Get-AzDoGroupPermission' -skip {
             }
         }
 
-        $result = Get-AzDoGroupPermission -GroupName 'Project\Group' -isInherited $true
+        $result = Get-AzDoGroupProjectPermission -GroupName 'Project\Group' -isInherited $true
         $result | Should -BeNullOrEmpty
     }
 }

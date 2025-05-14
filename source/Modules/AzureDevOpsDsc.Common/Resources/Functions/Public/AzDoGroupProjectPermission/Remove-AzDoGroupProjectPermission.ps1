@@ -3,7 +3,7 @@
 Removes Azure DevOps group permissions for a specified group.
 
 .DESCRIPTION
-The Remove-AzDoGroupPermission function removes permissions for a specified group in Azure DevOps.
+The Remove-AzDoGroupProjectPermission function removes permissions for a specified group in Azure DevOps.
 It validates the group name, retrieves the necessary security namespace and project information,
 and removes the Access Control Lists (ACLs) associated with the group if they exist.
 
@@ -26,7 +26,7 @@ Specifies the desired state of the permissions. This parameter is optional.
 Forces the removal of permissions without prompting for confirmation. This parameter is optional.
 
 .EXAMPLE
-Remove-AzDoGroupPermission -GroupName "ProjectName\GroupName" -isInherited $true
+Remove-AzDoGroupProjectPermission -GroupName "ProjectName\GroupName" -isInherited $true
 
 This example removes the permissions for the specified group in the given project.
 
@@ -34,7 +34,7 @@ This example removes the permissions for the specified group in the given projec
 The function uses cached items to retrieve security namespace, project, and repository information.
 It filters the ACLs related to the Git repository and removes them if they exist.
 #>
-Function Remove-AzDoGroupPermission
+Function Remove-AzDoGroupProjectPermission
 {
     [CmdletBinding()]
     param (
@@ -59,7 +59,7 @@ Function Remove-AzDoGroupPermission
     )
 
 
-    Write-Verbose "[Remove-AzDoGroupPermission] Started."
+    Write-Verbose "[Remove-AzDoGroupProjectPermission] Started."
 
     #
     # Format the Group Name

@@ -3,7 +3,7 @@
 Sets Azure DevOps group permissions.
 
 .DESCRIPTION
-The Set-AzDoGroupPermission function sets permissions for a specified Azure DevOps group.
+The Set-AzDoGroupProjectPermission function sets permissions for a specified Azure DevOps group.
 It formats the group name, retrieves necessary security namespace and project information,
 serializes ACLs, and applies the permissions.
 
@@ -26,13 +26,13 @@ Specifies whether the permissions should be ensured. This parameter is optional.
 A switch parameter to force the operation. This parameter is optional.
 
 .EXAMPLE
-Set-AzDoGroupPermission -GroupName "ProjectName\GroupName" -isInherited $true -Permissions $permissions -LookupResult $lookupResult -Ensure Present -Force
+Set-AzDoGroupProjectPermission -GroupName "ProjectName\GroupName" -isInherited $true -Permissions $permissions -LookupResult $lookupResult -Ensure Present -Force
 
 .NOTES
 This function relies on cached items for security namespace and project information.
 #>
 
-Function Set-AzDoGroupPermission
+Function Set-AzDoGroupProjectPermission
 {
     [CmdletBinding()]
     param (
@@ -56,7 +56,7 @@ Function Set-AzDoGroupPermission
         $Force
     )
 
-    Write-Verbose "[Set-AzDoGroupPermission] Started."
+    Write-Verbose "[Set-AzDoGroupProjectPermission] Started."
 
     #
     # Format the Group Name

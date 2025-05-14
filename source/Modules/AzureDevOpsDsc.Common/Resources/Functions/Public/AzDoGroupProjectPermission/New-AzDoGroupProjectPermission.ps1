@@ -3,7 +3,7 @@
 Creates a new Azure DevOps group permission.
 
 .DESCRIPTION
-The New-AzDoGroupPermission function creates a new permission set for a specified Azure DevOps group.
+The New-AzDoGroupProjectPermission function creates a new permission set for a specified Azure DevOps group.
 It formats the group name, retrieves necessary security namespace and project information,
 serializes the ACLs, and sets the permissions accordingly.
 
@@ -26,12 +26,12 @@ Specifies the desired state of the permissions. This parameter is optional.
 Forces the command to run without asking for user confirmation. This parameter is optional.
 
 .EXAMPLE
-New-AzDoGroupPermission -GroupName "ProjectName\GroupName" -isInherited $true -Permissions $permissions -LookupResult $lookupResult -Ensure Present -Force
+New-AzDoGroupProjectPermission -GroupName "ProjectName\GroupName" -isInherited $true -Permissions $permissions -LookupResult $lookupResult -Ensure Present -Force
 
 .NOTES
 This function requires the Azure DevOps PowerShell module and appropriate permissions to set group permissions.
 #>
-Function New-AzDoGroupPermission
+Function New-AzDoGroupProjectPermission
 {
     [CmdletBinding()]
     param (

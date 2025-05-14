@@ -74,10 +74,10 @@
         'Remove-AzDoGitPermission',
         'Set-AzDoGitPermission',
 
-        'Get-AzDoGroupPermission',
-        'New-AzDoGroupPermission',
-        'Remove-AzDoGroupPermission',
-        'Set-AzDoGroupPermission',
+        'Get-AzDoGroupProjectPermission',
+        'New-AzDoGroupProjectPermission',
+        'Remove-AzDoGroupProjectPermission',
+        'Set-AzDoGroupProjectPermission',
 
         'Get-AzDoProjectServices',
         'Set-AzDoProjectServices',

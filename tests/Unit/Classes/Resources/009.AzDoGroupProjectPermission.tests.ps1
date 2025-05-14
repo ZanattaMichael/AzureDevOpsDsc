@@ -1,5 +1,5 @@
 
-Describe 'AzDoGroupPermission Tests' {
+Describe 'AzDoGroupProjectPermission Tests' {
 
     BeforeAll {
         $ENV:AZDODSC_CACHE_DIRECTORY = 'mocked_cache_directory'
@@ -31,17 +31,17 @@ Describe 'AzDoGroupPermission Tests' {
 
     # Test case to check if the class can be instantiated
     Context 'Instantiation' {
-        It 'Should create an instance of the AzDoGroupPermission class' {
-            $groupPermission = [AzDoGroupPermission]::new()
+        It 'Should create an instance of the AzDoGroupProjectPermission class' {
+            $groupPermission = [AzDoGroupProjectPermission]::new()
             $groupPermission | Should -Not -BeNullOrEmpty
-            $groupPermission | Should -BeOfType 'AzDoGroupPermission'
+            $groupPermission | Should -BeOfType 'AzDoGroupProjectPermission'
         }
     }
 
     # Test case to check default values
     Context 'Default Values' {
         It 'Should have default value for isInherited as $true' {
-            $groupPermission = [AzDoGroupPermission]::new()
+            $groupPermission = [AzDoGroupProjectPermission]::new()
             $groupPermission.isInherited | Should -Be $true
         }
     }
@@ -49,13 +49,13 @@ Describe 'AzDoGroupPermission Tests' {
     # Test case to check property assignments
     Context 'Property Assignments' {
         It 'Should allow setting and getting GroupName property' {
-            $groupPermission = [AzDoGroupPermission]::new()
+            $groupPermission = [AzDoGroupProjectPermission]::new()
             $groupPermission.GroupName = 'TestGroup'
             $groupPermission.GroupName | Should -Be 'TestGroup'
         }
 
         It 'Should allow setting and getting Permissions property' {
-            $groupPermission = [AzDoGroupPermission]::new()
+            $groupPermission = [AzDoGroupProjectPermission]::new()
             $permissions = @(
                 @{ Permission = 'Read'; Allow = $true },
                 @{ Permission = 'Write'; Allow = $false }
@@ -69,7 +69,7 @@ Describe 'AzDoGroupPermission Tests' {
     Context 'Get Method' {
 
         BeforeAll {
-            Mock -CommandName Get-AzDoGroupPermission {
+            Mock -CommandName Get-AzDoGroupProjectPermission {
 
                 $properties = @{
                     Ensure = [Ensure]::Absent
@@ -94,7 +94,7 @@ Describe 'AzDoGroupPermission Tests' {
 
         It 'Should return current state properties' {
 
-            $groupPermission = [AzDoGroupPermission]::new()
+            $groupPermission = [AzDoGroupProjectPermission]::new()
             $groupPermission.GroupName = 'TestGroup'
             $groupPermission.isInherited = $false
             $groupPermission.Permissions = @(
@@ -107,7 +107,7 @@ Describe 'AzDoGroupPermission Tests' {
             $currentState.isInherited | Should -Be $false
             $currentState.Permissions | Should -Not -BeNullOrEmpty
 
-            Assert-MockCalled Get-AzDoGroupPermission -Exactly 1
+            Assert-MockCalled Get-AzDoGroupProjectPermission -Exactly 1
 
         }
     }
@@ -120,7 +120,7 @@ Describe 'AzDoGroupPermission Tests' {
 
         It 'Should return $true when calling the test method - when the current state is unchanged' {
 
-            Mock -CommandName Get-AzDoGroupPermission {
+            Mock -CommandName Get-AzDoGroupProjectPermission {
 
                 $properties = @{
                     Ensure = [Ensure]::Present
@@ -141,7 +141,7 @@ Describe 'AzDoGroupPermission Tests' {
 
             }
 
-            $groupPermission = [AzDoGroupPermission]::new()
+            $groupPermission = [AzDoGroupProjectPermission]::new()
             $groupPermission.GroupName = 'TestGroup'
             $groupPermission.Permissions = @(
                 @{ Permission = 'Read'; Allow = $true }
@@ -154,7 +154,7 @@ Describe 'AzDoGroupPermission Tests' {
 
         It 'Should return $false when calling the test method - when the current state is changed' {
 
-            Mock -CommandName Get-AzDoGroupPermission {
+            Mock -CommandName Get-AzDoGroupProjectPermission {
 
                 $properties = @{
                     Ensure = [Ensure]::Absent
@@ -175,7 +175,7 @@ Describe 'AzDoGroupPermission Tests' {
 
             }
 
-            $groupPermission = [AzDoGroupPermission]::new()
+            $groupPermission = [AzDoGroupProjectPermission]::new()
             $groupPermission.GroupName = 'DifferentGroup'
             $groupPermission.Permissions = @(
                 @{ Permission = 'Read'; Allow = $true }
@@ -187,7 +187,7 @@ Describe 'AzDoGroupPermission Tests' {
 
         It 'Should return $false when calling the test method - when the status is null' {
 
-            Mock -CommandName Get-AzDoGroupPermission {
+            Mock -CommandName Get-AzDoGroupProjectPermission {
 
                 $properties = @{
                     Ensure = [Ensure]::Absent
@@ -214,7 +214,7 @@ Describe 'AzDoGroupPermission Tests' {
                 $Message -like "*Could not obtain a valid 'LookupResult.Status' value within*"
             }
 
-            $groupPermission = [AzDoGroupPermission]::new()
+            $groupPermission = [AzDoGroupProjectPermission]::new()
             $groupPermission.GroupName = 'TestGroup'
             $groupPermission.Permissions = @(
                 @{ Permission = 'Read'; Allow = $true }
