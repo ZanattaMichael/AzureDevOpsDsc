@@ -67,6 +67,8 @@ Function New-AzDoAreaPermission
     #
     # Set the Git Repository Permissions
 
+    Write-Verbose "[New-AzDoAreaPermission] Setting Area Path Permissions for $ProjectName - $AreaPath"
+
     Set-AzDoPermission @params
 
 }
