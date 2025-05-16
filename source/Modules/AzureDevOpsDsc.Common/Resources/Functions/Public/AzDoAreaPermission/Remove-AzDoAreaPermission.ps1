@@ -84,7 +84,7 @@ Function Remove-AzDoAreaPermission
     #
     # Check the ACLs to see if the token identifier exists
 
-    $token = $(($LookupResult.propertiesChanged.identifiers | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_.identifier }) -join ':')
+    $token = $(($LookupResult.propertiesChanged.identifiers | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_ }) -join ':')
 
     # Test if the Token exists
     $Filtered = $DescriptorACLList | Where-Object { $_.token -eq $token }
@@ -101,8 +101,10 @@ Function Remove-AzDoAreaPermission
             TokenName = $token
         }
 
+    $params | Export-CLixml 'C:\temp\Remove-AzDoAreaPermission.clixml'
+
         # Remove the ACLs
-        Remove-AzDoPermission @params
+        #Remove-AzDoPermission @params
 
     }
 

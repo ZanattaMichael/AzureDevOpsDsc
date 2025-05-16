@@ -52,10 +52,12 @@ Function New-AzDoAreaPermission
     #
     # Serialize the ACLs
 
+    $token = $(($LookupResult.propertiesChanged.identifiers | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_ }) -join ':')
+
     $serializeACLParams = @{
         ReferenceACLs = $LookupResult.propertiesChanged
         DescriptorACLList = Get-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'
-        DescriptorMatchToken = ($LocalizedDataAzSerializationPatten.GitRepository -f $Project.id)
+        DescriptorMatchToken = $token
     }
 
     $params = @{
@@ -69,6 +71,8 @@ Function New-AzDoAreaPermission
 
     Write-Verbose "[New-AzDoAreaPermission] Setting Area Path Permissions for $ProjectName - $AreaPath"
 
-    Set-AzDoPermission @params
+    $params | Export-CLixml 'C:\temp\New-AzDoAreaPermission.clixml'
+
+    #Set-AzDoPermission @params
 
 }

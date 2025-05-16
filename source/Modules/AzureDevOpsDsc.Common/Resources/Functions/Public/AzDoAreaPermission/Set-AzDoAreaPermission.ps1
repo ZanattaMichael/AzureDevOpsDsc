@@ -49,13 +49,13 @@ Function Set-AzDoAreaPermission
     #
     # Serialize the ACLs
 
-    $token = $(($LookupResult.propertiesChanged.identifiers | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_.identifier }) -join ':')
+    $token = $(($LookupResult.identifiers | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_ }) -join ':')
 
     # More work is needed here.
     $serializeACLParams = @{
         ReferenceACLs = $LookupResult.propertiesChanged
         DescriptorACLList = Get-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'
-        DescriptorMatchToken = [regex]::Escape($token)
+        DescriptorMatchToken = $token
     }
 
     $params = @{
@@ -77,6 +77,6 @@ Function Set-AzDoAreaPermission
     # Set the Area Permissions
 
     Write-Verbose "[Set-AzDoAreaPermission] Parameters: $($params | ConvertTo-Json -Depth 5)"
-    Set-AzDoAreaPermission @params
+    Set-AzDoPermission @params
 
 }
