@@ -71,8 +71,6 @@ Function New-AzDoAreaPermission
 
     Write-Verbose "[New-AzDoAreaPermission] Setting Area Path Permissions for $ProjectName - $AreaPath"
 
-    $params | Export-CLixml 'C:\temp\New-AzDoAreaPermission.clixml'
-
-    #Set-AzDoPermission @params
+    Set-AzDoPermission @params
 
 }

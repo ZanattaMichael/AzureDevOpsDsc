@@ -101,10 +101,8 @@ Function Remove-AzDoAreaPermission
             TokenName = $token
         }
 
-    $params | Export-CLixml 'C:\temp\Remove-AzDoAreaPermission.clixml'
-
         # Remove the ACLs
-        #Remove-AzDoPermission @params
+        Remove-AzDoPermission @params
 
     }
 
