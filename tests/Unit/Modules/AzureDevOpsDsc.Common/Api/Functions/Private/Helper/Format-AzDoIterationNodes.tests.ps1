@@ -22,7 +22,7 @@ Describe "Format-AzDoIterationNodes Tests" {
             return $true
         }
 
-        Mock -CommandName Format-AzDoIterationPath {
+        Mock -CommandName Format-AzDoIteration {
             param (
                 [Parameter(Mandatory = $true)]
                 [string]$ProjectName,
