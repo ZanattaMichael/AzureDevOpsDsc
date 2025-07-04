@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'New-ACLToken Function Tests' -Skip -Tags "Unit", "ACL", "Helper" {
+Describe 'New-ACLToken Function Tests' -Tags "Unit", "ACL", "Helper" {
 
     BeforeAll {
 
@@ -17,6 +17,8 @@ Describe 'New-ACLToken Function Tests' -Skip -Tags "Unit", "ACL", "Helper" {
 
         # Load 001.LocalizedDataAzResourceTokenPatten
         . (Get-ClassFilePath '001.LocalizedDataAzResourceTokenPatten')
+        . (Get-ClassFilePath '000.CacheItem')
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         Mock -CommandName Get-CacheItem -MockWith {
             return [PSCustomObject]@{id = "1234"}
@@ -28,12 +30,17 @@ Describe 'New-ACLToken Function Tests' -Skip -Tags "Unit", "ACL", "Helper" {
     Context 'Git Repositories Namespace' {
 
         It 'Should return GitOrganization type for valid Git organization token' {
-            $result = New-ACLToken -SecurityNamespace 'Git Repositories' -TokenName 'OrgName'
+            $result = New-ACLToken -SecurityNamespace 'Git Repositories' -TokenName 'azdoorg'
             $result.type | Should -Be 'GitOrganization'
         }
 
+        It 'Should return "GitUnknown" type for invalid Git organization token' {
+            $result = New-ACLToken -SecurityNamespace 'Git Repositories' -TokenName 'Invalid-Organization'
+            $result.type | Should -Be 'GitUnknown'
+        }
+
         It 'Should return GitProject type for valid Git project token' {
-            $result = New-ACLToken -SecurityNamespace 'Git Repositories' -TokenName '[OrgName]/ProjectName'
+            $result = New-ACLToken -SecurityNamespace 'Git Repositories' -TokenName 'repov2/ProjectName'
             $result.type | Should -Be 'GitProject'
             $result.projectId | Should -Be '1234'
         }
@@ -46,7 +53,7 @@ Describe 'New-ACLToken Function Tests' -Skip -Tags "Unit", "ACL", "Helper" {
         }
 
         It 'Should return GitUnknown type for unknown Git token' {
-            $result = New-ACLToken -SecurityNamespace 'Git Repositories' -TokenName 'Unknown/Token'
+            $result = New-ACLToken -SecurityNamespace 'Git Repositories' -TokenName 'Unknown-Token'
             $result.type | Should -Be 'GitUnknown'
         }
     }
@@ -54,8 +61,8 @@ Describe 'New-ACLToken Function Tests' -Skip -Tags "Unit", "ACL", "Helper" {
     Context 'Identity Namespace' {
 
         It 'Should return GitGroupPermission type for valid identity group token' {
-            $result = New-ACLToken -SecurityNamespace 'Identity' -TokenName '[ProjectId]/[GroupId]'
-            $result.type | Should -Be 'GitGroupPermission'
+            $result = New-ACLToken -SecurityNamespace 'Identity' -TokenName '[ProjectId]\[GroupId]'
+            $result.type | Should -Be 'Identity'
             $result.projectId | Should -Be 'ProjectId'
             $result.groupId | Should -Be 'GroupId'
         }
@@ -64,6 +71,42 @@ Describe 'New-ACLToken Function Tests' -Skip -Tags "Unit", "ACL", "Helper" {
             $result = New-ACLToken -SecurityNamespace 'Identity' -TokenName 'Unknown/Token'
             $result.type | Should -Be 'GroupUnknown'
         }
+    }
+
+    Context 'CSS Namespace' {
+
+        It "Returns type as 'Unknown CSS'" {
+            $result =  New-ACLToken -SecurityNamespace 'CSS' -TokenName 'bad-token'
+            $result.type | Should -Be 'Unknown CSS'
+        }
+
+        It "Returns type as 'CSS' and correct identifiers" {
+            $mockId = [guid]::NewGuid().ToString()
+            $TokenName = "vstfs:///Classification/Node/$mockId"
+            $result = New-ACLToken -SecurityNamespace 'CSS' -TokenName $TokenName
+
+            $result.type | Should -Be 'CSS'
+            $result.Identifiers.identifier | Should -Be $mockId
+        }
+
+    }
+
+    Context 'Iteration Namespace' {
+
+        It "Returns type as 'Unknown Iteration'" {
+            $result =  New-ACLToken -SecurityNamespace 'Iteration' -TokenName 'bad-token'
+            $result.type | Should -Be 'Unknown IterationPath'
+        }
+
+        It "Returns type as 'Iteration' and correct identifiers" {
+            $mockId = [guid]::NewGuid().ToString()
+            $TokenName = "vstfs:///Classification/Node/$mockId"
+            $result = New-ACLToken -SecurityNamespace 'Iteration' -TokenName $TokenName
+
+            $result.type | Should -Be 'Iteration'
+            $result.Identifiers.identifier | Should -Be $mockId
+        }
+
     }
 
     Context 'Unknown SecurityNamespace' {

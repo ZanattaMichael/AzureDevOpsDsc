@@ -90,7 +90,7 @@ Function New-ACLToken
             if ($TokenName -match $LocalizedDataAzResourceTokenPatten.GroupPermission)
             {
                 # Derive the Token Type Identity
-                $result.type = 'GitGroupPermission'
+                $result.type = 'Identity'
                 $result.projectId = $matches.ProjectId
                 $result.groupId = $matches.GroupId
             }
@@ -101,7 +101,7 @@ Function New-ACLToken
                 Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known Identity ACL Token Patterns."
             }
 
-            $result.type = 'Identity'
+            #$result.type = 'Identity'
             break;
         }
 
@@ -122,6 +122,34 @@ Function New-ACLToken
 
             $result.Identifiers = @()
             $result.type = 'CSS'
+
+            # Construct the token structure
+            foreach ($match in $regexMatches) {
+                $result.Identifiers += @{
+                    identifier = $match.groups['identifiers'].value
+                }
+            }
+
+            break;
+
+        }
+        # Iteration Path
+        'Iteration' {
+
+            # Use custom logic to extract the IterationPath from the token.
+            # We cant use the regex variable as it it's a complex regex pattern.
+            $regexMatches = [regex]::Matches($TokenName, $LocalizedDataAzResourceTokenPatten.IterationPathPermission)
+
+            # Check if the match was successful
+            if ($regexMatches.Count -eq 0)
+            {
+                $result.type = 'Unknown IterationPath'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known Iteration Path ACL Token Patterns."
+                break
+            }
+
+            $result.Identifiers = @()
+            $result.type = 'Iteration'
 
             # Construct the token structure
             foreach ($match in $regexMatches) {

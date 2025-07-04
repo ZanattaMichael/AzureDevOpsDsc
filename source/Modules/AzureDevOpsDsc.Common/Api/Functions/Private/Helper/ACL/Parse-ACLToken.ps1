@@ -5,7 +5,7 @@ Function Parse-ACLToken
         [String]$Token,
 
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Identity', 'Git Repositories','CSS')]
+        [ValidateSet('Identity', 'Git Repositories','CSS', 'Iteration')]
         [String]$SecurityNamespace
     )
 
@@ -85,6 +85,46 @@ Function Parse-ACLToken
                 # Use custom logic to extract the AreaPath from the token.
                 # We cant use the regex variable as it it's a complex regex pattern.
                 $regexMatches = [regex]::Matches($Token, $LocalizedDataAzACLTokenPatten.AreaPathPermission)
+
+                # Check if the match was successful
+                if ($regexMatches.Count -eq 0)
+                {
+                    throw "Token '$Token' is not recognized."
+                }
+
+                $result.Identifiers = @()
+
+                # Construct the token structure
+                foreach ($match in $regexMatches) {
+                    $result.Identifiers += @{
+                        identifier = $match.groups['identifiers'].value
+                    }
+                }
+
+                # Bypass the regex variable as it is a complex regex pattern.
+                $useRegexVariable = $false
+
+                break;
+
+            }
+
+            default {
+                throw "Token '$Token' is not recognized."
+            }
+        }
+    }
+    elseif ($SecurityNamespace -eq 'Iteration') # IterationPath's
+    {
+        # Match the Token with the Regex Patterns
+        switch -regex ($Token.Trim())
+        {
+            $LocalizedDataAzACLTokenPatten.IterationPathPermission {
+
+                $result.type = 'IterationPathPermission'
+
+                # Use custom logic to extract the IterationPath from the token.
+                # We cant use the regex variable as it it's a complex regex pattern.
+                $regexMatches = [regex]::Matches($Token, $LocalizedDataAzACLTokenPatten.IterationPathPermission)
 
                 # Check if the match was successful
                 if ($regexMatches.Count -eq 0)
