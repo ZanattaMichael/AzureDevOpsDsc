@@ -48,9 +48,15 @@ AzDoIterationPermission {
         @{ Identity = 'User2'; Permission = 'Contribute'; Allow = $false }
     )
 }
-#>
 
-#[DscResource()]
+.INPUTS
+    None
+
+.OUTPUTS
+    None
+
+#>
+[DscResource()]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSDSCStandardDSCFunctionsInResource', '', Justification='Test() and Set() method are inherited from base, "AzDevOpsDscResourceBase" class')]
 class AzDoIterationPermission : AzDevOpsDscResourceBase
 {
