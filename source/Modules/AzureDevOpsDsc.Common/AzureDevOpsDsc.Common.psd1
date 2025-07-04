@@ -103,7 +103,12 @@
         'Get-AzDoAreaPermission',
         'New-AzDoAreaPermission',
         'Set-AzDoAreaPermission',
-        'Remove-AzDoAreaPermission'
+        'Remove-AzDoAreaPermission',
+
+        'Get-AzDoIterationPermission',
+        'New-AzDoIterationPermission',
+        'Set-AzDoIterationPermission',
+        'Remove-AzDoIterationPermission'
 
     )
 
