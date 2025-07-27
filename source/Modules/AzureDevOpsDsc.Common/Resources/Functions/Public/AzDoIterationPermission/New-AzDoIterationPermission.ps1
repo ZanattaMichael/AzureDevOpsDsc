@@ -52,7 +52,8 @@ Function New-AzDoIterationPermission
     #
     # Serialize the ACLs
 
-    $token = $(($LookupResult.propertiesChanged.identifiers | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_ }) -join ':')
+    #TODO CONSTRUCT TOKEN OBJECT.
+    $token = $(($LookupResult.identifiers | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_ }) -join ':')
 
     $serializeACLParams = @{
         ReferenceACLs = $LookupResult.propertiesChanged
@@ -60,12 +61,16 @@ Function New-AzDoIterationPermission
         DescriptorMatchToken = $token
     }
 
+    $serializeACLParams | Export-Clixml C:\Temp\SerializeACLParams.xml
+
+
     $params = @{
         OrganizationName = $Global:DSCAZDO_OrganizationName
         SecurityNamespaceID = $SecurityNamespace.namespaceId
         SerializedACLs = ConvertTo-ACLHashtable @serializeACLParams
     }
 
+    $params | Export-Clixml C:\Temp\params.clixml
     #
     # Set the Git Repository Permissions
 

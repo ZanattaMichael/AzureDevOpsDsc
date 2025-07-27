@@ -89,6 +89,18 @@ Describe 'New-ACLToken Function Tests' -Tags "Unit", "ACL", "Helper" {
             $result.Identifiers.identifier | Should -Be $mockId
         }
 
+        It "Results the correct Identifiers for multiple identifiers" {
+            $mockId1 = [guid]::NewGuid().ToString()
+            $mockId2 = [guid]::NewGuid().ToString()
+            $TokenName = "vstfs:///Classification/Node/$($mockId1):vstfs:///Classification/Node/$($mockId2)"
+            $result = New-ACLToken -SecurityNamespace 'CSS' -TokenName $TokenName
+
+            $result.type | Should -Be 'CSS'
+            $result.Identifiers.Count | Should -Be 2
+            $result.Identifiers[0].identifier | Should -Be $mockId1
+            $result.Identifiers[1].identifier | Should -Be $mockId2
+        }
+
     }
 
     Context 'Iteration Namespace' {
@@ -105,6 +117,18 @@ Describe 'New-ACLToken Function Tests' -Tags "Unit", "ACL", "Helper" {
 
             $result.type | Should -Be 'Iteration'
             $result.Identifiers.identifier | Should -Be $mockId
+        }
+
+        It "Results the correct Identifiers for multiple identifiers" {
+            $mockId1 = [guid]::NewGuid().ToString()
+            $mockId2 = [guid]::NewGuid().ToString()
+            $TokenName = "vstfs:///Classification/Node/$($mockId1):vstfs:///Classification/Node/$($mockId2)"
+            $result = New-ACLToken -SecurityNamespace 'Iteration' -TokenName $TokenName
+
+            $result.type | Should -Be 'Iteration'
+            $result.Identifiers.Count | Should -Be 2
+            $result.Identifiers[0].identifier | Should -Be $mockId1
+            $result.Identifiers[1].identifier | Should -Be $mockId2
         }
 
     }

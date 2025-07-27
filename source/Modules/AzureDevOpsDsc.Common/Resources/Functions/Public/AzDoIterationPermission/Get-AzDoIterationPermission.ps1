@@ -91,6 +91,8 @@ Function Get-AzDoIterationPermission
         $FormattedIterationPaths = @("\$ProjectName\Iteration")
     }
 
+    $FormattedIterationPaths | Export-Clixml C:\Temp\export.clixml
+
     # Perform a Lookup within the Cache for the IterationPath
     [Array]$IterationPaths = $FormattedIterationPaths | ForEach-Object {
         Write-Verbose "[Get-AzDoIterationPermission] IterationPath: $_"
@@ -144,16 +146,9 @@ Function Get-AzDoIterationPermission
     # Convert the ACLs to a formatted ACL
     $DifferenceACLs = $DevOpsACLs | ConvertTo-FormattedACL -SecurityNamespace $SecurityNamespace -OrganizationName $OrganizationName
 
-    # Test if the ACLs were found
-    if ($DifferenceACLs -eq $null)
-    {
-        Write-Warning "[Get-AzDoIterationPermission] No ACLs found for the IterationPath."
-        $results.status = [DSCGetSummaryState]::NotFound
-        return $results
-    }
-
     # Filter the ACLs for the IterationPath
-    if ($IterationPath) {
+    # Both the IterationPath and DifferenceACLs must be specified.
+    if (($IterationPath) -and ($DifferenceACLs)) {
 
         # Construct the IterationPath Token
         $DifferenceACLs = $DifferenceACLs | Where-Object { $_.Token.Type -eq 'IterationPathPermission' } | Where-Object {
@@ -173,17 +168,18 @@ Function Get-AzDoIterationPermission
         }
 
         # Test if the ACLs were found
-        if ($DifferenceACLs -eq $null)
-        {
-            Write-Warning "[Get-AzDoIterationPermission] No ACLs found for the IterationPath."
-            $results.status = [DSCGetSummaryState]::Error
-            $results.reason = "No ACLs found for the IterationPath."
-            return $results
-        }
+        #if ($null -eq $DifferenceACLs)
+        #{
+        #    Write-Warning "[Get-AzDoIterationPermission] No ACLs found for the IterationPath."
+        #    $results.status = [DSCGetSummaryState]::Error
+        #    $results.reason = "No ACLs found for the IterationPath."
+        #    return $results
+        #}
 
     }
 
     Write-Verbose "[Get-AzDoIterationPermission] ACL List retrieved and formatted."
+    Write-Verbose "[Get-AzDoIterationPermission] Difference ACLs Count: $($DifferenceACLs.Count)"
 
     #
     # Convert the Permissions into an ACL Token
@@ -195,6 +191,8 @@ Function Get-AzDoIterationPermission
         OrganizationName    = $OrganizationName
         TokenName           = $(($identifierArr | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_ }) -join ':')
     }
+
+    $params | Export-Clixml C:\Temp\params_convertoacl.xml
 
     # Convert the Permissions to an ACL Token
     $ReferenceACLs = ConvertTo-ACL @params
