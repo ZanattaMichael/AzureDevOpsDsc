@@ -61,16 +61,6 @@ Function Remove-AzDoAreaPermission
         return
     }
 
-    # Get the Area Path
-    $AreaPath = Get-CacheItem -Key "\$ProjectName\Area\" -Type 'LiveAreaNodes'
-
-    # If the AreaPath is null, return
-    if (-not $AreaPath)
-    {
-        Write-Error "[Remove-AzDoAreaPermission] AreaPath not found."
-        return
-    }
-
     # Get the ACLs
     $DescriptorACLList  = Get-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'
 

@@ -61,16 +61,6 @@ Function Remove-AzDoIterationPermission
         return
     }
 
-    # Get the Iteration Path
-    $IterationPath = Get-CacheItem -Key "\$ProjectName\Iteration\" -Type 'LiveIterations'
-
-    # If the IterationPath is null, return
-    if (-not $IterationPath)
-    {
-        Write-Error "[Remove-AzDoIterationPermission] IterationPath not found."
-        return
-    }
-
     # Get the ACLs
     $DescriptorACLList  = Get-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'
 

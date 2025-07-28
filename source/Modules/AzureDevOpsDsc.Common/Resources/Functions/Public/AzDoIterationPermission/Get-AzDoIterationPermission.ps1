@@ -91,8 +91,6 @@ Function Get-AzDoIterationPermission
         $FormattedIterationPaths = @("\$ProjectName\Iteration")
     }
 
-    $FormattedIterationPaths | Export-Clixml C:\Temp\export.clixml
-
     # Perform a Lookup within the Cache for the IterationPath
     [Array]$IterationPaths = $FormattedIterationPaths | ForEach-Object {
         Write-Verbose "[Get-AzDoIterationPermission] IterationPath: $_"
@@ -191,8 +189,6 @@ Function Get-AzDoIterationPermission
         OrganizationName    = $OrganizationName
         TokenName           = $(($identifierArr | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_ }) -join ':')
     }
-
-    $params | Export-Clixml C:\Temp\params_convertoacl.xml
 
     # Convert the Permissions to an ACL Token
     $ReferenceACLs = ConvertTo-ACL @params
