@@ -119,6 +119,8 @@ Describe "Remove-AzDoAreaPermission Tests" {
 
         It "Should not call Remove-AzDoPermission" {
             $LookupResult = @{ propertiesChanged = @{ identifiers = @("3") } }
+
+            Mock -CommandName Write-Error -Verifiable
             Remove-AzDoAreaPermission -ProjectName "SampleProject" -AreaPath "SampleAreaPath" -isInherited $true -LookupResult $LookupResult
 
             Assert-MockCalled -CommandName Remove-AzDoPermission -Exactly 0

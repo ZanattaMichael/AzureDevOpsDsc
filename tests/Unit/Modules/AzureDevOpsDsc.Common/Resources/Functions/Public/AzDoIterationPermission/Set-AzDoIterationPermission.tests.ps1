@@ -33,7 +33,7 @@ Describe 'Set-AzDoIterationPermission Tests' {
 
         Mock -CommandName Get-CacheItem {
             param ([string]$Key, [string]$Type)
-            if ($Key -eq 'CSS' -and $Type -eq 'SecurityNamespaces') {
+            if ($Key -eq 'Iteration' -and $Type -eq 'SecurityNamespaces') {
                 return @{ namespaceId = "12345" }
             } elseif ($Key -eq $ProjectName -and $Type -eq 'LiveProjects') {
                 return @{ Name = "SampleProject" }
@@ -81,7 +81,7 @@ Describe 'Set-AzDoIterationPermission Tests' {
 
             Mock -CommandName Get-CacheItem {
                 param ([string]$Key, [string]$Type)
-                if ($Key -eq 'CSS' -and $Type -eq 'SecurityNamespaces') {
+                if ($Key -eq 'Iteration' -and $Type -eq 'SecurityNamespaces') {
                     return @{ namespaceId = "12345" }
                 } else {
                     return $null

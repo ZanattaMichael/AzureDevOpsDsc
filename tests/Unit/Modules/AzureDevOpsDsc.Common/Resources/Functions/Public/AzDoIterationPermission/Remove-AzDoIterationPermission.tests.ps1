@@ -32,7 +32,7 @@ Describe "Remove-AzDoIterationPermission Tests" {
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         Mock -CommandName Get-CacheItem {
-            if ($Key -eq 'CSS' -and $Type -eq 'SecurityNamespaces') {
+            if ($Key -eq 'Iteration' -and $Type -eq 'SecurityNamespaces') {
                 return @{ namespaceId = "12345" }
             } elseif ($Type -eq 'LiveAreaNodes') {
                 return @{ Name = "SampleAreaPath" }
@@ -94,7 +94,7 @@ Describe "Remove-AzDoIterationPermission Tests" {
 
     Context "When ACLs exist" {
         It "Should call Remove-AzDoPermission" {
-            $LookupResult = @{ propertiesChanged = @{ identifiers = @("1") } }
+            $LookupResult = @{ identifiers = @("1") }
             Remove-AzDoIterationPermission -ProjectName "SampleProject" -IterationPath "SampleAreaPath" -isInherited $true -LookupResult $LookupResult
 
             Assert-MockCalled -CommandName Remove-AzDoPermission -Exactly 1
@@ -105,7 +105,7 @@ Describe "Remove-AzDoIterationPermission Tests" {
         BeforeAll {
             Mock -CommandName Get-CacheItem {
                 param ([string]$Key, [string]$Type)
-                if ($Key -eq 'CSS' -and $Type -eq 'SecurityNamespaces') {
+                if ($Key -eq 'Iteration' -and $Type -eq 'SecurityNamespaces') {
                     return @{ namespaceId = "12345" }
                 } elseif ($Key -eq "$ProjectName\Area\" -and $Type -eq 'LiveAreaNodes') {
                     return @{ Name = "SampleAreaPath" }
@@ -119,6 +119,8 @@ Describe "Remove-AzDoIterationPermission Tests" {
 
         It "Should not call Remove-AzDoPermission" {
             $LookupResult = @{ propertiesChanged = @{ identifiers = @("3") } }
+            Mock -CommandName Write-Error -Verifiable
+
             Remove-AzDoIterationPermission -ProjectName "SampleProject" -IterationPath "SampleAreaPath" -isInherited $true -LookupResult $LookupResult
 
             Assert-MockCalled -CommandName Remove-AzDoPermission -Exactly 0
