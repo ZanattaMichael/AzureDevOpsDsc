@@ -98,7 +98,17 @@
         'Get-AzDoIterationNodes',
         'New-AzDoIterationNodes',
         'Remove-AzDoIterationNodes',
-        'Set-AzDoIterationNodes'
+        'Set-AzDoIterationNodes',
+
+        'Get-AzDoAreaPermission',
+        'New-AzDoAreaPermission',
+        'Set-AzDoAreaPermission',
+        'Remove-AzDoAreaPermission',
+
+        'Get-AzDoIterationPermission',
+        'New-AzDoIterationPermission',
+        'Set-AzDoIterationPermission',
+        'Remove-AzDoIterationPermission'
 
     )
 
