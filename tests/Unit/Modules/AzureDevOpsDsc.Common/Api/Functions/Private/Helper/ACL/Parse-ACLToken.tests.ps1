@@ -17,12 +17,14 @@ Describe 'Parse-ACLToken' -Tags "Unit", "ACL", "Helper" {
 
 
         $script:LocalizedDataAzACLTokenPatten = @{
-            OrganizationGit    = '^org:(.+)$'
-            GitProject         = '^project:(.+)$'
-            GitRepository      = '^repo:(.+)$'
-            GitBranch          = '^branch:(.+)$'
-            ResourcePermission = '^resource:(.+)$'
-            GroupPermission    = '^group:(.+)$'
+            OrganizationGit         = '^org:(.+)$'
+            GitProject              = '^project:(.+)$'
+            GitRepository           = '^repo:(.+)$'
+            GitBranch               = '^branch:(.+)$'
+            ResourcePermission      = '^resource:(.+)$'
+            GroupPermission         = '^group:(.+)$'
+            IterationPathPermission = '^iteration:(.+)$'
+            AreaPathPermission      = '^area:(.+)$'
         }
 
         # If there were any Mock commands needed, they should be added here using the complete syntax.
@@ -73,6 +75,36 @@ Describe 'Parse-ACLToken' -Tags "Unit", "ACL", "Helper" {
 
         $result.type | Should -Be 'GroupPermission'
         $result._token | Should -Be $token
+    }
+
+    It 'Should parse AreaPathPermission token correctly' {
+        $token = "area:testArea"
+        $SecurityNamespace = "CSS"
+        $result = Parse-ACLToken -Token $token -SecurityNamespace $SecurityNamespace
+
+        $result.type | Should -Be 'AreaPathPermission'
+        $result._token | Should -Be $token
+    }
+
+    It 'Should parse IterationPathPermission token correctly' {
+        $token = "iteration:testIteration"
+        $SecurityNamespace = "Iteration"
+        $result = Parse-ACLToken -Token $token -SecurityNamespace $SecurityNamespace
+
+        $result.type | Should -Be 'IterationPathPermission'
+        $result._token | Should -Be $token
+    }
+
+    It 'Should throw an error if the AreaPath token is incorrect' {
+        $token = "badarea:testArea"
+        $SecurityNamespace = "CSS"
+        { Parse-ACLToken -Token $token -SecurityNamespace $SecurityNamespace } | Should -Throw "Token '$token' is not recognized."
+    }
+
+    It 'Should throw an error if the IterationPath token is incorrect' {
+        $token = "badIteration:testIteration"
+        $SecurityNamespace = "iteration"
+        { Parse-ACLToken -Token $token -SecurityNamespace $SecurityNamespace } | Should -Throw "Token '$token' is not recognized."
     }
 
     It 'Should throw for unrecognized Identity token' {

@@ -1,12 +1,13 @@
-Function Remove-AzDoGitPermission
+Function Remove-AzDoIterationPermission
 {
     [CmdletBinding()]
+    [OutputType([System.Management.Automation.PSObject[]])]
     param (
         [Parameter(Mandatory = $true)]
         [string]$ProjectName,
 
         [Parameter(Mandatory = $false)]
-        [string]$RepositoryName,
+        [string]$IterationPath,
 
         [Parameter(Mandatory = $true)]
         [bool]$isInherited,
@@ -25,14 +26,15 @@ Function Remove-AzDoGitPermission
         $Force
     )
 
-    Write-Verbose "[Remove-AzDoGitPermission] Started."
+
+    Write-Verbose "[Remove-AzDoIterationPermission] Started."
 
     #
-    # Test if the Repository is specified
-    if ([String]::IsNullOrEmpty($RepositoryName))
+    # Test if the IterationPath is specified
+    if ([String]::IsNullOrEmpty($IterationPath))
     {
-        Write-Warning "[Remove-AzDoGitPermission] Repository Name not specified. Defaulting to top-level Project permissions."
-        Write-Warning "[Remove-AzDoGitPermission] STOPPING. It is not possible to remove permissions from a top-level Project."
+        Write-Warning "[Remove-AzDoIterationPermission] Iteration Path Name not specified. Defaulting to top-level Project permissions."
+        Write-Warning "[Remove-AzDoIterationPermission] STOPPING. It is not possible to remove permissions from a top-level Project."
         return
     }
 
@@ -40,12 +42,12 @@ Function Remove-AzDoGitPermission
     # Security Namespace ID
 
     # Get the Security Namespace
-    $SecurityNamespace  = Get-CacheItem -Key 'Git Repositories' -Type 'SecurityNamespaces'
+    $SecurityNamespace  = Get-CacheItem -Key 'Iteration' -Type 'SecurityNamespaces'
 
     # If the Security Namespace is null, return
     if (-not $SecurityNamespace)
     {
-        Write-Error "[Remove-AzDoGitPermission] Security Namespace not found."
+        Write-Error "[Remove-AzDoIterationPermission] Security Namespace not found."
         return
     }
 
@@ -55,17 +57,7 @@ Function Remove-AzDoGitPermission
     # If the Project is null, return
     if (-not $Project)
     {
-        Write-Error "[Remove-AzDoGitPermission] Project not found."
-        return
-    }
-
-    # Get the Repository
-    $Repository = Get-CacheItem -Key "$ProjectName\$RepositoryName" -Type 'LiveRepositories'
-
-    # If the Repository is null, return
-    if (-not $Repository)
-    {
-        Write-Error "[Remove-AzDoGitPermission] Repository not found."
+        Write-Error "[Remove-AzDoIterationPermission] Project not found."
         return
     }
 
@@ -75,25 +67,28 @@ Function Remove-AzDoGitPermission
     # If the ACLs are null, return
     if (-not $DescriptorACLList)
     {
-        Write-Error "[Remove-AzDoGitPermission] ACLs not found."
+        Write-Error "[Remove-AzDoIterationPermission] ACLs not found."
         return
     }
 
     #
-    # Filter the ACLs that pertain to the Git Repository
+    # Check the ACLs to see if the token identifier exists
 
-    $searchString = 'repoV2/{0}/{1}' -f $Project.id, $Repository.id
+    $token = $(($LookupResult.identifiers | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_ }) -join ':')
 
     # Test if the Token exists
-    $Filtered = $DescriptorACLList | Where-Object { $_.token -eq $searchString }
+    $Filtered = $DescriptorACLList | Where-Object { $_.token -eq $token }
 
     # If the ACLs are not null, remove them
     if ($Filtered)
     {
+
+        Write-Verbose "[Remove-AzDoIterationPermission] Attempting to remove ACLs."
+
         $params = @{
             OrganizationName = $Global:DSCAZDO_OrganizationName
             SecurityNamespaceID = $SecurityNamespace.namespaceId
-            TokenName = $searchString
+            TokenName = $token
         }
 
         # Remove the ACLs

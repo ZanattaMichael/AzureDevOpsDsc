@@ -16,7 +16,7 @@ An optional hashtable array specifying the iteration attributes.
 PS> Format-AzDoIterationNodes -ProjectName "MyProject" -IterationAttributes @(@{Path="Iteration1"}, @{Path="Iteration2"})
 
 .NOTES
-This function relies on the Test-IterationNodeHashTable and Format-AzDoIterationPath functions to validate and format the iteration attributes.
+This function relies on the Test-IterationNodeHashTable and Format-AzDoIteration functions to validate and format the iteration attributes.
 #>
 Function Format-AzDoIterationNodes {
     [CmdletBinding()]
@@ -37,7 +37,7 @@ Function Format-AzDoIterationNodes {
     if (-not $result) { return }
 
     # Format the provided area paths for the specified project by adding missing classification node paths
-    $FormattedIterationAttributes = $IterationAttributes | Format-AzDoIterationPath -ProjectName $ProjectName -StructureType 'Iteration'
+    $FormattedIterationAttributes = $IterationAttributes | Format-AzDoIteration -ProjectName $ProjectName -StructureType 'Iteration'
 
     # Extract all Classification Node Paths and match the output to IterationAttributes. If there are any missing, add them.
     $FormattedIterationAttributes.Path | Get-AllAzDoClassificationNodePaths | ForEach-Object {
