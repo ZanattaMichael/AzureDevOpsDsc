@@ -5,7 +5,7 @@ Function Remove-AzDoGitPermission
         [Parameter(Mandatory = $true)]
         [string]$ProjectName,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $false)]
         [string]$RepositoryName,
 
         [Parameter(Mandatory = $true)]
@@ -25,7 +25,16 @@ Function Remove-AzDoGitPermission
         $Force
     )
 
-    Write-Verbose "[New-AzDoGitPermission] Started."
+    Write-Verbose "[Remove-AzDoGitPermission] Started."
+
+    #
+    # Test if the Repository is specified
+    if ([String]::IsNullOrEmpty($RepositoryName))
+    {
+        Write-Warning "[Remove-AzDoGitPermission] Repository Name not specified. Defaulting to top-level Project permissions."
+        Write-Warning "[Remove-AzDoGitPermission] STOPPING. It is not possible to remove permissions from a top-level Project."
+        return
+    }
 
     #
     # Security Namespace ID
@@ -36,7 +45,7 @@ Function Remove-AzDoGitPermission
     # If the Security Namespace is null, return
     if (-not $SecurityNamespace)
     {
-        Write-Error "[New-AzDoGitPermission] Security Namespace not found."
+        Write-Error "[Remove-AzDoGitPermission] Security Namespace not found."
         return
     }
 
@@ -46,7 +55,7 @@ Function Remove-AzDoGitPermission
     # If the Project is null, return
     if (-not $Project)
     {
-        Write-Error "[New-AzDoGitPermission] Project not found."
+        Write-Error "[Remove-AzDoGitPermission] Project not found."
         return
     }
 
@@ -56,7 +65,7 @@ Function Remove-AzDoGitPermission
     # If the Repository is null, return
     if (-not $Repository)
     {
-        Write-Error "[New-AzDoGitPermission] Repository not found."
+        Write-Error "[Remove-AzDoGitPermission] Repository not found."
         return
     }
 
@@ -66,7 +75,7 @@ Function Remove-AzDoGitPermission
     # If the ACLs are null, return
     if (-not $DescriptorACLList)
     {
-        Write-Error "[New-AzDoGitPermission] ACLs not found."
+        Write-Error "[Remove-AzDoGitPermission] ACLs not found."
         return
     }
 

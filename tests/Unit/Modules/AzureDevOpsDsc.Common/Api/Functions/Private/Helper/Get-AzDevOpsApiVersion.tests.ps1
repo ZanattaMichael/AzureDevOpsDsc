@@ -22,7 +22,7 @@ Describe 'Get-AzDevOpsApiVersion Tests' {
     }
 
     It 'Should return default API version when -Default is specified' {
-        $expected = '7.0-preview.1'
+        $expected = '7.1'
         $result = Get-AzDevOpsApiVersion -Default
         $result | Should -Be $expected
     }

@@ -18,6 +18,9 @@ Describe 'AzDoAPI_3_GroupMemberCache' -Tags "Unit", "Cache" {
             . $file.FullName
         }
 
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
+
         Mock -CommandName Get-CacheObject -MockWith {
             if ($CacheType -eq 'LiveGroups')
             {

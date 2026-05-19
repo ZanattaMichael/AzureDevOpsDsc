@@ -1,3 +1,6 @@
+
+$currentFile = $MyInvocation.MyCommand.Path
+
 # Not implemented
 Describe "PreCommandLookupAction" -skip {
     BeforeAll {

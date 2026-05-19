@@ -15,6 +15,9 @@ Describe 'AzDoAPI_6_ServicePrinciple' -Tags "Unit", "Cache" {
             . $file.FullName
         }
 
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
+
         Mock -CommandName List-DevOpsServicePrinciples -MockWith {
             return @([PSCustomObject]@{ displayName = 'SP1' }, [PSCustomObject]@{ displayName = 'SP2' })
         }

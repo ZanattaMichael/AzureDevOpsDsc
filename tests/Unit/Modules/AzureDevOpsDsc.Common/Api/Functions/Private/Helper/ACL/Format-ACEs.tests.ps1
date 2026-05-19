@@ -17,6 +17,9 @@ Describe 'Format-ACEs' -Tags "Unit", "ACL", "Helper" {
 
         . (Get-ClassFilePath '000.CacheItem')
 
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
+
         Mock -CommandName Get-CacheItem -ParameterFilter { $Key -eq 'SecurityNamespace' } -MockWith {
             return @{
                 Key = 'SecurityNamespace'

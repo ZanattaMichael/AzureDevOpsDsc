@@ -51,6 +51,12 @@ Get-ChildItem -LiteralPath "$($Global:RepositoryRoot)\source\Modules\AzureDevOps
     . $_.FullName
 }
 
+# Load all the Cache Functions from the AzureDevOpsDsc.Common Module into Memory
+Get-ChildItem -LiteralPath "$($Global:RepositoryRoot)\source\Modules\AzureDevOpsDsc.Common\Api\Functions\Private\Cache" -File -Recurse -Filter *.ps1 | ForEach-Object {
+    Write-Verbose "Dot Sourcing $($_.FullName)"
+    . $_.FullName
+}
+
 # Load all the Public Functions from the AzureDevOpsDsc.Common Module into Memory
 Get-ChildItem -LiteralPath $PublicDirectory -File -Recurse -Filter *.ps1 | ForEach-Object {
     Write-Verbose "Dot Sourcing $($_.FullName)"

@@ -29,4 +29,6 @@ enum DSCGetSummaryState
     Renamed = 3
     # Missing
     Missing = 4
+    # Error
+    Error = 5
 }

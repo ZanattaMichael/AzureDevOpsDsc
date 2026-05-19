@@ -21,6 +21,8 @@ function Get-AzDoCacheObjects
         'Team',
         'Group',
         'SecurityDescriptor',
+        'LiveAreaNodes',
+        'LiveIterations',
         'LiveGroups',
         'LiveProjects',
         'LiveUsers',

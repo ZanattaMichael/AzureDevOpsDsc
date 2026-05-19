@@ -58,11 +58,11 @@ Describe "ConvertTo-ACETokenList Tests" -Tags "Unit", "ACL", "Helper" {
         $result = ConvertTo-ACETokenList -SecurityNamespace "TestNamespace" -ACEPermissions $acePermissions
 
         $result | Should -HaveCount 2
-        $result[0].DescriptorType | Should -Be "TestNamespace"
+        $result[0].DescriptorType    | Should -Be "TestNamespace"
         $result[0].Allow.displayName | Should -Contain "Read"
-        $result[0].Deny.displayName | Should -Contain "Write"
+        $result[0].Deny.displayName  | Should -Contain "Write"
         $result[1].Allow.displayName | Should -Contain "Execute"
-        $result[1].Deny.displayName | Should -Contain "Read"
+        $result[1].Deny.displayName  | Should -Contain "Read"
     }
 
     It "should filter out permissions not found in the SecurityDescriptor" {

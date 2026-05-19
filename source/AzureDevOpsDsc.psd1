@@ -2,7 +2,7 @@
     RootModule = 'AzureDevOpsDsc.psm1'
 
     # Version number of this module.
-    moduleVersion      = '0.0.1'
+    moduleVersion      = '0.0.2'
 
     # ID used to uniquely identify this module
     GUID               = '3f8bbada-0fa9-4d80-b3d8-f019c3c60230'
@@ -42,8 +42,47 @@
 
     DscResourcesToExport = @(
       'AzDevOpsProject',
+      'AzDoGroupPermission',
       'AzDoOrganizationGroup',
-      'AzDoProjectGroup'
+      'AzDoProject',
+      'AzDoProjectServices',
+      'AzDoProjectGroup',
+      'AzDoGroupMember',
+      'AzDoGitRepository',
+      'AzDoGitPermission',
+      'AzDoAreaPermission',
+      'AzDoIterationPermission',
+      'AzDoWIPTags',
+      'AzDoAreaNodes',
+      'AzDoIterationNodes',
+      'AzDoBranchPolicy',
+      'AzDoVariableGroup',
+      'AzDoServiceConnection',
+      'AzDoPipelineEnvironment',
+      'AzDoAgentPool',
+      'AzDoAgentQueue',
+      'AzDoTeam',
+      'AzDoTeamMember',
+      'AzDoPipeline',
+      'AzDoPipelinePermission',
+      'AzDoEnvironmentApproval',
+      'AzDoVariableGroupPermission',
+      'AzDoServiceConnectionPermission',
+      'AzDoAgentPoolPermission',
+      'AzDoSecurityNamespacePermission',
+      'AzDoArtifactFeed',
+      'AzDoArtifactFeedPermission',
+      'AzDoDeploymentGroup',
+      'AzDoTaskGroup',
+      'AzDoOrganizationSettings',
+      'AzDoExtension',
+      'AzDoAuditStream',
+      'AzDoProjectPermission',
+      'AzDoEnvironmentPermission',
+      'AzDoWiki',
+      'AzDoNotificationSubscription',
+      'AzDoRepositorySettings',
+      'AzDoCheckConfiguration'
     )
 
     RequiredAssemblies = @()

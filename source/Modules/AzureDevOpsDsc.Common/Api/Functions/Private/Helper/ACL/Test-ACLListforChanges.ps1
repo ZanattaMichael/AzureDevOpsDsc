@@ -78,7 +78,7 @@ Function Test-ACLListforChanges
 
     if ($ReferenceACLs.ACEs.Count -ne $DifferenceACLs.ACEs.Count)
     {
-        Write-Verbose "[Test-ACLListforChanges] ACLs count is not equal."
+        Write-Verbose "[Test-ACLListforChanges] ACEs count is not equal."
         $result.status = "Changed"
         $result.reason += @{
             Value = $ReferenceACLs

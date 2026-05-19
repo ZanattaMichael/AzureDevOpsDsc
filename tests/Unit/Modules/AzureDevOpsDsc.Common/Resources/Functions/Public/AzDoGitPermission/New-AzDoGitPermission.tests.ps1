@@ -27,6 +27,8 @@ Describe 'New-AzDoGitPermission' {
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
         . (Get-ClassFilePath '002.LocalizedDataAzSerializationPatten')
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         Mock -CommandName Get-CacheItem -MockWith { return @{ namespaceId = '12345'; id = '67890' } }
         Mock -CommandName ConvertTo-ACLHashtable -MockWith { return @{} }

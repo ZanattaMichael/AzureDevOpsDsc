@@ -68,6 +68,11 @@ Function ConvertTo-ACL
 
     # Verbose output indicating the start of the function.
     Write-Verbose "[ConvertTo-ACL] Started."
+    Write-Verbose "[ConvertTo-ACL] Security Namespace: $SecurityNamespace"
+    Write-Verbose "[ConvertTo-ACL] Permissions: $($Permissions | Out-String)"
+    Write-Verbose "[ConvertTo-ACL] isInherited: $isInherited"
+    Write-Verbose "[ConvertTo-ACL] Organization Name: $OrganizationName"
+    Write-Verbose "[ConvertTo-ACL] Token Name: $TokenName"
 
     # Create a hash table for ACL token parameters.
     $ACLTokenParams = @{
@@ -101,7 +106,7 @@ Function ConvertTo-ACL
     }
 
     # Group the ACEs by the identity removing any duplicates.
-    $ACL.aces = Group-ACEs -ACEs $ACL.aces
+    $ACL.aces = @(Group-ACEs -ACEs $ACL.aces)
 
     Write-Verbose "[ConvertTo-ACL] Created ACL: $($ACL | Out-String)"
 
