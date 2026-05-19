@@ -13,6 +13,40 @@ AzDoAgentPoolPermission [string] #ResourceName
 }
 ```
 
+## Permissions Syntax
+
+``` PowerShell
+AzDoAgentPoolPermission/Permissions
+{
+    Identity   = [String]$Identity # Syntax
+    #   SYNTAX:     '[ProjectName | OrganizationName]\ServicePrincipalName, UserPrincipalName, UserDisplayName, GroupDisplayName'
+    #   EXAMPLE:    '[TestProject]\UserName@email.com'
+    #   EXAMPLE:    '[SampleOrganizationName]\Project Collection Administrators'
+    Permission = [Hashtable]$Permissions # See 'Permission List'
+}
+```
+
+## Permission Usage
+
+``` PowerShell
+AzDoAgentPoolPermission/Permissions/Permission
+{
+    PermissionName|PermissionDisplayName = [String]$Name { 'Allow, Deny' }
+}
+```
+
+## Permission List
+
+> Either 'Name' or 'DisplayName' can be used, but we Strongly Recommend that you use 'Name' in your configuration.
+
+| Name | DisplayName | Values | Note |
+| ---- | ----------- | ------ | ---- |
+| Use | Use | [ allow, deny ] | |
+| Manage | Manage | [ allow, deny ] | Not recommended. |
+| Create | Create | [ allow, deny ] | |
+| ViewAuthorization | View Authorization | [ allow, deny ] | |
+| ManagePermissions | Manage Permissions | [ allow, deny ] | Not recommended. |
+
 ## Properties
 
 ### Common Properties
@@ -20,7 +54,7 @@ AzDoAgentPoolPermission [string] #ResourceName
 - **PoolName**: The name of the agent pool. This property is mandatory and serves as the key property for the resource.
 - **GroupName**: The name of the group to grant permissions to. This is a key property. Use the format `[ProjectName]\GroupName` or `[TEAM FOUNDATION]\GroupName` for organization-level groups.
 - **isInherited**: Whether permissions are inherited. Defaults to `$true`.
-- **Permissions**: An array of permission hashtables specifying the permissions to grant or deny. Each entry requires a `Permission` name and an `Access` value of `Allow`, `Deny`, or `NotSet`.
+- **Permissions**: A HashTable that specifies the permissions to be set. Refer to: 'Permissions Syntax'.
 - **Ensure**: Specifies whether the permissions should exist. Valid values are `Present` and `Absent`.
 
 ## Additional Information
@@ -42,7 +76,12 @@ Configuration ExampleConfig {
             GroupName   = '[MyProject]\Contributors'
             isInherited = $true
             Permissions = @(
-                @{ Permission = 'Use'; Access = 'Allow' }
+                @{
+                    Identity   = '[MyProject]\Contributors'
+                    Permission = @{
+                        'Use' = 'Allow'
+                    }
+                }
             )
         }
     }
@@ -60,7 +99,12 @@ $properties = @{
     GroupName   = '[MyProject]\Contributors'
     isInherited = $true
     Permissions = @(
-        @{ Permission = 'Use'; Access = 'Allow' }
+        @{
+            Identity   = '[MyProject]\Contributors'
+            Permission = @{
+                'Use' = 'Allow'
+            }
+        }
     )
 }
 
@@ -87,8 +131,9 @@ resources:
     GroupName: '[$ProjectName]\Contributors'
     isInherited: true
     Permissions:
-      - Permission: Use
-        Access: Allow
+      - Identity: '[$ProjectName]\Contributors'
+        Permission:
+          Use: Allow
     Ensure: Present
 ```
 

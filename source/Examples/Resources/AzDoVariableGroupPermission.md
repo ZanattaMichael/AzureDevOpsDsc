@@ -14,6 +14,41 @@ AzDoVariableGroupPermission [string] #ResourceName
 }
 ```
 
+## Permissions Syntax
+
+``` PowerShell
+AzDoVariableGroupPermission/Permissions
+{
+    Identity   = [String]$Identity # Syntax
+    #   SYNTAX:     '[ProjectName | OrganizationName]\ServicePrincipalName, UserPrincipalName, UserDisplayName, GroupDisplayName'
+    #   EXAMPLE:    '[TestProject]\UserName@email.com'
+    #   EXAMPLE:    '[SampleOrganizationName]\Project Collection Administrators'
+    Permission = [Hashtable]$Permissions # See 'Permission List'
+}
+```
+
+## Permission Usage
+
+``` PowerShell
+AzDoVariableGroupPermission/Permissions/Permission
+{
+    PermissionName|PermissionDisplayName = [String]$Name { 'Allow, Deny' }
+}
+```
+
+## Permission List
+
+> Either 'Name' or 'DisplayName' can be used, but we Strongly Recommend that you use 'Name' in your configuration.
+
+| Name | DisplayName | Values | Note |
+| ---- | ----------- | ------ | ---- |
+| View | View library item | [ allow, deny ] | |
+| Administer | Administer library item | [ allow, deny ] | Not recommended. |
+| Create | Create library item | [ allow, deny ] | |
+| ViewSecrets | View library item secrets | [ allow, deny ] | |
+| Use | Use library item | [ allow, deny ] | |
+| Owner | Owner library item | [ allow, deny ] | Not recommended. |
+
 ## Properties
 
 ### Common Properties
@@ -22,12 +57,12 @@ AzDoVariableGroupPermission [string] #ResourceName
 - **VariableGroupName**: The name of the variable group. This is a key property.
 - **GroupName**: The name of the group to grant permissions to. This is a key property. Use the format `[ProjectName]\GroupName`.
 - **isInherited**: Whether permissions are inherited. Defaults to `$true`.
-- **Permissions**: An array of permission hashtables specifying the permissions to grant or deny.
+- **Permissions**: A HashTable that specifies the permissions to be set. Refer to: 'Permissions Syntax'.
 - **Ensure**: Specifies whether the permissions should exist. Valid values are `Present` and `Absent`.
 
 ## Additional Information
 
-This resource manages security permissions on Azure DevOps variable groups, controlling which groups or users can use or administer specific variable groups.
+This resource manages security permissions on Azure DevOps variable groups (Library security namespace), controlling which groups or users can use, view secrets, or administer specific variable groups in pipelines.
 
 ## Examples
 
@@ -45,7 +80,13 @@ Configuration ExampleConfig {
             GroupName         = '[MyProject]\Contributors'
             isInherited       = $true
             Permissions       = @(
-                @{ Permission = 'Use'; Access = 'Allow' }
+                @{
+                    Identity   = '[MyProject]\Contributors'
+                    Permission = @{
+                        'View' = 'Allow'
+                        'Use'  = 'Allow'
+                    }
+                }
             )
         }
     }
@@ -64,7 +105,13 @@ $properties = @{
     GroupName         = '[MyProject]\Contributors'
     isInherited       = $true
     Permissions       = @(
-        @{ Permission = 'Use'; Access = 'Allow' }
+        @{
+            Identity   = '[MyProject]\Contributors'
+            Permission = @{
+                'View' = 'Allow'
+                'Use'  = 'Allow'
+            }
+        }
     )
 }
 
@@ -92,8 +139,10 @@ resources:
     GroupName: '[$ProjectName]\Contributors'
     isInherited: true
     Permissions:
-      - Permission: Use
-        Access: Allow
+      - Identity: '[$ProjectName]\Contributors'
+        Permission:
+          View: Allow
+          Use: Allow
     Ensure: Present
 ```
 
