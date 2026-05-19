@@ -14,6 +14,8 @@ Describe "Find-AzDoIdentity" {
         ForEach ($file in $files) {
             . $file.FullName
         }
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         . (Get-ClassFilePath '000.CacheItem')
 

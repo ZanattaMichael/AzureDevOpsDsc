@@ -49,9 +49,9 @@ class AzDoGitPermission : AzDevOpsDscResourceBase
     [Alias('Name')]
     [System.String]$ProjectName
 
-    [DscProperty(Mandatory)]
+    [DscProperty()]
     [Alias('Repository')]
-    [System.String]$RepositoryName
+    [System.String]$RepositoryName = $null
 
     [DscProperty()]
     [Alias('Inherited')]

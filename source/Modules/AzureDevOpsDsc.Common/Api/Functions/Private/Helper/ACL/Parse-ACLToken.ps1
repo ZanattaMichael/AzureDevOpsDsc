@@ -5,11 +5,12 @@ Function Parse-ACLToken
         [String]$Token,
 
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Identity', 'Git Repositories')]
+        [ValidateSet('Identity', 'Git Repositories','CSS', 'Iteration')]
         [String]$SecurityNamespace
     )
 
     $result = @{}
+    $useRegexVariable = $true
 
     Write-Verbose "[Parse-ACLToken] Started."
     Write-Verbose "[Parse-ACLToken] Token: $Token"
@@ -72,10 +73,98 @@ Function Parse-ACLToken
             }
         }
     }
+    elseif ($SecurityNamespace -eq 'CSS') # AreaPath's
+    {
+        # Match the Token with the Regex Patterns
+        switch -regex ($Token.Trim())
+        {
+            $LocalizedDataAzACLTokenPatten.AreaPathPermission {
 
-    # Get all Capture Groups and add them into a hashtable
-    $matches.keys | Where-Object { $_.Length -gt 1 } | ForEach-Object {
-        $result."$_" = $matches."$_"
+                $result.type = 'AreaPathPermission'
+
+                # Use custom logic to extract the AreaPath from the token.
+                # We cant use the regex variable as it it's a complex regex pattern.
+                $regexMatches = [regex]::Matches($Token, $LocalizedDataAzACLTokenPatten.AreaPathPermission)
+
+                # Check if the match was successful
+                if ($regexMatches.Count -eq 0)
+                {
+                    throw "Token '$Token' is not recognized."
+                }
+
+                $result.Identifiers = @()
+
+                # Construct the token structure
+                foreach ($match in $regexMatches) {
+                    $result.Identifiers += @{
+                        identifier = $match.groups['identifiers'].value
+                    }
+                }
+
+                # Bypass the regex variable as it is a complex regex pattern.
+                $useRegexVariable = $false
+
+                break;
+
+            }
+
+            default {
+                throw "Token '$Token' is not recognized."
+            }
+        }
+    }
+    elseif ($SecurityNamespace -eq 'Iteration') # IterationPath's
+    {
+        # Match the Token with the Regex Patterns
+        switch -regex ($Token.Trim())
+        {
+            $LocalizedDataAzACLTokenPatten.IterationPathPermission {
+
+                $result.type = 'IterationPathPermission'
+
+                # Use custom logic to extract the IterationPath from the token.
+                # We cant use the regex variable as it it's a complex regex pattern.
+                $regexMatches = [regex]::Matches($Token, $LocalizedDataAzACLTokenPatten.IterationPathPermission)
+
+                # Check if the match was successful
+                if ($regexMatches.Count -eq 0)
+                {
+                    throw "Token '$Token' is not recognized."
+                }
+
+                $result.Identifiers = @()
+
+                # Construct the token structure
+                foreach ($match in $regexMatches) {
+                    $result.Identifiers += @{
+                        identifier = $match.groups['identifiers'].value
+                    }
+                }
+
+                # Bypass the regex variable as it is a complex regex pattern.
+                $useRegexVariable = $false
+
+                break;
+
+            }
+
+            default {
+                throw "Token '$Token' is not recognized."
+            }
+        }
+    }
+    else
+    {
+        throw "Security Namespace '$SecurityNamespace' is not recognized."
+    }
+
+    # Get the Regex Pattern for the Token by using the regex variable to extract the token structure.
+    if ($useRegexVariable) {
+        # Get all Capture Groups and add them into a hashtable
+        $matches.keys | Where-Object { $_.Length -gt 1 } | ForEach-Object {
+            $result."$_" = $matches."$_"
+        }
+
     }
 
     $result._token = $Token
