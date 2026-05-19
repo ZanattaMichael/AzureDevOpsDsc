@@ -1,60 +1,42 @@
 # DSC AzDoAuditStream Resource
 
-# Syntax
+## Syntax
 
-``` PowerShell
+```PowerShell
 AzDoAuditStream [string] #ResourceName
 {
-    StreamName      = [String]$StreamName
-    ConsumerType    = [String] {'AzureMonitorLogs', 'Splunk', 'AzureEventGrid', 'AzureEventHub'}
-    ConsumerInputs  = [HashTable]$ConsumerInputs
-    [ Enabled       = [Boolean]$Enabled ]
-    [ Ensure        = [String] {'Present', 'Absent'} ]
+    StreamName     = [String]$StreamName
+    ConsumerType   = [String] {'AzureMonitorLogs', 'Splunk', 'AzureEventGrid', 'AzureEventHub'}
+    ConsumerInputs = [HashTable]$ConsumerInputs
+    [ Enabled      = [Boolean]$Enabled ]
+    [ Ensure       = [String] {'Present', 'Absent'} ]
 }
 ```
 
-# Common Properties
+## Properties
 
-- __StreamName__: The name of the audit stream. This is a key property.
-- __ConsumerType__: The type of audit log consumer. Valid values are `AzureMonitorLogs`, `Splunk`, `AzureEventGrid`, and `AzureEventHub`.
-- __ConsumerInputs__: A hashtable of configuration inputs specific to the consumer type.
-- __Enabled__: Whether the audit stream is active. Defaults to `$true`.
-- __Ensure__: Specifies whether the audit stream should exist. Valid values are `Present` and `Absent`. Defaults to `Present`.
+### Common Properties
 
-## ConsumerInputs Examples by Type
+- **StreamName**: The name of the audit stream. This property is mandatory and serves as the key property for the resource.
+- **ConsumerType**: The type of audit log consumer. Valid values are `AzureMonitorLogs`, `Splunk`, `AzureEventGrid`, and `AzureEventHub`.
+- **ConsumerInputs**: A hashtable of configuration inputs specific to the consumer type.
+- **Enabled**: Whether the audit stream is active. Defaults to `$true`.
+- **Ensure**: Specifies whether the audit stream should exist. Valid values are `Present` and `Absent`.
 
-### AzureEventHub
-``` PowerShell
-ConsumerInputs = @{
-    connectionString = 'Endpoint=sb://my-eventhub.servicebus.windows.net/;SharedAccessKeyName=...'
-    eventHubName     = 'audit-logs'
-}
-```
-
-### Splunk
-``` PowerShell
-ConsumerInputs = @{
-    splunkEventCollectorUrl = 'https://splunk-host:8088'
-    splunkEventCollectorToken = 'my-hec-token'
-}
-```
-
-# Additional Information
+## Additional Information
 
 This resource manages audit streams that forward Azure DevOps audit events to external SIEM or monitoring systems. Audit streams help organizations meet compliance and security monitoring requirements.
 
-# Examples
+## Examples
 
-## Example 1: Create an Audit Stream to Azure Event Hub
+## Example 1: Sample Configuration using AzDoAuditStream Resource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
     Node localhost {
-        AzDoAuditStream 'AddAuditStream' {
+        AzDoAuditStream AddAuditStream {
             Ensure         = 'Present'
             StreamName     = 'MyEventHubAuditStream'
             ConsumerType   = 'AzureEventHub'
@@ -66,23 +48,61 @@ Configuration ExampleConfig {
         }
     }
 }
+
+Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ```
 
-## Example 2: Remove an Audit Stream
+## Example 2: Sample Configuration using Invoke-DSCResource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
-Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
-
-    Node localhost {
-        AzDoAuditStream 'RemoveAuditStream' {
-            Ensure         = 'Absent'
-            StreamName     = 'MyEventHubAuditStream'
-            ConsumerType   = 'AzureEventHub'
-            ConsumerInputs = @{}
-        }
+# Return the current configuration for AzDoAuditStream
+$properties = @{
+    StreamName     = 'MyEventHubAuditStream'
+    ConsumerType   = 'AzureEventHub'
+    ConsumerInputs = @{
+        connectionString = 'Endpoint=sb://my-eventhub.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=xxxx'
+        eventHubName     = 'azdo-audit-logs'
     }
 }
+
+Invoke-DscResource -Name 'AzDoAuditStream' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+```
+
+## Example 3: Sample Configuration using AzDO-DSC-LCM
+
+``` YAML
+parameters: {}
+
+variables: {
+  StreamName: MyEventHubAuditStream
+}
+
+resources:
+- name: Azure Event Hub Audit Stream
+  type: AzureDevOpsDsc/AzDoAuditStream
+  properties:
+    StreamName: $StreamName
+    ConsumerType: AzureEventHub
+    ConsumerInputs:
+      connectionString: 'Endpoint=sb://my-eventhub.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=xxxx'
+      eventHubName: azdo-audit-logs
+    Enabled: true
+    Ensure: Present
+```
+
+LCM Initialization:
+
+``` PowerShell
+
+$params = @{
+    AzureDevopsOrganizationName = "SampleAzDoOrgName"
+    ConfigurationDirectory      = "C:\Datum\DSCOutput\"
+    ConfigurationUrl            = 'https://configuration-path'
+    JITToken                    = 'SampleJITToken'
+    Mode                        = 'Set'
+    AuthenticationType          = 'ManagedIdentity'
+    ReportPath                  = 'C:\Datum\DSCOutput\Reports'
+}
+
+Invoke-AzDoLCM @params
 ```

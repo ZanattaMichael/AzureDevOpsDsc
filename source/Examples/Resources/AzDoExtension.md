@@ -1,8 +1,8 @@
 # DSC AzDoExtension Resource
 
-# Syntax
+## Syntax
 
-``` PowerShell
+```PowerShell
 AzDoExtension [string] #ResourceName
 {
     PublisherId   = [String]$PublisherId
@@ -11,55 +11,88 @@ AzDoExtension [string] #ResourceName
 }
 ```
 
-# Common Properties
+## Properties
 
-- __PublisherId__: The publisher ID of the extension in the Visual Studio Marketplace. This is a key property.
-- __ExtensionId__: The extension ID in the Visual Studio Marketplace. This is a key property.
-- __Ensure__: Specifies whether the extension should be installed. Valid values are `Present` and `Absent`. Defaults to `Present`.
+### Common Properties
 
-> **Note:** The `Version` and `DisplayName` properties are read-only (NotConfigurable) and are populated from the installed extension metadata.
+- **PublisherId**: The publisher ID of the extension in the Visual Studio Marketplace. This property is mandatory and serves as a key property for the resource.
+- **ExtensionId**: The extension ID in the Visual Studio Marketplace. This is a key property.
+- **Ensure**: Specifies whether the extension should be installed. Valid values are `Present` and `Absent`.
 
-# Additional Information
+> **Note:** The `Version` and `DisplayName` properties are read-only and are populated from the installed extension metadata.
 
-This resource manages the installation of extensions from the Visual Studio Marketplace in an Azure DevOps organization. Extensions can add new capabilities, integrations, and tools to Azure DevOps.
+## Additional Information
 
-To find the `PublisherId` and `ExtensionId` for an extension, look at its URL in the Marketplace:
-`https://marketplace.visualstudio.com/items?itemName={PublisherId}.{ExtensionId}`
+This resource manages the installation of extensions from the Visual Studio Marketplace in an Azure DevOps organization. To find the `PublisherId` and `ExtensionId` for an extension, look at its URL in the Marketplace: `https://marketplace.visualstudio.com/items?itemName={PublisherId}.{ExtensionId}`
 
-# Examples
+## Examples
 
-## Example 1: Install an extension
+## Example 1: Sample Configuration using AzDoExtension Resource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
     Node localhost {
-        AzDoExtension 'InstallGitHubExtension' {
+        AzDoExtension InstallExtension {
             Ensure      = 'Present'
             PublisherId = 'ms'
             ExtensionId = 'vss-services-github'
         }
     }
 }
+
+Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ```
 
-## Example 2: Uninstall an extension
+## Example 2: Sample Configuration using Invoke-DSCResource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
-Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
-
-    Node localhost {
-        AzDoExtension 'UninstallExtension' {
-            Ensure      = 'Absent'
-            PublisherId = 'ms'
-            ExtensionId = 'vss-services-github'
-        }
-    }
+# Return the current configuration for AzDoExtension
+$properties = @{
+    PublisherId = 'ms'
+    ExtensionId = 'vss-services-github'
 }
+
+Invoke-DscResource -Name 'AzDoExtension' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+```
+
+## Example 3: Sample Configuration using AzDO-DSC-LCM
+
+``` YAML
+parameters: {}
+
+variables: {}
+
+resources:
+- name: GitHub Services Extension
+  type: AzureDevOpsDsc/AzDoExtension
+  properties:
+    PublisherId: ms
+    ExtensionId: vss-services-github
+    Ensure: Present
+
+- name: Work Item Search Extension
+  type: AzureDevOpsDsc/AzDoExtension
+  properties:
+    PublisherId: ms-devlabs
+    ExtensionId: workitemsearch
+    Ensure: Present
+```
+
+LCM Initialization:
+
+``` PowerShell
+
+$params = @{
+    AzureDevopsOrganizationName = "SampleAzDoOrgName"
+    ConfigurationDirectory      = "C:\Datum\DSCOutput\"
+    ConfigurationUrl            = 'https://configuration-path'
+    JITToken                    = 'SampleJITToken'
+    Mode                        = 'Set'
+    AuthenticationType          = 'ManagedIdentity'
+    ReportPath                  = 'C:\Datum\DSCOutput\Reports'
+}
+
+Invoke-AzDoLCM @params
 ```

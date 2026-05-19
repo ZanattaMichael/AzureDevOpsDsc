@@ -1,8 +1,8 @@
 # DSC AzDoIterationPermission Resource
 
-# Syntax
+## Syntax
 
-``` PowerShell
+```PowerShell
 AzDoIterationPermission [string] #ResourceName
 {
     ProjectName    = [String]$ProjectName
@@ -15,19 +15,29 @@ AzDoIterationPermission [string] #ResourceName
 
 The `IterationPath` property is optional. If it is not provided, the permissions will be applied at the project-level iterations node.
 
-## Permissions Syntax
+## Properties
+
+### Common Properties
+
+- **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+- **IterationPath**: The iteration path to set permissions on (e.g., `\MyProject\Sprint 1`). If omitted, permissions apply at the root iteration level.
+- **isInherited**: Whether permissions are inherited. Defaults to `$true`.
+- **Permissions**: An array of permission hashtables specifying the permissions to set.
+- **Ensure**: Specifies whether the permissions should exist. Valid values are `Present` and `Absent`.
+
+### Permissions Syntax
 
 ``` PowerShell
 AzDoIterationPermission/Permissions
 {
     Identity   = [String]$Identity
-    #   SYNTAX:     '[ProjectName | OrganizationName]\ServicePrincipalName, UserPrincipalName, UserDisplayName, GroupDisplayName'
-    #   EXAMPLE:    '[TestProject]\TeamName'
+    #   SYNTAX:     '[ProjectName | OrganizationName]\GroupDisplayName'
+    #   EXAMPLE:    '[MyProject]\My Team'
     Permission = [Hashtable]$Permissions
 }
 ```
 
-## Permission List
+### Permission List
 
 | Name | DisplayName | Values |
 | ---- | ----------- | ------ |
@@ -40,30 +50,20 @@ AzDoIterationPermission/Permissions
 | MANAGE_TEST_PLANS | Manage test plans | [ allow, deny ] |
 | MANAGE_TEST_SUITES | Manage test suites | [ allow, deny ] |
 
-# Common Properties
-
-- __ProjectName__: The name of the Azure DevOps project.
-- __IterationPath__: The iteration path to set permissions on (e.g., `\Sprint 1\Sub Sprint`). If omitted, permissions apply at the root iteration level.
-- __isInherited__: Whether permissions are inherited. Defaults to `$true`.
-- __Permissions__: An array of permission hashtables specifying the permissions to set.
-- __Ensure__: Specifies whether the permissions should exist. Defaults to `Present`.
-
-# Additional Information
+## Additional Information
 
 This resource allows you to manage Azure DevOps iteration path permissions using Desired State Configuration (DSC). It controls which users or groups can view, edit, or manage work items within specific iteration paths.
 
-# Examples
+## Examples
 
-## Example 1: Grant iteration permissions to a team
+## Example 1: Sample Configuration using AzDoIterationPermission Resource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
     Node localhost {
-        AzDoIterationPermission 'AddIterationPermission' {
+        AzDoIterationPermission AddIterationPermission {
             Ensure        = 'Present'
             ProjectName   = 'MyProject'
             IterationPath = '\MyProject\Sprint 1'
@@ -80,11 +80,14 @@ Configuration ExampleConfig {
         }
     }
 }
+
+Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ```
 
-## Example 2: Using Invoke-DscResource
+## Example 2: Sample Configuration using Invoke-DSCResource
 
 ``` PowerShell
+# Return the current configuration for AzDoIterationPermission
 $properties = @{
     ProjectName   = 'MyProject'
     IterationPath = '\MyProject\Sprint 1'
@@ -101,4 +104,47 @@ $properties = @{
 }
 
 Invoke-DscResource -Name 'AzDoIterationPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+```
+
+## Example 3: Sample Configuration using AzDO-DSC-LCM
+
+``` YAML
+parameters: {}
+
+variables: {
+  ProjectName: MyProject
+}
+
+resources:
+- name: Sprint 1 Team Permissions
+  type: AzureDevOpsDsc/AzDoIterationPermission
+  dependsOn:
+    - AzureDevOpsDsc/AzDoIterationNodes/MyProject
+  properties:
+    ProjectName: $ProjectName
+    IterationPath: '\$ProjectName\Sprint 1'
+    isInherited: false
+    Permissions:
+      - Identity: '[$ProjectName]\My Team'
+        Permission:
+          WORK_ITEM_READ: Allow
+          WORK_ITEM_WRITE: Allow
+    Ensure: Present
+```
+
+LCM Initialization:
+
+``` PowerShell
+
+$params = @{
+    AzureDevopsOrganizationName = "SampleAzDoOrgName"
+    ConfigurationDirectory      = "C:\Datum\DSCOutput\"
+    ConfigurationUrl            = 'https://configuration-path'
+    JITToken                    = 'SampleJITToken'
+    Mode                        = 'Set'
+    AuthenticationType          = 'ManagedIdentity'
+    ReportPath                  = 'C:\Datum\DSCOutput\Reports'
+}
+
+Invoke-AzDoLCM @params
 ```

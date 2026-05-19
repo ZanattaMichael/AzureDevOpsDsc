@@ -1,8 +1,8 @@
 # DSC AzDoBranchPolicy Resource
 
-# Syntax
+## Syntax
 
-``` PowerShell
+```PowerShell
 AzDoBranchPolicy [string] #ResourceName
 {
     ProjectName      = [String]$ProjectName
@@ -16,62 +16,33 @@ AzDoBranchPolicy [string] #ResourceName
 }
 ```
 
-# Common Properties
+## Properties
 
-- __ProjectName__: The name of the Azure DevOps project. This is a key property.
-- __RepositoryName__: The name of the Git repository. This is a key property.
-- __BranchName__: The branch to apply the policy to, in `refs/heads/` format (e.g., `refs/heads/main`). This is a key property.
-- __PolicyType__: The type of branch policy to apply (e.g., `MinimumReviewerCount`, `CommentRequirements`, `MergeStrategy`).
-- __isEnabled__: Whether the policy is enabled. Defaults to `$true`.
-- __isBlocking__: Whether the policy blocks pull request completion. Defaults to `$true`.
-- __PolicySettings__: A hashtable of policy-specific settings.
-- __Ensure__: Specifies whether the policy should exist. Valid values are `Present` and `Absent`. Defaults to `Present`.
+### Common Properties
 
-## Common Policy Types and Their Settings
+- **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+- **RepositoryName**: The name of the Git repository. This is a key property.
+- **BranchName**: The branch to apply the policy to, in `refs/heads/` format (e.g., `refs/heads/main`). This is a key property.
+- **PolicyType**: The type of branch policy to apply (e.g., `MinimumReviewerCount`, `CommentRequirements`, `MergeStrategy`). This is a key property.
+- **isEnabled**: Whether the policy is enabled. Defaults to `$true`.
+- **isBlocking**: Whether the policy blocks pull request completion. Defaults to `$true`.
+- **PolicySettings**: A hashtable of policy-specific settings.
+- **Ensure**: Specifies whether the policy should exist. Valid values are `Present` and `Absent`.
 
-### MinimumReviewerCount
-``` PowerShell
-PolicySettings = @{
-    minimumApproverCount = 2
-    creatorVoteCounts    = $false
-    allowDownvotes       = $false
-    resetOnSourcePush    = $true
-}
-```
-
-### CommentRequirements
-``` PowerShell
-PolicySettings = @{
-    # No additional settings required
-}
-```
-
-### MergeStrategy
-``` PowerShell
-PolicySettings = @{
-    allowSquash        = $true
-    allowNoFastForward = $false
-    allowRebase        = $false
-    allowRebaseMerge   = $false
-}
-```
-
-# Additional Information
+## Additional Information
 
 This resource manages branch policies in Azure DevOps Git repositories, enforcing code quality standards such as requiring minimum reviewers, resolving comments, or restricting merge strategies.
 
-# Examples
+## Examples
 
-## Example 1: Require minimum reviewers on main branch
+## Example 1: Sample Configuration using AzDoBranchPolicy Resource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
     Node localhost {
-        AzDoBranchPolicy 'AddBranchPolicy' {
+        AzDoBranchPolicy AddBranchPolicy {
             Ensure         = 'Present'
             ProjectName    = 'MyProject'
             RepositoryName = 'MyRepository'
@@ -86,24 +57,65 @@ Configuration ExampleConfig {
         }
     }
 }
+
+Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ```
 
-## Example 2: Remove a branch policy
+## Example 2: Sample Configuration using Invoke-DSCResource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
-Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
-
-    Node localhost {
-        AzDoBranchPolicy 'RemoveBranchPolicy' {
-            Ensure         = 'Absent'
-            ProjectName    = 'MyProject'
-            RepositoryName = 'MyRepository'
-            BranchName     = 'refs/heads/main'
-            PolicyType     = 'MinimumReviewerCount'
-        }
-    }
+# Return the current configuration for AzDoBranchPolicy
+$properties = @{
+    ProjectName    = 'MyProject'
+    RepositoryName = 'MyRepository'
+    BranchName     = 'refs/heads/main'
+    PolicyType     = 'MinimumReviewerCount'
 }
+
+Invoke-DscResource -Name 'AzDoBranchPolicy' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+```
+
+## Example 3: Sample Configuration using AzDO-DSC-LCM
+
+``` YAML
+parameters: {}
+
+variables: {
+  ProjectName: MyProject,
+  RepositoryName: MyRepository
+}
+
+resources:
+- name: Main Branch Minimum Reviewer Policy
+  type: AzureDevOpsDsc/AzDoBranchPolicy
+  dependsOn:
+    - AzureDevOpsDsc/AzDoGitRepository/MyRepository
+  properties:
+    ProjectName: $ProjectName
+    RepositoryName: $RepositoryName
+    BranchName: refs/heads/main
+    PolicyType: MinimumReviewerCount
+    isEnabled: true
+    isBlocking: true
+    PolicySettings:
+      minimumApproverCount: 2
+      creatorVoteCounts: false
+    Ensure: Present
+```
+
+LCM Initialization:
+
+``` PowerShell
+
+$params = @{
+    AzureDevopsOrganizationName = "SampleAzDoOrgName"
+    ConfigurationDirectory      = "C:\Datum\DSCOutput\"
+    ConfigurationUrl            = 'https://configuration-path'
+    JITToken                    = 'SampleJITToken'
+    Mode                        = 'Set'
+    AuthenticationType          = 'ManagedIdentity'
+    ReportPath                  = 'C:\Datum\DSCOutput\Reports'
+}
+
+Invoke-AzDoLCM @params
 ```

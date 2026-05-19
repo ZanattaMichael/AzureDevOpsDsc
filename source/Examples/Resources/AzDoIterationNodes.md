@@ -1,8 +1,8 @@
 # DSC AzDoIterationNodes Resource
 
-# Syntax
+## Syntax
 
-``` PowerShell
+```PowerShell
 AzDoIterationNodes [string] #ResourceName
 {
     ProjectName              = [String]$ProjectName
@@ -11,13 +11,15 @@ AzDoIterationNodes [string] #ResourceName
 }
 ```
 
-# Common Properties
+## Properties
 
-- __ProjectName__: The name of the Azure DevOps project. This is a key property.
-- __IterationAttributes__: An array of hashtables defining iterations (sprints). Each hashtable can include `Name`, `StartDate`, and `FinishDate`.
-- __Ensure__: Specifies whether the iteration nodes should exist. Valid values are `Present` and `Absent`. Defaults to `Present`.
+### Common Properties
 
-## IterationAttributes Syntax
+- **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as the key property for the resource.
+- **IterationAttributes**: An array of hashtables defining iterations (sprints). Each hashtable can include `Name`, `StartDate`, and `FinishDate`.
+- **Ensure**: Specifies whether the iteration nodes should exist. Valid values are `Present` and `Absent`.
+
+### IterationAttributes Syntax
 
 ``` PowerShell
 AzDoIterationNodes/IterationAttributes
@@ -28,22 +30,20 @@ AzDoIterationNodes/IterationAttributes
 }
 ```
 
-# Additional Information
+## Additional Information
 
 This resource manages the iteration (sprint) hierarchy within an Azure DevOps project. Iterations define time-boxed development cycles and can be configured with start and end dates to support sprint planning.
 
-# Examples
+## Examples
 
-## Example 1: Create sprint iterations
+## Example 1: Sample Configuration using AzDoIterationNodes Resource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
     Node localhost {
-        AzDoIterationNodes 'AddAzDoIterationNodes' {
+        AzDoIterationNodes AddAzDoIterationNodes {
             Ensure              = 'Present'
             ProjectName         = 'MyProject'
             IterationAttributes = @(
@@ -61,21 +61,67 @@ Configuration ExampleConfig {
         }
     }
 }
+
+Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ```
 
-## Example 2: Remove all iteration nodes
+## Example 2: Sample Configuration using Invoke-DSCResource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
-Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
-
-    Node localhost {
-        AzDoIterationNodes 'RemoveAzDoIterationNodes' {
-            Ensure      = 'Absent'
-            ProjectName = 'MyProject'
+# Return the current configuration for AzDoIterationNodes
+$properties = @{
+    ProjectName         = 'MyProject'
+    IterationAttributes = @(
+        @{
+            Name       = 'Sprint 1'
+            StartDate  = '2024-01-01'
+            FinishDate = '2024-01-14'
         }
-    }
+    )
 }
+
+Invoke-DscResource -Name 'AzDoIterationNodes' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+```
+
+## Example 3: Sample Configuration using AzDO-DSC-LCM
+
+``` YAML
+parameters: {}
+
+variables: {
+  ProjectName: MyProject
+}
+
+resources:
+- name: MyProject Iteration Nodes
+  type: AzureDevOpsDsc/AzDoIterationNodes
+  dependsOn:
+    - AzureDevOpsDsc/AzDevOpsProject/MyProject
+  properties:
+    ProjectName: $ProjectName
+    IterationAttributes:
+      - Name: Sprint 1
+        StartDate: '2024-01-01'
+        FinishDate: '2024-01-14'
+      - Name: Sprint 2
+        StartDate: '2024-01-15'
+        FinishDate: '2024-01-28'
+    Ensure: Present
+```
+
+LCM Initialization:
+
+``` PowerShell
+
+$params = @{
+    AzureDevopsOrganizationName = "SampleAzDoOrgName"
+    ConfigurationDirectory      = "C:\Datum\DSCOutput\"
+    ConfigurationUrl            = 'https://configuration-path'
+    JITToken                    = 'SampleJITToken'
+    Mode                        = 'Set'
+    AuthenticationType          = 'ManagedIdentity'
+    ReportPath                  = 'C:\Datum\DSCOutput\Reports'
+}
+
+Invoke-AzDoLCM @params
 ```

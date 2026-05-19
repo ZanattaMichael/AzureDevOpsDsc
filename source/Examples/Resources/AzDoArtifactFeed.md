@@ -1,8 +1,8 @@
 # DSC AzDoArtifactFeed Resource
 
-# Syntax
+## Syntax
 
-``` PowerShell
+```PowerShell
 AzDoArtifactFeed [string] #ResourceName
 {
     ProjectName       = [String]$ProjectName
@@ -14,31 +14,31 @@ AzDoArtifactFeed [string] #ResourceName
 }
 ```
 
-# Common Properties
+## Properties
 
-- __ProjectName__: The name of the Azure DevOps project. This is a key property.
-- __FeedName__: The name of the artifact feed. This is a key property.
-- __Description__: An optional description for the feed.
-- __BadgesEnabled__: Whether to enable badges for the feed. Defaults to `$false`.
-- __UpstreamEnabled__: Whether to enable upstream sources. Defaults to `$true`.
-- __Ensure__: Specifies whether the feed should exist. Valid values are `Present` and `Absent`. Defaults to `Present`.
+### Common Properties
 
-# Additional Information
+- **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+- **FeedName**: The name of the artifact feed. This is a key property.
+- **Description**: An optional description for the feed.
+- **BadgesEnabled**: Whether to enable badges for the feed. Defaults to `$false`.
+- **UpstreamEnabled**: Whether to enable upstream sources. Defaults to `$true`.
+- **Ensure**: Specifies whether the feed should exist. Valid values are `Present` and `Absent`.
+
+## Additional Information
 
 This resource manages Azure Artifacts feeds within a project. Artifact feeds allow teams to share packages (NuGet, npm, Maven, Python, Universal Packages) across the organization.
 
-# Examples
+## Examples
 
-## Example 1: Create an Artifact Feed
+## Example 1: Sample Configuration using AzDoArtifactFeed Resource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
     Node localhost {
-        AzDoArtifactFeed 'AddArtifactFeed' {
+        AzDoArtifactFeed AddArtifactFeed {
             Ensure          = 'Present'
             ProjectName     = 'MyProject'
             FeedName        = 'MyFeed'
@@ -48,22 +48,59 @@ Configuration ExampleConfig {
         }
     }
 }
+
+Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ```
 
-## Example 2: Remove an Artifact Feed
+## Example 2: Sample Configuration using Invoke-DSCResource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
-Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
-
-    Node localhost {
-        AzDoArtifactFeed 'RemoveArtifactFeed' {
-            Ensure      = 'Absent'
-            ProjectName = 'MyProject'
-            FeedName    = 'MyFeed'
-        }
-    }
+# Return the current configuration for AzDoArtifactFeed
+$properties = @{
+    ProjectName = 'MyProject'
+    FeedName    = 'MyFeed'
 }
+
+Invoke-DscResource -Name 'AzDoArtifactFeed' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+```
+
+## Example 3: Sample Configuration using AzDO-DSC-LCM
+
+``` YAML
+parameters: {}
+
+variables: {
+  ProjectName: MyProject,
+  FeedName: MyFeed
+}
+
+resources:
+- name: My Artifact Feed
+  type: AzureDevOpsDsc/AzDoArtifactFeed
+  dependsOn:
+    - AzureDevOpsDsc/AzDevOpsProject/MyProject
+  properties:
+    ProjectName: $ProjectName
+    FeedName: $FeedName
+    Description: My package feed
+    BadgesEnabled: false
+    UpstreamEnabled: true
+    Ensure: Present
+```
+
+LCM Initialization:
+
+``` PowerShell
+
+$params = @{
+    AzureDevopsOrganizationName = "SampleAzDoOrgName"
+    ConfigurationDirectory      = "C:\Datum\DSCOutput\"
+    ConfigurationUrl            = 'https://configuration-path'
+    JITToken                    = 'SampleJITToken'
+    Mode                        = 'Set'
+    AuthenticationType          = 'ManagedIdentity'
+    ReportPath                  = 'C:\Datum\DSCOutput\Reports'
+}
+
+Invoke-AzDoLCM @params
 ```

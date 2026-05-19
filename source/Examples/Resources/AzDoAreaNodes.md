@@ -1,8 +1,8 @@
 # DSC AzDoAreaNodes Resource
 
-# Syntax
+## Syntax
 
-``` PowerShell
+```PowerShell
 AzDoAreaNodes [string] #ResourceName
 {
     ProjectName  = [String]$ProjectName
@@ -11,28 +11,28 @@ AzDoAreaNodes [string] #ResourceName
 }
 ```
 
-# Common Properties
+## Properties
 
-- __ProjectName__: The name of the Azure DevOps project. This is a key property.
-- __AreaPaths__: An array of area path strings to create or maintain. Paths should use backslash separators relative to the project root (e.g., `MyProject\Team Alpha\Frontend`).
-- __Ensure__: Specifies whether the area nodes should exist. Valid values are `Present` and `Absent`. Defaults to `Present`.
+### Common Properties
 
-# Additional Information
+- **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as the key property for the resource.
+- **AreaPaths**: An array of area path strings to create or maintain. Paths should use backslash separators relative to the project root (e.g., `MyProject\Team Alpha\Frontend`).
+- **Ensure**: Specifies whether the area nodes should exist. Valid values are `Present` and `Absent`.
+
+## Additional Information
 
 This resource manages the area path hierarchy within an Azure DevOps project. Area paths are used to organize work items and can be assigned to teams to define their scope of work.
 
-# Examples
+## Examples
 
-## Example 1: Create area paths
+## Example 1: Sample Configuration using AzDoAreaNodes Resource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
     Node localhost {
-        AzDoAreaNodes 'AddAzDoAreaNodes' {
+        AzDoAreaNodes AddAzDoAreaNodes {
             Ensure      = 'Present'
             ProjectName = 'MyProject'
             AreaPaths   = @(
@@ -43,21 +43,62 @@ Configuration ExampleConfig {
         }
     }
 }
+
+Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ```
 
-## Example 2: Remove all area nodes
+## Example 2: Sample Configuration using Invoke-DSCResource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
-Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
-
-    Node localhost {
-        AzDoAreaNodes 'RemoveAzDoAreaNodes' {
-            Ensure      = 'Absent'
-            ProjectName = 'MyProject'
-        }
-    }
+# Return the current configuration for AzDoAreaNodes
+$properties = @{
+    ProjectName = 'MyProject'
+    AreaPaths   = @(
+        'MyProject\Team Alpha'
+        'MyProject\Team Alpha\Frontend'
+        'MyProject\Team Beta'
+    )
 }
+
+Invoke-DscResource -Name 'AzDoAreaNodes' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+```
+
+## Example 3: Sample Configuration using AzDO-DSC-LCM
+
+``` YAML
+parameters: {}
+
+variables: {
+  ProjectName: MyProject
+}
+
+resources:
+- name: MyProject Area Nodes
+  type: AzureDevOpsDsc/AzDoAreaNodes
+  dependsOn:
+    - AzureDevOpsDsc/AzDevOpsProject/MyProject
+  properties:
+    ProjectName: $ProjectName
+    AreaPaths:
+      - '$ProjectName\Team Alpha'
+      - '$ProjectName\Team Alpha\Frontend'
+      - '$ProjectName\Team Beta'
+    Ensure: Present
+```
+
+LCM Initialization:
+
+``` PowerShell
+
+$params = @{
+    AzureDevopsOrganizationName = "SampleAzDoOrgName"
+    ConfigurationDirectory      = "C:\Datum\DSCOutput\"
+    ConfigurationUrl            = 'https://configuration-path'
+    JITToken                    = 'SampleJITToken'
+    Mode                        = 'Set'
+    AuthenticationType          = 'ManagedIdentity'
+    ReportPath                  = 'C:\Datum\DSCOutput\Reports'
+}
+
+Invoke-AzDoLCM @params
 ```

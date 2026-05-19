@@ -1,8 +1,8 @@
 # DSC AzDoServiceConnection Resource
 
-# Syntax
+## Syntax
 
-``` PowerShell
+```PowerShell
 AzDoServiceConnection [string] #ResourceName
 {
     ProjectName         = [String]$ProjectName
@@ -16,48 +16,33 @@ AzDoServiceConnection [string] #ResourceName
 }
 ```
 
-# Common Properties
+## Properties
 
-- __ProjectName__: The name of the Azure DevOps project. This is a key property.
-- __ConnectionName__: The name of the service connection. This is a key property.
-- __ConnectionType__: The type of service connection (e.g., `AzureRM`, `GitHub`, `Kubernetes`). This is a mandatory property.
-- __Description__: An optional description for the service connection.
-- __AllowAllPipelines__: Whether all pipelines can use this service connection. Defaults to `$false`.
-- __Authorization__: A hashtable of authorization parameters specific to the connection type.
-- __Data__: A hashtable of additional data parameters specific to the connection type.
-- __Ensure__: Specifies whether the service connection should exist. Valid values are `Present` and `Absent`. Defaults to `Present`.
+### Common Properties
 
-## Authorization Examples by ConnectionType
+- **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+- **ConnectionName**: The name of the service connection. This is a key property.
+- **ConnectionType**: The type of service connection (e.g., `AzureRM`, `GitHub`, `Kubernetes`). This is a mandatory property.
+- **Description**: An optional description for the service connection.
+- **AllowAllPipelines**: Whether all pipelines can use this service connection. Defaults to `$false`.
+- **Authorization**: A hashtable of authorization parameters specific to the connection type.
+- **Data**: A hashtable of additional data parameters specific to the connection type.
+- **Ensure**: Specifies whether the service connection should exist. Valid values are `Present` and `Absent`.
 
-### AzureRM (Service Principal)
-``` PowerShell
-Authorization = @{
-    tenantId           = 'your-tenant-id'
-    servicePrincipalId = 'your-sp-client-id'
-    authenticationType = 'spnKey'
-}
-Data = @{
-    subscriptionId   = 'your-subscription-id'
-    subscriptionName = 'My Azure Subscription'
-}
-```
-
-# Additional Information
+## Additional Information
 
 This resource manages service connections in Azure DevOps, enabling pipelines to connect to external services such as Azure subscriptions, GitHub repositories, or Kubernetes clusters.
 
-# Examples
+## Examples
 
-## Example 1: Create an Azure RM service connection
+## Example 1: Sample Configuration using AzDoServiceConnection Resource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
     Node localhost {
-        AzDoServiceConnection 'AddServiceConnection' {
+        AzDoServiceConnection AddServiceConnection {
             Ensure           = 'Present'
             ProjectName      = 'MyProject'
             ConnectionName   = 'MyAzureConnection'
@@ -76,23 +61,67 @@ Configuration ExampleConfig {
         }
     }
 }
+
+Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ```
 
-## Example 2: Remove a service connection
+## Example 2: Sample Configuration using Invoke-DSCResource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
-Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
-
-    Node localhost {
-        AzDoServiceConnection 'RemoveServiceConnection' {
-            Ensure         = 'Absent'
-            ProjectName    = 'MyProject'
-            ConnectionName = 'MyAzureConnection'
-            ConnectionType = 'AzureRM'
-        }
-    }
+# Return the current configuration for AzDoServiceConnection
+$properties = @{
+    ProjectName    = 'MyProject'
+    ConnectionName = 'MyAzureConnection'
+    ConnectionType = 'AzureRM'
 }
+
+Invoke-DscResource -Name 'AzDoServiceConnection' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+```
+
+## Example 3: Sample Configuration using AzDO-DSC-LCM
+
+``` YAML
+parameters: {}
+
+variables: {
+  ProjectName: MyProject,
+  ConnectionName: MyAzureConnection
+}
+
+resources:
+- name: Azure Service Connection
+  type: AzureDevOpsDsc/AzDoServiceConnection
+  dependsOn:
+    - AzureDevOpsDsc/AzDevOpsProject/MyProject
+  properties:
+    ProjectName: $ProjectName
+    ConnectionName: $ConnectionName
+    ConnectionType: AzureRM
+    Description: Connection to Azure subscription
+    AllowAllPipelines: true
+    Authorization:
+      tenantId: '00000000-0000-0000-0000-000000000000'
+      servicePrincipalId: '00000000-0000-0000-0000-000000000001'
+      authenticationType: spnKey
+    Data:
+      subscriptionId: '00000000-0000-0000-0000-000000000002'
+      subscriptionName: My Azure Subscription
+    Ensure: Present
+```
+
+LCM Initialization:
+
+``` PowerShell
+
+$params = @{
+    AzureDevopsOrganizationName = "SampleAzDoOrgName"
+    ConfigurationDirectory      = "C:\Datum\DSCOutput\"
+    ConfigurationUrl            = 'https://configuration-path'
+    JITToken                    = 'SampleJITToken'
+    Mode                        = 'Set'
+    AuthenticationType          = 'ManagedIdentity'
+    ReportPath                  = 'C:\Datum\DSCOutput\Reports'
+}
+
+Invoke-AzDoLCM @params
 ```

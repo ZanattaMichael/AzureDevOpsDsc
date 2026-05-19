@@ -1,8 +1,8 @@
 # DSC AzDoOrganizationSettings Resource
 
-# Syntax
+## Syntax
 
-``` PowerShell
+```PowerShell
 AzDoOrganizationSettings [string] #ResourceName
 {
     OrganizationName               = [String]$OrganizationName
@@ -15,34 +15,34 @@ AzDoOrganizationSettings [string] #ResourceName
 }
 ```
 
-# Common Properties
+## Properties
 
-- __OrganizationName__: The name of the Azure DevOps organization. This is a key property and is not configurable after creation.
-- __AllowPublicProjects__: Whether users can create public (anonymous-access) projects. Defaults to organization default.
-- __AllowExternalGuestAccess__: Whether external guest users (Azure AD guests) can be added to the organization. Defaults to organization default.
-- __EnableOAuthAuthentication__: Whether OAuth authentication is enabled for third-party applications. Defaults to organization default.
-- __EnableSSHAuthentication__: Whether SSH authentication is enabled for Git operations. Defaults to organization default.
-- __DisallowAadGuestUserPolicy__: Whether the Azure AD guest user policy is disallowed. Defaults to organization default.
-- __Ensure__: Specifies whether the settings should be applied. Valid values are `Present` and `Absent`. Defaults to `Present`.
+### Common Properties
 
-# Additional Information
+- **OrganizationName**: The name of the Azure DevOps organization. This property is mandatory and serves as the key property for the resource. It is not configurable after initial setup.
+- **AllowPublicProjects**: Whether users can create public (anonymous-access) projects.
+- **AllowExternalGuestAccess**: Whether external guest users (Azure AD guests) can be added to the organization.
+- **EnableOAuthAuthentication**: Whether OAuth authentication is enabled for third-party applications.
+- **EnableSSHAuthentication**: Whether SSH authentication is enabled for Git operations.
+- **DisallowAadGuestUserPolicy**: Whether the Azure AD guest user policy is disallowed.
+- **Ensure**: Specifies whether the settings should be applied. Valid values are `Present` and `Absent`.
+
+## Additional Information
 
 This resource manages organization-level security and access settings in Azure DevOps. These settings affect the entire organization and should be managed carefully. Only one instance of this resource should be configured per organization.
 
-# Examples
+## Examples
 
-## Example 1: Configure organization security settings
+## Example 1: Sample Configuration using AzDoOrganizationSettings Resource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
     Node localhost {
-        AzDoOrganizationSettings 'ConfigureOrgSettings' {
+        AzDoOrganizationSettings ConfigureOrgSettings {
             Ensure                     = 'Present'
-            OrganizationName           = 'test-organization'
+            OrganizationName           = 'SampleAzDoOrgName'
             AllowPublicProjects        = $false
             AllowExternalGuestAccess   = $false
             EnableOAuthAuthentication  = $true
@@ -51,4 +51,56 @@ Configuration ExampleConfig {
         }
     }
 }
+
+Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
+```
+
+## Example 2: Sample Configuration using Invoke-DSCResource
+
+``` PowerShell
+# Return the current configuration for AzDoOrganizationSettings
+$properties = @{
+    OrganizationName = 'SampleAzDoOrgName'
+}
+
+Invoke-DscResource -Name 'AzDoOrganizationSettings' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+```
+
+## Example 3: Sample Configuration using AzDO-DSC-LCM
+
+``` YAML
+parameters: {}
+
+variables: {
+  OrganizationName: SampleAzDoOrgName
+}
+
+resources:
+- name: Organization Security Settings
+  type: AzureDevOpsDsc/AzDoOrganizationSettings
+  properties:
+    OrganizationName: $OrganizationName
+    AllowPublicProjects: false
+    AllowExternalGuestAccess: false
+    EnableOAuthAuthentication: true
+    EnableSSHAuthentication: true
+    DisallowAadGuestUserPolicy: false
+    Ensure: Present
+```
+
+LCM Initialization:
+
+``` PowerShell
+
+$params = @{
+    AzureDevopsOrganizationName = "SampleAzDoOrgName"
+    ConfigurationDirectory      = "C:\Datum\DSCOutput\"
+    ConfigurationUrl            = 'https://configuration-path'
+    JITToken                    = 'SampleJITToken'
+    Mode                        = 'Set'
+    AuthenticationType          = 'ManagedIdentity'
+    ReportPath                  = 'C:\Datum\DSCOutput\Reports'
+}
+
+Invoke-AzDoLCM @params
 ```

@@ -1,8 +1,8 @@
 # DSC AzDoPipelinePermission Resource
 
-# Syntax
+## Syntax
 
-``` PowerShell
+```PowerShell
 AzDoPipelinePermission [string] #ResourceName
 {
     ProjectName   = [String]$ProjectName
@@ -14,61 +14,31 @@ AzDoPipelinePermission [string] #ResourceName
 }
 ```
 
-# Common Properties
+## Properties
 
-- __ProjectName__: The name of the Azure DevOps project. This is a key property.
-- __PipelineName__: The name of the pipeline. This is a key property.
-- __GroupName__: The name of the group to grant permissions to. This is a key property. Use the format `[ProjectName]\GroupName`.
-- __isInherited__: Whether permissions are inherited from the parent. Defaults to `$true`.
-- __Permissions__: An array of permission hashtables specifying the permissions to grant or deny.
-- __Ensure__: Specifies whether the permissions should exist. Valid values are `Present` and `Absent`. Defaults to `Present`.
+### Common Properties
 
-## Permissions Syntax
+- **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+- **PipelineName**: The name of the pipeline. This is a key property.
+- **GroupName**: The name of the group to grant permissions to. This is a key property. Use the format `[ProjectName]\GroupName`.
+- **isInherited**: Whether permissions are inherited from the parent. Defaults to `$true`.
+- **Permissions**: An array of permission hashtables specifying the permissions to grant or deny.
+- **Ensure**: Specifies whether the permissions should exist. Valid values are `Present` and `Absent`.
 
-``` PowerShell
-AzDoPipelinePermission/Permissions
-{
-    Permission = [String]$PermissionName
-    Access     = [String] {'Allow', 'Deny', 'NotSet'}
-}
-```
-
-## Permission List
-
-| Name | Description |
-| ---- | ----------- |
-| ViewBuilds | View builds |
-| EditBuildQuality | Edit build quality |
-| RetainIndefinitely | Retain indefinitely |
-| DeleteBuilds | Delete builds |
-| ManageBuildQualities | Manage build qualities |
-| DestroyBuilds | Destroy builds |
-| UpdateBuildInformation | Update build information |
-| QueueBuilds | Queue builds |
-| ManageBuildQueue | Manage build queue |
-| StopBuilds | Stop builds |
-| ViewBuildDefinition | View build pipeline |
-| EditBuildDefinition | Edit build pipeline |
-| DeleteBuildDefinition | Delete build pipeline |
-| OverrideBuildCheckInValidation | Override check-in validation by build |
-| AdministerBuildPermissions | Administer build permissions |
-
-# Additional Information
+## Additional Information
 
 This resource manages security permissions on individual Azure DevOps pipelines, controlling which groups can view, queue, or manage specific pipeline definitions.
 
-# Examples
+## Examples
 
-## Example 1: Grant pipeline permissions
+## Example 1: Sample Configuration using AzDoPipelinePermission Resource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
     Node localhost {
-        AzDoPipelinePermission 'AddPipelinePermission' {
+        AzDoPipelinePermission AddPipelinePermission {
             Ensure       = 'Present'
             ProjectName  = 'MyProject'
             PipelineName = 'MyBuildPipeline'
@@ -81,4 +51,68 @@ Configuration ExampleConfig {
         }
     }
 }
+
+Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
+```
+
+## Example 2: Sample Configuration using Invoke-DSCResource
+
+``` PowerShell
+# Return the current configuration for AzDoPipelinePermission
+$properties = @{
+    ProjectName  = 'MyProject'
+    PipelineName = 'MyBuildPipeline'
+    GroupName    = '[MyProject]\Contributors'
+    isInherited  = $true
+    Permissions  = @(
+        @{ Permission = 'ViewBuilds'; Access = 'Allow' }
+    )
+}
+
+Invoke-DscResource -Name 'AzDoPipelinePermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+```
+
+## Example 3: Sample Configuration using AzDO-DSC-LCM
+
+``` YAML
+parameters: {}
+
+variables: {
+  ProjectName: MyProject,
+  PipelineName: MyBuildPipeline
+}
+
+resources:
+- name: Pipeline Contributors Permission
+  type: AzureDevOpsDsc/AzDoPipelinePermission
+  dependsOn:
+    - AzureDevOpsDsc/AzDoPipeline/MyBuildPipeline
+  properties:
+    ProjectName: $ProjectName
+    PipelineName: $PipelineName
+    GroupName: '[$ProjectName]\Contributors'
+    isInherited: true
+    Permissions:
+      - Permission: ViewBuilds
+        Access: Allow
+      - Permission: QueueBuilds
+        Access: Allow
+    Ensure: Present
+```
+
+LCM Initialization:
+
+``` PowerShell
+
+$params = @{
+    AzureDevopsOrganizationName = "SampleAzDoOrgName"
+    ConfigurationDirectory      = "C:\Datum\DSCOutput\"
+    ConfigurationUrl            = 'https://configuration-path'
+    JITToken                    = 'SampleJITToken'
+    Mode                        = 'Set'
+    AuthenticationType          = 'ManagedIdentity'
+    ReportPath                  = 'C:\Datum\DSCOutput\Reports'
+}
+
+Invoke-AzDoLCM @params
 ```

@@ -1,8 +1,8 @@
 # DSC AzDoPipelineEnvironment Resource
 
-# Syntax
+## Syntax
 
-``` PowerShell
+```PowerShell
 AzDoPipelineEnvironment [string] #ResourceName
 {
     ProjectName       = [String]$ProjectName
@@ -12,29 +12,29 @@ AzDoPipelineEnvironment [string] #ResourceName
 }
 ```
 
-# Common Properties
+## Properties
 
-- __ProjectName__: The name of the Azure DevOps project. This is a key property.
-- __EnvironmentName__: The name of the pipeline environment. This is a key property.
-- __Description__: An optional description for the environment.
-- __Ensure__: Specifies whether the environment should exist. Valid values are `Present` and `Absent`. Defaults to `Present`.
+### Common Properties
 
-# Additional Information
+- **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+- **EnvironmentName**: The name of the pipeline environment. This is a key property.
+- **Description**: An optional description for the environment.
+- **Ensure**: Specifies whether the environment should exist. Valid values are `Present` and `Absent`.
+
+## Additional Information
 
 This resource manages pipeline environments in Azure DevOps. Environments represent deployment targets (e.g., Development, Staging, Production) and can be configured with approval gates and checks using the `AzDoEnvironmentApproval` and `AzDoCheckConfiguration` resources.
 
-# Examples
+## Examples
 
-## Example 1: Create a pipeline environment
+## Example 1: Sample Configuration using AzDoPipelineEnvironment Resource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
     Node localhost {
-        AzDoPipelineEnvironment 'AddEnvironment' {
+        AzDoPipelineEnvironment AddEnvironment {
             Ensure          = 'Present'
             ProjectName     = 'MyProject'
             EnvironmentName = 'Production'
@@ -42,22 +42,57 @@ Configuration ExampleConfig {
         }
     }
 }
+
+Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ```
 
-## Example 2: Remove a pipeline environment
+## Example 2: Sample Configuration using Invoke-DSCResource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
-Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
-
-    Node localhost {
-        AzDoPipelineEnvironment 'RemoveEnvironment' {
-            Ensure          = 'Absent'
-            ProjectName     = 'MyProject'
-            EnvironmentName = 'Production'
-        }
-    }
+# Return the current configuration for AzDoPipelineEnvironment
+$properties = @{
+    ProjectName     = 'MyProject'
+    EnvironmentName = 'Production'
 }
+
+Invoke-DscResource -Name 'AzDoPipelineEnvironment' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+```
+
+## Example 3: Sample Configuration using AzDO-DSC-LCM
+
+``` YAML
+parameters: {}
+
+variables: {
+  ProjectName: MyProject,
+  EnvironmentName: Production
+}
+
+resources:
+- name: Production Environment
+  type: AzureDevOpsDsc/AzDoPipelineEnvironment
+  dependsOn:
+    - AzureDevOpsDsc/AzDevOpsProject/MyProject
+  properties:
+    ProjectName: $ProjectName
+    EnvironmentName: $EnvironmentName
+    Description: Production deployment environment
+    Ensure: Present
+```
+
+LCM Initialization:
+
+``` PowerShell
+
+$params = @{
+    AzureDevopsOrganizationName = "SampleAzDoOrgName"
+    ConfigurationDirectory      = "C:\Datum\DSCOutput\"
+    ConfigurationUrl            = 'https://configuration-path'
+    JITToken                    = 'SampleJITToken'
+    Mode                        = 'Set'
+    AuthenticationType          = 'ManagedIdentity'
+    ReportPath                  = 'C:\Datum\DSCOutput\Reports'
+}
+
+Invoke-AzDoLCM @params
 ```

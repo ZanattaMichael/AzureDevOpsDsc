@@ -1,8 +1,8 @@
 # DSC AzDoAgentPoolPermission Resource
 
-# Syntax
+## Syntax
 
-``` PowerShell
+```PowerShell
 AzDoAgentPoolPermission [string] #ResourceName
 {
     PoolName      = [String]$PoolName
@@ -13,50 +13,30 @@ AzDoAgentPoolPermission [string] #ResourceName
 }
 ```
 
-# Common Properties
+## Properties
 
-- __PoolName__: The name of the agent pool. This is a key property.
-- __GroupName__: The name of the group to grant permissions to. This is a key property. Use the format `[ProjectName]\GroupName` or `[TEAM FOUNDATION]\GroupName` for organization-level groups.
-- __isInherited__: Whether permissions are inherited. Defaults to `$true`.
-- __Permissions__: An array of permission hashtables specifying the permissions to grant or deny.
-- __Ensure__: Specifies whether the permissions should exist. Valid values are `Present` and `Absent`. Defaults to `Present`.
+### Common Properties
 
-## Permissions Syntax
+- **PoolName**: The name of the agent pool. This property is mandatory and serves as the key property for the resource.
+- **GroupName**: The name of the group to grant permissions to. This is a key property. Use the format `[ProjectName]\GroupName` or `[TEAM FOUNDATION]\GroupName` for organization-level groups.
+- **isInherited**: Whether permissions are inherited. Defaults to `$true`.
+- **Permissions**: An array of permission hashtables specifying the permissions to grant or deny. Each entry requires a `Permission` name and an `Access` value of `Allow`, `Deny`, or `NotSet`.
+- **Ensure**: Specifies whether the permissions should exist. Valid values are `Present` and `Absent`.
 
-``` PowerShell
-AzDoAgentPoolPermission/Permissions
-{
-    Permission = [String]$PermissionName
-    Access     = [String] {'Allow', 'Deny', 'NotSet'}
-}
-```
-
-## Permission List
-
-| Name | Description |
-| ---- | ----------- |
-| Use | Use the agent pool |
-| Administer | Administer the agent pool |
-| Create | Create agent pools |
-| ManagePermissions | Manage permissions for the agent pool |
-| ViewAuthorization | View the agent pool's authorization |
-
-# Additional Information
+## Additional Information
 
 This resource manages security permissions on Azure DevOps agent pools, controlling which groups or users can use or administer the pool.
 
-# Examples
+## Examples
 
-## Example 1: Grant permissions on an agent pool
+## Example 1: Sample Configuration using AzDoAgentPoolPermission Resource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
     Node localhost {
-        AzDoAgentPoolPermission 'AddAgentPoolPermission' {
+        AzDoAgentPoolPermission AddAgentPoolPermission {
             Ensure      = 'Present'
             PoolName    = 'MyPool'
             GroupName   = '[MyProject]\Contributors'
@@ -67,4 +47,64 @@ Configuration ExampleConfig {
         }
     }
 }
+
+Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
+```
+
+## Example 2: Sample Configuration using Invoke-DSCResource
+
+``` PowerShell
+# Return the current configuration for AzDoAgentPoolPermission
+$properties = @{
+    PoolName    = 'MyPool'
+    GroupName   = '[MyProject]\Contributors'
+    isInherited = $true
+    Permissions = @(
+        @{ Permission = 'Use'; Access = 'Allow' }
+    )
+}
+
+Invoke-DscResource -Name 'AzDoAgentPoolPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+```
+
+## Example 3: Sample Configuration using AzDO-DSC-LCM
+
+``` YAML
+parameters: {}
+
+variables: {
+  ProjectName: MyProject,
+  PoolName: MyPool
+}
+
+resources:
+- name: Agent Pool Contributors Permission
+  type: AzureDevOpsDsc/AzDoAgentPoolPermission
+  dependsOn:
+    - AzureDevOpsDsc/AzDoAgentPool/MyPool
+  properties:
+    PoolName: $PoolName
+    GroupName: '[$ProjectName]\Contributors'
+    isInherited: true
+    Permissions:
+      - Permission: Use
+        Access: Allow
+    Ensure: Present
+```
+
+LCM Initialization:
+
+``` PowerShell
+
+$params = @{
+    AzureDevopsOrganizationName = "SampleAzDoOrgName"
+    ConfigurationDirectory      = "C:\Datum\DSCOutput\"
+    ConfigurationUrl            = 'https://configuration-path'
+    JITToken                    = 'SampleJITToken'
+    Mode                        = 'Set'
+    AuthenticationType          = 'ManagedIdentity'
+    ReportPath                  = 'C:\Datum\DSCOutput\Reports'
+}
+
+Invoke-AzDoLCM @params
 ```

@@ -1,8 +1,8 @@
 # DSC AzDoSecurityNamespacePermission Resource
 
-# Syntax
+## Syntax
 
-``` PowerShell
+```PowerShell
 AzDoSecurityNamespacePermission [string] #ResourceName
 {
     SecurityNamespace = [String]$SecurityNamespace
@@ -14,48 +14,31 @@ AzDoSecurityNamespacePermission [string] #ResourceName
 }
 ```
 
-# Common Properties
+## Properties
 
-- __SecurityNamespace__: The name of the Azure DevOps security namespace (e.g., `Build`, `Git Repositories`, `Project`). This is a key property.
-- __Token__: The security token identifying the specific object within the namespace. This is a key property.
-- __GroupName__: The name of the group to grant permissions to. This is a key property. Use the format `[ProjectName]\GroupName`.
-- __isInherited__: Whether permissions are inherited. Defaults to `$true`.
-- __Permissions__: An array of permission hashtables specifying the permissions to grant or deny.
-- __Ensure__: Specifies whether the permissions should exist. Valid values are `Present` and `Absent`. Defaults to `Present`.
+### Common Properties
 
-## Permissions Syntax
+- **SecurityNamespace**: The name of the Azure DevOps security namespace (e.g., `Build`, `Git Repositories`, `Project`). This property is mandatory and serves as a key property for the resource.
+- **Token**: The security token identifying the specific object within the namespace. This is a key property.
+- **GroupName**: The name of the group to grant permissions to. This is a key property. Use the format `[ProjectName]\GroupName`.
+- **isInherited**: Whether permissions are inherited. Defaults to `$true`.
+- **Permissions**: An array of permission hashtables specifying the permissions to grant or deny.
+- **Ensure**: Specifies whether the permissions should exist. Valid values are `Present` and `Absent`.
 
-``` PowerShell
-AzDoSecurityNamespacePermission/Permissions
-{
-    Permission = [String]$PermissionName
-    Access     = [String] {'Allow', 'Deny', 'NotSet'}
-}
-```
-
-# Additional Information
+## Additional Information
 
 This resource provides low-level access to Azure DevOps security namespaces, allowing fine-grained permission control over any object in the system. For most use cases, prefer the higher-level permission resources (e.g., `AzDoGitPermission`, `AzDoPipelinePermission`). Use this resource when you need to control permissions for namespaces not covered by dedicated resources.
 
-Common security namespaces include:
-- `Build` - Pipeline/build permissions
-- `Git Repositories` - Git repository permissions
-- `Project` - Project-level permissions
-- `ReleaseManagement` - Release pipeline permissions
-- `Library` - Variable group and secure file permissions
+## Examples
 
-# Examples
-
-## Example 1: Grant permissions in a security namespace
+## Example 1: Sample Configuration using AzDoSecurityNamespacePermission Resource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
     Node localhost {
-        AzDoSecurityNamespacePermission 'AddNamespacePermission' {
+        AzDoSecurityNamespacePermission AddNamespacePermission {
             Ensure            = 'Present'
             SecurityNamespace = 'Build'
             Token             = 'repoV2/00000000-0000-0000-0000-000000000001'
@@ -68,4 +51,62 @@ Configuration ExampleConfig {
         }
     }
 }
+
+Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
+```
+
+## Example 2: Sample Configuration using Invoke-DSCResource
+
+``` PowerShell
+# Return the current configuration for AzDoSecurityNamespacePermission
+$properties = @{
+    SecurityNamespace = 'Build'
+    Token             = 'repoV2/00000000-0000-0000-0000-000000000001'
+    GroupName         = '[MyProject]\Contributors'
+}
+
+Invoke-DscResource -Name 'AzDoSecurityNamespacePermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+```
+
+## Example 3: Sample Configuration using AzDO-DSC-LCM
+
+``` YAML
+parameters: {}
+
+variables: {
+  ProjectName: MyProject,
+  SecurityToken: 'repoV2/00000000-0000-0000-0000-000000000001'
+}
+
+resources:
+- name: Build Namespace Contributors Permission
+  type: AzureDevOpsDsc/AzDoSecurityNamespacePermission
+  properties:
+    SecurityNamespace: Build
+    Token: $SecurityToken
+    GroupName: '[$ProjectName]\Contributors'
+    isInherited: true
+    Permissions:
+      - Permission: ViewBuilds
+        Access: Allow
+      - Permission: QueueBuilds
+        Access: Allow
+    Ensure: Present
+```
+
+LCM Initialization:
+
+``` PowerShell
+
+$params = @{
+    AzureDevopsOrganizationName = "SampleAzDoOrgName"
+    ConfigurationDirectory      = "C:\Datum\DSCOutput\"
+    ConfigurationUrl            = 'https://configuration-path'
+    JITToken                    = 'SampleJITToken'
+    Mode                        = 'Set'
+    AuthenticationType          = 'ManagedIdentity'
+    ReportPath                  = 'C:\Datum\DSCOutput\Reports'
+}
+
+Invoke-AzDoLCM @params
 ```

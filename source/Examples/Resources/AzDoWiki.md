@@ -1,8 +1,8 @@
 # DSC AzDoWiki Resource
 
-# Syntax
+## Syntax
 
-``` PowerShell
+```PowerShell
 AzDoWiki [string] #ResourceName
 {
     ProjectName        = [String]$ProjectName
@@ -15,32 +15,32 @@ AzDoWiki [string] #ResourceName
 }
 ```
 
-# Common Properties
+## Properties
 
-- __ProjectName__: The name of the Azure DevOps project. This is a key property.
-- __WikiName__: The name of the wiki. This is a key property.
-- __WikiType__: The type of wiki. Valid values are `projectWiki` (a built-in project wiki) and `codeWiki` (a wiki sourced from a Git repository). Defaults to `projectWiki`.
-- __RepositoryName__: For `codeWiki` type, the name of the repository that contains the wiki content. Optional.
-- __MappedPath__: For `codeWiki` type, the folder path within the repository that contains the wiki content. Defaults to `/`.
-- __Version__: For `codeWiki` type, the branch or commit to use. Optional.
-- __Ensure__: Specifies whether the wiki should exist. Valid values are `Present` and `Absent`. Defaults to `Present`.
+### Common Properties
 
-# Additional Information
+- **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+- **WikiName**: The name of the wiki. This is a key property.
+- **WikiType**: The type of wiki. Valid values are `projectWiki` (a built-in project wiki) and `codeWiki` (a wiki sourced from a Git repository). Defaults to `projectWiki`.
+- **RepositoryName**: For `codeWiki` type, the name of the repository that contains the wiki content. Optional.
+- **MappedPath**: For `codeWiki` type, the folder path within the repository that contains the wiki content. Defaults to `/`.
+- **Version**: For `codeWiki` type, the branch or commit to use. Optional.
+- **Ensure**: Specifies whether the wiki should exist. Valid values are `Present` and `Absent`.
+
+## Additional Information
 
 This resource manages wikis in Azure DevOps projects. Project wikis are automatically created within the project, while code wikis are sourced from content stored in a Git repository.
 
-# Examples
+## Examples
 
-## Example 1: Create a project wiki
+## Example 1: Sample Configuration using AzDoWiki Resource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
     Node localhost {
-        AzDoWiki 'AddProjectWiki' {
+        AzDoWiki AddProjectWiki {
             Ensure      = 'Present'
             ProjectName = 'MyProject'
             WikiName    = 'MyProjectWiki'
@@ -48,44 +48,70 @@ Configuration ExampleConfig {
         }
     }
 }
+
+Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ```
 
-## Example 2: Create a code wiki from a repository
+## Example 2: Sample Configuration using Invoke-DSCResource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
-Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
-
-    Node localhost {
-        AzDoWiki 'AddCodeWiki' {
-            Ensure         = 'Present'
-            ProjectName    = 'MyProject'
-            WikiName       = 'MyCodeWiki'
-            WikiType       = 'codeWiki'
-            RepositoryName = 'MyRepository'
-            MappedPath     = '/docs'
-            Version        = 'main'
-        }
-    }
+# Return the current configuration for AzDoWiki
+$properties = @{
+    ProjectName = 'MyProject'
+    WikiName    = 'MyProjectWiki'
 }
+
+Invoke-DscResource -Name 'AzDoWiki' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
 ```
 
-## Example 3: Remove a wiki
+## Example 3: Sample Configuration using AzDO-DSC-LCM
+
+``` YAML
+parameters: {}
+
+variables: {
+  ProjectName: MyProject,
+  RepositoryName: MyRepository
+}
+
+resources:
+- name: Project Wiki
+  type: AzureDevOpsDsc/AzDoWiki
+  dependsOn:
+    - AzureDevOpsDsc/AzDevOpsProject/MyProject
+  properties:
+    ProjectName: $ProjectName
+    WikiName: MyProjectWiki
+    WikiType: projectWiki
+    Ensure: Present
+
+- name: Code Wiki
+  type: AzureDevOpsDsc/AzDoWiki
+  dependsOn:
+    - AzureDevOpsDsc/AzDoGitRepository/MyRepository
+  properties:
+    ProjectName: $ProjectName
+    WikiName: MyCodeWiki
+    WikiType: codeWiki
+    RepositoryName: $RepositoryName
+    MappedPath: /docs
+    Version: main
+    Ensure: Present
+```
+
+LCM Initialization:
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
 
-Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
-
-    Node localhost {
-        AzDoWiki 'RemoveWiki' {
-            Ensure      = 'Absent'
-            ProjectName = 'MyProject'
-            WikiName    = 'MyProjectWiki'
-        }
-    }
+$params = @{
+    AzureDevopsOrganizationName = "SampleAzDoOrgName"
+    ConfigurationDirectory      = "C:\Datum\DSCOutput\"
+    ConfigurationUrl            = 'https://configuration-path'
+    JITToken                    = 'SampleJITToken'
+    Mode                        = 'Set'
+    AuthenticationType          = 'ManagedIdentity'
+    ReportPath                  = 'C:\Datum\DSCOutput\Reports'
 }
+
+Invoke-AzDoLCM @params
 ```

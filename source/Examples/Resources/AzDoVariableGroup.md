@@ -1,8 +1,8 @@
 # DSC AzDoVariableGroup Resource
 
-# Syntax
+## Syntax
 
-``` PowerShell
+```PowerShell
 AzDoVariableGroup [string] #ResourceName
 {
     ProjectName         = [String]$ProjectName
@@ -15,32 +15,32 @@ AzDoVariableGroup [string] #ResourceName
 }
 ```
 
-# Common Properties
+## Properties
 
-- __ProjectName__: The name of the Azure DevOps project. This is a key property.
-- __VariableGroupName__: The name of the variable group. This is a key property.
-- __Description__: An optional description for the variable group.
-- __VariableGroupType__: The type of variable group. Valid values are `Vsts` (standard) and `AzureKeyVault`. Defaults to `Vsts`.
-- __Variables__: A hashtable of key-value pairs representing the variables. For secret variables, prefix the value with `secret:`.
-- __AllowAccess__: Whether all pipelines can access this variable group. Defaults to `$false`.
-- __Ensure__: Specifies whether the variable group should exist. Valid values are `Present` and `Absent`. Defaults to `Present`.
+### Common Properties
 
-# Additional Information
+- **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+- **VariableGroupName**: The name of the variable group. This is a key property.
+- **Description**: An optional description for the variable group.
+- **VariableGroupType**: The type of variable group. Valid values are `Vsts` (standard) and `AzureKeyVault`. Defaults to `Vsts`.
+- **Variables**: A hashtable of key-value pairs representing the variables.
+- **AllowAccess**: Whether all pipelines can access this variable group. Defaults to `$false`.
+- **Ensure**: Specifies whether the variable group should exist. Valid values are `Present` and `Absent`.
 
-This resource manages variable groups in Azure DevOps, allowing shared variables and secrets to be used across multiple pipelines.
+## Additional Information
 
-# Examples
+This resource manages variable groups in Azure DevOps, allowing shared variables and secrets to be used across multiple pipelines within a project.
 
-## Example 1: Create a variable group
+## Examples
+
+## Example 1: Sample Configuration using AzDoVariableGroup Resource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
     Node localhost {
-        AzDoVariableGroup 'AddVariableGroup' {
+        AzDoVariableGroup AddVariableGroup {
             Ensure            = 'Present'
             ProjectName       = 'MyProject'
             VariableGroupName = 'MyVariableGroup'
@@ -54,22 +54,62 @@ Configuration ExampleConfig {
         }
     }
 }
+
+Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ```
 
-## Example 2: Remove a variable group
+## Example 2: Sample Configuration using Invoke-DSCResource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
-Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
-
-    Node localhost {
-        AzDoVariableGroup 'RemoveVariableGroup' {
-            Ensure            = 'Absent'
-            ProjectName       = 'MyProject'
-            VariableGroupName = 'MyVariableGroup'
-        }
-    }
+# Return the current configuration for AzDoVariableGroup
+$properties = @{
+    ProjectName       = 'MyProject'
+    VariableGroupName = 'MyVariableGroup'
 }
+
+Invoke-DscResource -Name 'AzDoVariableGroup' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+```
+
+## Example 3: Sample Configuration using AzDO-DSC-LCM
+
+``` YAML
+parameters: {}
+
+variables: {
+  ProjectName: MyProject,
+  VariableGroupName: MyVariableGroup
+}
+
+resources:
+- name: My Variable Group
+  type: AzureDevOpsDsc/AzDoVariableGroup
+  dependsOn:
+    - AzureDevOpsDsc/AzDevOpsProject/MyProject
+  properties:
+    ProjectName: $ProjectName
+    VariableGroupName: $VariableGroupName
+    Description: Shared pipeline variables
+    VariableGroupType: Vsts
+    AllowAccess: true
+    Variables:
+      APP_ENV: production
+      APP_LOG_LEVEL: warn
+    Ensure: Present
+```
+
+LCM Initialization:
+
+``` PowerShell
+
+$params = @{
+    AzureDevopsOrganizationName = "SampleAzDoOrgName"
+    ConfigurationDirectory      = "C:\Datum\DSCOutput\"
+    ConfigurationUrl            = 'https://configuration-path'
+    JITToken                    = 'SampleJITToken'
+    Mode                        = 'Set'
+    AuthenticationType          = 'ManagedIdentity'
+    ReportPath                  = 'C:\Datum\DSCOutput\Reports'
+}
+
+Invoke-AzDoLCM @params
 ```

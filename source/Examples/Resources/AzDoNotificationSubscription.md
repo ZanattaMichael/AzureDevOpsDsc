@@ -1,8 +1,8 @@
 # DSC AzDoNotificationSubscription Resource
 
-# Syntax
+## Syntax
 
-``` PowerShell
+```PowerShell
 AzDoNotificationSubscription [string] #ResourceName
 {
     SubscriptionName  = [String]$SubscriptionName
@@ -16,37 +16,33 @@ AzDoNotificationSubscription [string] #ResourceName
 }
 ```
 
-# Common Properties
+## Properties
 
-- __SubscriptionName__: A descriptive name for the subscription. This is a key property.
-- __EventType__: The type of event to subscribe to. This is a key property. Common values include:
-  - `ms.vss-build.build-completed-failed-id` - Build failure
-  - `ms.vss-build.build-completed-id` - Build completion
-  - `ms.vss-code.git-push` - Code push
-  - `ms.vss-code.git-pullrequest-created` - Pull request created
-- __ChannelType__: The delivery channel for notifications. Common values: `EmailHtml`, `EmailPlainText`, `Slack`.
-- __Subscriber__: The email address or group descriptor of the notification recipient.
-- __ProjectName__: The project to scope the subscription to. If omitted, applies organization-wide.
-- __Filter__: A hashtable specifying event filter criteria.
-- __Enabled__: Whether the subscription is active. Defaults to `$true`.
-- __Ensure__: Specifies whether the subscription should exist. Valid values are `Present` and `Absent`. Defaults to `Present`.
+### Common Properties
 
-# Additional Information
+- **SubscriptionName**: A descriptive name for the subscription. This property is mandatory and serves as a key property for the resource.
+- **EventType**: The type of event to subscribe to. This is a key property. Common values include `ms.vss-build.build-completed-failed-id`, `ms.vss-code.git-push`, and `ms.vss-code.git-pullrequest-created`.
+- **ChannelType**: The delivery channel for notifications. Common values: `EmailHtml`, `EmailPlainText`.
+- **Subscriber**: The email address or group descriptor of the notification recipient. This is a mandatory property.
+- **ProjectName**: The project to scope the subscription to. If omitted, applies organization-wide.
+- **Filter**: A hashtable specifying event filter criteria.
+- **Enabled**: Whether the subscription is active. Defaults to `$true`.
+- **Ensure**: Specifies whether the subscription should exist. Valid values are `Present` and `Absent`.
 
-This resource manages Azure DevOps notification subscriptions, which deliver alerts about project events (builds, pull requests, work items, etc.) to email addresses, Slack channels, or other subscribers.
+## Additional Information
 
-# Examples
+This resource manages Azure DevOps notification subscriptions, which deliver alerts about project events (builds, pull requests, work items, etc.) to email addresses or other subscribers.
 
-## Example 1: Subscribe to build failures
+## Examples
+
+## Example 1: Sample Configuration using AzDoNotificationSubscription Resource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
     Node localhost {
-        AzDoNotificationSubscription 'BuildFailureNotification' {
+        AzDoNotificationSubscription BuildFailureNotification {
             Ensure           = 'Present'
             SubscriptionName = 'BuildFailureAlert'
             EventType        = 'ms.vss-build.build-completed-failed-id'
@@ -57,26 +53,59 @@ Configuration ExampleConfig {
         }
     }
 }
+
+Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ```
 
-## Example 2: Subscribe to pull request creation
+## Example 2: Sample Configuration using Invoke-DSCResource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
-Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
-
-    Node localhost {
-        AzDoNotificationSubscription 'PullRequestNotification' {
-            Ensure           = 'Present'
-            SubscriptionName = 'NewPullRequestAlert'
-            EventType        = 'ms.vss-code.git-pullrequest-created'
-            ChannelType      = 'EmailHtml'
-            Subscriber       = 'reviewers@example.com'
-            ProjectName      = 'MyProject'
-            Enabled          = $true
-        }
-    }
+# Return the current configuration for AzDoNotificationSubscription
+$properties = @{
+    SubscriptionName = 'BuildFailureAlert'
+    EventType        = 'ms.vss-build.build-completed-failed-id'
 }
+
+Invoke-DscResource -Name 'AzDoNotificationSubscription' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+```
+
+## Example 3: Sample Configuration using AzDO-DSC-LCM
+
+``` YAML
+parameters: {}
+
+variables: {
+  ProjectName: MyProject
+}
+
+resources:
+- name: Build Failure Alert
+  type: AzureDevOpsDsc/AzDoNotificationSubscription
+  dependsOn:
+    - AzureDevOpsDsc/AzDevOpsProject/MyProject
+  properties:
+    SubscriptionName: BuildFailureAlert
+    EventType: ms.vss-build.build-completed-failed-id
+    ChannelType: EmailHtml
+    Subscriber: team@example.com
+    ProjectName: $ProjectName
+    Enabled: true
+    Ensure: Present
+```
+
+LCM Initialization:
+
+``` PowerShell
+
+$params = @{
+    AzureDevopsOrganizationName = "SampleAzDoOrgName"
+    ConfigurationDirectory      = "C:\Datum\DSCOutput\"
+    ConfigurationUrl            = 'https://configuration-path'
+    JITToken                    = 'SampleJITToken'
+    Mode                        = 'Set'
+    AuthenticationType          = 'ManagedIdentity'
+    ReportPath                  = 'C:\Datum\DSCOutput\Reports'
+}
+
+Invoke-AzDoLCM @params
 ```

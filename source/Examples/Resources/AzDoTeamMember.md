@@ -1,8 +1,8 @@
 # DSC AzDoTeamMember Resource
 
-# Syntax
+## Syntax
 
-``` PowerShell
+```PowerShell
 AzDoTeamMember [string] #ResourceName
 {
     ProjectName = [String]$ProjectName
@@ -12,29 +12,29 @@ AzDoTeamMember [string] #ResourceName
 }
 ```
 
-# Common Properties
+## Properties
 
-- __ProjectName__: The name of the Azure DevOps project. This is a key property.
-- __TeamName__: The name of the team. This is a key property.
-- __MemberName__: The UPN, display name, or email of the user or group to add as a team member. This is a key property.
-- __Ensure__: Specifies whether the team membership should exist. Valid values are `Present` and `Absent`. Defaults to `Present`.
+### Common Properties
 
-# Additional Information
+- **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+- **TeamName**: The name of the team. This is a key property.
+- **MemberName**: The UPN, display name, or email of the user or group to add as a team member. This is a key property.
+- **Ensure**: Specifies whether the team membership should exist. Valid values are `Present` and `Absent`.
 
-This resource manages membership of individual users or groups within a team. The team must already exist (use the `AzDoTeam` resource to create it first).
+## Additional Information
 
-# Examples
+This resource manages membership of individual users or groups within a team. The team must already exist — use the `AzDoTeam` resource to create it first.
 
-## Example 1: Add a member to a team
+## Examples
+
+## Example 1: Sample Configuration using AzDoTeamMember Resource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
     Node localhost {
-        AzDoTeamMember 'AddTeamMember' {
+        AzDoTeamMember AddTeamMember {
             Ensure      = 'Present'
             ProjectName = 'MyProject'
             TeamName    = 'Frontend Team'
@@ -42,23 +42,57 @@ Configuration ExampleConfig {
         }
     }
 }
+
+Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ```
 
-## Example 2: Remove a member from a team
+## Example 2: Sample Configuration using Invoke-DSCResource
 
 ``` PowerShell
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
-
-Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
-
-    Node localhost {
-        AzDoTeamMember 'RemoveTeamMember' {
-            Ensure      = 'Absent'
-            ProjectName = 'MyProject'
-            TeamName    = 'Frontend Team'
-            MemberName  = 'user@example.com'
-        }
-    }
+# Return the current configuration for AzDoTeamMember
+$properties = @{
+    ProjectName = 'MyProject'
+    TeamName    = 'Frontend Team'
+    MemberName  = 'user@example.com'
 }
+
+Invoke-DscResource -Name 'AzDoTeamMember' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+```
+
+## Example 3: Sample Configuration using AzDO-DSC-LCM
+
+``` YAML
+parameters: {}
+
+variables: {
+  ProjectName: MyProject
+}
+
+resources:
+- name: Frontend Team Member
+  type: AzureDevOpsDsc/AzDoTeamMember
+  dependsOn:
+    - AzureDevOpsDsc/AzDoTeam/FrontendTeam
+  properties:
+    ProjectName: $ProjectName
+    TeamName: Frontend Team
+    MemberName: user@example.com
+    Ensure: Present
+```
+
+LCM Initialization:
+
+``` PowerShell
+
+$params = @{
+    AzureDevopsOrganizationName = "SampleAzDoOrgName"
+    ConfigurationDirectory      = "C:\Datum\DSCOutput\"
+    ConfigurationUrl            = 'https://configuration-path'
+    JITToken                    = 'SampleJITToken'
+    Mode                        = 'Set'
+    AuthenticationType          = 'ManagedIdentity'
+    ReportPath                  = 'C:\Datum\DSCOutput\Reports'
+}
+
+Invoke-AzDoLCM @params
 ```
