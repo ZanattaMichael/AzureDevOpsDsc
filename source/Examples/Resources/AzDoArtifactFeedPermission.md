@@ -5,12 +5,36 @@
 ```PowerShell
 AzDoArtifactFeedPermission [string] #ResourceName
 {
-    ProjectName = [String]$ProjectName
-    FeedName    = [String]$FeedName
-    Permissions = [HashTable[]]$Permissions
-    [ Ensure    = [String] {'Present', 'Absent'} ]
+    ProjectName         = [String]$ProjectName
+    FeedName            = [String]$FeedName
+    Permissions         = [HashTable[]]$Permissions
+    [ Ensure            = [String] {'Present', 'Absent'} ]
 }
 ```
+
+## Permissions Syntax
+
+``` PowerShell
+AzDoArtifactFeedPermission/Permissions
+{
+    identity = [String]$Identity # Syntax
+    #   SYNTAX:     '[ProjectName | OrganizationName]\ServicePrincipalName, UserPrincipalName, UserDisplayName, GroupDisplayName'
+    #   EXAMPLE:    '[TestProject]\UserName@email.com'
+    #   EXAMPLE:    '[SampleOrganizationName]\Project Collection Administrators'
+    role     = [String]$Role # See 'Permission List'
+}
+```
+
+## Permission List
+
+> Azure Artifacts Feed permissions use a role-based access control model. Assign one of the roles below to each identity.
+
+| Role | Description | Note |
+| ---- | ----------- | ---- |
+| Reader | Can list and download packages | |
+| Collaborator | Can list, download, and save packages from upstream sources | |
+| Contributor | Can push, list, and download packages | |
+| Administrator | Full control including managing feed settings and permissions | Not recommended. |
 
 ## Properties
 
@@ -18,19 +42,12 @@ AzDoArtifactFeedPermission [string] #ResourceName
 
 - **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
 - **FeedName**: The name of the artifact feed. This is a key property.
-- **Permissions**: An array of permission hashtables specifying role-based access for identities.
+- **Permissions**: An array of permission hashtables specifying role-based access for identities. Refer to: 'Permissions Syntax'.
 - **Ensure**: Specifies whether the permissions should exist. Valid values are `Present` and `Absent`.
-
-### Permissions Syntax
-
-Each entry in the `Permissions` array uses the following structure:
-
-- **identity**: The descriptor or display name of the identity.
-- **role**: The role to assign. Valid values are `Reader`, `Contributor`, `Collaborator`, and `Administrator`.
 
 ## Additional Information
 
-This resource manages role-based permissions on Azure Artifacts feeds, controlling which users or groups can read, publish, or administer packages.
+This resource manages role-based permissions on Azure Artifacts feeds, controlling which users or groups can read, publish, or administer packages. Unlike other permission resources, Artifact Feed permissions use a role model (Reader, Contributor, Collaborator, Administrator) rather than individual permission bits.
 
 ## Examples
 
@@ -47,7 +64,7 @@ Configuration ExampleConfig {
             FeedName    = 'MyFeed'
             Permissions = @(
                 @{ identity = '[MyProject]\Contributors'; role = 'Contributor' }
-                @{ identity = '[MyProject]\Readers'; role = 'Reader' }
+                @{ identity = '[MyProject]\Readers';      role = 'Reader' }
             )
         }
     }
