@@ -44,18 +44,11 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
 
         $organizationName = $objectSettings.OrganizationName
         $tokenObject = $objectSettings.Token
-        $access_token = $tokenObject.access_token
 
-        # Ensure that the access_token is not null or empty. If it is, throw an error.
-        if ([String]::IsNullOrEmpty($access_token))
-        {
-            Throw "[AzDevOpsDscResourceBase] The Token information does not exist in the Cache Directory. Please ensure that the Token information exists."
-        }
-
-        Write-Verbose "[AzDevOpsDscResourceBase] Access token retrieved successfully."
+        Write-Verbose "[AzDevOpsDscResourceBase] Token type: $($tokenObject.tokenType)"
 
         #
-        # Determine the type of Token (PersonalAccessToken or ManagedIdentity)
+        # Determine the type of Token
 
         switch ($tokenObject.tokenType.ToString())
         {
@@ -68,12 +61,55 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
             # If the Token is a Personal Access Token
             { $_ -eq 'PersonalAccessToken' } {
                 Write-Verbose "[AzDevOpsDscResourceBase] Token type is Personal Access Token."
+                $access_token = $tokenObject.access_token
+                if ($null -eq $access_token)
+                {
+                    Throw "[AzDevOpsDscResourceBase] The Token information does not exist in the Cache Directory. Please ensure that the Token information exists."
+                }
                 New-AzDoAuthenticationProvider -OrganizationName $organizationName -SecureStringPersonalAccessToken $access_token -isResource -NoVerify
             }
             # If the Token is a Managed Identity Token
             { $_ -eq 'ManagedIdentity' } {
                 Write-Verbose "[AzDevOpsDscResourceBase] Token type is Managed Identity."
                 New-AzDoAuthenticationProvider -OrganizationName $organizationName -useManagedIdentity -isResource -NoVerify
+            }
+            # If the Token is a Service Principal Token (client secret)
+            { $_ -eq 'ServicePrincipal' } {
+                Write-Verbose "[AzDevOpsDscResourceBase] Token type is Service Principal."
+                New-AzDoAuthenticationProvider `
+                    -OrganizationName $organizationName `
+                    -TenantId $tokenObject.tenantId `
+                    -ClientId $tokenObject.clientId `
+                    -SecureStringClientSecret ([SecureString]$tokenObject.clientSecret) `
+                    -isResource -NoVerify
+            }
+            # If the Token is a Certificate Token (service principal with cert)
+            { $_ -eq 'Certificate' } {
+                Write-Verbose "[AzDevOpsDscResourceBase] Token type is Certificate."
+                if (-not [String]::IsNullOrEmpty($tokenObject.certificateThumbprint))
+                {
+                    New-AzDoAuthenticationProvider `
+                        -OrganizationName $organizationName `
+                        -TenantId $tokenObject.tenantId `
+                        -ClientId $tokenObject.clientId `
+                        -CertificateThumbprint $tokenObject.certificateThumbprint `
+                        -isResource -NoVerify
+                }
+                else
+                {
+                    New-AzDoAuthenticationProvider `
+                        -OrganizationName $organizationName `
+                        -TenantId $tokenObject.tenantId `
+                        -ClientId $tokenObject.clientId `
+                        -CertificatePath $tokenObject.certificatePath `
+                        -CertificatePassword ([SecureString]$tokenObject.certificatePassword) `
+                        -isResource -NoVerify
+                }
+            }
+            # If the Token is an Azure CLI Token
+            { $_ -eq 'AzureCLI' } {
+                Write-Verbose "[AzDevOpsDscResourceBase] Token type is Azure CLI."
+                New-AzDoAuthenticationProvider -OrganizationName $organizationName -useAzureCLI -isResource -NoVerify
             }
             # Default
             default {
