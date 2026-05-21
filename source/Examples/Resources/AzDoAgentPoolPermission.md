@@ -1,10 +1,11 @@
-# DSC AzDoGroupPermission Resource
+# DSC AzDoAgentPoolPermission Resource
 
 ## Syntax
 
 ```PowerShell
-AzDoGroupPermission [string] #ResourceName
+AzDoAgentPoolPermission [string] #ResourceName
 {
+    PoolName      = [String]$PoolName
     GroupName     = [String]$GroupName
     [ isInherited = [Boolean]$isInherited ]
     [ Permissions = [HashTable[]]$Permissions ]
@@ -15,11 +16,10 @@ AzDoGroupPermission [string] #ResourceName
 ## Permissions Syntax
 
 ``` PowerShell
-AzDoGroupPermission/Permissions
+AzDoAgentPoolPermission/Permissions
 {
     Identity   = [String]$Identity # Syntax
     #   SYNTAX:     '[ProjectName | OrganizationName]\ServicePrincipalName, UserPrincipalName, UserDisplayName, GroupDisplayName'
-    #   ALTERNATIVE: 'this' refers to the group itself.
     #   EXAMPLE:    '[TestProject]\UserName@email.com'
     #   EXAMPLE:    '[SampleOrganizationName]\Project Collection Administrators'
     Permission = [Hashtable]$Permissions # See 'Permission List'
@@ -29,7 +29,7 @@ AzDoGroupPermission/Permissions
 ## Permission Usage
 
 ``` PowerShell
-AzDoGroupPermission/Permissions/Permission
+AzDoAgentPoolPermission/Permissions/Permission
 {
     PermissionName|PermissionDisplayName = [String]$Name { 'Allow, Deny' }
 }
@@ -41,45 +41,45 @@ AzDoGroupPermission/Permissions/Permission
 
 | Name | DisplayName | Values | Note |
 | ---- | ----------- | ------ | ---- |
-| Read | View identity information | [ allow, deny ] | |
-| Write | Edit identity information | [ allow, deny ] | |
-| Delete | Delete identity information | [ allow, deny ] | |
-| ManageMembership | Manage group membership | [ allow, deny ] | |
-| CreateScope | Create identity scopes | [ allow, deny ] | |
-| RestoreScope | Restore identity scopes | [ allow, deny ] | |
+| Use | Use | [ allow, deny ] | |
+| Manage | Manage | [ allow, deny ] | Not recommended. |
+| Create | Create | [ allow, deny ] | |
+| ViewAuthorization | View Authorization | [ allow, deny ] | |
+| ManagePermissions | Manage Permissions | [ allow, deny ] | Not recommended. |
 
 ## Properties
 
 ### Common Properties
 
-- **GroupName**: The name of the Azure DevOps group. This property is mandatory and serves as the key property for the resource. Use the format `[ProjectName]\GroupName`.
+- **PoolName**: The name of the agent pool. This property is mandatory and serves as the key property for the resource.
+- **GroupName**: The name of the group to grant permissions to. This is a key property. Use the format `[ProjectName]\GroupName` or `[TEAM FOUNDATION]\GroupName` for organization-level groups.
 - **isInherited**: Whether permissions are inherited. Defaults to `$true`.
 - **Permissions**: A HashTable that specifies the permissions to be set. Refer to: 'Permissions Syntax'.
 - **Ensure**: Specifies whether the permissions should exist. Valid values are `Present` and `Absent`.
 
 ## Additional Information
 
-This resource manages permissions on Azure DevOps groups (identity security namespace), controlling what operations can be performed on the group itself such as managing membership or viewing group information.
+This resource manages security permissions on Azure DevOps agent pools, controlling which groups or users can use or administer the pool.
 
 ## Examples
 
-## Example 1: Sample Configuration using AzDoGroupPermission Resource
+## Example 1: Sample Configuration using AzDoAgentPoolPermission Resource
 
 ``` PowerShell
 Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
     Node localhost {
-        AzDoGroupPermission AddGroupPermission {
+        AzDoAgentPoolPermission AddAgentPoolPermission {
             Ensure      = 'Present'
-            GroupName   = '[MyProject]\Readers'
+            PoolName    = 'MyPool'
+            GroupName   = '[MyProject]\Contributors'
             isInherited = $true
             Permissions = @(
                 @{
-                    Identity   = '[MyProject]\Readers'
+                    Identity   = '[MyProject]\Contributors'
                     Permission = @{
-                        'Read'            = 'Allow'
-                        'ManageMembership' = 'Deny'
+                        'Use' = 'Allow'
                     }
                 }
             )
@@ -93,21 +93,22 @@ Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ## Example 2: Sample Configuration using Invoke-DSCResource
 
 ``` PowerShell
-# Return the current configuration for AzDoGroupPermission
+# Return the current configuration for AzDoAgentPoolPermission
 $properties = @{
-    GroupName   = '[MyProject]\Readers'
+    PoolName    = 'MyPool'
+    GroupName   = '[MyProject]\Contributors'
     isInherited = $true
     Permissions = @(
         @{
-            Identity   = '[MyProject]\Readers'
+            Identity   = '[MyProject]\Contributors'
             Permission = @{
-                'Read' = 'Allow'
+                'Use' = 'Allow'
             }
         }
     )
 }
 
-Invoke-DscResource -Name 'AzDoGroupPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoAgentPoolPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -116,22 +117,23 @@ Invoke-DscResource -Name 'AzDoGroupPermission' -Method Get -Property $properties
 parameters: {}
 
 variables: {
-  ProjectName: MyProject
+  ProjectName: MyProject,
+  PoolName: MyPool
 }
 
 resources:
-- name: Readers Group Permission
-  type: AzureDevOpsDsc/AzDoGroupPermission
+- name: Agent Pool Contributors Permission
+  type: AzureDevOpsDsc/AzDoAgentPoolPermission
   dependsOn:
-    - AzureDevOpsDsc/AzDoProjectGroup/Readers
+    - AzureDevOpsDsc/AzDoAgentPool/MyPool
   properties:
-    GroupName: '[$ProjectName]\Readers'
+    PoolName: $PoolName
+    GroupName: '[$ProjectName]\Contributors'
     isInherited: true
     Permissions:
-      - Identity: '[$ProjectName]\Readers'
+      - Identity: '[$ProjectName]\Contributors'
         Permission:
-          Read: Allow
-          ManageMembership: Deny
+          Use: Allow
     Ensure: Present
 ```
 

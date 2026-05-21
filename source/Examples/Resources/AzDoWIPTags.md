@@ -5,8 +5,8 @@
 ```PowerShell
 AzDoWIPTags [string] #ResourceName
 {
-    ProjectName = [String]$ProjectName
-    WorkItemTrackingTagList = [String[]]$WorkItemTrackingTagList
+    ProjectName                 = [String]$ProjectName
+    WorkItemTrackingTagList     = [String[]]$WorkItemTrackingTagList
 }
 ```
 
@@ -14,68 +14,69 @@ AzDoWIPTags [string] #ResourceName
 
 ### Common Properties
 
-- **ProjectName**: The name of the Azure DevOps project associated with this group. This property is mandatory.
-- **WorkItemTrackingTagList**: An array of Tags to track.
+- **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+- **WorkItemTrackingTagList**: An array of work item tracking tags to manage within the project.
 
 ## Additional Information
 
-The AzDoWIPTags class is a DSC (Desired State Configuration) resource used for managing work item tags in Azure DevOps projects. It enables the creation, deletion, and listing of work item tags within a specified project.
+This resource manages work item tracking tags in Azure DevOps projects using Desired State Configuration (DSC). It enables the creation and management of tags that can be applied to work items within a specified project.
 
-### Example 1: Sample Configuration using AzDoWIPTags Resource
+## Examples
+
+## Example 1: Sample Configuration using AzDoWIPTags Resource
 
 ``` PowerShell
-    configuration ExampleConfig {
-        Import-DscResource -ModuleName AzDevOpsDsc
+Configuration ExampleConfig {
+    Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
-        Node 'localhost' {
-            AzDoWIPTags AzDoWIPTagsExample {
-                ProjectName              = "MyAzureDevOpsProject"
-                WorkItemTrackingTagList  = @("Bug", "Feature", "Improvement")
-            }
+    Node localhost {
+        AzDoWIPTags AddWIPTags {
+            ProjectName             = 'MyProject'
+            WorkItemTrackingTagList = @('Bug', 'Feature', 'Improvement')
         }
     }
-
-    # To apply the configuration:
-    ExampleConfig -OutputPath "C:\DSC\ExampleConfig"
-    Start-DscConfiguration -Path "C:\DSC\ExampleConfig" -Wait -Verbose
-```
-
-### Example 2: Sample Configuration using Invoke-DSCResource
-
-```PowerShell
-# Return the current configuration for AzDoProjectServices
-# Ensure is not required
-$properties = @{
-    ProjectName      = 'SampleProject'
-    WorkItemTrackingTagList  = @("Bug", "Feature", "Improvement")
 }
 
-Invoke-DSCResource -Name 'AzDoWIPTags' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ```
 
-### Example 3: Sample Configuration using AzDO-DSC-LCM
+## Example 2: Sample Configuration using Invoke-DSCResource
 
-```YAML
+``` PowerShell
+# Return the current configuration for AzDoWIPTags
+$properties = @{
+    ProjectName             = 'MyProject'
+    WorkItemTrackingTagList = @('Bug', 'Feature', 'Improvement')
+}
+
+Invoke-DscResource -Name 'AzDoWIPTags' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+```
+
+## Example 3: Sample Configuration using AzDO-DSC-LCM
+
+``` YAML
 parameters: {}
 
 variables: {
-   "PlaceHolder2": "PlaceHolder"  
+  ProjectName: MyProject
 }
 
 resources:
-- name: Sample Project Services
-  type: AzureDevOpsDsc/AzDoProjectServices
+- name: Work Item Tags
+  type: AzureDevOpsDsc/AzDoWIPTags
+  dependsOn:
+    - AzureDevOpsDsc/AzDoProject/MyProject
   properties:
-    ProjectName: SampleProject
-    WorkItemTrackingTagList: 
-        "Bug",
-        "Feature",
-        "Improvement"
+    ProjectName: $ProjectName
+    WorkItemTrackingTagList:
+      - Bug
+      - Feature
+      - Improvement
 ```
 
 LCM Initialization:
 
-```PowerShell
+``` PowerShell
 
 $params = @{
     AzureDevopsOrganizationName = "SampleAzDoOrgName"
