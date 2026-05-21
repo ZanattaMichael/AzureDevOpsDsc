@@ -1,14 +1,15 @@
 # DSC AzDoGitPermission Resource
 
-# Syntax
+## Syntax
 
 ``` PowerShell
 AzDoGitPermission [string] #ResourceName
 {
-    ProjectName = [String]$ProjectName
-    [ RepositoryName = [String]$RepositoryName ]
-    Permissions = [HashTable]$Permissions # See Permissions Syntax
-    [ Ensure = [String] {'Present', 'Absent'}]
+    ProjectName          = [String]$ProjectName
+    [ RepositoryName     = [String]$RepositoryName ]
+    [ isInherited        = [Boolean]$isInherited ]
+    [ Permissions        = [HashTable[]]$Permissions ]
+    [ Ensure             = [String] {'Present', 'Absent'} ]
 }
 ```
 
@@ -19,11 +20,11 @@ The `RepositoryName` property is optional. If it is not provided, the Git permis
 ``` PowerShell
 AzDoGitPermission/Permissions
 {
-    Identity = [String]$Identity # Syntax
+    Identity   = [String]$Identity # Syntax
     #   SYNTAX:     '[ProjectName | OrganizationName]\ServicePrincipalName, UserPrincipalName, UserDisplayName, GroupDisplayName'
     #   EXAMPLE:    '[TestProject]\UserName@email.com'
     #   EXAMPLE:    '[SampleOrganizationName]\Project Collection Administrators'
-    Permission = [Hashtable[]]$Permissions # See 'Permission List"
+    Permission = [Hashtable]$Permissions # See 'Permission List'
 }
 ```
 
@@ -34,68 +35,68 @@ AzDoGitPermission/Permissions/Permission
 {
     PermissionName|PermissionDisplayName = [String]$Name { 'Allow, Deny' }
 }
-
 ```
 
 ## Permission List
 
 > Either 'Name' or 'DisplayName' can be used, but we Strongly Recommend that you use 'Name' in your configuration.
 
-| Name      | DisplayName      | Values | Note |
-| ------------- | ------------- | - | - |
-|Administer  |            Administer   | [ allow, deny ] | Not recommended. |
-|GenericRead |            Read         | [ allow, deny ] | |
-|GenericContribute |      Contribute | [ allow, deny ] | |
-|ForcePush         |      Force push (rewrite history, delete branches and tags) | [ allow, deny ] | |
-|CreateBranch      |     Create branch                                          |[ allow, deny ] | |
-|CreateTag         |      Create tag                                            | [ allow, deny ] | |
-|ManageNote        |      Manage notes                                          | [ allow, deny ] | |
-|PolicyExempt      |      Bypass policies when pushing                          | [ allow, deny ] | |
-|CreateRepository  |      Create repository                                     | [ allow, deny ] | |
-|DeleteRepository  |      Delete or disable repository                          | [ allow, deny ] | |
-|RenameRepository  |      Rename repository                                     | [ allow, deny ] | |
-|EditPolicies      |      Edit policies                                         | [ allow, deny ] | |
-|RemoveOthersLocks |      Remove others' locks                                  | [ allow, deny ] | |
-|ManagePermissions |      Manage permissions                                    | [ allow, deny ] | |
-|PullRequestContribute |   Contribute to pull requests                          |  [ allow, deny ] | |
-|PullRequestBypassPolicy | Bypass policies when completing pull requests        |  [ allow, deny ] | |
-|ViewAdvSecAlerts      |  Advanced Security: view alerts                        | [ allow, deny ] | |
-|DismissAdvSecAlerts   |  Advanced Security: manage and dismiss alerts          | [ allow, deny ] | |
-|ManageAdvSecScanning  |  Advanced Security: manage settings                    | [ allow, deny ] | |
+| Name | DisplayName | Values | Note |
+| ---- | ----------- | ------ | ---- |
+| Administer | Administer | [ allow, deny ] | Not recommended. |
+| GenericRead | Read | [ allow, deny ] | |
+| GenericContribute | Contribute | [ allow, deny ] | |
+| ForcePush | Force push (rewrite history, delete branches and tags) | [ allow, deny ] | |
+| CreateBranch | Create branch | [ allow, deny ] | |
+| CreateTag | Create tag | [ allow, deny ] | |
+| ManageNote | Manage notes | [ allow, deny ] | |
+| PolicyExempt | Bypass policies when pushing | [ allow, deny ] | Not recommended. |
+| CreateRepository | Create repository | [ allow, deny ] | |
+| DeleteRepository | Delete or disable repository | [ allow, deny ] | Not recommended. |
+| RenameRepository | Rename repository | [ allow, deny ] | |
+| EditPolicies | Edit policies | [ allow, deny ] | |
+| RemoveOthersLocks | Remove others' locks | [ allow, deny ] | |
+| ManagePermissions | Manage permissions | [ allow, deny ] | Not recommended. |
+| PullRequestContribute | Contribute to pull requests | [ allow, deny ] | |
+| PullRequestBypassPolicy | Bypass policies when completing pull requests | [ allow, deny ] | Not recommended. |
+| ViewAdvSecAlerts | Advanced Security: view alerts | [ allow, deny ] | |
+| DismissAdvSecAlerts | Advanced Security: manage and dismiss alerts | [ allow, deny ] | |
+| ManageAdvSecScanning | Advanced Security: manage settings | [ allow, deny ] | |
 
-# Common Properties
+## Properties
 
-- __ProjectName__: The name of the Azure DevOps project.
-- __RepositoryName__: The name of the Git repository within the project.
-- __Permissions__: A HashTable that specifies the permissions to be set. Refer to: 'Permissions Syntax'.
-- __Ensure__: Specifies whether the repository should exist. Defaults to 'Absent'.
+### Common Properties
 
-# Additional Information
+- **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+- **RepositoryName**: The name of the Git repository within the project. If omitted, permissions apply at the project-level Git node.
+- **isInherited**: Whether permissions are inherited from parent objects. Defaults to `$true`.
+- **Permissions**: A HashTable that specifies the permissions to be set. Refer to: 'Permissions Syntax'.
+- **Ensure**: Specifies whether the permissions should exist. Valid values are `Present` and `Absent`.
 
-This resource allows you to manage Azure DevOps projects using Desired State Configuration (DSC).
-It includes properties for specifying the project name, description, source control type, process template, and visibility.
+## Additional Information
 
-# Examples
+This resource manages Git repository security permissions in Azure DevOps, controlling what actions groups or users can perform on a specific repository or at the project-level Git node.
+
+## Examples
 
 ## Example 1: Sample Configuration using AzDoGitPermission Resource
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
     Node localhost {
-        AzDoGitPermission GitPermission {
-            Ensure             = 'Present'
-            ProjectName        = 'SampleProject'
-            RepositoryName     = 'SampleGitRepository'
-            isInherited        = $true
-            Permissions        = @(
+        AzDoGitPermission AddGitPermission {
+            Ensure         = 'Present'
+            ProjectName    = 'MyProject'
+            RepositoryName = 'MyRepository'
+            isInherited    = $true
+            Permissions    = @(
                 @{
-                    Identity = '[ProjectName]\GroupName'
-                    Permissions = @{
-                        Read = 'Allow'
-                        ManageNote = 'Allow'
-                        Contribute = 'Deny'
+                    Identity   = '[MyProject]\Contributors'
+                    Permission = @{
+                        'GenericRead'        = 'Allow'
+                        'GenericContribute'  = 'Allow'
                     }
                 }
             )
@@ -103,79 +104,55 @@ Configuration ExampleConfig {
     }
 }
 
-ExampleConfig
 Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
-
 ```
 
 ## Example 2: Sample Configuration using Invoke-DSCResource
 
 ``` PowerShell
 # Return the current configuration for AzDoGitPermission
-# Ensure is not required
 $properties = @{
-    ProjectName        = 'SampleProject'
-    RepositoryName     = 'SampleGitRepository'
-    isInherited        = $true
-    Permissions        = @(
-                                @{
-                                    Identity = '[ProjectName]\GroupName'
-                                    Permissions = @{
-                                        Read = 'Allow'
-                                        ManageNote = 'Allow'
-                                        Contribute = 'Deny'
-                                    }
-                                }
-                        )
+    ProjectName    = 'MyProject'
+    RepositoryName = 'MyRepository'
+    isInherited    = $true
+    Permissions    = @(
+        @{
+            Identity   = '[MyProject]\Contributors'
+            Permission = @{
+                'GenericRead' = 'Allow'
+            }
+        }
+    )
 }
 
-Invoke-DSCResource -Name 'AzDoGitPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoGitPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
 ```
 
-## Example 3: Sample Configuration to clear permissions for an identity within a group
-
-``` PowerShell
-# Remove all group members from the group.
-$properties = @{
-    ProjectName        = 'SampleProject'
-    RepositoryName     = 'SampleGitRepository'
-    isInherited        = $true
-    Permissions        = @(
-                                @{
-                                    Identity = '[ProjectName]\GroupName'
-                                    Permissions = @{}
-                                }
-                        )
-}
-
-Invoke-DSCResource -Name 'AzDoGitPermission' -Method Set -Property $properties -ModuleName 'AzureDevOpsDsc'
-```
-
-## Example 4: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using AzDO-DSC-LCM
 
 ``` YAML
 parameters: {}
 
 variables: {
-  ProjectName: SampleProject,
-  RepositoryName: SampleRepository
+  ProjectName: MyProject,
+  RepositoryName: MyRepository
 }
 
 resources:
-
-  - name: SampleGroup Permissions
-    type: AzureDevOpsDsc/AzDoGitPermission
-    dependsOn: 
-        - AzureDevOpsDsc/AzDoProjectGroup/SampleGroupReadAccess
-    properties:
-      projectName: $ProjectName
-      RepositoryName: $RepositoryName
-      isInherited: false
-      Permissions:
-        - Identity: '[$ProjectName]\SampleGroupReadAccess'
-          Permission:
-            Read: "Allow"
-            ManageNote: "Allow"   
+- name: Repository Contributors Permissions
+  type: AzureDevOpsDsc/AzDoGitPermission
+  dependsOn:
+    - AzureDevOpsDsc/AzDoGitRepository/MyRepository
+  properties:
+    ProjectName: $ProjectName
+    RepositoryName: $RepositoryName
+    isInherited: true
+    Permissions:
+      - Identity: '[$ProjectName]\Contributors'
+        Permission:
+          GenericRead: Allow
+          GenericContribute: Allow
+    Ensure: Present
 ```
 
 LCM Initialization:
@@ -193,31 +170,4 @@ $params = @{
 }
 
 Invoke-AzDoLCM @params
-
-```
-
-## Example 5: Sample Configuration using AzDO-DSC-LCM setting Project Permissions
-
-``` YAML
-parameters: {}
-
-variables: {
-  ProjectName: SampleProject,
-  RepositoryName: SampleRepository
-}
-
-resources:
-
-  - name: Project-Level Git Permissions Sample
-    type: AzureDevOpsDsc/AzDoGitPermission
-    dependsOn: 
-        - AzureDevOpsDsc/AzDoProjectGroup/SampleGroupReadAccess
-    properties:
-      projectName: $ProjectName
-      isInherited: false
-      Permissions:
-        - Identity: '[$ProjectName]\SampleGroupReadAccess'
-          Permission:
-            Read: "Allow"
-            ManageNote: "Allow"   
 ```
