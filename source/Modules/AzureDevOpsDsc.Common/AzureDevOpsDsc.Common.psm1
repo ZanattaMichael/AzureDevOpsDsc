@@ -30,8 +30,9 @@ $functionSubDirectoryPaths = @(
     "$ModuleRoot\Api\Functions\Private\Api",
     "$ModuleRoot\Api\Functions\Private\Cache",
     "$ModuleRoot\Api\Functions\Private\Helper",
-    "$ModuleRoot\Api\Functions\Private\Cache\Cache Initalization"
-    "$ModuleRoot\Api\Functions\Private\Authentication"
+    "$ModuleRoot\Api\Functions\Private\Command\ClassificationNode",
+    "$ModuleRoot\Api\Functions\Private\Cache\Cache Initalization",
+    "$ModuleRoot\Api\Functions\Private\Authentication",
 
     # Connection
     "$ModuleRoot\Connection\Functions\Private",

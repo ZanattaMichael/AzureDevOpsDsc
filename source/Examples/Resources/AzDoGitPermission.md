@@ -1,27 +1,30 @@
 # DSC AzDoGitPermission Resource
 
-# Syntax
+## Syntax
 
 ``` PowerShell
 AzDoGitPermission [string] #ResourceName
 {
-    ProjectName = [String]$ProjectName
-    RepositoryName = [String]$RepositoryName
-    Permissions = [HashTable]$Permissions # See Permissions Syntax
-    [ Ensure = [String] {'Present', 'Absent'}]
+    ProjectName          = [String]$ProjectName
+    [ RepositoryName     = [String]$RepositoryName ]
+    [ isInherited        = [Boolean]$isInherited ]
+    [ Permissions        = [HashTable[]]$Permissions ]
+    [ Ensure             = [String] {'Present', 'Absent'} ]
 }
 ```
+
+The `RepositoryName` property is optional. If it is not provided, the Git permissions will be applied at the project-level.
 
 ## Permissions Syntax
 
 ``` PowerShell
 AzDoGitPermission/Permissions
 {
-    Identity = [String]$Identity # Syntax
+    Identity   = [String]$Identity # Syntax
     #   SYNTAX:     '[ProjectName | OrganizationName]\ServicePrincipalName, UserPrincipalName, UserDisplayName, GroupDisplayName'
     #   EXAMPLE:    '[TestProject]\UserName@email.com'
     #   EXAMPLE:    '[SampleOrganizationName]\Project Collection Administrators'
-    Permission = [Hashtable[]]$Permissions # See 'Permission List"
+    Permission = [Hashtable]$Permissions # See 'Permission List'
 }
 ```
 
@@ -32,7 +35,6 @@ AzDoGitPermission/Permissions/Permission
 {
     PermissionName|PermissionDisplayName = [String]$Name { 'Allow, Deny' }
 }
-
 ```
 
 ## Permission List
@@ -79,21 +81,20 @@ It includes properties for specifying the project name, repository name, permiss
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
     Node localhost {
-        AzDoGitPermission GitPermission {
-            Ensure             = 'Present'
-            ProjectName        = 'SampleProject'
-            RepositoryName     = 'SampleGitRepository'
-            isInherited        = $true
-            Permissions        = @(
+        AzDoGitPermission AddGitPermission {
+            Ensure         = 'Present'
+            ProjectName    = 'MyProject'
+            RepositoryName = 'MyRepository'
+            isInherited    = $true
+            Permissions    = @(
                 @{
-                    Identity = '[ProjectName]\GroupName'
-                    Permissions = @{
-                        Read = 'Allow'
-                        ManageNote = 'Allow'
-                        Contribute = 'Deny'
+                    Identity   = '[MyProject]\Contributors'
+                    Permission = @{
+                        'GenericRead'        = 'Allow'
+                        'GenericContribute'  = 'Allow'
                     }
                 }
             )
@@ -101,79 +102,55 @@ Configuration ExampleConfig {
     }
 }
 
-ExampleConfig
 Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
-
 ```
 
 ## Example 2: Sample Configuration using Invoke-DSCResource
 
 ``` PowerShell
 # Return the current configuration for AzDoGitPermission
-# Ensure is not required
 $properties = @{
-    ProjectName        = 'SampleProject'
-    RepositoryName     = 'SampleGitRepository'
-    isInherited        = $true
-    Permissions        = @(
-                                @{
-                                    Identity = '[ProjectName]\GroupName'
-                                    Permissions = @{
-                                        Read = 'Allow'
-                                        ManageNote = 'Allow'
-                                        Contribute = 'Deny'
-                                    }
-                                }
-                        )
+    ProjectName    = 'MyProject'
+    RepositoryName = 'MyRepository'
+    isInherited    = $true
+    Permissions    = @(
+        @{
+            Identity   = '[MyProject]\Contributors'
+            Permission = @{
+                'GenericRead' = 'Allow'
+            }
+        }
+    )
 }
 
-Invoke-DSCResource -Name 'AzDoGitPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoGitPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
 ```
 
-## Example 3: Sample Configuration to clear permissions for an identity within a group
-
-``` PowerShell
-# Remove all group members from the group.
-$properties = @{
-    ProjectName        = 'SampleProject'
-    RepositoryName     = 'SampleGitRepository'
-    isInherited        = $true
-    Permissions        = @(
-                                @{
-                                    Identity = '[ProjectName]\GroupName'
-                                    Permissions = @{}
-                                }
-                        )
-}
-
-Invoke-DSCResource -Name 'AzDoGitPermission' -Method Set -Property $properties -ModuleName 'AzureDevOpsDsc'
-```
-
-## Example 4: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using AzDO-DSC-LCM
 
 ``` YAML
 parameters: {}
 
 variables: {
-  ProjectName: SampleProject,
-  RepositoryName: SampleRepository
+  ProjectName: MyProject,
+  RepositoryName: MyRepository
 }
 
 resources:
-
-  - name: SampleGroup Permissions
-    type: AzureDevOpsDsc/AzDoGitPermission
-    dependsOn: 
-        - AzureDevOpsDsc/AzDoProjectGroup/SampleGroupReadAccess
-    properties:
-      projectName: $ProjectName
-      RepositoryName: $RepositoryName
-      isInherited: false
-      Permissions:
-        - Identity: '[$ProjectName]\SampleGroupReadAccess'
-          Permission:
-            Read: "Allow"
-            ManageNote: "Allow"   
+- name: Repository Contributors Permissions
+  type: AzureDevOpsDsc/AzDoGitPermission
+  dependsOn:
+    - AzureDevOpsDsc/AzDoGitRepository/MyRepository
+  properties:
+    ProjectName: $ProjectName
+    RepositoryName: $RepositoryName
+    isInherited: true
+    Permissions:
+      - Identity: '[$ProjectName]\Contributors'
+        Permission:
+          GenericRead: Allow
+          GenericContribute: Allow
+    Ensure: Present
 ```
 
 LCM Initialization:
@@ -191,5 +168,4 @@ $params = @{
 }
 
 Invoke-AzDoLCM @params
-
 ```

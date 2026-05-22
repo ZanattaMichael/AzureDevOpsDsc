@@ -26,6 +26,8 @@ Describe 'Get-AzDoGitPermission Tests' {
         . (Get-ClassFilePath 'DSCGetSummaryState')
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         Function Mock-Get-CacheItem {
             param (
@@ -35,6 +37,7 @@ Describe 'Get-AzDoGitPermission Tests' {
             switch ($Type) {
                 'LiveRepositories' { return @{ id = 123; Name = "TestRepository" } }
                 'SecurityNamespaces' { return @{ namespaceId = "TestNamespaceId" } }
+                'LiveProjects' { return @{ id = 123; Name = "TestProject" } }
                 default { return $null }
             }
         }
@@ -132,6 +135,21 @@ Describe 'Get-AzDoGitPermission Tests' {
         $result.propertiesChanged | Should -BeNullOrEmpty
     }
 
+    it "Should return 'Error' if the project enumeration is null" {
+        Mock -CommandName Get-CacheItem -MockWith { return $null } -ParameterFilter { $Type -eq 'LiveProjects' }
+
+        $ProjectName = 'TestProject'
+        $RepositoryName = 'TestRepository'
+        $isInherited = $true
+        $Permissions = @(@{ 'Permission' = 'Allow' })
+
+        $result = Get-AzDoGitPermission -ProjectName $ProjectName -RepositoryName $RepositoryName -isInherited $isInherited -Permissions $Permissions
+
+        $result | Should -Not -BeNullOrEmpty
+        $result.status | Should -Be 'Error'
+
+    }
+
     It "Should returned 'Changed' if one of the permissions is null" {
         $ProjectName = 'TestProject'
         $RepositoryName = 'TestRepository'
@@ -159,11 +177,12 @@ Describe 'Get-AzDoGitPermission Tests' {
         $result | Should -Not -BeNullOrEmpty
         $result.status | Should -Be 'NotFound'
         $result.propertiesChanged | Should -BeNullOrEmpty
+
     }
 
-    It "Should return 'NotFound' if Get-DevOpsACL is null" {
+    It "Should return 'Error' if Get-DevOpsACL is null" {
         Mock -CommandName Get-DevOpsACL -MockWith { return $null }
-        Mock -CommandName Write-Warning -Verifiable
+        Mock -CommandName Write-Error
 
         $ProjectName = 'TestProject'
         $RepositoryName = 'TestRepository'
@@ -173,8 +192,8 @@ Describe 'Get-AzDoGitPermission Tests' {
         $result = Get-AzDoGitPermission -ProjectName $ProjectName -RepositoryName $RepositoryName -isInherited $isInherited -Permissions $Permissions
 
         $result | Should -Not -BeNullOrEmpty
-        $result.status | Should -Be 'NotFound'
-        Assert-VerifiableMock
+        $result.status | Should -Be 'Error'
+
     }
 
     It "Should return 'NotFound' if ConvertTo-FormattedACL is null" {

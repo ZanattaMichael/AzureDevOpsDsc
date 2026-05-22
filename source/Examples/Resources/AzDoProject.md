@@ -1,44 +1,44 @@
 # DSC AzDoProject Resource
 
-# Syntax
+## Syntax
 
 ``` PowerShell
 AzDoProject [string] #ResourceName
 {
-    ProjectName = [String]$ProjectName
-    [ Ensure = [String] {'Present', 'Absent'}]
-    [ ProjectDescription = [String]$ProjectDescription]
-    [ SourceControlType = [String] {'Git', 'Tfvc'}]
-    [ ProcessTemplate = [String] {'Agile', 'Scrum', 'CMMI', 'Basic'}]
-    [ Visibility = [String] {'Public', 'Private'}]
+    ProjectName              = [String]$ProjectName
+    [ Ensure                 = [String] {'Present', 'Absent'} ]
+    [ ProjectDescription     = [String]$ProjectDescription ]
+    [ SourceControlType      = [String] {'Git', 'Tfvc'} ]
+    [ ProcessTemplate        = [String] {'Agile', 'Scrum', 'CMMI', 'Basic'} ]
+    [ Visibility             = [String] {'Public', 'Private'} ]
 }
 ```
 
-# Properties
+## Properties
 
-Common Properties:
+### Common Properties
 
-- __ProjectName__: The name of the Azure DevOps project.
-- __ProjectDescription__: A description for the Azure DevOps project.
-- __SourceControlType__: The type of source control (Git or Tfvc). Default is Git.
-- __ProcessTemplate__: The process template to use (Agile, Scrum, CMMI, Basic). Default is Agile.
-- __Visibility__: The visibility of the project (Public or Private). Default is Private.
+- **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+- **ProjectDescription**: A description for the Azure DevOps project.
+- **SourceControlType**: The type of source control (`Git` or `Tfvc`). Defaults to `Git`.
+- **ProcessTemplate**: The process template to use (`Agile`, `Scrum`, `CMMI`, `Basic`). Defaults to `Agile`.
+- **Visibility**: The visibility of the project (`Public` or `Private`). Defaults to `Private`.
+- **Ensure**: Specifies whether the project should exist. Valid values are `Present` and `Absent`.
 
-# Additional Information
+## Additional Information
 
-This resource is used to manage Azure DevOps projects using Desired State Configuration (DSC).
-It allows you to define the properties of an Azure DevOps project and ensures that the project is configured according to those properties.
+This resource manages Azure DevOps projects using Desired State Configuration (DSC). It allows you to define project properties such as source control type, process template, and visibility, ensuring the project is configured to the desired state.
 
-# Examples
+## Examples
 
-## Example 1: Sample Configuration for Azure DevOps Project using AzDoProject Resource
+## Example 1: Sample Configuration using AzDoProject Resource
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDsc'
 
     Node localhost {
-        AzDoProject ProjectExample {
+        AzDoProject AddProject {
             Ensure             = 'Present'
             ProjectName        = 'MySampleProject'
             ProjectDescription = 'This is a sample Azure DevOps project.'
@@ -49,12 +49,10 @@ Configuration ExampleConfig {
     }
 }
 
-ExampleConfig
 Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
-
 ```
 
-## Example 2: Sample Configuration for Azure DevOps Project using Invoke-DSCResource
+## Example 2: Sample Configuration using Invoke-DSCResource
 
 ``` PowerShell
 # Return the current configuration for AzDoProject
@@ -79,29 +77,29 @@ $properties = @{
     Ensure                  = 'Absent'
 }
 
-Invoke-DSCResource -Name 'AzDoProject' -Method Set -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoProject' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
 ```
 
-## Example 4: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using AzDO-DSC-LCM
 
 ``` YAML
 parameters: {}
 
 variables: {
-  ProjectName: SampleProject,
-  ProjectDescription: This is a SampleProject!   
+  ProjectName: MySampleProject,
+  ProjectDescription: This is a sample Azure DevOps project
 }
 
 resources:
-
-  - name: Project
-    type: AzureDevOpsDsc/AzDoProject
-    properties:
-      projectName: $ProjectName
-      projectDescription: $ProjectDescription
-      visibility: private
-      SourceControlType: Git
-      ProcessTemplate: Agile
+- name: My Sample Project
+  type: AzureDevOpsDsc/AzDoProject
+  properties:
+    ProjectName: $ProjectName
+    ProjectDescription: $ProjectDescription
+    SourceControlType: Git
+    ProcessTemplate: Agile
+    Visibility: Private
+    Ensure: Present
 ```
 
 LCM Initialization:
@@ -119,5 +117,4 @@ $params = @{
 }
 
 Invoke-AzDoLCM @params
-
 ```

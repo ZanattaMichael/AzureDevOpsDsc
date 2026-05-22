@@ -19,6 +19,8 @@ Describe "Refresh-AzDoCache Tests" -Tags "Unit", "Cache" {
         }
 
         . (Get-ClassFilePath '000.CacheItem')
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         # Mock the Get-Command cmdlet to return a list of commands matching the pattern
         Mock -CommandName Get-Command -MockWith {

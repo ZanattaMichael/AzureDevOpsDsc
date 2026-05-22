@@ -15,6 +15,9 @@ Describe 'AzDoAPI_8_ProjectProcessTemplates' -Tags "Unit", "Cache" {
             . $file.FullName
         }
 
+        # Load Get-AzDoCacheObjects
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
+
         $mockOrganizationName = 'TestOrg'
         $mockProcesses = @(
             [PSCustomObject]@{ name = 'Process1' },
