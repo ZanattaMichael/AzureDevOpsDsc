@@ -8,6 +8,7 @@ AzDoProjectGroup [string] #ResourceName
     GroupName = [String]$GroupName
     ProjectName = [String]$ProjectName
     [ GroupDescription = [String]$GroupDescription ]
+    [ Ensure = [String] {'Present', 'Absent'} ]
 }
 ```
 
@@ -18,6 +19,7 @@ AzDoProjectGroup [string] #ResourceName
 - **GroupName**: The name of the project group. This property is mandatory and serves as the key property for the resource.
 - **ProjectName**: The name of the Azure DevOps project associated with this group. This property is mandatory.
 - **GroupDescription**: A description of the project group.
+- **Ensure**: Specifies whether the project group should exist. Defaults to 'Present'.
 
 ## Additional Information
 

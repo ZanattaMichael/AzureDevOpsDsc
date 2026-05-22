@@ -56,12 +56,25 @@ Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 
 ``` PowerShell
 # Return the current configuration for AzDoProject
+# Ensure is not required
 $properties = @{
-    ProjectName        = 'MySampleProject'
-    ProjectDescription = 'This is a sample Azure DevOps project'
-    SourceControlType  = 'Git'
-    ProcessTemplate    = 'Agile'
-    Visibility         = 'Private'
+    ProjectName             = 'MySampleProject'
+    ProjectDescription      = 'This is a sample Azure DevOps project'
+    SourceControlType       = 'Git'
+    ProcessTemplate         = 'Agile'
+    Visibility              = 'Private'
+}
+
+Invoke-DSCResource -Name 'AzDoProject' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+```
+
+## Example 3: Sample Configuration to remove/exclude an Azure DevOps Project using Invoke-DSCResource
+
+``` PowerShell
+# Remove the Azure Devops Project and ensure that it is not recreated.
+$properties = @{
+    ProjectName             = 'MySampleProject'
+    Ensure                  = 'Absent'
 }
 
 Invoke-DscResource -Name 'AzDoProject' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'

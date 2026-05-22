@@ -7,6 +7,7 @@ AzDoOrganizationGroup [string] #ResourceName
 {
     GroupName = [String]$GroupName
     [ GroupDescription = [String]$GroupDescription ]
+    [ Ensure = [String] {'Present', 'Absent'} ]
 }
 ```
 
@@ -16,6 +17,7 @@ AzDoOrganizationGroup [string] #ResourceName
 
 - **GroupName**: The name of the organization group. This property is mandatory and serves as the key property for the resource.
 - **GroupDescription**: A description of the organization group.
+- **Ensure**: Specifies whether the organization group should exist. Defaults to 'Present'.
 
 ## Additional Information
 
@@ -44,7 +46,7 @@ Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ## Example 2: Sample Configuration using Invoke-DSCResource
 
 ``` PowerShell
-# Return the current configuration for AzDoGitPermission
+# Return the current configuration for AzDoOrganizationGroup
 # Ensure is not required
 $properties = @{
     GroupName = 'SampleGroup'
@@ -92,3 +94,4 @@ $params = @{
 }
 
 Invoke-AzDoLCM @params
+```

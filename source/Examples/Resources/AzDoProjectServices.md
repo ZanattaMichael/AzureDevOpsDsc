@@ -11,6 +11,7 @@ AzDoProjectServices [string] #ResourceName
     [ BuildPipelines = [String]$BuildPipelines { 'Enabled' | 'Disabled' } ]
     [ TestPlans = [String]$TestPlans { 'Enabled' | 'Disabled' } ]
     [ AzureArtifact = [String]$AzureArtifact { 'Enabled' | 'Disabled' } ]
+    [ Ensure = [String] {'Present', 'Absent'} ]
 }
 ```
 
@@ -24,6 +25,7 @@ AzDoProjectServices [string] #ResourceName
 - **BuildPipelines**: Specifies whether build pipelines are enabled or disabled. Valid values are `Enabled` or `Disabled`. Default is `Enabled`.
 - **TestPlans**: Specifies whether test plans are enabled or disabled. Valid values are `Enabled` or `Disabled`. Default is `Enabled`.
 - **AzureArtifact**: Specifies whether Azure artifacts are enabled or disabled. Valid values are `Enabled` or `Disabled`. Default is `Enabled`.
+- **Ensure**: Specifies whether the project services configuration should be applied. Defaults to 'Present'.
 
 ## Additional Information
 

@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `WikiSource` will be published to the GitHub repository wiki. The markdown
     file `Home.md` will be updated with the correct module version on each
     publish to gallery (including preview).
+  - CodeCov integration.
 - Added Resources:
   - AzDoGroupPermission
   - AzDoOrganizationGroup
@@ -49,6 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     for more information).
   - Updated pipeline file `RequiredModules.ps1` to latest pipeline pattern.
   - Updated pipeline file `build.yaml` to latest pipeline pattern.
+  - Updated pipeline file `azure-pipelines.yml` to use correct images (hosted runners)
+    and correct task for artifacts.
   - Enhanced Authentication Mechanisms.
     The classes have been refactored to accommodate a variety of authentication methods.
     This refactoring allows the system to support multiple authentication
@@ -73,6 +76,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update build.yaml tests reference:
   - Added: ./azuredevopsdsc.common.tests.ps1
   - Added: ./azuredevopsdsc.tests.ps1
+- Repository Updates
+  - Update repository files to latest versions.
+    - Resolve-Dependency
+    - build.yml
+    - Sampler files
+    - azure-pipelines
 
 ### Fixed
 
