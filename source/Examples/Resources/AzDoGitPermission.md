@@ -41,43 +41,41 @@ AzDoGitPermission/Permissions/Permission
 
 > Either 'Name' or 'DisplayName' can be used, but we Strongly Recommend that you use 'Name' in your configuration.
 
-| Name | DisplayName | Values | Note |
-| ---- | ----------- | ------ | ---- |
-| Administer | Administer | [ allow, deny ] | Not recommended. |
-| GenericRead | Read | [ allow, deny ] | |
-| GenericContribute | Contribute | [ allow, deny ] | |
-| ForcePush | Force push (rewrite history, delete branches and tags) | [ allow, deny ] | |
-| CreateBranch | Create branch | [ allow, deny ] | |
-| CreateTag | Create tag | [ allow, deny ] | |
-| ManageNote | Manage notes | [ allow, deny ] | |
-| PolicyExempt | Bypass policies when pushing | [ allow, deny ] | Not recommended. |
-| CreateRepository | Create repository | [ allow, deny ] | |
-| DeleteRepository | Delete or disable repository | [ allow, deny ] | Not recommended. |
-| RenameRepository | Rename repository | [ allow, deny ] | |
-| EditPolicies | Edit policies | [ allow, deny ] | |
-| RemoveOthersLocks | Remove others' locks | [ allow, deny ] | |
-| ManagePermissions | Manage permissions | [ allow, deny ] | Not recommended. |
-| PullRequestContribute | Contribute to pull requests | [ allow, deny ] | |
-| PullRequestBypassPolicy | Bypass policies when completing pull requests | [ allow, deny ] | Not recommended. |
-| ViewAdvSecAlerts | Advanced Security: view alerts | [ allow, deny ] | |
-| DismissAdvSecAlerts | Advanced Security: manage and dismiss alerts | [ allow, deny ] | |
-| ManageAdvSecScanning | Advanced Security: manage settings | [ allow, deny ] | |
+| Name      | DisplayName      | Values | Note |
+| ------------- | ------------- | - | - |
+|Administer  |            Administer   | [ allow, deny ] | Not recommended. |
+|GenericRead |            Read         | [ allow, deny ] | |
+|GenericContribute |      Contribute | [ allow, deny ] | |
+|ForcePush         |      Force push (rewrite history, delete branches and tags) | [ allow, deny ] | |
+|CreateBranch      |     Create branch                                          |[ allow, deny ] | |
+|CreateTag         |      Create tag                                            | [ allow, deny ] | |
+|ManageNote        |      Manage notes                                          | [ allow, deny ] | |
+|PolicyExempt      |      Bypass policies when pushing                          | [ allow, deny ] | |
+|CreateRepository  |      Create repository                                     | [ allow, deny ] | |
+|DeleteRepository  |      Delete or disable repository                          | [ allow, deny ] | |
+|RenameRepository  |      Rename repository                                     | [ allow, deny ] | |
+|EditPolicies      |      Edit policies                                         | [ allow, deny ] | |
+|RemoveOthersLocks |      Remove others' locks                                  | [ allow, deny ] | |
+|ManagePermissions |      Manage permissions                                    | [ allow, deny ] | |
+|PullRequestContribute |   Contribute to pull requests                          |  [ allow, deny ] | |
+|PullRequestBypassPolicy | Bypass policies when completing pull requests        |  [ allow, deny ] | |
+|ViewAdvSecAlerts      |  Advanced Security: view alerts                        | [ allow, deny ] | |
+|DismissAdvSecAlerts   |  Advanced Security: manage and dismiss alerts          | [ allow, deny ] | |
+|ManageAdvSecScanning  |  Advanced Security: manage settings                    | [ allow, deny ] | |
 
-## Properties
+# Common Properties
 
-### Common Properties
+- __ProjectName__: The name of the Azure DevOps project.
+- __RepositoryName__: The name of the Git repository within the project.
+- __Permissions__: A HashTable that specifies the permissions to be set. Refer to: 'Permissions Syntax'.
+- __Ensure__: Specifies whether the Git repository permissions should be applied. Defaults to 'Present'.
 
-- **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
-- **RepositoryName**: The name of the Git repository within the project. If omitted, permissions apply at the project-level Git node.
-- **isInherited**: Whether permissions are inherited from parent objects. Defaults to `$true`.
-- **Permissions**: A HashTable that specifies the permissions to be set. Refer to: 'Permissions Syntax'.
-- **Ensure**: Specifies whether the permissions should exist. Valid values are `Present` and `Absent`.
+# Additional Information
 
-## Additional Information
+This resource allows you to manage Git repository permissions in Azure DevOps using Desired State Configuration (DSC).
+It includes properties for specifying the project name, repository name, permission inheritance, and a list of permissions to apply to identities.
 
-This resource manages Git repository security permissions in Azure DevOps, controlling what actions groups or users can perform on a specific repository or at the project-level Git node.
-
-## Examples
+# Examples
 
 ## Example 1: Sample Configuration using AzDoGitPermission Resource
 

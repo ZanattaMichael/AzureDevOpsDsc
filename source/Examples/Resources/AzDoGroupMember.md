@@ -8,6 +8,7 @@ AzDoGroupMember [string] #ResourceName
     GroupName = [String]$GroupName # [ProjectName|OrganizationName]\GroupName
     # For GroupMember Syntax, refer to # GroupMembers Syntax
     [ GroupMembers = [String[]]$GroupMembers ]
+    [ Ensure = [String] {'Present', 'Absent'} ]
 }
 ```
 
@@ -42,6 +43,7 @@ Common Properties:
 
 - __GroupName__: The name of the Azure DevOps group.
 - __GroupMembers__: An array of members to be included in the Azure DevOps group.
+- __Ensure__: Specifies whether the group membership should be applied. Defaults to 'Present'.
 
 ## Additional Information
 

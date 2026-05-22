@@ -16,10 +16,20 @@ AzDoGitRepository [string] #ResourceName
 
 ### Common Properties
 
-- **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
-- **RepositoryName**: The name of the Git repository within the project. This is a key property.
-- **SourceRepository**: (Optional) The name of a source repository from which to initialize the new repository.
-- **Ensure**: Specifies whether the repository should exist. Valid values are `Present` and `Absent`.
+## Permission Usage
+
+Not applicable for this resource.
+
+## Permission List
+
+Not applicable for this resource.
+
+## Common Properties
+
+- __Ensure__: Specifies whether the repository should exist. Defaults to 'Present'.
+- __ProjectName__: The name of the Azure DevOps project.
+- __RepositoryName__: The name of the Git repository within the project.
+- __SourceRepository__: (Optional) The source repository from which to create the new repository.
 
 ## Additional Information
 

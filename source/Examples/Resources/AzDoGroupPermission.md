@@ -151,3 +151,7 @@ $params = @{
 
 Invoke-AzDoLCM @params
 ```
+
+## Additional Information
+
+This resource inherits from `AzDevOpsDscResourceBase`, which provides the base functionality for DSC resources in the Azure DevOps DSC module. This resource is **not currently supported** and will be enabled in a future release.
