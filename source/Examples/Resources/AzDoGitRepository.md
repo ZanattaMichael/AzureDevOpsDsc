@@ -26,7 +26,7 @@ Not applicable for this resource.
 
 ## Common Properties
 
-- __Ensure__: Specifies whether the repository should exist. Defaults to 'Absent'.
+- __Ensure__: Specifies whether the repository should exist. Defaults to 'Present'.
 - __ProjectName__: The name of the Azure DevOps project.
 - __RepositoryName__: The name of the Git repository within the project.
 - __SourceRepository__: (Optional) The source repository from which to create the new repository.

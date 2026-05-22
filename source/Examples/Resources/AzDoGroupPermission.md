@@ -105,43 +105,6 @@ $properties = @{
 Invoke-DSCResource -Name 'AzDoGroupPermission' -Method Set -Property $properties -ModuleName 'AzureDevOpsDsc'
 ```
 
-## Methods
+## Additional Information
 
-### Get Method
-
-Retrieves the current state properties of the `AzDoGroupPermission` resource.
-
-```PowerShell
-[AzDoGroupPermission] Get()
-{
-    return [AzDoGroupPermission]$($this.GetDscCurrentStateProperties())
-}
-```
-
-### GetDscCurrentStateProperties Method
-
-Returns the current state properties of the resource object.
-
-```PowerShell
-hidden [Hashtable] GetDscCurrentStateProperties([PSCustomObject]$CurrentResourceObject)
-{
-    $properties = @{
-        Ensure = [Ensure]::Absent
-    }
-
-    if ($null -eq $CurrentResourceObject)
-    {
-        return $properties
-    }
-
-    $properties.GroupName   = $CurrentResourceObject.GroupName
-    $properties.isInherited = $CurrentResourceObject.isInherited
-    $properties.Permissions = $CurrentResourceObject.Permissions
-
-    Write-Verbose "[AzDoGroupPermission] Current state properties: $($properties | Out-String)"
-
-    return $properties
-}
-```
-
-This class inherits from the `AzDevOpsDscResourceBase` class, which provides the base functionality for DSC resources in the Azure DevOps DSC module.
+This resource inherits from `AzDevOpsDscResourceBase`, which provides the base functionality for DSC resources in the Azure DevOps DSC module. This resource is **not currently supported** and will be enabled in a future release.

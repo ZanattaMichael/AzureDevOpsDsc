@@ -66,12 +66,12 @@ AzDoGitPermission/Permissions/Permission
 - __ProjectName__: The name of the Azure DevOps project.
 - __RepositoryName__: The name of the Git repository within the project.
 - __Permissions__: A HashTable that specifies the permissions to be set. Refer to: 'Permissions Syntax'.
-- __Ensure__: Specifies whether the repository should exist. Defaults to 'Absent'.
+- __Ensure__: Specifies whether the Git repository permissions should be applied. Defaults to 'Present'.
 
 # Additional Information
 
-This resource allows you to manage Azure DevOps projects using Desired State Configuration (DSC).
-It includes properties for specifying the project name, description, source control type, process template, and visibility.
+This resource allows you to manage Git repository permissions in Azure DevOps using Desired State Configuration (DSC).
+It includes properties for specifying the project name, repository name, permission inheritance, and a list of permissions to apply to identities.
 
 # Examples
 

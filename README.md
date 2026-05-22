@@ -37,6 +37,19 @@ module structure, design and setup of Integration tests).
 
 A full list of changes in each version can be found in the [change log](CHANGELOG.md).
 
+## Resources
+
+| Resource | Description |
+|---|---|
+| [AzDoProject](source/Examples/Resources/AzDoProject.md) | Creates and manages Azure DevOps projects. |
+| [AzDoProjectServices](source/Examples/Resources/AzDoProjectServices.md) | Enables or disables services (Repos, Boards, Pipelines, etc.) within a project. |
+| [AzDoProjectGroup](source/Examples/Resources/AzDoProjectGroup.md) | Creates and manages groups within an Azure DevOps project. |
+| [AzDoOrganizationGroup](source/Examples/Resources/AzDoOrganizationGroup.md) | Creates and manages groups at the Azure DevOps organization level. |
+| [AzDoGroupMember](source/Examples/Resources/AzDoGroupMember.md) | Manages membership of users and service principals in an Azure DevOps group. |
+| [AzDoGitRepository](source/Examples/Resources/AzDoGitRepository.md) | Creates and manages Git repositories within an Azure DevOps project. |
+| [AzDoGitPermission](source/Examples/Resources/AzDoGitPermission.md) | Manages fine-grained Git repository permissions for identities. |
+| [AzDoGroupPermission](source/Examples/Resources/AzDoGroupPermission.md) | *(Not currently supported)* Manages group-level identity permissions. |
+
 ## Documentation
 
 The documentation can be found in the [AzureDevOpsDsc Wiki](https://github.com/dsccommunity/AzureDevOpsDsc/wiki).
