@@ -74,7 +74,7 @@ Function Get-AzDoAreaNodes {
     Write-Verbose "[Get-AzDoAreaNodes] FormattedAreaPaths $($AreaPaths | Out-String)"
 
     # Retrieve the global organization name
-    $OrganizationName = $Global:DSCAZDO_OrganizationName
+    $OrganizationName = (Get-AzDoOrganizationName)
     Write-Verbose "[Get-AzDoAreaNodes] OrganizationName: $OrganizationName"
 
     # Initialize the result object with default values

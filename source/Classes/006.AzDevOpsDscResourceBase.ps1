@@ -255,7 +255,8 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
                         [RequiredAction]::None
                     } elseif ($currentProperties.LookupResult.Status -eq [DSCGetSummaryState]::Unchanged)
                     {
-                        [RequiredAction]::None
+                        # Resource exists (Unchanged) but desired state is Absent - remove it.
+                        [RequiredAction]::Remove
                     } else
                     {
                         [RequiredAction]::Remove

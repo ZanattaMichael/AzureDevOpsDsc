@@ -242,7 +242,20 @@ function Invoke-AzDevOpsApiRestMethod
 
                 # Increment the number of retries attempted and obtain any exception message
                 $CurrentNoOfRetryAttempts++
-                $restMethodExceptionMessage = $_.Exception.Message
+                $responseBody = $null
+                try { $responseBody = $_.ErrorDetails.Message } catch {}
+                if (-not $responseBody)
+                {
+                    try { $responseBody = $_.Exception.Response.Content.ReadAsStringAsync().Result } catch {}
+                }
+                if (-not $responseBody)
+                {
+                    try {
+                        $stream = $_.Exception.Response.GetResponseStream()
+                        $responseBody = [System.IO.StreamReader]::new($stream).ReadToEnd()
+                    } catch {}
+                }
+                $restMethodExceptionMessage = if ($responseBody) { "$($_.Exception.Message) | ResponseBody: $responseBody" } else { $_.Exception.Message }
 
                 # Wait before the next attempt/retry
                 Start-Sleep -Milliseconds $RetryIntervalMs
@@ -256,7 +269,12 @@ function Invoke-AzDevOpsApiRestMethod
     }
 
     # If all retry attempts have failed, throw an exception
-    $errorMessage = $script:localizedData.AzDevOpsApiRestMethodException -f $MyInvocation.MyCommand, $RetryAttempts, $restMethodExceptionMessage
-    throw (New-InvalidOperationException -Message $errorMessage)
+    $localizedMsg = $script:localizedData.AzDevOpsApiRestMethodException
+    if ([String]::IsNullOrEmpty($localizedMsg))
+    {
+        $localizedMsg = "The '{0}' function returned an error after {1} retry attempts: ""{2}"""
+    }
+    $errorMessage = $localizedMsg -f $MyInvocation.MyCommand, $RetryAttempts, $restMethodExceptionMessage
+    throw "[Invoke-AzDevOpsApiRestMethod] $errorMessage"
 
 }

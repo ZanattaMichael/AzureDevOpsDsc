@@ -101,7 +101,7 @@ Function Test-AzDoProjectGroup
     }
 
     # Format the Key According to the Principal Name
-    $Key = Format-AzDoGroup -Prefix "[$Global:DSCAZDO_OrganizationName]" -GroupName $GroupName
+    $Key = Format-AzDoGroup -Prefix "[$(Get-AzDoOrganizationName)]" -GroupName $GroupName
 
     # Check the cache for the group
     $group = Get-CacheItem -Key $Key -Type 'LiveGroups'

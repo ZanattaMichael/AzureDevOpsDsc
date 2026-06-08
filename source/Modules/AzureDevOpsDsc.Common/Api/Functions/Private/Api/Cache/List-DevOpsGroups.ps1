@@ -34,11 +34,11 @@ Function List-DevOpsGroups
         $Organization,
         [Parameter()]
         [String]
-        $ApiVersion = $(Get-AzDevOpsApiVersion -Default)
+        $ApiVersion = '7.1-preview.1'
     )
 
     $params = @{
-        Uri = "https://vssps.dev.azure.com/$Organization/_apis/graph/groups"
+        Uri = "https://vssps.dev.azure.com/$Organization/_apis/graph/groups?api-version=$ApiVersion"
         Method = 'Get'
     }
 

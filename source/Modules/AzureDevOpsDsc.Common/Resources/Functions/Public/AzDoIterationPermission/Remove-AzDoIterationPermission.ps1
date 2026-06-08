@@ -86,7 +86,7 @@ Function Remove-AzDoIterationPermission
         Write-Verbose "[Remove-AzDoIterationPermission] Attempting to remove ACLs."
 
         $params = @{
-            OrganizationName = $Global:DSCAZDO_OrganizationName
+            OrganizationName = (Get-AzDoOrganizationName)
             SecurityNamespaceID = $SecurityNamespace.namespaceId
             TokenName = $token
         }

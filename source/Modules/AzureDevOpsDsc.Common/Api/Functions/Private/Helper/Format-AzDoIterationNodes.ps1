@@ -27,7 +27,7 @@ Function Format-AzDoIterationNodes {
 
         # Optional parameter for specifying area paths
         [Parameter()]
-        [HashTable[]]$IterationAttributes
+        [object[]]$IterationAttributes
     )
 
     # Test the Attribute State. Errors will be flagged in the function

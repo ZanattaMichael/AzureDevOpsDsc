@@ -72,7 +72,7 @@ Function Get-AzDoGitPermission
 
     # Define the Descriptor Type and Organization Name
     $SecurityNamespace = 'Git Repositories'
-    $OrganizationName = $Global:DSCAZDO_OrganizationName
+    $OrganizationName = (Get-AzDoOrganizationName)
 
     Write-Verbose "[Get-AzDoGitPermission] Security Namespace: $SecurityNamespace"
     Write-Verbose "[Get-AzDoGitPermission] Organization Name: $OrganizationName"

@@ -23,6 +23,41 @@ $header = Add-AuthenticationHTTPHeader
 
 Function Add-AuthenticationHTTPHeader
 {
+    # If the global token is null, attempt to restore from clixml cache.
+    # This handles the DSC isolated-runspace scenario where Construct() sets globals in the
+    # constructor runspace but the method (Set/Test/Get) executes in the calling runspace.
+    if ($null -eq $Global:DSCAZDO_AuthenticationToken)
+    {
+        Write-Verbose "[Add-AuthenticationHTTPHeader] Authentication token is null. Attempting to restore from cache."
+        if ($ENV:AZDODSC_CACHE_DIRECTORY)
+        {
+            $settingsPath = Join-Path -Path $ENV:AZDODSC_CACHE_DIRECTORY -ChildPath 'ModuleSettings.clixml'
+            if (Test-Path -LiteralPath $settingsPath)
+            {
+                $objectSettings = Import-Clixml -LiteralPath $settingsPath
+                $organizationName = $objectSettings.OrganizationName
+                # tokenType is serialized as an integer enum value (0=ManagedIdentity, 1=PersonalAccessToken)
+                $tokenType = $objectSettings.Token.tokenType
+                try
+                {
+                    if ($tokenType -eq 'ManagedIdentity' -or $tokenType -eq 0)
+                    {
+                        $Global:DSCAZDO_AuthenticationToken = Get-AzManagedIdentityToken -OrganizationName $organizationName
+                        $Global:DSCAZDO_OrganizationName = $organizationName
+                    }
+                    elseif ($tokenType -eq 'PersonalAccessToken' -or $tokenType -eq 1)
+                    {
+                        New-AzDoAuthenticationProvider -OrganizationName $organizationName -SecureStringPersonalAccessToken $objectSettings.Token.access_token -isResource -NoVerify
+                    }
+                }
+                catch
+                {
+                    Write-Warning "[Add-AuthenticationHTTPHeader] Failed to restore authentication token from cache: $_"
+                }
+            }
+        }
+    }
+
     # Dertimine the type of token.
     $headerValue = ""
     switch ($Global:DSCAZDO_AuthenticationToken.tokenType)

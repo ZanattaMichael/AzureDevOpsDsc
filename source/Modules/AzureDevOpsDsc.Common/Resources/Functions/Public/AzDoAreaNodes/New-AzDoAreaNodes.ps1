@@ -28,7 +28,7 @@
     forcing the creation even if the nodes already exist.
 
 .NOTES
-    This function requires the global variable $Global:DSCAZDO_OrganizationName to be set with the organization name.
+    This function requires the global variable (Get-AzDoOrganizationName) to be set with the organization name.
 #>
 Function New-AzDoAreaNodes
 {
@@ -58,7 +58,7 @@ Function New-AzDoAreaNodes
         ProjectName = $ProjectName
         NodeType = 'Areas'
         LookupResult = $LookupResult
-        OrganizationName = $Global:DSCAZDO_OrganizationName
+        OrganizationName = (Get-AzDoOrganizationName)
     }
 
     New-ClassificationNodeResource @params

@@ -27,7 +27,7 @@ This function is intended for internal use within the AzureDevOpsDsc module.
 Function Format-AzDoIteration {
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [HashTable]$Iteration,
+        [object]$Iteration,
         [Parameter(Mandatory = $true)]
         [string]$ProjectName,
         [Parameter()]

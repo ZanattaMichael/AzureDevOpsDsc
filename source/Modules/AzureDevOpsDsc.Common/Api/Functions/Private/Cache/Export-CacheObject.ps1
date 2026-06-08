@@ -43,7 +43,7 @@ Function Export-CacheObject
         [Object[]]$Content,
 
         [Parameter()]
-        [int]$Depth = 3
+        [int]$Depth = 6
     )
 
     # Write initial verbose message

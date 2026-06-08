@@ -74,7 +74,7 @@ function Get-AzDoProject
     Write-Verbose "[Get-AzDoProject] Started."
 
     # Set the organization name
-    $OrganizationName = $Global:DSCAZDO_OrganizationName
+    $OrganizationName = (Get-AzDoOrganizationName)
     Write-Verbose "[Get-AzDoProject] Organization Name: $OrganizationName"
 
     # Construct a hashtable detailing the group

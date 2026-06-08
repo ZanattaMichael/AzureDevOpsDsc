@@ -44,16 +44,29 @@ Function Test-ACLListforChanges
     # Get the Token
     #$Token = Get-ACLToken $ReferenceACLs $DifferenceACLs
 
-    # If the Reference ACL is null, set the status to changed.
-    if (($null -eq $ReferenceACLs) -or ($null -eq $ReferenceACLs.aces))
+    # If the Reference ACL is null/empty (no ACEs desired), check whether current state also has no ACEs.
+    if (($null -eq $ReferenceACLs) -or ($null -eq $ReferenceACLs.aces) -or ($ReferenceACLs[0].aces.Count -eq 0))
     {
-        Write-Verbose "[Test-ACLListforChanges] Reference ACL is null."
-        $result.status = "Missing"
-        $result.propertiesChanged = $DifferenceACLs
-        $result.reason += @{
-            Value = $DifferenceACLs
-            Reason = "Reference ACL is null."
+        if (($null -eq $DifferenceACLs) -or ($DifferenceACLs[0].aces.Count -eq 0))
+        {
+            Write-Verbose "[Test-ACLListforChanges] No ACEs desired and none present - state is Unchanged."
+            return $result
         }
+        # Desired state is 0 ACEs but current state has ACEs - need to clear them.
+        Write-Verbose "[Test-ACLListforChanges] No ACEs desired but Difference has ACEs - needs clear."
+        $result.status = "Changed"
+        $result.propertiesChanged = $ReferenceACLs
+        $result.reason += @{
+            Value = $ReferenceACLs
+            Reason = "ACEs exist but none are desired - clearing required."
+        }
+        return $result
+    }
+
+    # If the Difference ACL is null but no ACEs are desired, the cleared state is correct.
+    if (($null -eq $DifferenceACLs) -and ($ReferenceACLs[0].aces.Count -eq 0))
+    {
+        Write-Verbose "[Test-ACLListforChanges] No ACEs desired and no ACL found - state is Unchanged."
         return $result
     }
 
@@ -76,7 +89,8 @@ Function Test-ACLListforChanges
     #
     # Test if the Reference and Difference ACLs count is not equal.
 
-    if ($ReferenceACLs.ACEs.Count -ne $DifferenceACLs.ACEs.Count)
+    # Use indexed access to avoid member-enumeration flattening (which returns key-count instead of item-count).
+    if ($ReferenceACLs[0].aces.Count -ne $DifferenceACLs[0].aces.Count)
     {
         Write-Verbose "[Test-ACLListforChanges] ACEs count is not equal."
         $result.status = "Changed"

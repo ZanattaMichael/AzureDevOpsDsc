@@ -29,13 +29,19 @@
 function Test-IterationNodeHashTable {
     param(
         [Parameter(Mandatory = $false)]
-        [HashTable[]]$IterationAttributes
+        [object[]]$IterationAttributes
     )
 
     # Validate the Iteration Attributes and Ensure that all the required properties are present (path, startdate, enddate (optional))
-    ForEach ($Iteration in $IterationAttributes) {
-        # Ensure that Iteration is a HashTable
-        if (-not($Iteration -is [HashTable])) {
+    ForEach ($rawIteration in $IterationAttributes) {
+        # Normalize to a real Hashtable — DSC serialization produces Deserialized objects that fail -is [HashTable]
+        if ($rawIteration -is [HashTable]) {
+            $Iteration = $rawIteration
+        } elseif ($rawIteration -is [System.Collections.IDictionary]) {
+            $Iteration = @{}; $rawIteration.Keys | ForEach-Object { $Iteration[$_] = $rawIteration[$_] }
+        } elseif ($rawIteration -is [PSCustomObject]) {
+            $Iteration = @{}; $rawIteration.PSObject.Properties | ForEach-Object { $Iteration[$_.Name] = $_.Value }
+        } else {
             Write-Error '[Get-AzDoIterationNode] The iteration must be a HashTable.'
             return $false
         }

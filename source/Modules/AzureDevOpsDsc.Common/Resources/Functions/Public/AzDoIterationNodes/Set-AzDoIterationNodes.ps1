@@ -26,7 +26,7 @@
     This example sets the iteration nodes for the project "MyProject" with the specified attributes and lookup results, ensuring the state is present and forcing the execution.
 
 .NOTES
-    This function retrieves the global organization name from the variable $Global:DSCAZDO_OrganizationName and updates the iteration nodes accordingly. It also updates the live cache and global cache for live iterations.
+    This function retrieves the global organization name from the variable (Get-AzDoOrganizationName) and updates the iteration nodes accordingly. It also updates the live cache and global cache for live iterations.
 
 #>
 Function Set-AzDoIterationNodes {
@@ -38,7 +38,7 @@ Function Set-AzDoIterationNodes {
 
         # Optional parameter for specifying area paths
         [Parameter()]
-        [HashTable[]]$IterationAttributes,
+        [object[]]$IterationAttributes,
 
         # Optional hashtable for lookup results
         [Parameter()]
@@ -55,7 +55,7 @@ Function Set-AzDoIterationNodes {
     )
 
     # Retrieve the global organization name
-    $OrganizationName = $Global:DSCAZDO_OrganizationName
+    $OrganizationName = (Get-AzDoOrganizationName)
 
     Write-Verbose "[Set-AzDoIterationNodes] Started"
 
@@ -68,7 +68,7 @@ Function Set-AzDoIterationNodes {
             NodeType = 'Iterations'
             LookupResult = $LookupResult
             IterationAttributes = $IterationAttributes
-            OrganizationName = $Global:DSCAZDO_OrganizationName
+            OrganizationName = (Get-AzDoOrganizationName)
         }
 
         New-ClassificationNodeResource @params
@@ -83,7 +83,7 @@ Function Set-AzDoIterationNodes {
             ProjectName = $ProjectName
             NodeType = 'Iterations'
             LookupResult = $LookupResult
-            OrganizationName = $Global:DSCAZDO_OrganizationName
+            OrganizationName = (Get-AzDoOrganizationName)
         }
 
         Remove-ClassificationNodeResource @params

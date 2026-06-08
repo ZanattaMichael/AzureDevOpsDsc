@@ -45,7 +45,7 @@ function Get-ProjectServiceStatus
 
         [Parameter()]
         [String]
-        $ApiVersion = $(Get-AzDevOpsApiVersion -Default)
+        $ApiVersion = '7.1-preview.1'
     )
 
     # Get the project
@@ -57,12 +57,21 @@ function Get-ProjectServiceStatus
 
     try
     {
-        $response = Invoke-AzDevOpsApiRestMethod @params
-        # If the service is 'undefined' then treat it as 'enabled'
-        if ($response.state -eq 'undefined')
-        {
-            $response.state = 'enabled'
+        $result = Invoke-AzDevOpsApiRestMethod @params
+        # Unwrap ArrayList returned by Invoke-AzDevOpsApiRestMethod
+        $response = $result | Select-Object -First 1
+        # Normalize state to 'Enabled'/'Disabled' string regardless of API return format
+        $stateValue = $response.state
+        $normalizedState = switch ($stateValue) {
+            2           { 'Enabled' }   # integer Enabled
+            1           { 'Disabled' }  # integer Disabled
+            0           { 'Enabled' }   # integer Undefined → treat as Enabled
+            'enabled'   { 'Enabled' }
+            'disabled'  { 'Disabled' }
+            'undefined' { 'Enabled' }   # undefined → treat as Enabled
+            default     { 'Enabled' }
         }
+        $response.state = $normalizedState
 
         # Output the state of the service
         return $response

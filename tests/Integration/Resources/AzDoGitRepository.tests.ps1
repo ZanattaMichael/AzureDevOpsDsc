@@ -5,14 +5,15 @@ Describe "AzDoGitRepository Integration Tests" {
         # Perform setup tasks here
         $PROJECTNAME = 'TESTPROJECT_GITREPOSITORY'
 
+        function New-Project { param([string]$ProjectName)
+            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
+        }
+
         # Define common parameters
         $parameters = @{
             Name = 'AzDoGitRepository'
             ModuleName = 'AzureDevOpsDsc'
         }
-
-        #
-        # Create a new project
 
         New-Project $PROJECTNAME
 

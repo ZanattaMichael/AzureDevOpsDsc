@@ -61,7 +61,7 @@ Function New-AzDoAreaPermission
     }
 
     $params = @{
-        OrganizationName = $Global:DSCAZDO_OrganizationName
+        OrganizationName = (Get-AzDoOrganizationName)
         SecurityNamespaceID = $SecurityNamespace.namespaceId
         SerializedACLs = ConvertTo-ACLHashtable @serializeACLParams
     }
@@ -72,5 +72,8 @@ Function New-AzDoAreaPermission
     Write-Verbose "[New-AzDoAreaPermission] Setting Area Path Permissions for $ProjectName - $AreaPath"
 
     Set-AzDoPermission @params
+
+    # Invalidate the LiveACLList cache so the next Get re-fetches from the API.
+    Remove-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'
 
 }

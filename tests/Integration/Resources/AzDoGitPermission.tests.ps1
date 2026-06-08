@@ -2,8 +2,25 @@ Describe "AzDoGitPermission Integration Tests" {
 
     BeforeAll {
 
-        # Perform setup tasks here
         $PROJECTNAME = 'TESTPROJECT_GIT_PERMISSION'
+
+        function New-Project { param([string]$ProjectName)
+            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
+        }
+
+        function New-Repository { param([string]$ProjectName, [string]$RepositoryName)
+            $null = Invoke-DscResource -Name 'AzDoGitRepository' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
+                ProjectName    = $ProjectName
+                RepositoryName = $RepositoryName
+            }
+        }
+
+        function New-Group { param([string]$ProjectName, [string]$GroupName)
+            $null = Invoke-DscResource -Name 'AzDoProjectGroup' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
+                ProjectName = $ProjectName
+                GroupName   = $GroupName
+            }
+        }
 
         $parameters = @{
             Name = 'AzDoGitPermission'
@@ -16,36 +33,24 @@ Describe "AzDoGitPermission Integration Tests" {
                     @{
                         Identity = "[$PROJECTNAME]\Group1"
                         Permission = @{
-                            Read = 'Allow'
-                            Write = 'Allow'
+                            GenericRead        = 'Allow'
+                            GenericContribute  = 'Allow'
                         }
                     }
                     @{
                         Identity = "[$PROJECTNAME]\Group2"
                         Permission = @{
-                            Read = 'Deny'
-                            Write = 'Deny'
+                            GenericRead        = 'Deny'
+                            GenericContribute  = 'Deny'
                         }
                     }
                 )
             }
         }
 
-        #
-        # Create a new project
         New-Project $PROJECTNAME
-
-        #
-        # Create a new repository
-
         New-Repository -ProjectName $PROJECTNAME -RepositoryName 'TESTREPOSITORY'
-
-        #
-        # Create some new groups
-
-        'Group1', 'Group2' | ForEach-Object {
-            New-Group -ProjectName $PROJECTNAME -GroupName $_
-        }
+        'Group1', 'Group2' | ForEach-Object { New-Group -ProjectName $PROJECTNAME -GroupName $_ }
     }
 
     Context "Testing if the permissions exist" {
@@ -76,8 +81,6 @@ Describe "AzDoGitPermission Integration Tests" {
         }
 
         It "Should return True" {
-
-            # Set up the parameters for the DSC resource invocation.
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
@@ -87,46 +90,24 @@ Describe "AzDoGitPermission Integration Tests" {
 
     Context "Changing permissions" {
 
-            BeforeAll {
-                $parameters.Method = 'Set'
-                $parameters.property.Permissions = @(
-                    @{
-                        Identity = "[$PROJECTNAME]\Group1"
-                        Permission = @{
-                            Read = 'Allow'
-                            Write = 'Deny'
-                        }
-                    }
-                    @{
-                        Identity = "[$PROJECTNAME]\Group2"
-                        Permission = @{
-                            Read = 'Deny'
-                            Write = 'Allow'
-                        }
-                    }
-                )
-            }
-
-            It "Should not throw any exceptions" {
-                { Invoke-DscResource @parameters } | Should -Not -Throw
-            }
-
-            It "Should return True" {
-
-                # Set up the parameters for the DSC resource invocation.
-                $parameters.Method = 'Test'
-
-                $result = Invoke-DscResource @parameters
-                $result.InDesiredState | Should -BeTrue
-            }
-    }
-
-    Context "Clearing permissions should revert to inherited" {
-
         BeforeAll {
             $parameters.Method = 'Set'
-            $parameters.property.Permissions = @()
-            $parameters.property.isInherited = $false
+            $parameters.property.Permissions = @(
+                @{
+                    Identity = "[$PROJECTNAME]\Group1"
+                    Permission = @{
+                        GenericRead        = 'Allow'
+                        GenericContribute  = 'Deny'
+                    }
+                }
+                @{
+                    Identity = "[$PROJECTNAME]\Group2"
+                    Permission = @{
+                        GenericRead        = 'Deny'
+                        GenericContribute  = 'Allow'
+                    }
+                }
+            )
         }
 
         It "Should not throw any exceptions" {
@@ -134,7 +115,25 @@ Describe "AzDoGitPermission Integration Tests" {
         }
 
         It "Should return True" {
-            # Set up the parameters for the DSC resource invocation.
+            $parameters.Method = 'Test'
+            $result = Invoke-DscResource @parameters
+            $result.InDesiredState | Should -BeTrue
+        }
+    }
+
+    Context "Clearing permissions should revert to inherited" {
+
+        BeforeAll {
+            $parameters.Method = 'Set'
+            $parameters.property.Permissions = @()
+            $parameters.property.isInherited = $true
+        }
+
+        It "Should not throw any exceptions" {
+            { Invoke-DscResource @parameters } | Should -Not -Throw
+        }
+
+        It "Should return True" {
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue

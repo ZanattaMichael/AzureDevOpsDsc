@@ -58,7 +58,7 @@ Function Set-DevOpsGroup
         [Parameter(ParameterSetName = 'ProjectScope')]
         [Parameter(ParameterSetName = 'Default')]
         [String]
-        $ApiVersion = $(Get-AzDevOpsApiVersion -Default), # The API version to use for the request.
+        $ApiVersion = '7.1-preview.1', # The API version to use for the request.
 
         # Group Descriptor for the project within which the group exists.
         [Parameter(Mandatory = $true, ParameterSetName = 'Default')]

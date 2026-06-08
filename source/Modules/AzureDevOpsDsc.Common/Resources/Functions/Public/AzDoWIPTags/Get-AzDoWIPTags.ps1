@@ -23,7 +23,7 @@ Function Get-AzDoWIPTags
         $Force
     )
 
-    $Organization =  $Global:DSCAZDO_OrganizationName
+    $Organization =  (Get-AzDoOrganizationName)
 
     $Result = @{
         #Reasons = $()

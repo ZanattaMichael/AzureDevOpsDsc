@@ -54,10 +54,10 @@ function New-DevOpsProject
         [Parameter()]
         [System.String]$Visibility,
 
-        # Get the latest API version. 7.1 is not supported by the API endpoint.
+        # Use 6.0 — later versions return 405 for POST /projects
         [Parameter()]
         [String]
-        $ApiVersion = $(Get-AzDevOpsApiVersion | Select-Object -Last 1)
+        $ApiVersion = '6.0'
     )
 
     # Validate the parameters
@@ -97,6 +97,6 @@ function New-DevOpsProject
     }
     catch
     {
-        Write-Error "[New-DevOpsProject] Failed to create the Azure DevOps project: $_"
+        Throw "[New-DevOpsProject] Failed to create the Azure DevOps project '$ProjectName' in '$Organization': $_"
     }
 }

@@ -35,7 +35,7 @@ Remove-AzDoProject -ProjectName "MyProject" -Force
 This command removes the Azure DevOps project named "MyProject" without prompting for confirmation.
 
 .NOTES
-The function uses global variable $Global:DSCAZDO_OrganizationName to get the organization name.
+The function uses global variable (Get-AzDoOrganizationName) to get the organization name.
 #>
 function Remove-AzDoProject
 {
@@ -73,7 +73,7 @@ function Remove-AzDoProject
     )
 
     # Set the organization name
-    $OrganizationName = $Global:DSCAZDO_OrganizationName
+    $OrganizationName = (Get-AzDoOrganizationName)
     Write-Verbose "[Remove-AzDoProject] Using organization name: $OrganizationName"
 
     # Perform a lookup to see if the group exists in Azure DevOps

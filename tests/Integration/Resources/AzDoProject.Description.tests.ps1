@@ -10,7 +10,7 @@ Describe "AzDoProject Integration Tests - With Description" {
             ModuleName = 'AzureDevOpsDsc'
         }
 
-        $PROJECTNAME = 'TESTPROJECT_DESC'
+        $PROJECTNAME = 'TESTPROJECT_DESCRIBED'
 
     }
 

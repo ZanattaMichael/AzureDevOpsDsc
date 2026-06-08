@@ -47,7 +47,7 @@ Function New-DevOpsGroupMember
         # Optional parameter for the API version with a default value obtained from the Get-AzDevOpsApiVersion function
         [Parameter()]
         [String]
-        $ApiVersion = $(Get-AzDevOpsApiVersion -Default),
+        $ApiVersion = '7.1-preview.1',
 
         # The URI for the Azure DevOps API.
         [Parameter(Mandatory = $true)]

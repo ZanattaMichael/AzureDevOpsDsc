@@ -32,7 +32,7 @@ Function Get-AzDoIterationPermission
     # Define the Descriptor Type and Organization Name
     # https://learn.microsoft.com/en-us/azure/devops/organizations/security/namespace-reference?view=azure-devops
     $SecurityNamespace = 'Iteration' # Manages Iteration path object-level permissions.
-    $OrganizationName = $Global:DSCAZDO_OrganizationName
+    $OrganizationName = (Get-AzDoOrganizationName)
 
     Write-Verbose "[Get-AzDoIterationPermission] Security Namespace: $SecurityNamespace"
     Write-Verbose "[Get-AzDoIterationPermission] Organization Name: $OrganizationName"
@@ -144,36 +144,17 @@ Function Get-AzDoIterationPermission
     # Convert the ACLs to a formatted ACL
     $DifferenceACLs = $DevOpsACLs | ConvertTo-FormattedACL -SecurityNamespace $SecurityNamespace -OrganizationName $OrganizationName
 
-    # Filter the ACLs for the IterationPath
-    # Both the IterationPath and DifferenceACLs must be specified.
-    if (($IterationPath) -and ($DifferenceACLs)) {
-
-        # Construct the IterationPath Token
+    # Filter the ACLs for the IterationPath token (always apply to avoid matching unrelated ACLs).
+    if ($DifferenceACLs) {
         $DifferenceACLs = $DifferenceACLs | Where-Object { $_.Token.Type -eq 'IterationPathPermission' } | Where-Object {
-
-            # Check if the current array contains all items in the matching list
             if ($_.token.Identifiers.Count -ne $identifierArr.Count) { return $false }
-
-            # Check if the current array contains all items in the matching list
             foreach ($item in $identifierArr) {
                 if ($_.token.Identifiers.identifier -notcontains $item) {
                     return $false
                 }
             }
-
             return $true
-
         }
-
-        # Test if the ACLs were found
-        #if ($null -eq $DifferenceACLs)
-        #{
-        #    Write-Warning "[Get-AzDoIterationPermission] No ACLs found for the IterationPath."
-        #    $results.status = [DSCGetSummaryState]::Error
-        #    $results.reason = "No ACLs found for the IterationPath."
-        #    return $results
-        #}
-
     }
 
     Write-Verbose "[Get-AzDoIterationPermission] ACL List retrieved and formatted."

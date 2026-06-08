@@ -54,7 +54,7 @@ function Update-DevOpsProject
 
         [Parameter()]
         [String]
-        $ApiVersion = $(Get-AzDevOpsApiVersion | Select-Object -Last 1)
+        $ApiVersion = '7.1'
 
     )
 
@@ -62,7 +62,6 @@ function Update-DevOpsProject
 
     # Construct the body of the request
     $body = @{
-        name = $ProjectName
         visibility = $Visibility
     }
 
@@ -86,7 +85,7 @@ function Update-DevOpsProject
     }
     catch
     {
-        Write-Error "Failed to update the Azure DevOps project: $_"
+        Throw "[Update-DevOpsProject] Failed to update project '$ProjectId' in '$Organization': $_"
     }
 
     # Output the response which contains the updated project details

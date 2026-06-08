@@ -59,7 +59,7 @@ Function Set-AzDoAreaPermission
     }
 
     $params = @{
-        OrganizationName = $Global:DSCAZDO_OrganizationName
+        OrganizationName = (Get-AzDoOrganizationName)
         SecurityNamespaceID = $SecurityNamespace.namespaceId
         SerializedACLs = ConvertTo-ACLHashtable @serializeACLParams
     }
@@ -78,5 +78,8 @@ Function Set-AzDoAreaPermission
 
     Write-Verbose "[Set-AzDoAreaPermission] Parameters: $($params | ConvertTo-Json -Depth 5)"
     Set-AzDoPermission @params
+
+    # Invalidate the LiveACLList cache so the next Get re-fetches from the API.
+    Remove-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'
 
 }

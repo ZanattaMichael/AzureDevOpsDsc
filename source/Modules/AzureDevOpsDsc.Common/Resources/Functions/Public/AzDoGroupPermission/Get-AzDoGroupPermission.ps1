@@ -68,7 +68,7 @@ Function Get-AzDoGroupPermission
 
     # Define the Descriptor Type and Organization Name
     $SecurityNamespace = 'Identity'
-    $OrganizationName = $Global:DSCAZDO_OrganizationName
+    $OrganizationName = (Get-AzDoOrganizationName)
     # Split the Group Name
     $split = $GroupName.Split('\').Split('/')
 

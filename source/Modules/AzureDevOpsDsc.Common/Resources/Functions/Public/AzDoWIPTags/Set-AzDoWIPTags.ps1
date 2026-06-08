@@ -23,7 +23,7 @@ Function Set-AzDoWIPTags
         $Force
     )
 
-    $Organization =  $Global:DSCAZDO_OrganizationName
+    $Organization =  (Get-AzDoOrganizationName)
 
     if ($null -eq $LookupResult) {
         Throw "The parameter 'LookupResult' cannot be null."

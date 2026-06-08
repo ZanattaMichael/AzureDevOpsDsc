@@ -38,7 +38,7 @@ Creates a new group named "Testers" with the description "QA Team" in the "MyPro
 forcing the creation even if the group already exists.
 
 .NOTES
-This function relies on the global variable $Global:DSCAZDO_OrganizationName to construct the API URI.
+This function relies on the global variable (Get-AzDoOrganizationName) to construct the API URI.
 It also interacts with cache functions like Get-CacheItem, Refresh-CacheIdentity, Add-CacheItem, and Set-CacheObject.
 #>
 Function New-AzDoProjectGroup
@@ -76,7 +76,7 @@ Function New-AzDoProjectGroup
     $params = @{
         GroupName = $GroupName
         GroupDescription = $GroupDescription
-        ApiUri = 'https://vssps.dev.azure.com/{0}' -f $Global:DSCAZDO_OrganizationName
+        ApiUri = 'https://vssps.dev.azure.com/{0}' -f (Get-AzDoOrganizationName)
         ProjectScopeDescriptor = (Get-CacheItem -Key $ProjectName -Type 'LiveProjects').ProjectDescriptor
     }
 
@@ -92,6 +92,11 @@ Function New-AzDoProjectGroup
 
     # Create a new group
     $group = New-DevOpsGroup @params
+
+    if ($null -eq $group)
+    {
+        Throw "[New-AzDoProjectGroup] New-DevOpsGroup returned null for group '$GroupName' in project '$ProjectName'."
+    }
 
     # Write verbose log after group creation
     Write-Verbose "[New-AzDoProjectGroup] New DevOps group created: $($group | Out-String)"

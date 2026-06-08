@@ -10,17 +10,27 @@ Describe "AzDoProjectServices Integration Tests" {
         $PROJECTNAME = 'TEST_PROJECTSERVICES'
         $GROUPNAME = 'TESTPROJECTGROUP'
 
+        function New-Project { param([string]$ProjectName)
+            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
+        }
+
         # Define common parameters
         $parameters = @{
             Name = 'AzDoProjectServices'
             ModuleName = 'AzureDevOpsDsc'
         }
 
-        #
-        # Create a new project
-
         New-Project $PROJECTNAME
 
+        # Reset services to all-enabled to ensure clean state before testing
+        $null = Invoke-DscResource -Name 'AzDoProjectServices' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
+            ProjectName     = $PROJECTNAME
+            GitRepositories = 'Enabled'
+            WorkBoards      = 'Enabled'
+            BuildPipelines  = 'Enabled'
+            TestPlans       = 'Enabled'
+            AzureArtifact   = 'Enabled'
+        }
     }
 
     # This context is used to test if a project services exist.

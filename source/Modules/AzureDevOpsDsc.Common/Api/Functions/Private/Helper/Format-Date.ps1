@@ -26,6 +26,15 @@ Function Format-Date {
         $string = $object
     } elseif ($object -is [datetime]) {
         return $object.ToString('yyyyMMdd')
+    } else {
+        # Handle Deserialized.System.DateTime and other date-like objects.
+        # Try casting to [DateTime] directly (works for Deserialized.System.DateTime).
+        try {
+            $dtCast = [DateTime]$object
+            return $dtCast.ToString('yyyyMMdd')
+        } catch {
+            $string = "$object"
+        }
     }
 
     # Type cast the input string as a DateTime object

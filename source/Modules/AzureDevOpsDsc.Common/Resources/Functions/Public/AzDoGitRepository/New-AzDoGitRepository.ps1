@@ -36,7 +36,7 @@ PS> New-AzDoGitRepository -ProjectName "MyProject" -RepositoryName "MyRepo" -Sou
 Creates a new Git repository named "MyRepo" in the "MyProject" Azure DevOps project, initialized with the contents of "TemplateRepo".
 
 .NOTES
-This function requires the Azure DevOps organization name to be set in the global variable $Global:DSCAZDO_OrganizationName.
+This function requires the Azure DevOps organization name to be set in the global variable (Get-AzDoOrganizationName).
 #>
 
 Function New-AzDoGitRepository
@@ -72,7 +72,7 @@ Function New-AzDoGitRepository
 
     # Define parameters for creating a new DevOps group
     $params = @{
-        ApiUri = 'https://dev.azure.com/{0}/' -f $Global:DSCAZDO_OrganizationName
+        ApiUri = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
         Project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
         RepositoryName = $RepositoryName
         SourceRepository = $SourceRepository

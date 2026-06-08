@@ -114,7 +114,7 @@ Function Get-AzDoProjectServices
     }
 
     $params = @{
-        Organization = $Global:DSCAZDO_OrganizationName
+        Organization = (Get-AzDoOrganizationName)
         ProjectId    = $Project.id
     }
 

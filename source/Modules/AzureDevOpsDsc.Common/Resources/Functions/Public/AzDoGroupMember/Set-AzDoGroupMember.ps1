@@ -59,7 +59,7 @@ Function Set-AzDoGroupMember
     $GroupIdentity = Find-AzDoIdentity $GroupName
 
     # Format the  According to the Group Name
-    $Key = Format-AzDoProjectName -GroupName $GroupName -OrganizationName $Global:DSCAZDO_OrganizationName
+    $Key = Format-AzDoProjectName -GroupName $GroupName -OrganizationName (Get-AzDoOrganizationName)
     # Check the cache for the group
     $members = [System.Collections.ArrayList]::New()
     Get-CacheItem -Key $Key -Type 'LiveGroupMembers' | ForEach-Object { $members.Add($_) }
@@ -80,7 +80,7 @@ Function Set-AzDoGroupMember
     # Fetch the Group Identity
     $params = @{
         GroupIdentity = $GroupIdentity
-        ApiUri = 'https://vssps.dev.azure.com/{0}/' -f $Global:DSCAZDO_OrganizationName
+        ApiUri = 'https://vssps.dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
     }
 
     Write-Verbose "[Set-AzDoGroupMember] Starting group member addition process for group '$GroupName'."

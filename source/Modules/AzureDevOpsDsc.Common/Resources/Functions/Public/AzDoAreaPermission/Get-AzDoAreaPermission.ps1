@@ -32,7 +32,7 @@ Function Get-AzDoAreaPermission
     # Define the Descriptor Type and Organization Name
     # https://learn.microsoft.com/en-us/azure/devops/organizations/security/namespace-reference?view=azure-devops
     $SecurityNamespace = 'CSS' # Manages area path object-level permissions.
-    $OrganizationName = $Global:DSCAZDO_OrganizationName
+    $OrganizationName = (Get-AzDoOrganizationName)
 
     Write-Verbose "[Get-AzDoAreaPermission] Security Namespace: $SecurityNamespace"
     Write-Verbose "[Get-AzDoAreaPermission] Organization Name: $OrganizationName"
@@ -152,34 +152,20 @@ Function Get-AzDoAreaPermission
         return $results
     }
 
-    # Filter the ACLs for the AreaPath
-    if ($AreaPath) {
+    # Filter the ACLs to only those matching the specific area path token (always applied).
+    $DifferenceACLs = $DifferenceACLs | Where-Object { $_.Token.Type -eq 'AreaPathPermission' } | Where-Object {
 
-        # Construct the AreaPath Token
-        $DifferenceACLs = $DifferenceACLs | Where-Object { $_.Token.Type -eq 'AreaPathPermission' } | Where-Object {
+        # Check if the current array contains all items in the matching list
+        if ($_.token.Identifiers.Count -ne $identifierArr.Count) { return $false }
 
-            # Check if the current array contains all items in the matching list
-            if ($_.token.Identifiers.Count -ne $identifierArr.Count) { return $false }
-
-            # Check if the current array contains all items in the matching list
-            foreach ($item in $identifierArr) {
-                if ($_.token.Identifiers.identifier -notcontains $item) {
-                    return $false
-                }
+        # Check if the current array contains all items in the matching list
+        foreach ($item in $identifierArr) {
+            if ($_.token.Identifiers.identifier -notcontains $item) {
+                return $false
             }
-
-            return $true
-
         }
 
-        # Test if the ACLs were found
-        if ($DifferenceACLs -eq $null)
-        {
-            Write-Warning "[Get-AzDoAreaPermission] No ACLs found for the AreaPath."
-            $results.status = [DSCGetSummaryState]::Error
-            $results.reason = "No ACLs found for the AreaPath."
-            return $results
-        }
+        return $true
 
     }
 

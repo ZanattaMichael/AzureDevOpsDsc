@@ -96,16 +96,26 @@ Function Set-AzDoProjectServices
     # Construct a hashtable detailing the group
     ForEach ($PropertyChanged in $LookupResult.propertiesChanged)
     {
+        # Find the matching live service object by featureId
+        $serviceKey = $LookupResult.LiveServices.Keys | Where-Object {
+            $LookupResult.LiveServices[$_].featureId -eq $PropertyChanged.FeatureId
+        } | Select-Object -First 1
 
-        $params = @{
-            Organization = $Global:DSCAZDO_OrganizationName
-            ProjectId    = $Project.id
-            ServiceName  = $PropertyChanged.FeatureId
-            Body         = $LookupResult.LiveServices.Keys | Where-Object { $LookupResult.LiveServices[$_].featureId -eq $PropertyChanged.FeatureId } | ForEach-Object { $LookupResult.LiveServices[$_] }
+        if ($null -eq $serviceKey) {
+            Write-Warning "[Set-AzDoProjectServices] Could not find live service for FeatureId '$($PropertyChanged.FeatureId)'"
+            continue
         }
 
-        # Set the Project Service Status
-        $params.Body.state = ($PropertyChanged.Expected -eq 'Enabled') ? 1 : 0
+        $bodyObject = $LookupResult.LiveServices[$serviceKey]
+        # Set state as string — FeatureManagement API requires "enabled"/"disabled" strings
+        $bodyObject.state = ($PropertyChanged.Expected -eq 'Enabled') ? 'enabled' : 'disabled'
+
+        $params = @{
+            Organization = (Get-AzDoOrganizationName)
+            ProjectId    = $Project.id
+            ServiceName  = $PropertyChanged.FeatureId
+            Body         = $bodyObject
+        }
 
         Set-ProjectServiceStatus @params
 

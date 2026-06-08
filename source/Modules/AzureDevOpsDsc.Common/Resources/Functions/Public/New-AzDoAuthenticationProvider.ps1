@@ -137,7 +137,7 @@ Function New-AzDoAuthenticationProvider
     Write-Verbose "[New-AzDoAuthenticationProvider] Exporting the Module Settings to $moduleSettingsPath."
 
     $objectSettings = [PSCustomObject]@{
-        OrganizationName = $Global:DSCAZDO_OrganizationName
+        OrganizationName = (Get-AzDoOrganizationName)
         Token = $Global:DSCAZDO_AuthenticationToken
         SecurityDescriptorTypes = Join-Path -Path $ENV:AZDODSC_CACHE_DIRECTORY -ChildPath "SecurityDescriptors.clixml"
     }

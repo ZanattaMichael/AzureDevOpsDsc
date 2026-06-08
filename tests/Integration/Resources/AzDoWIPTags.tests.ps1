@@ -7,17 +7,23 @@ Describe "AzDoWIPTags Integration Tests" {
 
         $PROJECTNAME = 'TEST_PROJECT_WIP_TAGS'
 
+        function New-Project { param([string]$ProjectName)
+            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
+        }
+
         # Define common parameters
         $parameters = @{
             Name = 'AzDoWIPTags'
             ModuleName = 'AzureDevOpsDsc'
         }
 
-        #
-        # Create a new project
-
         New-Project $PROJECTNAME
 
+        # Clear any existing tags to ensure clean state
+        $null = Invoke-DscResource -Name 'AzDoWIPTags' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
+            ProjectName             = $PROJECTNAME
+            WorkItemTrackingTagList = @()
+        }
     }
 
     # This context is used to test if a project services exist.

@@ -35,7 +35,7 @@ Function Remove-DevOpsGroup
 
         [Parameter()]
         [String]
-        $ApiVersion = $(Get-AzDevOpsApiVersion -Default),
+        $ApiVersion = '7.1-preview.1',
 
         [Parameter()]
         [String]

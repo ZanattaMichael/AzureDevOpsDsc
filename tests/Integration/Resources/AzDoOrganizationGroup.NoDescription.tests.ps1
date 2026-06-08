@@ -12,11 +12,6 @@ Describe "AzDoOrganizationGroup Integration Tests - No Description" {
 
         $PROJECTNAME = 'TESTORGANIZATIONGROUP'
 
-        #
-        # Create a new project
-
-        New-Project $PROJECTNAME
-
     }
 
     # This context is used to test if a organization group exists.

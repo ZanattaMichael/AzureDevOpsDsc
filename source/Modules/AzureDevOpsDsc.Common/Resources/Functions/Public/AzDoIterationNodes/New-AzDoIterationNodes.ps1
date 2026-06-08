@@ -25,7 +25,7 @@ A switch parameter to force the execution of the function. This parameter is opt
 New-AzDoIterationNodes -ProjectName "MyProject" -IterationAttributes @{} -LookupResult @{} -Ensure "Present" -Force
 
 .NOTES
-This function requires the global variable $Global:DSCAZDO_OrganizationName to be set with the organization name.
+This function requires the global variable (Get-AzDoOrganizationName) to be set with the organization name.
 #>
 Function New-AzDoIterationNodes {
     [CmdletBinding()]
@@ -36,7 +36,7 @@ Function New-AzDoIterationNodes {
 
         # Optional parameter for specifying area paths
         [Parameter()]
-        [HashTable[]]$IterationAttributes,
+        [object[]]$IterationAttributes,
 
         # Optional hashtable for lookup results
         [Parameter()]
@@ -59,7 +59,7 @@ Function New-AzDoIterationNodes {
         NodeType = 'Iterations'
         LookupResult = $LookupResult
         IterationAttributes = $IterationAttributes
-        OrganizationName = $Global:DSCAZDO_OrganizationName
+        OrganizationName = (Get-AzDoOrganizationName)
     }
 
     New-ClassificationNodeResource @params

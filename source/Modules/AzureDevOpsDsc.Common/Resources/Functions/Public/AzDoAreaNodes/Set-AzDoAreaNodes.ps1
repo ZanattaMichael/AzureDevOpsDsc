@@ -25,7 +25,7 @@ Forces the operation to proceed without prompting for confirmation.
 Set-AzDoAreaNodes -ProjectName "MyProject" -AreaPaths @("Area1", "Area2") -LookupResult $lookupResult -Ensure Present -Force
 
 .NOTES
-This function requires the global variable $Global:DSCAZDO_OrganizationName to be set.
+This function requires the global variable (Get-AzDoOrganizationName) to be set.
 #>
 Function Set-AzDoAreaNodes {
     [CmdletBinding()]
@@ -50,7 +50,7 @@ Function Set-AzDoAreaNodes {
 
     Write-Verbose "[Set-AzDoAreaNodes] Starting function execution for Project: $ProjectName."
 
-    $OrganizationName = $Global:DSCAZDO_OrganizationName
+    $OrganizationName = (Get-AzDoOrganizationName)
 
     # Get the ID of the top-level area. This is needed to get the id so all the work items can be reassigned to the top level area.
     $projectAreaId = ($LookupResult.cachedAreaNodes | Where-Object { $_.path -eq "\$ProjectName\Area" }).id
@@ -72,7 +72,7 @@ Function Set-AzDoAreaNodes {
             ProjectName = $ProjectName
             NodeType = 'Areas'
             LookupResult = $LookupResult
-            OrganizationName = $Global:DSCAZDO_OrganizationName
+            OrganizationName = (Get-AzDoOrganizationName)
         }
 
         New-ClassificationNodeResource @params
@@ -84,7 +84,7 @@ Function Set-AzDoAreaNodes {
             ProjectName = $ProjectName
             NodeType = 'Areas'
             LookupResult = $LookupResult
-            OrganizationName = $Global:DSCAZDO_OrganizationName
+            OrganizationName = (Get-AzDoOrganizationName)
         }
 
         Remove-ClassificationNodeResource @params

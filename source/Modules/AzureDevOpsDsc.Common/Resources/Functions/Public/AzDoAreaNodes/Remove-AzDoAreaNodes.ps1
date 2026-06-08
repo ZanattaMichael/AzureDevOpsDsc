@@ -25,7 +25,7 @@ A switch parameter to force the removal of area nodes without confirmation. This
 Remove-AzDoAreaNodes -ProjectName "MyProject" -AreaPaths @("Area1", "Area2") -Force
 
 .NOTES
-This function requires the global variable $Global:DSCAZDO_OrganizationName to be set with the organization name.
+This function requires the global variable (Get-AzDoOrganizationName) to be set with the organization name.
 #>
 Function Remove-AzDoAreaNodes
 {
@@ -55,7 +55,7 @@ Function Remove-AzDoAreaNodes
         ProjectName = $ProjectName
         NodeType = 'Areas'
         LookupResult = $LookupResult
-        OrganizationName = $Global:DSCAZDO_OrganizationName
+        OrganizationName = (Get-AzDoOrganizationName)
     }
 
     Remove-ClassificationNodeResource @params
