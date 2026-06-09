@@ -15,225 +15,127 @@ Function Parse-ACLToken
     Write-Verbose "[Parse-ACLToken] Token: $Token"
     Write-Verbose "[Parse-ACLToken] Security Namespace: $SecurityNamespace"
 
-    #
-    # Git Repositories
-    if ($SecurityNamespace -eq 'Git Repositories')
+    # Helper: extract named capture group 'identifiers' from all regex matches for complex patterns.
+    $extractIdentifiers = {
+        param([string]$tok, [string]$pattern)
+        $m = [regex]::Matches($tok, $pattern)
+        if ($m.Count -eq 0) { throw "Token '$tok' is not recognized." }
+        @($m | ForEach-Object { @{ identifier = $_.Groups['identifiers'].Value } })
+    }
+
+    switch ($SecurityNamespace)
     {
-        # Match the Token with the Regex Patterns
-        switch -regex ($Token.Trim())
-        {
-            $LocalizedDataAzACLTokenPatten.OrganizationGit {
-                $result.type = 'OrganizationGit'
-                break;
-            }
-
-            $LocalizedDataAzACLTokenPatten.GitProject {
-                $result.type = 'GitProject'
-                break;
-            }
-
-            $LocalizedDataAzACLTokenPatten.GitRepository {
-                $result.type = 'GitRepository'
-                break;
-            }
-
-            $LocalizedDataAzACLTokenPatten.GitBranch {
-                $result.type = 'GitBranch'
-                break;
-            }
-
-            default {
-                throw "Token '$Token' is not recognized."
+        'Git Repositories' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.OrganizationGit { $result.type = 'OrganizationGit'; break }
+                $LocalizedDataAzACLTokenPatten.GitProject      { $result.type = 'GitProject';      break }
+                $LocalizedDataAzACLTokenPatten.GitRepository   { $result.type = 'GitRepository';   break }
+                $LocalizedDataAzACLTokenPatten.GitBranch       { $result.type = 'GitBranch';       break }
+                default { throw "Token '$Token' is not recognized." }
             }
         }
 
-    #
-    # Identity
-    }
-    elseif ($SecurityNamespace -eq 'Identity')
-    {
-
-        # Match the Token with the Regex Patterns
-        switch -regex ($Token.Trim())
-        {
-
-            $LocalizedDataAzACLTokenPatten.ResourcePermission {
-                $result.type = 'ResourcePermission'
-                break;
-            }
-
-            $LocalizedDataAzACLTokenPatten.GroupPermission {
-                $result.type = 'GroupPermission'
-                break;
-            }
-
-            default {
-                throw "Token '$Token' is not recognized."
+        'Identity' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.ResourcePermission { $result.type = 'ResourcePermission'; break }
+                $LocalizedDataAzACLTokenPatten.GroupPermission    { $result.type = 'GroupPermission';    break }
+                default { throw "Token '$Token' is not recognized." }
             }
         }
-    }
-    elseif ($SecurityNamespace -eq 'CSS') # AreaPath's
-    {
-        # Match the Token with the Regex Patterns
-        switch -regex ($Token.Trim())
-        {
-            $LocalizedDataAzACLTokenPatten.AreaPathPermission {
 
-                $result.type = 'AreaPathPermission'
-
-                # Use custom logic to extract the AreaPath from the token.
-                # We cant use the regex variable as it it's a complex regex pattern.
-                $regexMatches = [regex]::Matches($Token, $LocalizedDataAzACLTokenPatten.AreaPathPermission)
-
-                # Check if the match was successful
-                if ($regexMatches.Count -eq 0)
-                {
-                    throw "Token '$Token' is not recognized."
+        'CSS' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.AreaPathPermission {
+                    $result.type        = 'AreaPathPermission'
+                    $result.Identifiers = & $extractIdentifiers $Token $LocalizedDataAzACLTokenPatten.AreaPathPermission
+                    $useRegexVariable   = $false
+                    break
                 }
+                default { throw "Token '$Token' is not recognized." }
+            }
+        }
 
-                $result.Identifiers = @()
-
-                # Construct the token structure
-                foreach ($match in $regexMatches) {
-                    $result.Identifiers += @{
-                        identifier = $match.groups['identifiers'].value
-                    }
+        'Iteration' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.IterationPathPermission {
+                    $result.type        = 'IterationPathPermission'
+                    $result.Identifiers = & $extractIdentifiers $Token $LocalizedDataAzACLTokenPatten.IterationPathPermission
+                    $useRegexVariable   = $false
+                    break
                 }
-
-                # Bypass the regex variable as it is a complex regex pattern.
-                $useRegexVariable = $false
-
-                break;
-
-            }
-
-            default {
-                throw "Token '$Token' is not recognized."
+                default { throw "Token '$Token' is not recognized." }
             }
         }
-    }
-    elseif ($SecurityNamespace -eq 'Iteration') # IterationPath's
-    {
-        # Match the Token with the Regex Patterns
-        switch -regex ($Token.Trim())
-        {
-            $LocalizedDataAzACLTokenPatten.IterationPathPermission {
 
-                $result.type = 'IterationPathPermission'
+        'Project' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.ProjectPermission { $result.type = 'Project';        break }
+                default                                          { $result.type = 'ProjectUnknown'        }
+            }
+        }
 
-                # Use custom logic to extract the IterationPath from the token.
-                # We cant use the regex variable as it it's a complex regex pattern.
-                $regexMatches = [regex]::Matches($Token, $LocalizedDataAzACLTokenPatten.IterationPathPermission)
+        'Build' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.BuildPermission { $result.type = 'Build';        break }
+                default                                        { $result.type = 'BuildUnknown'        }
+            }
+        }
 
-                # Check if the match was successful
-                if ($regexMatches.Count -eq 0)
-                {
-                    throw "Token '$Token' is not recognized."
+        'Library' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.LibraryPermission { $result.type = 'Library';        break }
+                default                                          { $result.type = 'LibraryUnknown'        }
+            }
+        }
+
+        'ServiceEndpoints' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.ServiceEndpointPermission { $result.type = 'ServiceEndpoints';        break }
+                default                                                   { $result.type = 'ServiceEndpointsUnknown'       }
+            }
+        }
+
+        'AgentPool' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.AgentPoolPermission {
+                    $result.type   = 'AgentPool'
+                    $result.PoolId = $Token.Trim()
+                    break
                 }
-
-                $result.Identifiers = @()
-
-                # Construct the token structure
-                foreach ($match in $regexMatches) {
-                    $result.Identifiers += @{
-                        identifier = $match.groups['identifiers'].value
-                    }
-                }
-
-                # Bypass the regex variable as it is a complex regex pattern.
-                $useRegexVariable = $false
-
-                break;
-
-            }
-
-            default {
-                throw "Token '$Token' is not recognized."
+                default { $result.type = 'AgentPoolUnknown' }
             }
         }
-    }
-    elseif ($SecurityNamespace -eq 'Project')
-    {
-        switch -regex ($Token.Trim())
-        {
-            $LocalizedDataAzACLTokenPatten.ProjectPermission {
-                $result.type = 'Project'
-                break
+
+        'DistributedTask' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.EnvironmentPermission { $result.type = 'Environment';            break }
+                default                                              { $result.type = 'DistributedTaskUnknown'        }
             }
-            default { $result.type = 'ProjectUnknown' }
         }
-    }
-    elseif ($SecurityNamespace -eq 'Build')
-    {
-        switch -regex ($Token.Trim())
-        {
-            $LocalizedDataAzACLTokenPatten.BuildPermission {
-                $result.type = 'Build'
-                break
-            }
-            default { $result.type = 'BuildUnknown' }
+
+        default {
+            # Generic / pass-through for any namespace not explicitly handled above.
+            Write-Warning "[Parse-ACLToken] Security Namespace '$SecurityNamespace' is not natively recognised — using generic token."
+            $result.type       = 'Generic'
+            $result.TokenValue = $Token
         }
-    }
-    elseif ($SecurityNamespace -eq 'Library')
-    {
-        switch -regex ($Token.Trim())
-        {
-            $LocalizedDataAzACLTokenPatten.LibraryPermission {
-                $result.type = 'Library'
-                break
-            }
-            default { $result.type = 'LibraryUnknown' }
-        }
-    }
-    elseif ($SecurityNamespace -eq 'ServiceEndpoints')
-    {
-        switch -regex ($Token.Trim())
-        {
-            $LocalizedDataAzACLTokenPatten.ServiceEndpointPermission {
-                $result.type = 'ServiceEndpoints'
-                break
-            }
-            default { $result.type = 'ServiceEndpointsUnknown' }
-        }
-    }
-    elseif ($SecurityNamespace -eq 'AgentPool')
-    {
-        switch -regex ($Token.Trim())
-        {
-            $LocalizedDataAzACLTokenPatten.AgentPoolPermission {
-                $result.type   = 'AgentPool'
-                $result.PoolId = $Token.Trim()
-                break
-            }
-            default { $result.type = 'AgentPoolUnknown' }
-        }
-    }
-    elseif ($SecurityNamespace -eq 'DistributedTask')
-    {
-        switch -regex ($Token.Trim())
-        {
-            $LocalizedDataAzACLTokenPatten.EnvironmentPermission {
-                $result.type = 'Environment'
-                break
-            }
-            default { $result.type = 'DistributedTaskUnknown' }
-        }
-    }
-    else
-    {
-        # Generic / pass-through for any namespace not explicitly handled above.
-        Write-Warning "[Parse-ACLToken] Security Namespace '$SecurityNamespace' is not natively recognised — using generic token."
-        $result.type       = 'Generic'
-        $result.TokenValue = $Token
     }
 
-    # Get the Regex Pattern for the Token by using the regex variable to extract the token structure.
+    # Populate result with named capture groups from the automatic $Matches variable.
     if ($useRegexVariable) {
-        # Get all Capture Groups and add them into a hashtable
-        $matches.keys | Where-Object { $_.Length -gt 1 } | ForEach-Object {
-            $result."$_" = $matches."$_"
+        $Matches.Keys | Where-Object { $_.Length -gt 1 } | ForEach-Object {
+            $result."$_" = $Matches."$_"
         }
-
     }
 
     $result._token = $Token

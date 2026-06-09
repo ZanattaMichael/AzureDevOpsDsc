@@ -43,22 +43,11 @@ Function Test-ObjectProperty
         $PropertyName
     )
 
-    # If the object is a hashtable, check if the key exists
+    # Hashtables use ContainsKey; all other objects (PSCustomObject, PSObject, etc.) expose properties via PSObject
     if ($Object -is [System.Collections.Hashtable])
     {
         return $Object.ContainsKey($PropertyName)
     }
-    # If the object is a PSCustomObject, check if the property exists
-    elseif ($Object -is [PSCustomObject])
-    {
-        return $Object.PSObject.Properties.Name -contains $PropertyName
-    }
-    # If the object is a PSObject, check if the property exists
-    elseif ($Object -is [PSObject])
-    {
-        return $Object.PSObject.Properties.Name -contains $PropertyName
-    }
 
-    # Return false
-    return $false
+    return $Object.PSObject.Properties.Name -contains $PropertyName
 }

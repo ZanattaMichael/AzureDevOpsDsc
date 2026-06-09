@@ -18,35 +18,14 @@ If the input string cannot be cast to a valid date, the function defaults to '01
 #>
 Function Format-Date {
     param(
-        [Object]$object  # Define a parameter to accept a string input
+        [Object]$object
     )
 
-    # Test if the object is a string type.
-    if ($object -is [string]) {
-        $string = $object
-    } elseif ($object -is [datetime]) {
-        return $object.ToString('yyyyMMdd')
-    } else {
-        # Handle Deserialized.System.DateTime and other date-like objects.
-        # Try casting to [DateTime] directly (works for Deserialized.System.DateTime).
-        try {
-            $dtCast = [DateTime]$object
-            return $dtCast.ToString('yyyyMMdd')
-        } catch {
-            $string = "$object"
-        }
-    }
+    # -as [datetime] handles strings, DateTime, and Deserialized.System.DateTime uniformly.
+    # Fall back to 01-01-1900 when conversion fails.
+    $dateTime = $object -as [datetime]
+    if ($null -eq $dateTime) { $dateTime = [datetime]'01-01-1900' }
 
-    # Type cast the input string as a DateTime object
-    $dateTime = $string -as [datetime]
-
-    # Check if the conversion was successful (i.e., $dateTime is not null)
-    if ($null -eq $dateTime) {
-        # If conversion failed, default the dateTime to January 1, 1900
-        $dateTime = '01-01-1900' -as [datetime]
-    }
-
-    # Return the formatted date as a string in 'yyyyMMdd' format
     return $dateTime.ToString('yyyyMMdd')
 }
 

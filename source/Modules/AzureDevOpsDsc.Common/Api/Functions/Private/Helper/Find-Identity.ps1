@@ -56,8 +56,8 @@ Function Find-Identity
 
     try
     {
-        $CachedGroups = Get-CacheObject -CacheType 'LiveGroups'
-        $CachedUsers = Get-CacheObject -CacheType 'LiveUsers'
+        $CachedGroups            = Get-CacheObject -CacheType 'LiveGroups'
+        $CachedUsers             = Get-CacheObject -CacheType 'LiveUsers'
         $CachedServicePrincipals = Get-CacheObject -CacheType 'LiveServicePrinciples'
     }
     catch
@@ -66,157 +66,80 @@ Function Find-Identity
         return $null
     }
 
-    #
-    # Define the lookup table based on the search type
-    switch ($SearchType)
-    {
-        'descriptor' {
-            $lookup = @{
-                groupIdentitySB             = { $_.value.ACLIdentity.descriptor -eq $Name }
-                userIdentitySB              = { $_.value.ACLIdentity.descriptor -eq $Name }
-                servicePrincipalIdentitySB  = { $_.value.ACLIdentity.descriptor -eq $Name }
-            }
-        }
-        'descriptorId' {
-            $lookup = @{
-                groupIdentitySB             = { $_.value.ACLIdentity.id -eq $Name }
-                userIdentitySB              = { $_.value.ACLIdentity.id -eq $Name }
-                servicePrincipalIdentitySB  = { $_.value.ACLIdentity.id -eq $Name }
-            }
-        }
-        'originId' {
-            $lookup = @{
-                groupIdentitySB             = { $_.value.originId -eq $Name }
-                userIdentitySB              = { $_.value.originId -eq $Name }
-                servicePrincipalIdentitySB  = { $_.value.originId -eq $Name }
-            }
-        }
-        'principalName' {
-            $lookup = @{
-                groupIdentitySB             = { $_.value.principalName.replace('[','').replace(']','') -eq $Name }
-                userIdentitySB              = { $_.value.principalName -eq $Name }
-                servicePrincipalIdentitySB  = { $_.value.principalName -eq $Name }
-            }
-        }
-        'displayName' {
-            $lookup = @{
-                groupIdentitySB             = { $_.value.displayName -eq $Name }
-                userIdentitySB              = { $_.value.displayName -eq $Name }
-                servicePrincipalIdentitySB  = { $_.value.displayName -eq $Name }
-            }
-        }
-        default {
-            Write-Error "Invalid SearchType: $SearchType"
+    # Helper: returns the single matching identity from three candidate sets, or $null when
+    # zero or more than one are found (with appropriate verbose/warning output).
+    $resolveUnique = {
+        param($group, $user, $sp, [string]$label)
+        $found = @($group, $user, $sp) | Where-Object { $null -ne $_ }
+        if ($found.Count -gt 1)
+        {
+            Write-Warning "[Find-Identity] Found multiple identities for '$label'. Returning null."
             return $null
         }
+        return $found[0]   # $null when Count -eq 0
     }
 
-    #
-    # Find the identity
-
-    $groupIdentity = $CachedGroups | Where-Object $lookup.groupIdentitySB
-    $userIdentity = $CachedUsers | Where-Object $lookup.userIdentitySB
-    $servicePrincipalIdentity = $CachedServicePrincipals | Where-Object $lookup.servicePrincipalIdentitySB
-
-    # Check if multiple identities were found.
-    if ($groupIdentity -or $userIdentity -or $servicePrincipalIdentity)
+    # Build the filter scriptblock for each cache type.
+    # Groups use a bracket-stripped principalName comparison; all others use the raw value.
+    $commonFilter = switch ($SearchType)
     {
-
-        if (
-                ($groupIdentity -and $userIdentity) -or
-                ($groupIdentity -and $servicePrincipalIdentity) -or
-                ($userIdentity -and $servicePrincipalIdentity)
-        )
-        {
-            Write-Warning "[Find-Identity] Found multiple identities with the name '$Name'. Returning null."
-            return $null
-        }
-
-        if ($groupIdentity)
-        {
-            Write-Verbose "[Find-Identity] Found group identity for '$Name'."
-            Write-Verbose "[Find-Identity] $SearchType"
-            return $groupIdentity
-        }
-        elseif ($userIdentity)
-        {
-            Write-Verbose "[Find-Identity] Found user identity for '$Name'."
-            return $userIdentity
-        }
-        elseif ($servicePrincipalIdentity)
-        {
-            Write-Verbose "[Find-Identity] Found service principal identity for '$Name'."
-            return $servicePrincipalIdentity
-        }
-
+        'descriptor'    { { $_.value.ACLIdentity.descriptor -eq $Name }; break }
+        'descriptorId'  { { $_.value.ACLIdentity.id         -eq $Name }; break }
+        'originId'      { { $_.value.originId               -eq $Name }; break }
+        'principalName' { { $_.value.principalName          -eq $Name }; break }
+        'displayName'   { { $_.value.displayName            -eq $Name }; break }
+        default         { Write-Error "Invalid SearchType: $SearchType"; return $null }
+    }
+    $groupFilter = if ($SearchType -eq 'principalName')
+    {
+        { $_.value.principalName.replace('[','').replace(']','') -eq $Name }
     }
     else
     {
-
-        Write-Warning "[Find-Identity] No identity found for '$Name'. Performing a lookup via the API."
-
-        # Perform a lookup via the API
-        $params = @{
-            OrganizationName = $OrganizationName
-            Descriptor = $Name
-        }
-
-        Write-Verbose "[Find-Identity] Performing a lookup via the API."
-        Write-Verbose "[Find-Identity] $SearchType"
-
-        try
-        {
-            # Get the identity
-            $identity = Get-DevOpsDescriptorIdentity @params
-        }
-        catch
-        {
-            Write-Error "Failed to retrieve identity via API: $_"
-            return $null
-        }
-
-        # Attempt to match the identity using the ID
-        $groupIdentity = $CachedGroups | Where-Object { $_.value.ACLIdentity.id -eq $identity.id }
-        $userIdentity = $CachedUsers | Where-Object { $_.value.ACLIdentity.id -eq $identity.id }
-        $servicePrincipalIdentity = $CachedServicePrincipals | Where-Object { $_.value.ACLIdentity.id -eq $identity.id }
-
-        # Test if the identity was found
-        if ($groupIdentity -or $userIdentity -or $servicePrincipalIdentity)
-        {
-            # Check if multiple identities were found.
-            if (
-                    ($groupIdentity -and $userIdentity) -or
-                    ($groupIdentity -and $servicePrincipalIdentity) -or
-                    ($userIdentity -and $servicePrincipalIdentity)
-                )
-            {
-                Write-Warning "[Find-Identity] Found multiple identities with the ID '$($identity.id)'. Returning null."
-                return $null
-            }
-
-            if ($groupIdentity)
-            {
-                Write-Verbose "[Find-Identity] Found group identity for '$Name'."
-                return $groupIdentity
-            }
-            elseif ($userIdentity)
-            {
-                Write-Verbose "[Find-Identity] Found user identity for '$Name'."
-                return $userIdentity
-            }
-            elseif ($servicePrincipalIdentity)
-            {
-                Write-Verbose "[Find-Identity] Found service principal identity for '$Name'."
-                return $servicePrincipalIdentity
-            }
-        }
-
-        # If no identity was found, write a warning and return null
-        Write-Warning "[Find-Identity] No identity found for '$Name'."
-        return $null
-
+        $commonFilter
     }
 
-    # Return null if no identity was found
+    # Search the caches.
+    $groupIdentity            = $CachedGroups            | Where-Object $groupFilter
+    $userIdentity             = $CachedUsers             | Where-Object $commonFilter
+    $servicePrincipalIdentity = $CachedServicePrincipals | Where-Object $commonFilter
+
+    $resolved = & $resolveUnique $groupIdentity $userIdentity $servicePrincipalIdentity $Name
+    if ($null -ne $resolved)
+    {
+        Write-Verbose "[Find-Identity] Found identity for '$Name' ($SearchType)."
+        return $resolved
+    }
+
+    if ($groupIdentity -or $userIdentity -or $servicePrincipalIdentity)
+    {
+        # resolveUnique already warned about duplicates; nothing further to do.
+        return $null
+    }
+
+    # Nothing in cache — fall back to the API.
+    Write-Warning "[Find-Identity] No identity found for '$Name'. Performing a lookup via the API."
+    try
+    {
+        $identity = Get-DevOpsDescriptorIdentity -OrganizationName $OrganizationName -Descriptor $Name
+    }
+    catch
+    {
+        Write-Error "Failed to retrieve identity via API: $_"
+        return $null
+    }
+
+    $groupIdentity            = $CachedGroups            | Where-Object { $_.value.ACLIdentity.id -eq $identity.id }
+    $userIdentity             = $CachedUsers             | Where-Object { $_.value.ACLIdentity.id -eq $identity.id }
+    $servicePrincipalIdentity = $CachedServicePrincipals | Where-Object { $_.value.ACLIdentity.id -eq $identity.id }
+
+    $resolved = & $resolveUnique $groupIdentity $userIdentity $servicePrincipalIdentity $identity.id
+    if ($null -ne $resolved)
+    {
+        Write-Verbose "[Find-Identity] Found identity for '$Name' via API."
+        return $resolved
+    }
+
+    Write-Warning "[Find-Identity] No identity found for '$Name'."
     return $null
 }
