@@ -37,7 +37,7 @@ Function List-DevOpsServicePrinciples
         $ApiVersion
     )
 
-    if (-not $ApiVersion) { $ApiVersion = Get-AzDevOpsApiVersion }
+    if (-not $ApiVersion) { $ApiVersion = Get-AzDevOpsApiVersion -Default }
 
     $params = @{
         Uri = "https://vssps.dev.azure.com/$OrganizationName/_apis/graph/serviceprincipals?api-version=$ApiVersion"

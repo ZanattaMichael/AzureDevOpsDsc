@@ -71,7 +71,7 @@ Function Set-DevOpsGroup
         $ProjectScopeDescriptor # Scope descriptor for the project within which the group exists.
     )
 
-    if (-not $ApiVersion) { $ApiVersion = Get-AzDevOpsApiVersion }
+    if (-not $ApiVersion) { $ApiVersion = Get-AzDevOpsApiVersion -Default }
 
     # A hashtable is created to hold parameters that will be used in the REST method invocation.
     $params = @{

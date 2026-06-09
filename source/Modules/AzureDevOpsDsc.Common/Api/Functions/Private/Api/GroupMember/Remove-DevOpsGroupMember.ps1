@@ -51,7 +51,7 @@ Function Remove-DevOpsGroupMember
         $ApiUri
     )
 
-    if (-not $ApiVersion) { $ApiVersion = Get-AzDevOpsApiVersion }
+    if (-not $ApiVersion) { $ApiVersion = Get-AzDevOpsApiVersion -Default }
 
     # Define a hashtable to store parameters for the Invoke-AzDevOpsApiRestMethod function.
     $params = @{

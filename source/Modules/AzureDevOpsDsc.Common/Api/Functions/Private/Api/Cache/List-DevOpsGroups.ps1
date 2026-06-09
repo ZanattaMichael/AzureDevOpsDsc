@@ -37,7 +37,7 @@ Function List-DevOpsGroups
         $ApiVersion
     )
 
-    if (-not $ApiVersion) { $ApiVersion = Get-AzDevOpsApiVersion }
+    if (-not $ApiVersion) { $ApiVersion = Get-AzDevOpsApiVersion -Default }
 
     $params = @{
         Uri = "https://vssps.dev.azure.com/$Organization/_apis/graph/groups?api-version=$ApiVersion"
