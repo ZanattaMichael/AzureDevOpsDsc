@@ -70,7 +70,8 @@ Function Find-Identity
     # zero or more than one are found (with appropriate verbose/warning output).
     $resolveUnique = {
         param($group, $user, $sp, [string]$label)
-        $found = @($group, $user, $sp) | Where-Object { $null -ne $_ }
+        # Wrap in @() so $found is always an array; Where-Object returns $null (not @()) when nothing matches.
+        $found = @(@($group, $user, $sp) | Where-Object { $null -ne $_ })
         if ($found.Count -gt 1)
         {
             Write-Warning "[Find-Identity] Found multiple identities for '$label'. Returning null."

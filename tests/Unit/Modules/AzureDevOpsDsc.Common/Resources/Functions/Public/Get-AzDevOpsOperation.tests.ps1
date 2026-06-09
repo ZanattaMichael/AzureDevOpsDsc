@@ -14,10 +14,15 @@ Describe "Get-AzDevOpsOperation" {
         Mock -CommandName Test-AzDevOpsPat         -MockWith { return $true }
         Mock -CommandName Test-AzDevOpsOperationId -MockWith { return $true }
 
+        # Get-AzDevOpsApiResource is a legacy helper with no standalone .ps1 source file.
+        # Define a stub with explicit parameters so Pester's ParameterFilter can bind splatted arguments.
+        function Get-AzDevOpsApiResource {
+            param([string]$ApiUri, [string]$Pat, [string]$ResourceName, [string]$ResourceId)
+        }
         Mock -CommandName Get-AzDevOpsApiResource -MockWith {
             return @(
-                @{ id = 'op-id-001'; status = 'succeeded' }
-                @{ id = 'op-id-002'; status = 'inProgress' }
+                [PSCustomObject]@{ id = 'op-id-001'; status = 'succeeded' }
+                [PSCustomObject]@{ id = 'op-id-002'; status = 'inProgress' }
             )
         }
     }
