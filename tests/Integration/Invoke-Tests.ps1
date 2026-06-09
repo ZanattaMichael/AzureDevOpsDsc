@@ -12,8 +12,22 @@ $CurrentLocation = Get-Location
 Get-ChildItem -Path "$($CurrentLocation.Path)\Supporting\Functions" -Filter "*.ps1" | ForEach-Object { . $_.FullName }
 
 #
+# Load API helpers (needed for teardown)
+
+Get-ChildItem -Path "$($CurrentLocation.Path)\Supporting\API" -Filter "*.ps1" | ForEach-Object { . $_.FullName }
+Get-ChildItem -Path "$($CurrentLocation.Path)\Supporting\APICalls" -Filter "*.ps1" | ForEach-Object { . $_.FullName }
+
+#
 # Firstly Initialize the test environment
 . "$($CurrentLocation.Path)\Supporting\Initalize-TestFramework.ps1" -TestFrameworkConfigurationPath $TestFrameworkConfigurationPath
+
+#
+# Pre-run teardown: ensure a clean slate before tests start
+# This removes any resources left over from a previous (possibly failed) test run.
+
+Write-Host "[Invoke-Tests] Running pre-run teardown to ensure a clean environment..."
+. "$($CurrentLocation.Path)\Supporting\Teardown.ps1" -ClearAll -OrganizationName $GLOBAL:DSCAZDO_OrganizationName -TestFrameworkConfiguration $TestFrameworkConfiguration
+Write-Host "[Invoke-Tests] Pre-run teardown complete."
 
 #
 # Trigger the Tests
@@ -21,9 +35,8 @@ Get-ChildItem -Path "$($CurrentLocation.Path)\Supporting\Functions" -Filter "*.p
 Invoke-Pester -Path "$PSScriptRoot\Resources"
 
 #
-# Tear down the test environment
+# Post-run teardown: clean up all resources created during the test run
 
-Get-ChildItem -Path "$($CurrentLocation.Path)\Supporting\API" -Filter "*.ps1" | ForEach-Object { . $_.FullName }
-Get-ChildItem -Path "$($CurrentLocation.Path)\Supporting\APICalls" -Filter "*.ps1" | ForEach-Object { . $_.FullName }
-
+Write-Host "[Invoke-Tests] Running post-run teardown..."
 . "$($CurrentLocation.Path)\Supporting\Teardown.ps1" -ClearAll -OrganizationName $GLOBAL:DSCAZDO_OrganizationName -TestFrameworkConfiguration $TestFrameworkConfiguration
+Write-Host "[Invoke-Tests] Post-run teardown complete."
