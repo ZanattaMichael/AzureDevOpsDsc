@@ -58,7 +58,7 @@ Function Set-DevOpsGroup
         [Parameter(ParameterSetName = 'ProjectScope')]
         [Parameter(ParameterSetName = 'Default')]
         [String]
-        $ApiVersion = '7.1-preview.1', # The API version to use for the request.
+        $ApiVersion, # The API version to use for the request.
 
         # Group Descriptor for the project within which the group exists.
         [Parameter(Mandatory = $true, ParameterSetName = 'Default')]
@@ -70,6 +70,8 @@ Function Set-DevOpsGroup
         [String]
         $ProjectScopeDescriptor # Scope descriptor for the project within which the group exists.
     )
+
+    if (-not $ApiVersion) { $ApiVersion = Get-AzDevOpsApiVersion }
 
     # A hashtable is created to hold parameters that will be used in the REST method invocation.
     $params = @{

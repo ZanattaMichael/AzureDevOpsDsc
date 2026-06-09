@@ -3,7 +3,7 @@ Function Remove-DevOpsAuditStream
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$ApiUri,
-        [Parameter(Mandatory)][int]$StreamId,
+        [Parameter(Mandatory)][Object]$StreamId,
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )
     $params = @{

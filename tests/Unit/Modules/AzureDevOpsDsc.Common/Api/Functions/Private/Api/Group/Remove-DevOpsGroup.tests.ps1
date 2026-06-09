@@ -36,7 +36,7 @@ Describe 'Remove-DevOpsGroup' -Tags "Unit", "API" {
             $result = Remove-DevOpsGroup -ApiUri $Uri -GroupDescriptor $GroupDescriptor
 
             Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Exactly 1 -ParameterFilter {
-                $ApiUri -eq $params.Uri -and
+                $Uri -eq $params.Uri -and
                 $Method -eq $params.Method
             }
             $result.success | Should -Be $true

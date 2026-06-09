@@ -35,7 +35,7 @@ Describe 'Set-DevOpsGroup' -Tags "Unit", "API" {
             $result.description | Should -Be 'Updated group description'
             Assert-MockCalled Get-AzDevOpsApiVersion -Exactly 1
             Assert-MockCalled Invoke-AzDevOpsApiRestMethod -Exactly 1 -Scope It -ParameterFilter {
-                $ApiUri -eq "https://dev.azure.com/contoso/_apis/graph/groups/some-group-descriptor?api-version=6.0-preview.1" -and
+                $Uri -eq "https://dev.azure.com/contoso/_apis/graph/groups/some-group-descriptor?api-version=6.0-preview.1" -and
                 $Method -eq 'Patch'
             }
         }
@@ -55,7 +55,7 @@ Describe 'Set-DevOpsGroup' -Tags "Unit", "API" {
             $result.description | Should -Be 'Updated group description'
             Assert-MockCalled Get-AzDevOpsApiVersion -Exactly 1
             Assert-MockCalled Invoke-AzDevOpsApiRestMethod -Exactly 1 -Scope It -ParameterFilter {
-                $ApiUri -eq "https://dev.azure.com/contoso/_apis/graph/groups?scopeDescriptor=some-project-scope&api-version=6.0-preview.1" -and
+                $Uri -eq "https://dev.azure.com/contoso/_apis/graph/groups?scopeDescriptor=some-project-scope&api-version=6.0-preview.1" -and
                 $Method -eq 'Patch'
             }
         }

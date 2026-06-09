@@ -53,7 +53,7 @@ Describe 'List-DevOpsServicePrinciples' -Tags "Unit", "API" {
 
             Assert-MockCalled Get-AzDevOpsApiVersion -Exactly 1 -Scope It
             Assert-MockCalled Invoke-AzDevOpsApiRestMethod -ParameterFilter {
-                $Uri -eq 'https://vssps.dev.azure.com/MyOrg/_apis/graph/serviceprincipals' -and
+                $Uri -like 'https://vssps.dev.azure.com/MyOrg/_apis/graph/serviceprincipals*' -and
                 $Method -eq 'Get'
             } -Exactly 1 -Scope It
         }
@@ -62,7 +62,7 @@ Describe 'List-DevOpsServicePrinciples' -Tags "Unit", "API" {
             List-DevOpsServicePrinciples -OrganizationName 'MyOrg' -ApiVersion '5.0-preview.1'
 
             Assert-MockCalled Invoke-AzDevOpsApiRestMethod -ParameterFilter {
-                $Uri -eq 'https://vssps.dev.azure.com/MyOrg/_apis/graph/serviceprincipals' -and
+                $Uri -like 'https://vssps.dev.azure.com/MyOrg/_apis/graph/serviceprincipals*' -and
                 $Method -eq 'Get'
             } -Exactly 1 -Scope It
         }

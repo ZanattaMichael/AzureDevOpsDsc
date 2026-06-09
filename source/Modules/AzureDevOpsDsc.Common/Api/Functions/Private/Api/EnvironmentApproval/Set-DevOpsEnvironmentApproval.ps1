@@ -4,8 +4,8 @@ Function Set-DevOpsEnvironmentApproval
     param(
         [Parameter(Mandatory)][string]$ApiUri,
         [Parameter(Mandatory)][string]$ProjectName,
-        [Parameter(Mandatory)][int]$CheckId,
-        [Parameter(Mandatory)][int]$EnvironmentId,
+        [Parameter(Mandatory)][Object]$CheckId,
+        [Parameter(Mandatory)][Object]$EnvironmentId,
         [Parameter(Mandatory)][string[]]$ApproverIds,
         [Parameter()][int]$RequiredApproverCount = 1,
         [Parameter()][bool]$AllowApproverToApproveOwnRuns = $false,

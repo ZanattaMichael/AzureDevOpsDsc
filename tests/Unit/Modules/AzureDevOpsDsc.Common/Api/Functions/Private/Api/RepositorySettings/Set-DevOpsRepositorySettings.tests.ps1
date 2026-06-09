@@ -19,7 +19,7 @@ Describe 'Set-DevOpsRepositorySettings' -Tags "Unit", "API" {
     It 'Calls Invoke-AzDevOpsApiRestMethod with PUT method' {
         Set-DevOpsRepositorySettings -ApiUri 'https://dev.azure.com/myorg' -ProjectName 'TestProject' -RepositoryId 'repo-id'
         Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -ParameterFilter {
-            $Method -eq 'PUT'
+            $Method -eq 'PATCH'
         } -Times 1
     }
 

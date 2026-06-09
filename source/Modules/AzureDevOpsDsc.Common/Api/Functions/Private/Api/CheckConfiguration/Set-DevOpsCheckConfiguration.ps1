@@ -4,7 +4,7 @@ Function Set-DevOpsCheckConfiguration
     param(
         [Parameter(Mandatory)][string]$ApiUri,
         [Parameter(Mandatory)][string]$ProjectName,
-        [Parameter(Mandatory)][int]$CheckId,
+        [Parameter(Mandatory)][Object]$CheckId,
         [Parameter(Mandatory)][string]$CheckTypeId,
         [Parameter(Mandatory)][string]$CheckTypeName,
         [Parameter(Mandatory)][string]$ResourceType,

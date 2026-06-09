@@ -64,7 +64,7 @@ function Set-ProjectServiceStatus
     }
     catch
     {
-        Throw "[Set-ProjectServiceStatus] Failed to set service status for '$ServiceName': $_"
+        Write-Error "[Set-ProjectServiceStatus] Failed to set service status for '$ServiceName': $_"
     }
 
 }

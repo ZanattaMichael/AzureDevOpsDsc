@@ -90,7 +90,7 @@ Describe 'Set-AzDoOrganizationGroup' {
             $result.principalName | Should -Be 'testPrincipalName'
 
             Assert-MockCalled -CommandName Set-DevOpsGroup -Exactly -Times 1 -ParameterFilter {
-                $ApiUri -eq 'https://vssps.dev.azure.com/TestOrg' -and
+                $ApiUri -eq 'https://vssps.dev.azure.com/TestOrganization' -and
                 $GroupName -eq 'TestGroup' -and
                 $GroupDescription -eq 'Test Description' -and
                 $GroupDescriptor -eq 'liveDescriptor'
@@ -133,7 +133,7 @@ Describe 'Set-AzDoOrganizationGroup' {
             $result.principalName | Should -Be 'testPrincipalName'
 
             Assert-MockCalled -CommandName Set-DevOpsGroup -Exactly -Times 1 -ParameterFilter {
-                $ApiUri -eq 'https://vssps.dev.azure.com/TestOrg' -and
+                $ApiUri -eq 'https://vssps.dev.azure.com/TestOrganization' -and
                 $GroupName -eq 'TestGroup' -and
                 $GroupDescription -eq 'Test Description' -and
                 $GroupDescriptor -eq 'liveDescriptor'

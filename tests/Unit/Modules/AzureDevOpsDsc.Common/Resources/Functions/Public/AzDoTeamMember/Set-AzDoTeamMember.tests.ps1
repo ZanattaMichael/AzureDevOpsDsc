@@ -17,6 +17,9 @@ Describe "Set-AzDoTeamMember" {
         $files = Get-FunctionItem (Find-MockedFunctions -TestFilePath $currentFile)
         ForEach ($file in $files) { . $file.FullName }
 
+        # Set-AzDoTeamMember delegates to New-AzDoTeamMember; load it explicitly
+        . (Get-FunctionItem 'New-AzDoTeamMember.ps1').FullName
+
         . (Get-ClassFilePath 'DSCGetSummaryState')
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')

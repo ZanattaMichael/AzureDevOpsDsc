@@ -35,12 +35,14 @@ Function Remove-DevOpsGroup
 
         [Parameter()]
         [String]
-        $ApiVersion = '7.1-preview.1',
+        $ApiVersion,
 
         [Parameter()]
         [String]
         $GroupDescriptor
     )
+
+    if (-not $ApiVersion) { $ApiVersion = Get-AzDevOpsApiVersion }
 
     $params = @{
         Uri = '{0}/_apis/graph/groups/{1}?api-version={2}' -f $ApiUri, $GroupDescriptor, $ApiVersion

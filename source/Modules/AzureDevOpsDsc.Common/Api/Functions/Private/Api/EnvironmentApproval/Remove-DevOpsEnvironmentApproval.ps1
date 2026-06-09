@@ -4,7 +4,7 @@ Function Remove-DevOpsEnvironmentApproval
     param(
         [Parameter(Mandatory)][string]$ApiUri,
         [Parameter(Mandatory)][string]$ProjectName,
-        [Parameter(Mandatory)][int]$CheckId,
+        [Parameter(Mandatory)][Object]$CheckId,
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )
     $params = @{

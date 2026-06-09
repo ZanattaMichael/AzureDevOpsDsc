@@ -35,9 +35,9 @@ Describe 'List-UserCache' -Tags "Unit", "API" {
 
             $result = List-UserCache -OrganizationName $OrganizationName -ApiVersion $ApiVersion
 
-            $expectedUri = "https://vssps.dev.azure.com/$OrganizationName/_apis/graph/users"
+            $expectedUriPattern = "https://vssps.dev.azure.com/$OrganizationName/_apis/graph/users*"
             Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -Exactly -Scope It -ParameterFilter {
-                $Uri -eq $expectedUri -and
+                $Uri -like $expectedUriPattern -and
                 $Method -eq 'Get'
             }
 

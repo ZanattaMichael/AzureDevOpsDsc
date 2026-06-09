@@ -11,6 +11,11 @@ Function Get-DevOpsRepositorySettings
         Uri    = '{0}/{1}/_apis/git/repositories/{2}/settings?api-version={3}' -f $ApiUri, $ProjectName, $RepositoryId, $ApiVersion
         Method = 'GET'
     }
-    try   { return Invoke-AzDevOpsApiRestMethod @params }
+    try
+    {
+        $result = Invoke-AzDevOpsApiRestMethod @params
+        if ($null -eq $result.value) { return $null }
+        return $result
+    }
     catch { Throw "[Get-DevOpsRepositorySettings] Failed to get repository settings for '$RepositoryId': $_" }
 }

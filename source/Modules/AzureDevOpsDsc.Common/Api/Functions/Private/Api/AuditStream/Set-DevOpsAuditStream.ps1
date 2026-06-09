@@ -3,7 +3,7 @@ Function Set-DevOpsAuditStream
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$ApiUri,
-        [Parameter(Mandatory)][int]$StreamId,
+        [Parameter(Mandatory)][Object]$StreamId,
         [Parameter(Mandatory)][ValidateSet('enabled','disabled')][string]$Status,
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )

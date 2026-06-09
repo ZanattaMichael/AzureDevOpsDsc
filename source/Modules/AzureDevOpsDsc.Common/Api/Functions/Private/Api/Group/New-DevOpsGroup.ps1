@@ -114,6 +114,6 @@ Function New-DevOpsGroup
             }
         }
 
-        Throw "[New-DevOpsGroup] Failed to create group '$GroupName': $_"
+        Write-Error "[New-DevOpsGroup] Failed to create group '$GroupName': $_"
     }
 }

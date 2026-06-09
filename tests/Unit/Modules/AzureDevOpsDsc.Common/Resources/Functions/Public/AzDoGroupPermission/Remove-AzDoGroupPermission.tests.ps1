@@ -10,6 +10,7 @@ Describe 'Remove-AzDoGroupPermission' -skip {
     BeforeAll {
 
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        . (Get-FunctionItem 'Get-AzDoOrganizationName.ps1').FullName\n
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         # Load the functions to test

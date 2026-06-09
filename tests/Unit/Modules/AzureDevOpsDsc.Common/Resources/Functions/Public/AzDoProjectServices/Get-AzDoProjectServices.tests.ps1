@@ -19,6 +19,7 @@ Describe "Get-AzDoProjectServices" {
         . (Get-ClassFilePath 'DSCGetSummaryState')
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
+        . (Get-ClassFilePath '003.LocalizedDataAzURLParams')
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }

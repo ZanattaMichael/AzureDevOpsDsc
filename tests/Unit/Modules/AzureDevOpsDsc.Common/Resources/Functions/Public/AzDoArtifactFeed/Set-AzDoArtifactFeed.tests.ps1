@@ -37,19 +37,19 @@ Describe "Set-AzDoArtifactFeed" {
         }
 
         It "calls Set-DevOpsArtifactFeed" {
-            Set-AzDoArtifactFeed -FeedName 'TestFeed'
+            Set-AzDoArtifactFeed -ProjectName 'TestProject' -FeedName 'TestFeed'
             Assert-MockCalled -CommandName Set-DevOpsArtifactFeed -Exactly -Times 1
         }
 
         It "updates the cache with Add-CacheItem" {
-            Set-AzDoArtifactFeed -FeedName 'TestFeed'
+            Set-AzDoArtifactFeed -ProjectName 'TestProject' -FeedName 'TestFeed'
             Assert-MockCalled -CommandName Add-CacheItem -ParameterFilter {
                 $Type -eq 'LiveArtifactFeeds'
             } -Times 1
         }
 
         It "calls Export-CacheObject" {
-            Set-AzDoArtifactFeed -FeedName 'TestFeed'
+            Set-AzDoArtifactFeed -ProjectName 'TestProject' -FeedName 'TestFeed'
             Assert-MockCalled -CommandName Export-CacheObject -Times 1
         }
     }
@@ -60,7 +60,7 @@ Describe "Set-AzDoArtifactFeed" {
         }
 
         It "writes an error and does not call Set-DevOpsArtifactFeed" {
-            Set-AzDoArtifactFeed -FeedName 'NonExistent'
+            Set-AzDoArtifactFeed -ProjectName 'TestProject' -FeedName 'NonExistent'
             Assert-MockCalled -CommandName Write-Error -Times 1
             Assert-MockCalled -CommandName Set-DevOpsArtifactFeed -Times 0
         }

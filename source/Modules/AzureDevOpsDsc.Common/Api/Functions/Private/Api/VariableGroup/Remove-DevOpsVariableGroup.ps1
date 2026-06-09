@@ -4,7 +4,7 @@ Function Remove-DevOpsVariableGroup
     param(
         [Parameter(Mandatory)][string]$ApiUri,
         [Parameter(Mandatory)][string]$ProjectName,
-        [Parameter(Mandatory)][int]$VariableGroupId,
+        [Parameter(Mandatory)][Object]$VariableGroupId,
         [Parameter()][string]$ApiVersion = '7.1-preview.2'
     )
     $params = @{

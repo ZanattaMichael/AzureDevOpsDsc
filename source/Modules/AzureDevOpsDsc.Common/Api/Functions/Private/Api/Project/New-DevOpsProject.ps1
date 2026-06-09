@@ -97,6 +97,6 @@ function New-DevOpsProject
     }
     catch
     {
-        Throw "[New-DevOpsProject] Failed to create the Azure DevOps project '$ProjectName' in '$Organization': $_"
+        Write-Error "[New-DevOpsProject] Failed to create the Azure DevOps project '$ProjectName' in '$Organization': $_"
     }
 }

@@ -9,6 +9,7 @@ Describe 'New-AzDoAreaPermission Tests' {
     BeforeAll {
 
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        . (Get-FunctionItem 'Get-AzDoOrganizationName.ps1').FullName\n
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         # Load the functions to test
@@ -51,6 +52,7 @@ Describe 'New-AzDoAreaPermission Tests' {
 
         Mock -CommandName Write-Warning
         Mock -CommandName Set-AzDoPermission
+        Mock -CommandName Remove-CacheItem
 
     }
 

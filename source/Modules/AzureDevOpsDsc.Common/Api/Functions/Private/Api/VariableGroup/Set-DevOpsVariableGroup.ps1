@@ -4,7 +4,7 @@ Function Set-DevOpsVariableGroup
     param(
         [Parameter(Mandatory)][string]$ApiUri,
         [Parameter(Mandatory)][string]$ProjectName,
-        [Parameter(Mandatory)][int]$VariableGroupId,
+        [Parameter(Mandatory)][Object]$VariableGroupId,
         [Parameter(Mandatory)][string]$VariableGroupName,
         [Parameter()][string]$Description,
         [Parameter()][ValidateSet('Vsts','AzureKeyVault')][string]$Type = 'Vsts',

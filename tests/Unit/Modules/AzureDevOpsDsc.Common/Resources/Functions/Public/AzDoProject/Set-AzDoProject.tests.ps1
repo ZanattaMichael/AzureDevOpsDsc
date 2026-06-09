@@ -10,6 +10,7 @@ Describe "Set-AzDoProject" {
 
         # Set the organization name
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        . (Get-FunctionItem 'Get-AzDoOrganizationName.ps1').FullName\n
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         # Load the functions to test
@@ -80,17 +81,17 @@ Describe "Set-AzDoProject" {
                 ($Type -eq 'LiveProcesses')
             }
             Assert-MockCalled -CommandName Update-DevOpsProject -Exactly -Times 1 -ParameterFilter {
-                ($organization -eq "TestOrg") -and
+                ($organization -eq "TestOrganization") -and
                 ($projectId -eq '12345') -and
                 ($description -eq $projectDescription) -and
                 ($processTemplateId -eq '67890')
             }
             Assert-MockCalled -CommandName Wait-DevOpsProject -Exactly -Times 1 -ParameterFilter {
                 ($ProjectURL -eq "http://devopsprojecturl") -and
-                ($OrganizationName -eq "TestOrg")
+                ($OrganizationName -eq "TestOrganization")
             }
             Assert-MockCalled -CommandName Refresh-AzDoCache -Exactly -Times 1 -ParameterFilter {
-                $OrganizationName -eq "TestOrg"
+                $OrganizationName -eq "TestOrganization"
             }
         }
     }

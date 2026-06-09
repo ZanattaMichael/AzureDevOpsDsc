@@ -4,7 +4,7 @@ Function Remove-DevOpsBranchPolicy
     param(
         [Parameter(Mandatory)][string]$ApiUri,
         [Parameter(Mandatory)][string]$ProjectName,
-        [Parameter(Mandatory)][int]$PolicyId,
+        [Parameter(Mandatory)][Object]$PolicyId,
         [Parameter()][string]$ApiVersion = '7.1'
     )
     $params = @{

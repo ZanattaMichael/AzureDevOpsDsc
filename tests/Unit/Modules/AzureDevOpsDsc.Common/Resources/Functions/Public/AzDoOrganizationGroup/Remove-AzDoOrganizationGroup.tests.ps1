@@ -73,7 +73,7 @@ Describe 'Remove-AzDoOrganizationGroup' {
 
             Assert-MockCalled -CommandName Remove-DevOpsGroup -Exactly -Times 1 -ParameterFilter {
                 $GroupDescriptor -eq 'LiveDescriptor' -and
-                $ApiUri -eq 'https://vssps.dev.azure.com/TestOrg'
+                $ApiUri -eq 'https://vssps.dev.azure.com/TestOrganization'
             }
 
             Assert-MockCalled -CommandName Remove-CacheItem -Exactly -Times 2
@@ -95,7 +95,7 @@ Describe 'Remove-AzDoOrganizationGroup' {
 
             Assert-MockCalled -CommandName Remove-DevOpsGroup -Exactly -Times 1 -ParameterFilter {
                 $GroupDescriptor -eq 'LocalDescriptor' -and
-                $ApiUri -eq 'https://vssps.dev.azure.com/TestOrg'
+                $ApiUri -eq 'https://vssps.dev.azure.com/TestOrganization'
             }
 
             Assert-MockCalled -CommandName Remove-CacheItem -Exactly -Times 2
@@ -120,7 +120,7 @@ Describe 'Remove-AzDoOrganizationGroup' {
 
             Assert-MockCalled -CommandName Remove-DevOpsGroup -Exactly -Times 1 -ParameterFilter {
                 $GroupDescriptor -eq 'LiveDescriptor' -and
-                $ApiUri -eq 'https://vssps.dev.azure.com/TestOrg'
+                $ApiUri -eq 'https://vssps.dev.azure.com/TestOrganization'
             }
 
             Assert-MockCalled -CommandName Remove-CacheItem -Exactly -Times 2

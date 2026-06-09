@@ -4,7 +4,7 @@ Function Set-DevOpsBranchPolicy
     param(
         [Parameter(Mandatory)][string]$ApiUri,
         [Parameter(Mandatory)][string]$ProjectName,
-        [Parameter(Mandatory)][int]$PolicyId,
+        [Parameter(Mandatory)][Object]$PolicyId,
         [Parameter(Mandatory)][string]$PolicyTypeId,
         [Parameter(Mandatory)][bool]$IsEnabled,
         [Parameter(Mandatory)][bool]$IsBlocking,
