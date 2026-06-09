@@ -42,7 +42,7 @@ Describe "Remove-AzDoServiceConnectionPermission" {
         }
 
         It "performs the expected operation" {
-            Remove-AzDoServiceConnectionPermission -ProjectName 'TestProject' -ServiceConnectionName 'TestSC' -GroupName 'TestGroup' -isInherited $false
+            Remove-AzDoServiceConnectionPermission -ProjectName 'TestProject' -ConnectionName 'TestSC' -GroupName 'TestGroup' -isInherited $false
             Assert-MockCalled -CommandName Remove-AzDoPermission -Exactly -Times 1
         }
     }
@@ -53,7 +53,7 @@ Describe "Remove-AzDoServiceConnectionPermission" {
         }
 
         It "writes an error" {
-            Remove-AzDoServiceConnectionPermission -ProjectName 'TestProject' -ServiceConnectionName 'TestSC' -GroupName 'TestGroup' -isInherited $false
+            Remove-AzDoServiceConnectionPermission -ProjectName 'TestProject' -ConnectionName 'TestSC' -GroupName 'TestGroup' -isInherited $false
             Assert-MockCalled -CommandName Write-Error -Times 1
         }
     }

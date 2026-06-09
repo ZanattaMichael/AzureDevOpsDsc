@@ -32,6 +32,7 @@ Describe "Remove-AzDoProjectPermission" {
                 param ($Key, $Type)
                 switch ($Type) {
                     'SecurityNamespaces' { return @{ namespaceId = 'mock-ns-id' } }
+                    'LiveProjects'       { return @{ id = 'mock-project-id' } }
                     default { return $null }
                 }
             }

@@ -19,6 +19,7 @@ Describe "New-AzDoPipelinePermission" {
         . (Get-ClassFilePath 'DSCGetSummaryState')
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
+        . (Get-ClassFilePath '002.LocalizedDataAzSerializationPatten')
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }

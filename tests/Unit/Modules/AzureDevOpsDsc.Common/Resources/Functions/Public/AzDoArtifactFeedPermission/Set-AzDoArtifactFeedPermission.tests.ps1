@@ -19,6 +19,7 @@ Describe "Set-AzDoArtifactFeedPermission" {
         . (Get-ClassFilePath 'DSCGetSummaryState')
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
+        . (Get-ClassFilePath '002.LocalizedDataAzSerializationPatten')
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
@@ -43,7 +44,7 @@ Describe "Set-AzDoArtifactFeedPermission" {
         }
 
         It "performs the expected operation" {
-            Set-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed' -GroupName 'TestGroup' -isInherited $false -LookupResult @{ propertiesChanged = @(); DifferenceACLs = @() }
+            Set-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed' -LookupResult @{ propertiesChanged = @(); DifferenceACLs = @() }
             Assert-MockCalled -CommandName Set-AzDoPermission -Exactly -Times 1
         }
     }
@@ -54,7 +55,7 @@ Describe "Set-AzDoArtifactFeedPermission" {
         }
 
         It "writes an error" {
-            Set-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed' -GroupName 'TestGroup' -isInherited $false
+            Set-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed'
             Assert-MockCalled -CommandName Write-Error -Times 1
         }
     }

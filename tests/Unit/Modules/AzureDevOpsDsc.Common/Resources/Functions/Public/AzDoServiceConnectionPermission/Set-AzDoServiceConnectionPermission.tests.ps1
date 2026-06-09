@@ -19,6 +19,7 @@ Describe "Set-AzDoServiceConnectionPermission" {
         . (Get-ClassFilePath 'DSCGetSummaryState')
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
+        . (Get-ClassFilePath '002.LocalizedDataAzSerializationPatten')
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
@@ -43,7 +44,7 @@ Describe "Set-AzDoServiceConnectionPermission" {
         }
 
         It "performs the expected operation" {
-            Set-AzDoServiceConnectionPermission -ProjectName 'TestProject' -ServiceConnectionName 'TestSC' -GroupName 'TestGroup' -isInherited $false -LookupResult @{ propertiesChanged = @(); DifferenceACLs = @() }
+            Set-AzDoServiceConnectionPermission -ProjectName 'TestProject' -ConnectionName 'TestSC' -GroupName 'TestGroup' -isInherited $false -LookupResult @{ propertiesChanged = @(); DifferenceACLs = @() }
             Assert-MockCalled -CommandName Set-AzDoPermission -Exactly -Times 1
         }
     }
@@ -54,7 +55,7 @@ Describe "Set-AzDoServiceConnectionPermission" {
         }
 
         It "writes an error" {
-            Set-AzDoServiceConnectionPermission -ProjectName 'TestProject' -ServiceConnectionName 'TestSC' -GroupName 'TestGroup' -isInherited $false
+            Set-AzDoServiceConnectionPermission -ProjectName 'TestProject' -ConnectionName 'TestSC' -GroupName 'TestGroup' -isInherited $false
             Assert-MockCalled -CommandName Write-Error -Times 1
         }
     }

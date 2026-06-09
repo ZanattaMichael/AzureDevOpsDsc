@@ -45,7 +45,7 @@ Describe "Get-AzDoArtifactFeedPermission" {
         }
 
         It "performs the expected operation" {
-            Get-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed' -GroupName 'TestGroup' -isInherited $false
+            Get-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed'
             Assert-MockCalled -CommandName Test-ACLListforChanges -Times 1
         }
     }
@@ -56,7 +56,7 @@ Describe "Get-AzDoArtifactFeedPermission" {
         }
 
         It "writes an error" {
-            Get-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed' -GroupName 'TestGroup' -isInherited $false
+            Get-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed'
             Assert-MockCalled -CommandName Write-Error -Times 1
         }
     }

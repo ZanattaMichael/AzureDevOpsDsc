@@ -33,7 +33,7 @@ data LocalizedDataAzSerializationPatten
         GroupPermission = '^{0}\\\\{1}$'
         # Project Permissions
         # Example: $PROJECT:vstfs:///Classification/TeamProject/78a5065f-3043-426f-9cc5-785748b18f9d
-        ProjectPermission = '^\$PROJECT:vstfs:\/{3}Classification\/TeamProject\/{0}$'
+        ProjectPermission = '^\$PROJECT:vstfs:\/{{3}}Classification\/TeamProject\/{0}$'
         # Build/Pipeline Permissions  (ProjectId or ProjectId/PipelineId)
         # Example: 78a5065f-3043-426f-9cc5-785748b18f9d  or  78a5065f.../123
         BuildPermission = '^{0}(\/[0-9]+)?$'

@@ -45,18 +45,22 @@ Describe "Get-AzDoServiceConnectionPermission" {
         }
 
         It "performs the expected operation" {
-            Get-AzDoServiceConnectionPermission -ProjectName 'TestProject' -ServiceConnectionName 'TestSC' -GroupName 'TestGroup' -isInherited $false
+            Get-AzDoServiceConnectionPermission -ProjectName 'TestProject' -ConnectionName 'TestSC' -GroupName 'TestGroup' -isInherited $false
             Assert-MockCalled -CommandName Test-ACLListforChanges -Times 1
         }
     }
 
     Context "when namespace not found" {
         BeforeEach {
-            Mock -CommandName Get-CacheItem -MockWith { return $null }
+            Mock -CommandName Get-CacheItem -MockWith {
+                param ($Key, $Type)
+                if ($Type -eq 'LiveProjects') { return @{ id = 'mock-project-id' } }
+                return $null
+            }
         }
 
         It "writes an error" {
-            Get-AzDoServiceConnectionPermission -ProjectName 'TestProject' -ServiceConnectionName 'TestSC' -GroupName 'TestGroup' -isInherited $false
+            Get-AzDoServiceConnectionPermission -ProjectName 'TestProject' -ConnectionName 'TestSC' -GroupName 'TestGroup' -isInherited $false
             Assert-MockCalled -CommandName Write-Error -Times 1
         }
     }

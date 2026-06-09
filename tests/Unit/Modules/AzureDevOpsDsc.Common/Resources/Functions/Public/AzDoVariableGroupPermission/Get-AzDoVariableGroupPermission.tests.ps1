@@ -52,7 +52,11 @@ Describe "Get-AzDoVariableGroupPermission" {
 
     Context "when namespace not found" {
         BeforeEach {
-            Mock -CommandName Get-CacheItem -MockWith { return $null }
+            Mock -CommandName Get-CacheItem -MockWith {
+                param ($Key, $Type)
+                if ($Type -eq 'LiveProjects') { return @{ id = 'mock-project-id' } }
+                return $null
+            }
         }
 
         It "writes an error" {

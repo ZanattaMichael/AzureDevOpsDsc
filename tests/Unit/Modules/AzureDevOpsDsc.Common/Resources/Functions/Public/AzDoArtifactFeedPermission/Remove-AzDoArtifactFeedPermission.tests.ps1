@@ -42,7 +42,7 @@ Describe "Remove-AzDoArtifactFeedPermission" {
         }
 
         It "performs the expected operation" {
-            Remove-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed' -GroupName 'TestGroup' -isInherited $false
+            Remove-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed'
             Assert-MockCalled -CommandName Remove-AzDoPermission -Exactly -Times 1
         }
     }
@@ -53,7 +53,7 @@ Describe "Remove-AzDoArtifactFeedPermission" {
         }
 
         It "writes an error" {
-            Remove-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed' -GroupName 'TestGroup' -isInherited $false
+            Remove-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed'
             Assert-MockCalled -CommandName Write-Error -Times 1
         }
     }
