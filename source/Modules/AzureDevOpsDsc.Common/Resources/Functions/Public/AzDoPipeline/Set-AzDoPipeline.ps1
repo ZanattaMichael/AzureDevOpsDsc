@@ -38,6 +38,12 @@ Function Set-AzDoPipeline
 
     $value = Set-DevOpsPipeline @params
 
+    if ($null -eq $value)
+    {
+        Write-Error "[Set-AzDoPipeline] Set-DevOpsPipeline returned null. Check authentication token and organization settings."
+        return
+    }
+
     Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $PipelineName) -Value $value -Type 'LivePipelines'
     Export-CacheObject -CacheType 'LivePipelines' -Content $AzDoLivePipelines
     Refresh-CacheObject -CacheType 'LivePipelines'

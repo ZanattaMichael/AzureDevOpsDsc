@@ -21,6 +21,12 @@ Function New-AzDoAgentPool
         IsHosted     = $IsHosted
     }
     $value = New-DevOpsAgentPool @params
+
+    if ($null -eq $value)
+    {
+        Write-Error "[New-AzDoAgentPool] New-DevOpsAgentPool returned null. Check authentication token and organization settings."
+        return
+    }
     Add-CacheItem -Key $PoolName -Value $value -Type 'LiveAgentPools'
     Export-CacheObject -CacheType 'LiveAgentPools' -Content $AzDoLiveAgentPools
     Refresh-CacheObject -CacheType 'LiveAgentPools'

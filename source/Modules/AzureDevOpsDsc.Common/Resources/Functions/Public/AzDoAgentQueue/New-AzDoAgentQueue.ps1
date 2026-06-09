@@ -21,6 +21,12 @@ Function New-AzDoAgentQueue
         AuthorizeAllPipelines = $AuthorizeAllPipelines
     }
     $value = New-DevOpsAgentQueue @params
+
+    if ($null -eq $value)
+    {
+        Write-Error "[New-AzDoAgentQueue] New-DevOpsAgentQueue returned null. Check authentication token and organization settings."
+        return
+    }
     Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $QueueName) -Value $value -Type 'LiveAgentQueues'
     Export-CacheObject -CacheType 'LiveAgentQueues' -Content $AzDoLiveAgentQueues
     Refresh-CacheObject -CacheType 'LiveAgentQueues'

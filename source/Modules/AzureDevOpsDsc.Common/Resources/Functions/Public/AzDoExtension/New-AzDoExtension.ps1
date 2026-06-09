@@ -15,6 +15,12 @@ Function New-AzDoExtension
         ExtensionId = $ExtensionId
     }
     $value = New-DevOpsExtension @params
+
+    if ($null -eq $value)
+    {
+        Write-Error "[New-AzDoExtension] New-DevOpsExtension returned null. Check authentication token and organization settings."
+        return
+    }
     Add-CacheItem -Key ('{0}\{1}' -f $PublisherId, $ExtensionId) -Value $value -Type 'LiveExtensions'
     Export-CacheObject -CacheType 'LiveExtensions' -Content $AzDoLiveExtensions
     Refresh-CacheObject -CacheType 'LiveExtensions'

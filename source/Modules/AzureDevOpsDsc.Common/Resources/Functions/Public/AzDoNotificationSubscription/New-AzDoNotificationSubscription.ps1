@@ -23,6 +23,12 @@ Function New-AzDoNotificationSubscription
         Filter      = $Filter
     }
     $value = New-DevOpsNotificationSubscription @params
+
+    if ($null -eq $value)
+    {
+        Write-Error "[New-AzDoNotificationSubscription] New-DevOpsNotificationSubscription returned null. Check authentication token and organization settings."
+        return
+    }
     Add-CacheItem -Key $SubscriptionName -Value $value -Type 'LiveNotificationSubscriptions'
     Export-CacheObject -CacheType 'LiveNotificationSubscriptions' -Content $AzDoLiveNotificationSubscriptions
     Refresh-CacheObject -CacheType 'LiveNotificationSubscriptions'

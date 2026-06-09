@@ -59,6 +59,12 @@ Function New-AzDoCheckConfiguration
 
     $value = New-DevOpsCheckConfiguration @params
 
+    if ($null -eq $value)
+    {
+        Write-Error "[New-AzDoCheckConfiguration] New-DevOpsCheckConfiguration returned null. Check authentication token and organization settings."
+        return
+    }
+
     $cacheKey = '{0}\{1}\{2}\{3}' -f $ProjectName, $ResourceType, $ResourceName, $CheckType
     Add-CacheItem -Key $cacheKey -Value $value -Type 'LiveCheckConfigurations'
     Export-CacheObject -CacheType 'LiveCheckConfigurations' -Content $AzDoLiveCheckConfigurations

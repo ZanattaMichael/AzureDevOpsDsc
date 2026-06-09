@@ -22,6 +22,12 @@ Function Set-AzDoAgentPool
         AutoUpdate   = $AutoUpdate
     }
     $value = Set-DevOpsAgentPool @params
+
+    if ($null -eq $value)
+    {
+        Write-Error "[Set-AzDoAgentPool] Set-DevOpsAgentPool returned null. Check authentication token and organization settings."
+        return
+    }
     Add-CacheItem -Key $PoolName -Value $value -Type 'LiveAgentPools'
     Export-CacheObject -CacheType 'LiveAgentPools' -Content $AzDoLiveAgentPools
     Refresh-CacheObject -CacheType 'LiveAgentPools'

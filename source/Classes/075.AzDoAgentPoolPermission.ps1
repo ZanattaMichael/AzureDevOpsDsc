@@ -10,7 +10,7 @@ class AzDoAgentPoolPermission : AzDevOpsDscResourceBase
     [DscProperty(Key, Mandatory)]
     [System.String]$PoolName
 
-    [DscProperty(Key, Mandatory)]
+    [DscProperty(Mandatory)]
     [System.String]$GroupName
 
     [DscProperty()]

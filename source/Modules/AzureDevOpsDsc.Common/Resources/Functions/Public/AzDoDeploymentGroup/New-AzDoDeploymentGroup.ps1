@@ -18,6 +18,12 @@ Function New-AzDoDeploymentGroup
         Description         = $Description
     }
     $value = New-DevOpsDeploymentGroup @params
+
+    if ($null -eq $value)
+    {
+        Write-Error "[New-AzDoDeploymentGroup] New-DevOpsDeploymentGroup returned null. Check authentication token and organization settings."
+        return
+    }
     Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $DeploymentGroupName) -Value $value -Type 'LiveDeploymentGroups'
     Export-CacheObject -CacheType 'LiveDeploymentGroups' -Content $AzDoLiveDeploymentGroups
     Refresh-CacheObject -CacheType 'LiveDeploymentGroups'

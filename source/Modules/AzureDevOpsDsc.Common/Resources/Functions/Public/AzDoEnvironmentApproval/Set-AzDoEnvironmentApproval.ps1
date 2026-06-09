@@ -48,6 +48,12 @@ Function Set-AzDoEnvironmentApproval
 
     $value = Set-DevOpsEnvironmentApproval @params
 
+    if ($null -eq $value)
+    {
+        Write-Error "[Set-AzDoEnvironmentApproval] Set-DevOpsEnvironmentApproval returned null. Check authentication token and organization settings."
+        return
+    }
+
     $cacheKey = '{0}\{1}' -f $ProjectName, $EnvironmentName
     Add-CacheItem -Key $cacheKey -Value $value -Type 'LiveEnvironmentApprovals'
     Export-CacheObject -CacheType 'LiveEnvironmentApprovals' -Content $AzDoLiveEnvironmentApprovals

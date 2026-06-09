@@ -67,6 +67,12 @@ Function New-AzDoOrganizationGroup
     # Create a new group
     $group = New-DevOpsGroup @params
 
+    if ($null -eq $group)
+    {
+        Write-Error "[New-AzDoOrganizationGroup] New-DevOpsGroup returned null for group '$GroupName'. Check authentication token and organization settings."
+        return
+    }
+
     # Update the cache with the new group
     Refresh-CacheIdentity -Identity $group -Key $group.principalName -CacheType 'LiveGroups'
 

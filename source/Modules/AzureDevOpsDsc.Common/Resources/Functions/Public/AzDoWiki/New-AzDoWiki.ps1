@@ -27,6 +27,12 @@ Function New-AzDoWiki
         MappedPath   = $MappedPath
     }
     $value = New-DevOpsWiki @params
+
+    if ($null -eq $value)
+    {
+        Write-Error "[New-AzDoWiki] New-DevOpsWiki returned null. Check authentication token and organization settings."
+        return
+    }
     Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $WikiName) -Value $value -Type 'LiveWikis'
     Export-CacheObject -CacheType 'LiveWikis' -Content $AzDoLiveWikis
     Refresh-CacheObject -CacheType 'LiveWikis'

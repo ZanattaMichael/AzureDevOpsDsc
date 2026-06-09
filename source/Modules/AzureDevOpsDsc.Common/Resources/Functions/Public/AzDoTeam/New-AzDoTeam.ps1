@@ -28,6 +28,12 @@ Function New-AzDoTeam
 
     $value = New-DevOpsTeam @params
 
+    if ($null -eq $value)
+    {
+        Write-Error "[New-AzDoTeam] New-DevOpsTeam returned null. Check authentication token and organization settings."
+        return
+    }
+
     Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $TeamName) -Value $value -Type 'LiveTeams'
     Export-CacheObject -CacheType 'LiveTeams' -Content $AzDoLiveTeams
     Refresh-CacheObject -CacheType 'LiveTeams'

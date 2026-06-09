@@ -37,6 +37,12 @@ Function New-AzDoServiceConnection
 
     $value = New-DevOpsServiceConnection @params
 
+    if ($null -eq $value)
+    {
+        Write-Error "[New-AzDoServiceConnection] New-DevOpsServiceConnection returned null. Check authentication token and organization settings."
+        return
+    }
+
     Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $ConnectionName) -Value $value -Type 'LiveServiceConnections'
     Export-CacheObject -CacheType 'LiveServiceConnections' -Content $AzDoLiveServiceConnections
     Refresh-CacheObject -CacheType 'LiveServiceConnections'

@@ -27,6 +27,12 @@ Function New-AzDoVariableGroup
 
     $value = New-DevOpsVariableGroup @params
 
+    if ($null -eq $value)
+    {
+        Write-Error "[New-AzDoVariableGroup] New-DevOpsVariableGroup returned null. Check authentication token and organization settings."
+        return
+    }
+
     Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $VariableGroupName) -Value $value -Type 'LiveVariableGroups'
     Export-CacheObject -CacheType 'LiveVariableGroups' -Content $AzDoLiveVariableGroups
     Refresh-CacheObject -CacheType 'LiveVariableGroups'

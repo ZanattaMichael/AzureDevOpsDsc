@@ -7,7 +7,10 @@ Function Get-AzDoExtension
         [Parameter(Mandatory = $true)][string]$ExtensionId,
         [Parameter()][HashTable]$LookupResult,
         [Parameter()][Ensure]$Ensure,
-        [Parameter()][System.Management.Automation.SwitchParameter]$Force
+        [Parameter()][System.Management.Automation.SwitchParameter]$Force,
+        # NotConfigurable DSC properties passed by the base class - accepted but not used
+        [Parameter()][string]$Version,
+        [Parameter()][string]$DisplayName
     )
     Write-Verbose "[Get-AzDoExtension] Started."
     $result = @{ Ensure = [Ensure]::Absent; propertiesChanged = @(); status = $null }

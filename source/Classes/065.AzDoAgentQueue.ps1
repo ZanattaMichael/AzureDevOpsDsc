@@ -7,7 +7,7 @@
 class AzDoAgentQueue : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)][System.String]$ProjectName
-    [DscProperty(Key, Mandatory)][System.String]$QueueName
+    [DscProperty(Mandatory)][System.String]$QueueName
     [DscProperty(Mandatory)][System.String]$PoolName
     [DscProperty()][System.Boolean]$AuthorizeAllPipelines = $false
 

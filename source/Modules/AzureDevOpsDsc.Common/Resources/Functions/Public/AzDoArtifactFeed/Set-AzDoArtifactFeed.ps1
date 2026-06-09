@@ -25,6 +25,12 @@ Function Set-AzDoArtifactFeed
         HideDeletedPackageVersions = $HideDeletedPackageVersions
     }
     $value = Set-DevOpsArtifactFeed @params
+
+    if ($null -eq $value)
+    {
+        Write-Error "[Set-AzDoArtifactFeed] Set-DevOpsArtifactFeed returned null. Check authentication token and organization settings."
+        return
+    }
     Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $FeedName) -Value $value -Type 'LiveArtifactFeeds'
     Export-CacheObject -CacheType 'LiveArtifactFeeds' -Content $AzDoLiveArtifactFeeds
     Refresh-CacheObject -CacheType 'LiveArtifactFeeds'

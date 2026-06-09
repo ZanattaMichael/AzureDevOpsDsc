@@ -23,6 +23,12 @@ Function New-AzDoTaskGroup
         Inputs        = if ($Inputs) { $Inputs } else { @() }
     }
     $value = New-DevOpsTaskGroup @params
+
+    if ($null -eq $value)
+    {
+        Write-Error "[New-AzDoTaskGroup] New-DevOpsTaskGroup returned null. Check authentication token and organization settings."
+        return
+    }
     Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $TaskGroupName) -Value $value -Type 'LiveTaskGroups'
     Export-CacheObject -CacheType 'LiveTaskGroups' -Content $AzDoLiveTaskGroups
     Refresh-CacheObject -CacheType 'LiveTaskGroups'

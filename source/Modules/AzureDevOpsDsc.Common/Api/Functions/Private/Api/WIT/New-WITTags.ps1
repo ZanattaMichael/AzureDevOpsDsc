@@ -24,7 +24,13 @@ Function New-WITTags {
     )
 
     # Get the Work Item Type Tag ID
-    $WorkItemType = (List-WITTypes -Organization $Organization -ProjectName $ProjectName)[0].name
+    $witTypes = List-WITTypes -Organization $Organization -ProjectName $ProjectName
+    if ($null -eq $witTypes -or $witTypes.Count -eq 0)
+    {
+        Write-Error "[New-WITTag] Failed to retrieve Work Item Types for project '$ProjectName'. Check authentication token and organization settings."
+        return $null
+    }
+    $WorkItemType = $witTypes[0].name
 
     # Validate the parameters
     $NewWIPTagParams = @{

@@ -88,6 +88,12 @@ Function New-AzDoGitRepository
     # Create a new repository
     $value = New-GitRepository @params
 
+    if ($null -eq $value)
+    {
+        Write-Error "[New-AzDoGitRepository] New-GitRepository returned null for repository '$RepositoryName' in project '$ProjectName'. Check authentication token and organization settings."
+        return
+    }
+
     # Add the repository to the LiveRepositories cache and write to verbose log
     Add-CacheItem -Key "$ProjectName\$RepositoryName" -Value $value -Type 'LiveRepositories'
     Export-CacheObject -CacheType 'LiveRepositories' -Content $AzDoLiveRepositories

@@ -10,7 +10,7 @@ class AzDoDeploymentGroup : AzDevOpsDscResourceBase
     [DscProperty(Key, Mandatory)]
     [System.String]$ProjectName
 
-    [DscProperty(Key, Mandatory)]
+    [DscProperty(Mandatory)]
     [System.String]$DeploymentGroupName
 
     [DscProperty()]

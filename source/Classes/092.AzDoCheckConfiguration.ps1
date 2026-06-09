@@ -10,14 +10,14 @@ class AzDoCheckConfiguration : AzDevOpsDscResourceBase
     [DscProperty(Key, Mandatory)]
     [System.String]$ProjectName
 
-    [DscProperty(Key, Mandatory)]
+    [DscProperty(Mandatory)]
     [System.String]$ResourceName
 
-    [DscProperty(Key, Mandatory)]
+    [DscProperty(Mandatory)]
     [ValidateSet('environment','repository','endpoint')]
     [System.String]$ResourceType
 
-    [DscProperty(Key, Mandatory)]
+    [DscProperty(Mandatory)]
     [System.String]$CheckType
 
     [DscProperty()]

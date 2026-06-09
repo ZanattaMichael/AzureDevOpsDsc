@@ -58,6 +58,12 @@ Function New-AzDoBranchPolicy
 
     $value = New-DevOpsBranchPolicy @params
 
+    if ($null -eq $value)
+    {
+        Write-Error "[New-AzDoBranchPolicy] New-DevOpsBranchPolicy returned null. Check authentication token and organization settings."
+        return
+    }
+
     $cacheKey = '{0}\{1}\{2}\{3}' -f $ProjectName, $RepositoryName, $BranchName, $PolicyType
     Add-CacheItem -Key $cacheKey -Value $value -Type 'LiveBranchPolicies'
     Export-CacheObject -CacheType 'LiveBranchPolicies' -Content $AzDoLiveBranchPolicies

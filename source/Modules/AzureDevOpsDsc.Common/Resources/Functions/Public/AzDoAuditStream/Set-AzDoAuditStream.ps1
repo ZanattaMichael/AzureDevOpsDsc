@@ -19,6 +19,12 @@ Function Set-AzDoAuditStream
         Status   = if ($Enabled) { 'enabled' } else { 'disabled' }
     }
     $value = Set-DevOpsAuditStream @params
+
+    if ($null -eq $value)
+    {
+        Write-Error "[Set-AzDoAuditStream] Set-DevOpsAuditStream returned null. Check authentication token and organization settings."
+        return
+    }
     Add-CacheItem -Key $StreamName -Value $value -Type 'LiveAuditStreams'
     Export-CacheObject -CacheType 'LiveAuditStreams' -Content $AzDoLiveAuditStreams
     Refresh-CacheObject -CacheType 'LiveAuditStreams'

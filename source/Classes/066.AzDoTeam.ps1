@@ -7,7 +7,7 @@
 class AzDoTeam : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)][System.String]$ProjectName
-    [DscProperty(Key, Mandatory)][System.String]$TeamName
+    [DscProperty(Mandatory)][System.String]$TeamName
     [DscProperty()][System.String]$Description
 
     AzDoTeam() { $this.Construct() }

@@ -7,8 +7,8 @@
 class AzDoTeamMember : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)][System.String]$ProjectName
-    [DscProperty(Key, Mandatory)][System.String]$TeamName
-    [DscProperty(Key, Mandatory)][System.String]$MemberName
+    [DscProperty(Mandatory)][System.String]$TeamName
+    [DscProperty(Mandatory)][System.String]$MemberName
 
     AzDoTeamMember() { $this.Construct() }
     [AzDoTeamMember] Get() { return [AzDoTeamMember]$($this.GetDscCurrentStateProperties()) }
