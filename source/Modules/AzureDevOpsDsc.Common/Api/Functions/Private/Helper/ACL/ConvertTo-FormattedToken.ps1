@@ -63,6 +63,45 @@ Function ConvertTo-FormattedToken {
             $string = $(($Token.Identifiers | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_.identifier }) -join ':')
             break
         }
+        # Project-level permissions
+        {$_.type -eq 'Project'} {
+            $string = '$PROJECT:vstfs:///Classification/TeamProject/{0}' -f $Token.ProjectId
+            break
+        }
+        # Build (Pipeline) permissions
+        {$_.type -eq 'Build'} {
+            $string = if ($Token.PipelineId) { '{0}/{1}' -f $Token.ProjectId, $Token.PipelineId }
+                      else                   { $Token.ProjectId }
+            break
+        }
+        # Library (VariableGroup) permissions
+        {$_.type -eq 'Library'} {
+            $string = if ($Token.VariableGroupId) { 'Library/Project/{0}/VariableGroup/{1}' -f $Token.ProjectId, $Token.VariableGroupId }
+                      else                        { 'Library/Project/{0}' -f $Token.ProjectId }
+            break
+        }
+        # ServiceEndpoints permissions
+        {$_.type -eq 'ServiceEndpoints'} {
+            $string = if ($Token.EndpointId) { 'endpoints/Project/{0}/endpoint/{1}' -f $Token.ProjectId, $Token.EndpointId }
+                      else                   { 'endpoints/Project/{0}' -f $Token.ProjectId }
+            break
+        }
+        # DistributedTask — AgentPool
+        {$_.type -eq 'AgentPool'} {
+            $string = '{0}' -f $Token.PoolId
+            break
+        }
+        # DistributedTask — Environment
+        {$_.type -eq 'Environment'} {
+            $string = if ($Token.EnvironmentId) { 'Environments/{0}/{1}' -f $Token.ProjectId, $Token.EnvironmentId }
+                      else                      { 'Environments/{0}' -f $Token.ProjectId }
+            break
+        }
+        # Generic / passthrough — token stored verbatim
+        {$_.type -eq 'Generic'} {
+            $string = $Token.TokenValue
+            break
+        }
     }
 
     # Output verbose message with the token value

@@ -162,9 +162,113 @@ Function New-ACLToken
 
         }
 
+        # Project-level permissions  ($PROJECT:vstfs:///Classification/TeamProject/{id})
+        'Project' {
+            if ($TokenName -match $LocalizedDataAzACLTokenPatten.ProjectPermission)
+            {
+                $result.type      = 'Project'
+                $result.ProjectId = $matches.ProjectId
+            }
+            else
+            {
+                $result.type = 'ProjectUnknown'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known Project ACL Token Patterns."
+            }
+            break
+        }
+
+        # Build / Pipeline permissions
+        'Build' {
+            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.BuildPermission)
+            {
+                $result.type = 'Build'
+                $result.ProjectId  = (Get-CacheItem -Key $matches.ProjectName.Trim() -Type 'LiveProjects').id
+                if ($matches.PipelineName) {
+                    $result.PipelineId = $matches.PipelineName.Trim()
+                }
+            }
+            else
+            {
+                $result.type = 'BuildUnknown'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known Build ACL Token Patterns."
+            }
+            break
+        }
+
+        # Library / VariableGroup permissions
+        'Library' {
+            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.LibraryPermission)
+            {
+                $result.type      = 'Library'
+                $result.ProjectId = (Get-CacheItem -Key $matches.ProjectName.Trim() -Type 'LiveProjects').id
+                if ($matches.VariableGroupName) {
+                    $result.VariableGroupId = $matches.VariableGroupName.Trim()
+                }
+            }
+            else
+            {
+                $result.type = 'LibraryUnknown'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known Library ACL Token Patterns."
+            }
+            break
+        }
+
+        # ServiceEndpoints / ServiceConnection permissions
+        'ServiceEndpoints' {
+            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.ServiceEndpointPermission)
+            {
+                $result.type      = 'ServiceEndpoints'
+                $result.ProjectId = (Get-CacheItem -Key $matches.ProjectName.Trim() -Type 'LiveProjects').id
+                if ($matches.EndpointName) {
+                    $result.EndpointId = $matches.EndpointName.Trim()
+                }
+            }
+            else
+            {
+                $result.type = 'ServiceEndpointsUnknown'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known ServiceEndpoints ACL Token Patterns."
+            }
+            break
+        }
+
+        # DistributedTask — AgentPool permissions
+        'AgentPool' {
+            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.AgentPoolPermission)
+            {
+                $result.type   = 'AgentPool'
+                $result.PoolId = $TokenName.Trim()
+            }
+            else
+            {
+                $result.type = 'AgentPoolUnknown'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known AgentPool ACL Token Patterns."
+            }
+            break
+        }
+
+        # DistributedTask — Environment permissions
+        'DistributedTask' {
+            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.EnvironmentPermission)
+            {
+                $result.type      = 'Environment'
+                $result.ProjectId = (Get-CacheItem -Key $matches.ProjectName.Trim() -Type 'LiveProjects').id
+                if ($matches.EnvironmentName) {
+                    $result.EnvironmentId = $matches.EnvironmentName.Trim()
+                }
+            }
+            else
+            {
+                $result.type = 'DistributedTaskUnknown'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known DistributedTask ACL Token Patterns."
+            }
+            break
+        }
+
+        # Generic / pass-through for any other namespace
         default {
-            Write-Warning "[New-ACLToken] SecurityNamespace '$SecurityNamespace' is not recognized."
-            $result.type = 'UnknownSecurityNamespace'
+            Write-Warning "[New-ACLToken] SecurityNamespace '$SecurityNamespace' is not natively recognised — using generic token."
+            $result.type       = 'Generic'
+            $result.TokenValue = $TokenName
         }
 
     }

@@ -5,7 +5,6 @@ Function Parse-ACLToken
         [String]$Token,
 
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Identity', 'Git Repositories','CSS', 'Iteration')]
         [String]$SecurityNamespace
     )
 
@@ -153,9 +152,79 @@ Function Parse-ACLToken
             }
         }
     }
+    elseif ($SecurityNamespace -eq 'Project')
+    {
+        switch -regex ($Token.Trim())
+        {
+            $LocalizedDataAzACLTokenPatten.ProjectPermission {
+                $result.type = 'Project'
+                break
+            }
+            default { $result.type = 'ProjectUnknown' }
+        }
+    }
+    elseif ($SecurityNamespace -eq 'Build')
+    {
+        switch -regex ($Token.Trim())
+        {
+            $LocalizedDataAzACLTokenPatten.BuildPermission {
+                $result.type = 'Build'
+                break
+            }
+            default { $result.type = 'BuildUnknown' }
+        }
+    }
+    elseif ($SecurityNamespace -eq 'Library')
+    {
+        switch -regex ($Token.Trim())
+        {
+            $LocalizedDataAzACLTokenPatten.LibraryPermission {
+                $result.type = 'Library'
+                break
+            }
+            default { $result.type = 'LibraryUnknown' }
+        }
+    }
+    elseif ($SecurityNamespace -eq 'ServiceEndpoints')
+    {
+        switch -regex ($Token.Trim())
+        {
+            $LocalizedDataAzACLTokenPatten.ServiceEndpointPermission {
+                $result.type = 'ServiceEndpoints'
+                break
+            }
+            default { $result.type = 'ServiceEndpointsUnknown' }
+        }
+    }
+    elseif ($SecurityNamespace -eq 'AgentPool')
+    {
+        switch -regex ($Token.Trim())
+        {
+            $LocalizedDataAzACLTokenPatten.AgentPoolPermission {
+                $result.type   = 'AgentPool'
+                $result.PoolId = $Token.Trim()
+                break
+            }
+            default { $result.type = 'AgentPoolUnknown' }
+        }
+    }
+    elseif ($SecurityNamespace -eq 'DistributedTask')
+    {
+        switch -regex ($Token.Trim())
+        {
+            $LocalizedDataAzACLTokenPatten.EnvironmentPermission {
+                $result.type = 'Environment'
+                break
+            }
+            default { $result.type = 'DistributedTaskUnknown' }
+        }
+    }
     else
     {
-        throw "Security Namespace '$SecurityNamespace' is not recognized."
+        # Generic / pass-through for any namespace not explicitly handled above.
+        Write-Warning "[Parse-ACLToken] Security Namespace '$SecurityNamespace' is not natively recognised — using generic token."
+        $result.type       = 'Generic'
+        $result.TokenValue = $Token
     }
 
     # Get the Regex Pattern for the Token by using the regex variable to extract the token structure.

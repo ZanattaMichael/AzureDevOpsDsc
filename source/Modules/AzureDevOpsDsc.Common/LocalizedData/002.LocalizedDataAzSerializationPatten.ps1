@@ -34,6 +34,26 @@ data LocalizedDataAzSerializationPatten
         # Project Permissions
         # Example: $PROJECT:vstfs:///Classification/TeamProject/78a5065f-3043-426f-9cc5-785748b18f9d
         ProjectPermission = '^\$PROJECT:vstfs:\/{3}Classification\/TeamProject\/{0}$'
+        # Build/Pipeline Permissions  (ProjectId or ProjectId/PipelineId)
+        # Example: 78a5065f-3043-426f-9cc5-785748b18f9d  or  78a5065f.../123
+        BuildPermission = '^{0}(\/[0-9]+)?$'
+        # Library/VariableGroup Permissions
+        # Example: Library/Project/ProjectId  or  Library/Project/ProjectId/VariableGroup/42
+        LibraryPermission = '^Library\/Project\/{0}(\/VariableGroup\/[0-9]+)?$'
+        # ServiceEndpoints Permissions
+        # Example: endpoints/Project/ProjectId  or  endpoints/Project/ProjectId/endpoint/EndpointId
+        ServiceEndpointPermission = '^endpoints\/Project\/{0}(\/endpoint\/[A-Za-z0-9-]+)?$'
+        # AgentPool Permissions  (PoolId integer)
+        # Example: 7
+        AgentPoolPermission = '^{0}$'
+        # DistributedTask/Environment Permissions
+        # Example: Environments/ProjectId  or  Environments/ProjectId/42
+        EnvironmentPermission = '^Environments\/{0}(\/[0-9]+)?$'
+        # Packaging/ArtifactFeed Permissions
+        # Example: FeedId  or  Project/FeedId
+        PackagingPermission = '^({0}\/)?[A-Za-z0-9-]+$'
+        # Generic fallback – exact token match
+        GenericPermission = '^{0}$'
     }
 
 }
