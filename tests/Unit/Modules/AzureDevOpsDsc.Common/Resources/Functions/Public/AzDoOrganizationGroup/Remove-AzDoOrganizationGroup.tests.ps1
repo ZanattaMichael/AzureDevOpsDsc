@@ -39,6 +39,7 @@ Describe 'Remove-AzDoOrganizationGroup' {
     BeforeEach {
         # Reset global variables before each test
         $Global:DSCAZDO_OrganizationName = "TestOrg"
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
         $Global:AZDOLiveGroups = @{}
         $Global:AzDoGroup = @{}
     }

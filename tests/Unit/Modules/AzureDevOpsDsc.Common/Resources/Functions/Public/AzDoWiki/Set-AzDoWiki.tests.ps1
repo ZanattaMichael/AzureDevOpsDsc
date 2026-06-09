@@ -9,6 +9,7 @@ Describe "Set-AzDoWiki" {
     BeforeAll {
 
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         if ($null -eq $currentFile) {
             $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'Set-AzDoWiki.tests.ps1'

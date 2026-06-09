@@ -26,7 +26,7 @@ Function Get-AzDoEnvironmentPermission
     if (-not $projectCache) { $getResult.status = [DSCGetSummaryState]::Error; $getResult.reason = "Project not found."; return $getResult }
 
     $namespace = Get-CacheItem -Key $SecurityNamespace -Type 'SecurityNamespaces'
-    if (-not $namespace) { $getResult.status = [DSCGetSummaryState]::Error; return $getResult }
+    if (-not $namespace) { Write-Error "[Get-AzDoEnvironmentPermission] Security namespace not found."; $getResult.status = [DSCGetSummaryState]::Error; return $getResult }
 
     $getResult.namespace = $namespace
 

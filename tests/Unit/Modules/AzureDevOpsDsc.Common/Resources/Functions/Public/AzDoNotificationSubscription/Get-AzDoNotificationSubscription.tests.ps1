@@ -9,6 +9,7 @@ Describe "Get-AzDoNotificationSubscription" {
     BeforeAll {
 
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         if ($null -eq $currentFile) {
             $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'Get-AzDoNotificationSubscription.tests.ps1'

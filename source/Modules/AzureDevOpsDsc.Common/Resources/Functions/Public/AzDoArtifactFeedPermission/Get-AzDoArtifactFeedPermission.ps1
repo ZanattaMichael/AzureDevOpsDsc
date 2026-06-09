@@ -25,6 +25,7 @@ Function Get-AzDoArtifactFeedPermission
     $namespace = Get-CacheItem -Key $SecurityNamespace -Type 'SecurityNamespaces'
     if (-not $namespace)
     {
+        Write-Error "[Get-AzDoArtifactFeedPermission] Security namespace not found."
         $getResult.status = [DSCGetSummaryState]::Error
         $getResult.reason = "Security namespace '$SecurityNamespace' not found."
         return $getResult

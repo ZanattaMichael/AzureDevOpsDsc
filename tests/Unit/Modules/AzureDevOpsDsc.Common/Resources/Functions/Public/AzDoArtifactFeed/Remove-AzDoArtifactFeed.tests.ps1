@@ -36,19 +36,19 @@ Describe "Remove-AzDoArtifactFeed" {
         }
 
         It "calls Remove-DevOpsArtifactFeed" {
-            Remove-AzDoArtifactFeed -FeedName 'TestFeed'
+            Remove-AzDoArtifactFeed -ProjectName 'TestProject' -FeedName 'TestFeed'
             Assert-MockCalled -CommandName Remove-DevOpsArtifactFeed -Exactly -Times 1
         }
 
         It "calls Remove-CacheItem with LiveArtifactFeeds" {
-            Remove-AzDoArtifactFeed -FeedName 'TestFeed'
+            Remove-AzDoArtifactFeed -ProjectName 'TestProject' -FeedName 'TestFeed'
             Assert-MockCalled -CommandName Remove-CacheItem -ParameterFilter {
                 $Type -eq 'LiveArtifactFeeds'
             } -Times 1
         }
 
         It "calls Export-CacheObject" {
-            Remove-AzDoArtifactFeed -FeedName 'TestFeed'
+            Remove-AzDoArtifactFeed -ProjectName 'TestProject' -FeedName 'TestFeed'
             Assert-MockCalled -CommandName Export-CacheObject -Times 1
         }
     }
@@ -59,7 +59,7 @@ Describe "Remove-AzDoArtifactFeed" {
         }
 
         It "writes an error and does not call Remove-DevOpsArtifactFeed" {
-            Remove-AzDoArtifactFeed -FeedName 'NonExistent'
+            Remove-AzDoArtifactFeed -ProjectName 'TestProject' -FeedName 'NonExistent'
             Assert-MockCalled -CommandName Write-Error -Times 1
             Assert-MockCalled -CommandName Remove-DevOpsArtifactFeed -Times 0
         }

@@ -31,7 +31,7 @@ Function Get-AzDoVariableGroupPermission
     }
 
     $namespace = Get-CacheItem -Key $SecurityNamespace -Type 'SecurityNamespaces'
-    if (-not $namespace) { $getResult.status = [DSCGetSummaryState]::Error; return $getResult }
+    if (-not $namespace) { Write-Error "[Get-AzDoVariableGroupPermission] Security namespace not found."; $getResult.status = [DSCGetSummaryState]::Error; return $getResult }
 
     $getResult.namespace = $namespace
 

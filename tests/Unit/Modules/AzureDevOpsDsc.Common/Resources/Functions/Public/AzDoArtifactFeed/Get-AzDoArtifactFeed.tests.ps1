@@ -9,6 +9,7 @@ Describe "Get-AzDoArtifactFeed" {
     BeforeAll {
 
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         if ($null -eq $currentFile) {
             $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'Get-AzDoArtifactFeed.tests.ps1'

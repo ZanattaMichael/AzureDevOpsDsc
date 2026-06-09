@@ -9,6 +9,7 @@ Describe "Set-AzDoWIPTags" {
     BeforeAll {
         # Set up any global variables or states needed for the tests
         $Global:DSCAZDO_OrganizationName = "TestOrg"
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         # Load the functions to test
         if ($null -eq $currentFile)

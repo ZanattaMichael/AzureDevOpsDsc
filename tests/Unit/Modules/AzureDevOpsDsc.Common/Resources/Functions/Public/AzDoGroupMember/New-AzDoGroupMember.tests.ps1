@@ -10,6 +10,7 @@ Describe "New-AzDoGroupMember" {
     BeforeAll {
 
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
         $global:AzDoLiveGroupMembers = @{}
 
         # Load the functions to test
