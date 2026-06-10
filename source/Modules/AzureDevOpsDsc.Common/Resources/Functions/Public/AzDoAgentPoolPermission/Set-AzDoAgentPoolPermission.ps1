@@ -11,7 +11,7 @@ Function Set-AzDoAgentPoolPermission
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
     )
     Write-Verbose "[Set-AzDoAgentPoolPermission] Started."
-    $SecurityNamespace = Get-CacheItem -Key 'AgentPools' -Type 'SecurityNamespaces'
+    $SecurityNamespace = Get-CacheItem -Key 'DistributedTask' -Type 'SecurityNamespaces'
     $Pool              = Get-CacheItem -Key $PoolName -Type 'LiveAgentPools'
     if (-not $SecurityNamespace) { Write-Error "[Set-AzDoAgentPoolPermission] Namespace not found."; return }
     $matchToken = if ($Pool) { $LocalizedDataAzSerializationPatten.AgentPoolPermission -f $Pool.id } else { '.*' }

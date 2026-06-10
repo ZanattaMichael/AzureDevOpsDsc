@@ -56,9 +56,24 @@ Function New-AzDoBranchPolicy
         }
     }
 
+    # Fall back to well-known policy type GUIDs (Azure DevOps built-in types)
     if (-not $policyTypeObj)
     {
-        Write-Error "[New-AzDoBranchPolicy] PolicyType '$PolicyType' not found in cache or API."
+        $wellKnownTypeIds = @{
+            'MinimumReviewerCount' = 'fa4e907d-c16b-452d-8106-7efa0cb84489'
+            'BuildValidation'      = '0609b952-1397-4640-95ec-e00a01b2f659'
+            'CommentRequirements'  = 'c6a1889d-b943-4856-b76f-9e46bb6b0df3'
+            'WorkItemLinking'      = '40e92b44-2fe1-4dd6-b3d8-74a9c21d0c6e'
+        }
+        if ($wellKnownTypeIds.ContainsKey($PolicyType))
+        {
+            $policyTypeObj = [PSCustomObject]@{ id = $wellKnownTypeIds[$PolicyType]; displayName = $PolicyType }
+        }
+    }
+
+    if (-not $policyTypeObj)
+    {
+        Write-Error "[New-AzDoBranchPolicy] PolicyType '$PolicyType' not found in cache, API, or well-known types."
         return
     }
 

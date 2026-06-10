@@ -29,6 +29,31 @@ param (
 $Global:DSCAZDO_AuthenticationToken = Get-MIToken -OrganizationName $OrganizationName
 
 #
+# Purge artifact feed recycle bins BEFORE removing projects (project-level API requires project to exist)
+if ($ClearAll -or $ClearProjects)
+{
+    Write-Verbose "[Teardown] Purging org-level artifact feed recycle bin..."
+    $recycleBinFeeds = List-DevOpsArtifactFeedRecycleBin -OrganizationName $OrganizationName
+    foreach ($feed in $recycleBinFeeds)
+    {
+        Write-Verbose "[Teardown] Purging feed '$($feed.name)' ($($feed.id)) from org recycle bin."
+        Remove-DevOpsArtifactFeedFromRecycleBin -OrganizationName $OrganizationName -FeedId $feed.id
+    }
+
+    Write-Verbose "[Teardown] Purging project-level artifact feed recycle bins..."
+    $projects = List-DevOpsProjects -OrganizationName $OrganizationName | Where-Object { $_.Name -notin $TestFrameworkConfiguration.excludedProjectsFromTeardown }
+    foreach ($project in $projects)
+    {
+        $projectFeeds = List-DevOpsArtifactFeedRecycleBin -OrganizationName $OrganizationName -ProjectName $project.Name
+        foreach ($feed in $projectFeeds)
+        {
+            Write-Verbose "[Teardown] Purging feed '$($feed.name)' ($($feed.id)) from project '$($project.Name)' recycle bin."
+            Remove-DevOpsArtifactFeedFromRecycleBin -OrganizationName $OrganizationName -ProjectName $project.Name -FeedId $feed.id
+        }
+    }
+}
+
+#
 # Remove Projects
 if ($ClearAll -or $ClearProjects)
 {
@@ -51,19 +76,6 @@ if ($ClearAll -or $ClearOrganizationGroups)
     } | ForEach-Object {
         Write-Verbose "[Teardown] Removing group '$($_.displayName)'"
         Remove-DevOpsGroup -GroupDescriptor $_.descriptor -OrganizationName $OrganizationName
-    }
-}
-
-#
-# Purge artifact feed recycle bin (org-level) to prevent "name reserved" errors on re-run
-if ($ClearAll -or $ClearProjects)
-{
-    Write-Verbose "[Teardown] Purging artifact feed recycle bin..."
-    $recycleBinFeeds = List-DevOpsArtifactFeedRecycleBin -OrganizationName $OrganizationName
-    foreach ($feed in $recycleBinFeeds)
-    {
-        Write-Verbose "[Teardown] Purging feed '$($feed.name)' ($($feed.id)) from recycle bin."
-        Remove-DevOpsArtifactFeedFromRecycleBin -OrganizationName $OrganizationName -FeedId $feed.id
     }
 }
 

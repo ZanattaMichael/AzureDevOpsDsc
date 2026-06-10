@@ -14,7 +14,7 @@ Function Get-AzDoAgentPoolPermission
 
     Write-Verbose "[Get-AzDoAgentPoolPermission] Started."
 
-    $SecurityNamespace = 'AgentPools'
+    $SecurityNamespace = 'DistributedTask'
     $OrganizationName  = (Get-AzDoOrganizationName)
 
     $getResult = @{ Ensure = [Ensure]::Absent; propertiesChanged = @(); status = $null; reason = $null }

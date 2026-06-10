@@ -3,9 +3,9 @@ Describe "AzDoExtension Integration Tests" {
     BeforeAll {
 
         # Use a well-known, free Marketplace extension that is safe to install/uninstall
-        # in a test organisation: the Microsoft DevLabs "Feature Timeline & Epic Roadmap" extension.
+        # in a test organisation: the Microsoft DevLabs "Team Calendar" extension.
         $PUBLISHERID  = 'ms-devlabs'
-        $EXTENSIONID  = 'featuretimeline'
+        $EXTENSIONID  = 'team-calendar'
 
         $parameters = @{
             Name       = 'AzDoExtension'

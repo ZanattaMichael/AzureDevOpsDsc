@@ -70,6 +70,13 @@ Function Export-CacheObject
             New-Item -Path $CacheDirectoryPath -ItemType Directory | Out-Null
         }
 
+        # If content is null, fall back to reading from the in-memory cache. This handles
+        # cases where module-scope variable lookup doesn't resolve the global $AzDo* variable.
+        if ($null -eq $Content)
+        {
+            $Content = Get-CacheObject -CacheType $CacheType
+        }
+
         # Save content to cache file
         Write-Verbose "[Export-ObjectCache] Saving content to cache file: $cacheFilePath"
         $Content | Export-Clixml -Depth $Depth -LiteralPath $cacheFilePath

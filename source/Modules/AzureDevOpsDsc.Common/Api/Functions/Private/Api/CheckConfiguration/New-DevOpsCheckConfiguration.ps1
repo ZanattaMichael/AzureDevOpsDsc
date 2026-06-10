@@ -22,7 +22,7 @@ Function New-DevOpsCheckConfiguration
             timeout  = $TimeoutInMinutes
             resource = @{
                 type = $ResourceType
-                id   = $ResourceId
+                id   = if ($ResourceId -match '^\d+$') { [int]$ResourceId } else { $ResourceId }
             }
         } | ConvertTo-Json -Depth 10
     }
