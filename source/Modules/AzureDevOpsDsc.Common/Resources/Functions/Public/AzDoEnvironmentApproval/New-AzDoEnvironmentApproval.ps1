@@ -19,14 +19,15 @@ Function New-AzDoEnvironmentApproval
     $env = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $EnvironmentName) -Type 'LivePipelineEnvironments'
     if (-not $env) { Write-Error "[New-AzDoEnvironmentApproval] Environment not found."; return }
 
-    # Resolve approver IDs from group/user cache
+    # Resolve approver IDs from group/user cache.
+    # Approver strings are expected in [ProjectName]\GroupName or UPN format (the PrincipalName used as cache key).
     $approverIds = @()
     foreach ($approver in $Approvers)
     {
-        $resolved = Get-CacheItem -Key ('[{0}]\{1}' -f $ProjectName, $approver) -Type 'LiveGroups'
+        $resolved = Get-CacheItem -Key $approver -Type 'LiveGroups'
         if (-not $resolved) { $resolved = Get-CacheItem -Key $approver -Type 'LiveUsers' }
         if ($resolved) { $approverIds += $resolved.originId }
-        else            { $approverIds += $approver } # fallback: treat as literal ID
+        else            { $approverIds += $approver }
     }
 
     $params = @{

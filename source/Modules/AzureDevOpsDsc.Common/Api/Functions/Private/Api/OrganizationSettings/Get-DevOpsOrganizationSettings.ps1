@@ -6,7 +6,7 @@ Function Get-DevOpsOrganizationSettings
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )
     $params = @{
-        Uri    = '{0}/_apis/settings/entries/host?api-version={1}' -f $ApiUri, $ApiVersion
+        Uri    = '{0}/_apis/settings/entries/host?api-version={1}' -f $ApiUri.TrimEnd('/'), $ApiVersion
         Method = 'GET'
     }
     try   { return Invoke-AzDevOpsApiRestMethod @params }

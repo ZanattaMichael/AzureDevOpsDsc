@@ -7,7 +7,7 @@ Function Remove-DevOpsAuditStream
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )
     $params = @{
-        Uri    = '{0}/_apis/audit/streams/{1}?api-version={2}' -f $ApiUri, $StreamId, $ApiVersion
+        Uri    = '{0}/_apis/audit/streams/{1}?api-version={2}' -f $ApiUri.TrimEnd('/'), $StreamId, $ApiVersion
         Method = 'DELETE'
     }
     try   { return Invoke-AzDevOpsApiRestMethod @params }

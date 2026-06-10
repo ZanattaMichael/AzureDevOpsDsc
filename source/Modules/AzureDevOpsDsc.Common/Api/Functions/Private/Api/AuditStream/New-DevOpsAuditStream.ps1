@@ -9,7 +9,7 @@ Function New-DevOpsAuditStream
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )
     $params = @{
-        Uri         = '{0}/_apis/audit/streams?daysToBackfill={1}&api-version={2}' -f $ApiUri, ([int]$DaysToBackfill), $ApiVersion
+        Uri         = '{0}/_apis/audit/streams?daysToBackfill={1}&api-version={2}' -f $ApiUri.TrimEnd('/'), ([int]$DaysToBackfill), $ApiVersion
         Method      = 'POST'
         ContentType = 'application/json'
         Body        = @{

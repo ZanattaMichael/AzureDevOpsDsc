@@ -9,7 +9,7 @@ Function Remove-DevOpsPipeline
     )
     # The Pipelines API does not expose a DELETE endpoint; use the Build Definition API instead
     $params = @{
-        Uri    = '{0}/{1}/_apis/build/definitions/{2}?api-version={3}' -f $ApiUri, $ProjectName, $PipelineId, $ApiVersion
+        Uri    = '{0}/{1}/_apis/build/definitions/{2}?api-version={3}' -f $ApiUri.TrimEnd('/'), $ProjectName, $PipelineId, $ApiVersion
         Method = 'DELETE'
     }
     try   { return Invoke-AzDevOpsApiRestMethod @params }

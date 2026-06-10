@@ -22,7 +22,7 @@ Function Set-DevOpsRepositorySettings
     if ($PSBoundParameters.ContainsKey('AllowEditDescriptionDuringCompletion')) { $body['allowEditDescriptionDuringCompletion'] = $AllowEditDescriptionDuringCompletion }
     if ($PSBoundParameters.ContainsKey('AllowDeletionOfLockedBranches'))       { $body['allowDeletionOfLockedBranches']       = $AllowDeletionOfLockedBranches }
     $params = @{
-        Uri         = '{0}/{1}/_apis/git/repositories/{2}/settings?api-version={3}' -f $ApiUri, $ProjectName, $RepositoryId, $ApiVersion
+        Uri         = '{0}/{1}/_apis/git/repositories/{2}/settings?api-version={3}' -f $ApiUri.TrimEnd('/'), $ProjectName, $RepositoryId, $ApiVersion
         Method      = 'PATCH'
         ContentType = 'application/json'
         Body        = $body | ConvertTo-Json

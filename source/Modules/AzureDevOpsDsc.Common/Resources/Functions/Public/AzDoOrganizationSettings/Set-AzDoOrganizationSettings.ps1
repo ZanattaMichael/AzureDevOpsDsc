@@ -2,7 +2,7 @@ Function Set-AzDoOrganizationSettings
 {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)][string]$OrganizationName,
+        [Parameter()][string]$OrganizationName,
         [Parameter()][bool]$AllowPublicProjects,
         [Parameter()][bool]$AllowExternalGuestAccess,
         [Parameter()][bool]$EnableOAuthAuthentication,

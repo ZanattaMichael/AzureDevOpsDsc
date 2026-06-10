@@ -8,7 +8,7 @@ Function New-DevOpsExtension
         [Parameter()][string]$Version,
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )
-    $uri = '{0}/_apis/extensionmanagement/installedextensionsbyname/{1}/{2}' -f $ApiUri, $PublisherId, $ExtensionId
+    $uri = '{0}/_apis/extensionmanagement/installedextensionsbyname/{1}/{2}' -f $ApiUri.TrimEnd('/'), $PublisherId, $ExtensionId
     if ($Version) { $uri += '/{0}' -f $Version }
     $uri += '?api-version={0}' -f $ApiVersion
     # Uses vssps endpoint — caller should pass vssps URI if needed

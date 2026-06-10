@@ -7,7 +7,7 @@ Function List-DevOpsTaskGroups
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )
     $params = @{
-        Uri    = '{0}/{1}/_apis/distributedtask/taskgroups?api-version={2}' -f $ApiUri, $ProjectName, $ApiVersion
+        Uri    = '{0}/{1}/_apis/distributedtask/taskgroups?api-version={2}' -f $ApiUri.TrimEnd('/'), $ProjectName, $ApiVersion
         Method = 'GET'
     }
     try   { return (Invoke-AzDevOpsApiRestMethod @params).value }

@@ -38,12 +38,27 @@ Function New-AzDoBranchPolicy
         )
     }
 
-    # Look up the policy type by name
+    # Look up the policy type by name, falling back to a live API call if not cached
     $policyTypeObj = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $PolicyType) -Type 'LivePolicyTypes'
 
     if (-not $policyTypeObj)
     {
-        Write-Error "[New-AzDoBranchPolicy] PolicyType '$PolicyType' not found in cache."
+        Write-Verbose "[New-AzDoBranchPolicy] PolicyType '$PolicyType' not in cache, querying API."
+        $orgUri = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
+        $policyTypes = List-DevOpsPolicyTypes -ApiUri $orgUri -ProjectName $ProjectName
+        $policyTypeObj = $policyTypes | Where-Object { $_.displayName -eq $PolicyType }
+        if ($policyTypeObj)
+        {
+            foreach ($pt in $policyTypes)
+            {
+                Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $pt.displayName) -Value $pt -Type 'LivePolicyTypes' -SuppressWarning
+            }
+        }
+    }
+
+    if (-not $policyTypeObj)
+    {
+        Write-Error "[New-AzDoBranchPolicy] PolicyType '$PolicyType' not found in cache or API."
         return
     }
 

@@ -9,7 +9,7 @@ Function Remove-DevOpsServiceConnection
         [Parameter()][string]$ApiVersion = '7.1-preview.4'
     )
     $params = @{
-        Uri    = '{0}/{1}/_apis/serviceendpoint/endpoints/{2}?deep={3}&api-version={4}' -f $ApiUri, $ProjectName, $ServiceConnectionId, $Deep.ToString().ToLower(), $ApiVersion
+        Uri    = '{0}/{1}/_apis/serviceendpoint/endpoints/{2}?deep={3}&api-version={4}' -f $ApiUri.TrimEnd('/'), $ProjectName, $ServiceConnectionId, $Deep.ToString().ToLower(), $ApiVersion
         Method = 'DELETE'
     }
     try   { return Invoke-AzDevOpsApiRestMethod @params }

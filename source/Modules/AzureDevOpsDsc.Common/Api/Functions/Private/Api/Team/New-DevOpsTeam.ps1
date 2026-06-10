@@ -9,7 +9,7 @@ Function New-DevOpsTeam
         [Parameter()][string]$ApiVersion = '7.1'
     )
     $params = @{
-        Uri         = '{0}/_apis/projects/{1}/teams?api-version={2}' -f $ApiUri, $ProjectId, $ApiVersion
+        Uri         = '{0}/_apis/projects/{1}/teams?api-version={2}' -f $ApiUri.TrimEnd('/'), $ProjectId, $ApiVersion
         Method      = 'POST'
         ContentType = 'application/json'
         Body        = @{ name = $TeamName; description = $Description } | ConvertTo-Json

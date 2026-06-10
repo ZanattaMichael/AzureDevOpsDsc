@@ -21,9 +21,9 @@ Describe "AzDoCheckConfiguration Integration Tests" {
             Name       = 'AzDoCheckConfiguration'
             ModuleName = 'AzureDevOpsDsc'
             property   = @{
-                ProjectName      = $PROJECTNAME
-                ResourceName     = $ENVNAME
-                ResourceType     = 'environment'
+                ProjectName          = $PROJECTNAME
+                TargetResourceName   = $ENVNAME
+                ResourceType         = 'environment'
                 CheckType        = 'ExclusiveLock'
                 Settings         = @{ requestedCoalescingTimeout = 5 }
                 TimeoutInMinutes = 43200
@@ -91,9 +91,9 @@ Describe "AzDoCheckConfiguration Integration Tests" {
         BeforeAll {
             $parameters.Method = 'Set'
             $parameters.property = @{
-                ProjectName  = $PROJECTNAME
-                ResourceName = $ENVNAME
-                ResourceType = 'environment'
+                ProjectName          = $PROJECTNAME
+                TargetResourceName   = $ENVNAME
+                ResourceType         = 'environment'
                 CheckType    = 'ExclusiveLock'
                 Settings     = @{}
                 Ensure       = 'Absent'

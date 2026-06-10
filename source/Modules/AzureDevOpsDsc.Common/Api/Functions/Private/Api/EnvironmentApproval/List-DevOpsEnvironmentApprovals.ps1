@@ -7,7 +7,7 @@ Function List-DevOpsEnvironmentApprovals
         [Parameter()][int]$EnvironmentId,
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )
-    $uri = '{0}/{1}/_apis/pipelines/checks/configurations?api-version={2}' -f $ApiUri, $ProjectName, $ApiVersion
+    $uri = '{0}/{1}/_apis/pipelines/checks/configurations?api-version={2}' -f $ApiUri.TrimEnd('/'), $ProjectName, $ApiVersion
     if ($EnvironmentId) { $uri += '&resourceType=environment&resourceId={0}' -f $EnvironmentId }
     $params = @{
         Uri    = $uri

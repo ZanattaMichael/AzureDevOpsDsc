@@ -10,7 +10,7 @@ Function Set-DevOpsPipelineEnvironment
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )
     $params = @{
-        Uri         = '{0}/{1}/_apis/distributedtask/environments/{2}?api-version={3}' -f $ApiUri, $ProjectName, $EnvironmentId, $ApiVersion
+        Uri         = '{0}/{1}/_apis/distributedtask/environments/{2}?api-version={3}' -f $ApiUri.TrimEnd('/'), $ProjectName, $EnvironmentId, $ApiVersion
         Method      = 'PATCH'
         ContentType = 'application/json'
         Body        = @{ name = $EnvironmentName; description = $Description } | ConvertTo-Json

@@ -11,7 +11,7 @@ Function Set-DevOpsAgentPool
     )
     $body = @{ name = $PoolName; autoUpdate = $AutoUpdate; autoProvision = $AutoProvision }
     $params = @{
-        Uri         = '{0}/_apis/distributedtask/pools/{1}?api-version={2}' -f $ApiUri, $PoolId, $ApiVersion
+        Uri         = '{0}/_apis/distributedtask/pools/{1}?api-version={2}' -f $ApiUri.TrimEnd('/'), $PoolId, $ApiVersion
         Method      = 'PATCH'
         ContentType = 'application/json'
         Body        = $body | ConvertTo-Json

@@ -8,7 +8,7 @@ Function Remove-DevOpsCheckConfiguration
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )
     $params = @{
-        Uri    = '{0}/{1}/_apis/pipelines/checks/configurations/{2}?api-version={3}' -f $ApiUri, $ProjectName, $CheckId, $ApiVersion
+        Uri    = '{0}/{1}/_apis/pipelines/checks/configurations/{2}?api-version={3}' -f $ApiUri.TrimEnd('/'), $ProjectName, $CheckId, $ApiVersion
         Method = 'DELETE'
     }
     try   { return Invoke-AzDevOpsApiRestMethod @params }

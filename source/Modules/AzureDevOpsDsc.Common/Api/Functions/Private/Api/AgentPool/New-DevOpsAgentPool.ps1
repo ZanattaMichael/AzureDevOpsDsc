@@ -11,7 +11,7 @@ Function New-DevOpsAgentPool
         [Parameter()][string]$ApiVersion  = '7.1'
     )
     $params = @{
-        Uri         = '{0}/_apis/distributedtask/pools?api-version={1}' -f $ApiUri, $ApiVersion
+        Uri         = '{0}/_apis/distributedtask/pools?api-version={1}' -f $ApiUri.TrimEnd('/'), $ApiVersion
         Method      = 'POST'
         ContentType = 'application/json'
         Body        = @{

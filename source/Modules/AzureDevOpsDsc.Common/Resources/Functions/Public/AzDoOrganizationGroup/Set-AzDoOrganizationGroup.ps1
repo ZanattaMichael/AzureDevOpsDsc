@@ -82,6 +82,12 @@ Function Set-AzDoOrganizationGroup
         throw $_
     }
 
+    if ($null -eq $group)
+    {
+        Write-Error "[Set-AzDoOrganizationGroup] Set-DevOpsGroup returned null for group '$GroupName'. Check authentication and group descriptor."
+        return
+    }
+
     #
     # Update the cache with the new group
     Refresh-CacheIdentity -Identity $group -Key $group.principalName -CacheType 'LiveGroups'

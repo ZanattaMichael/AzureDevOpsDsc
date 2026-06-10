@@ -32,7 +32,14 @@ Write-Host "[Invoke-Tests] Pre-run teardown complete."
 #
 # Trigger the Tests
 
-Invoke-Pester -Path "$PSScriptRoot\Resources"
+$pesterConfig = New-PesterConfiguration
+$pesterConfig.Run.Path           = "$PSScriptRoot\Resources"
+$pesterConfig.Output.Verbosity   = 'Detailed'
+$pesterConfig.TestResult.Enabled = $true
+$pesterConfig.TestResult.OutputPath   = 'C:\Temp\integration-test-results.xml'
+$pesterConfig.TestResult.OutputFormat = 'NUnitXml'
+
+Invoke-Pester -Configuration $pesterConfig
 
 #
 # Post-run teardown: clean up all resources created during the test run

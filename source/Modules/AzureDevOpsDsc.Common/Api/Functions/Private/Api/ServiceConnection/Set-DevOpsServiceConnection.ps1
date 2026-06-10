@@ -16,7 +16,7 @@ Function Set-DevOpsServiceConnection
         [Parameter()][string]$ApiVersion = '7.1-preview.4'
     )
     $params = @{
-        Uri         = '{0}/{1}/_apis/serviceendpoint/endpoints/{2}?api-version={3}' -f $ApiUri, $ProjectName, $ServiceConnectionId, $ApiVersion
+        Uri         = '{0}/{1}/_apis/serviceendpoint/endpoints/{2}?api-version={3}' -f $ApiUri.TrimEnd('/'), $ProjectName, $ServiceConnectionId, $ApiVersion
         Method      = 'PUT'
         ContentType = 'application/json'
         Body        = @{

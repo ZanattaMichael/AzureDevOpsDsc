@@ -3,7 +3,7 @@ Function Remove-AzDoCheckConfiguration
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)][string]$ProjectName,
-        [Parameter(Mandatory = $true)][string]$ResourceName,
+        [Parameter(Mandatory = $true)][string]$TargetResourceName,
         [Parameter(Mandatory = $true)][string]$ResourceType,
         [Parameter(Mandatory = $true)][string]$CheckType,
         [Parameter()][HashTable]$Settings,
@@ -13,8 +13,8 @@ Function Remove-AzDoCheckConfiguration
         [Parameter()][Ensure]$Ensure,
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
     )
-    Write-Verbose "[Remove-AzDoCheckConfiguration] Removing check '$CheckType' on $ResourceType '$ResourceName'."
-    $cacheKey = '{0}\{1}\{2}\{3}' -f $ProjectName, $ResourceType, $ResourceName, $CheckType
+    Write-Verbose "[Remove-AzDoCheckConfiguration] Removing check '$CheckType' on $ResourceType '$TargetResourceName'."
+    $cacheKey = '{0}\{1}\{2}\{3}' -f $ProjectName, $ResourceType, $TargetResourceName, $CheckType
     $check = Get-CacheItem -Key $cacheKey -Type 'LiveCheckConfigurations'
     if (-not $check) { Write-Error "[Remove-AzDoCheckConfiguration] Check configuration not found."; return }
     $params = @{

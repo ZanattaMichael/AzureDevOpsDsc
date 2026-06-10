@@ -15,7 +15,7 @@ Function Set-DevOpsPipeline
         [Parameter()][string]$ApiVersion = '7.1'
     )
     $params = @{
-        Uri         = '{0}/{1}/_apis/pipelines/{2}?api-version={3}' -f $ApiUri, $ProjectName, $PipelineId, $ApiVersion
+        Uri         = '{0}/{1}/_apis/pipelines/{2}?api-version={3}' -f $ApiUri.TrimEnd('/'), $ProjectName, $PipelineId, $ApiVersion
         Method      = 'PATCH'
         ContentType = 'application/json'
         Body        = @{

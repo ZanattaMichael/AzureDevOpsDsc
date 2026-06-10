@@ -6,7 +6,7 @@ Function List-DevOpsExtensions
         [Parameter()][bool]$IncludeDisabled = $false,
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )
-    $uri = '{0}/_apis/extensionmanagement/installedextensions?api-version={1}' -f $ApiUri, $ApiVersion
+    $uri = '{0}/_apis/extensionmanagement/installedextensions?api-version={1}' -f $ApiUri.TrimEnd('/'), $ApiVersion
     if ($IncludeDisabled) { $uri += '&includeDisabledExtensions=true' }
     $params = @{
         Uri    = $uri

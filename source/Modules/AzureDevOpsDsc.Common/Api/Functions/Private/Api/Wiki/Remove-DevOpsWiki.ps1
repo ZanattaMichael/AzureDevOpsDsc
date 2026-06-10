@@ -7,7 +7,7 @@ Function Remove-DevOpsWiki
         [Parameter()][string]$ApiVersion = '7.1'
     )
     $params = @{
-        Uri    = '{0}/_apis/wiki/wikis/{1}?api-version={2}' -f $ApiUri, $WikiId, $ApiVersion
+        Uri    = '{0}/_apis/wiki/wikis/{1}?api-version={2}' -f $ApiUri.TrimEnd('/'), $WikiId, $ApiVersion
         Method = 'DELETE'
     }
     try   { return Invoke-AzDevOpsApiRestMethod @params }

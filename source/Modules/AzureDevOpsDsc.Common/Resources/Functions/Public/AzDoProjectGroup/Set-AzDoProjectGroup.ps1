@@ -88,6 +88,12 @@ Function Set-AzDoProjectGroup
         throw $_
     }
 
+    if ($null -eq $group)
+    {
+        Write-Error "[Set-AzDoProjectGroup] Set-DevOpsGroup returned null for group '$GroupName'. Check authentication and group descriptor."
+        return
+    }
+
     #
     # Firstly Replace the live cache with the new group
 

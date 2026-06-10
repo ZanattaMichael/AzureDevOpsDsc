@@ -12,9 +12,10 @@ Describe "AzDoWiki Integration Tests" {
             Name       = 'AzDoWiki'
             ModuleName = 'AzureDevOpsDsc'
             property   = @{
-                ProjectName = $PROJECTNAME
-                WikiName    = 'TEST_PROJECTWIKI'
-                WikiType    = 'projectWiki'
+                ProjectName    = $PROJECTNAME
+                WikiName       = 'TEST_CODEWIKI'
+                WikiType       = 'codeWiki'
+                RepositoryName = $PROJECTNAME
             }
         }
 
@@ -59,10 +60,11 @@ Describe "AzDoWiki Integration Tests" {
         BeforeAll {
             $parameters.Method = 'Set'
             $parameters.property = @{
-                ProjectName = $PROJECTNAME
-                WikiName    = 'TEST_PROJECTWIKI'
-                WikiType    = 'projectWiki'
-                Ensure      = 'Absent'
+                ProjectName    = $PROJECTNAME
+                WikiName       = 'TEST_CODEWIKI'
+                WikiType       = 'codeWiki'
+                RepositoryName = $PROJECTNAME
+                Ensure         = 'Absent'
             }
         }
 

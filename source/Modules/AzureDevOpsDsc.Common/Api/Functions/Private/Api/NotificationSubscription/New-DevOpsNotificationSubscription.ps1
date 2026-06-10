@@ -16,7 +16,7 @@ Function New-DevOpsNotificationSubscription
     }
     if ($Filter) { $body['filter'] = $Filter }
     $params = @{
-        Uri         = '{0}/_apis/notification/subscriptions?api-version={1}' -f $ApiUri, $ApiVersion
+        Uri         = '{0}/_apis/notification/subscriptions?api-version={1}' -f $ApiUri.TrimEnd('/'), $ApiVersion
         Method      = 'POST'
         ContentType = 'application/json'
         Body        = $body | ConvertTo-Json -Depth 10

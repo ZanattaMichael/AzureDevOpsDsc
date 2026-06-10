@@ -28,7 +28,7 @@ Function Set-AzDoEnvironmentApproval
     $approverIds = @()
     foreach ($approver in $Approvers)
     {
-        $resolved = Get-CacheItem -Key ('[{0}]\{1}' -f $ProjectName, $approver) -Type 'LiveGroups'
+        $resolved = Get-CacheItem -Key $approver -Type 'LiveGroups'
         if (-not $resolved) { $resolved = Get-CacheItem -Key $approver -Type 'LiveUsers' }
         if ($resolved) { $approverIds += $resolved.originId }
         else            { $approverIds += $approver }

@@ -9,7 +9,7 @@ Function Set-DevOpsExtension
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )
     $params = @{
-        Uri         = '{0}/_apis/extensionmanagement/installedextensionsbyname/{1}/{2}?api-version={3}' -f $ApiUri, $PublisherId, $ExtensionId, $ApiVersion
+        Uri         = '{0}/_apis/extensionmanagement/installedextensionsbyname/{1}/{2}?api-version={3}' -f $ApiUri.TrimEnd('/'), $PublisherId, $ExtensionId, $ApiVersion
         Method      = 'PATCH'
         ContentType = 'application/json'
         Body        = @{

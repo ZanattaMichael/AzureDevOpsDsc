@@ -1,4 +1,4 @@
-Function List-DevOpsDeploymentGroups
+Function List-DevOpsPolicyTypes
 {
     [CmdletBinding()]
     param(
@@ -7,9 +7,9 @@ Function List-DevOpsDeploymentGroups
         [Parameter()][string]$ApiVersion = '7.1'
     )
     $params = @{
-        Uri    = '{0}/{1}/_apis/distributedtask/deploymentgroups?api-version={2}' -f $ApiUri.TrimEnd('/'), $ProjectName, $ApiVersion
+        Uri    = '{0}/{1}/_apis/policy/types?api-version={2}' -f $ApiUri.TrimEnd('/'), $ProjectName, $ApiVersion
         Method = 'GET'
     }
     try   { return (Invoke-AzDevOpsApiRestMethod @params).value }
-    catch { Throw "[List-DevOpsDeploymentGroups] Failed to list deployment groups for '$ProjectName': $_" }
+    catch { Throw "[List-DevOpsPolicyTypes] Failed to list policy types for '$ProjectName': $_" }
 }

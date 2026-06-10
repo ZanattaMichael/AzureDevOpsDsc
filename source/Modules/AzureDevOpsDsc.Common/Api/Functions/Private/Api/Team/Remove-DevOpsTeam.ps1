@@ -8,7 +8,7 @@ Function Remove-DevOpsTeam
         [Parameter()][string]$ApiVersion = '7.1'
     )
     $params = @{
-        Uri    = '{0}/_apis/projects/{1}/teams/{2}?api-version={3}' -f $ApiUri, $ProjectId, $TeamId, $ApiVersion
+        Uri    = '{0}/_apis/projects/{1}/teams/{2}?api-version={3}' -f $ApiUri.TrimEnd('/'), $ProjectId, $TeamId, $ApiVersion
         Method = 'DELETE'
     }
     try   { return Invoke-AzDevOpsApiRestMethod @params }

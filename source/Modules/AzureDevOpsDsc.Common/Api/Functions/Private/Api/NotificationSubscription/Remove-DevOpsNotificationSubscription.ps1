@@ -7,7 +7,7 @@ Function Remove-DevOpsNotificationSubscription
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )
     $params = @{
-        Uri    = '{0}/_apis/notification/subscriptions/{1}?api-version={2}' -f $ApiUri, $SubscriptionId, $ApiVersion
+        Uri    = '{0}/_apis/notification/subscriptions/{1}?api-version={2}' -f $ApiUri.TrimEnd('/'), $SubscriptionId, $ApiVersion
         Method = 'DELETE'
     }
     try   { return Invoke-AzDevOpsApiRestMethod @params }

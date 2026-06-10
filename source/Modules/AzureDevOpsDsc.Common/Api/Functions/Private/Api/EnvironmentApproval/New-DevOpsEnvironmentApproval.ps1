@@ -14,7 +14,7 @@ Function New-DevOpsEnvironmentApproval
     )
     $approvers = $ApproverIds | ForEach-Object { @{ id = $_ } }
     $params = @{
-        Uri         = '{0}/{1}/_apis/pipelines/checks/configurations?api-version={2}' -f $ApiUri, $ProjectName, $ApiVersion
+        Uri         = '{0}/{1}/_apis/pipelines/checks/configurations?api-version={2}' -f $ApiUri.TrimEnd('/'), $ProjectName, $ApiVersion
         Method      = 'POST'
         ContentType = 'application/json'
         Body        = @{

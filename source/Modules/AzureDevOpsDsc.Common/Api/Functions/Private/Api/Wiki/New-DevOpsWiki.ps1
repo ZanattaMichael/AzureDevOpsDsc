@@ -20,7 +20,7 @@ Function New-DevOpsWiki
         $body['mappedPath']   = $MappedPath
     }
     $params = @{
-        Uri         = '{0}/_apis/wiki/wikis?api-version={1}' -f $ApiUri, $ApiVersion
+        Uri         = '{0}/_apis/wiki/wikis?api-version={1}' -f $ApiUri.TrimEnd('/'), $ApiVersion
         Method      = 'POST'
         ContentType = 'application/json'
         Body        = $body | ConvertTo-Json

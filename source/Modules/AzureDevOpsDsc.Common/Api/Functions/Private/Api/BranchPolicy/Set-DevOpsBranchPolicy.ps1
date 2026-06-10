@@ -13,7 +13,7 @@ Function Set-DevOpsBranchPolicy
         [Parameter()][string]$ApiVersion = '7.1'
     )
     $params = @{
-        Uri         = '{0}/{1}/_apis/policy/configurations/{2}?api-version={3}' -f $ApiUri, $ProjectName, $PolicyId, $ApiVersion
+        Uri         = '{0}/{1}/_apis/policy/configurations/{2}?api-version={3}' -f $ApiUri.TrimEnd('/'), $ProjectName, $PolicyId, $ApiVersion
         Method      = 'PUT'
         ContentType = 'application/json'
         Body        = @{

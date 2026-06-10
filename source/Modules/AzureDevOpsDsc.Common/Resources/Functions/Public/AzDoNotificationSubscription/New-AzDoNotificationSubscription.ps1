@@ -15,12 +15,22 @@ Function New-AzDoNotificationSubscription
     )
     Write-Verbose "[New-AzDoNotificationSubscription] Creating subscription '$SubscriptionName'."
     $channel = @{ type = $ChannelType; address = $Subscriber }
+
+    # Provide a minimal default filter if none was specified
+    $effectiveFilter = if ($Filter) { $Filter } else {
+        @{
+            eventType = $EventType
+            type      = 'Expression'
+            criteria  = @{ clauses = @(); groups = @(); maxGroupLevel = 0 }
+        }
+    }
+
     $params = @{
         ApiUri      = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
         EventType   = $EventType
         Channel     = $channel
         Description = $SubscriptionName
-        Filter      = $Filter
+        Filter      = $effectiveFilter
     }
     $value = New-DevOpsNotificationSubscription @params
 

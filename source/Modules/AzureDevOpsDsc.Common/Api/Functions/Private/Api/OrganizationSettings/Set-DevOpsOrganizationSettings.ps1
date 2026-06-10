@@ -7,7 +7,7 @@ Function Set-DevOpsOrganizationSettings
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )
     $params = @{
-        Uri         = '{0}/_apis/settings/entries/host?api-version={1}' -f $ApiUri, $ApiVersion
+        Uri         = '{0}/_apis/settings/entries/host?api-version={1}' -f $ApiUri.TrimEnd('/'), $ApiVersion
         Method      = 'PATCH'
         ContentType = 'application/json'
         Body        = $Settings | ConvertTo-Json -Depth 10

@@ -3,7 +3,7 @@ Function Set-AzDoCheckConfiguration
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)][string]$ProjectName,
-        [Parameter(Mandatory = $true)][string]$ResourceName,
+        [Parameter(Mandatory = $true)][string]$TargetResourceName,
         [Parameter(Mandatory = $true)][string]$ResourceType,
         [Parameter(Mandatory = $true)][string]$CheckType,
         [Parameter()][HashTable]$Settings,
@@ -13,9 +13,9 @@ Function Set-AzDoCheckConfiguration
         [Parameter()][Ensure]$Ensure,
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
     )
-    Write-Verbose "[Set-AzDoCheckConfiguration] Updating check '$CheckType' on $ResourceType '$ResourceName'."
+    Write-Verbose "[Set-AzDoCheckConfiguration] Updating check '$CheckType' on $ResourceType '$TargetResourceName'."
 
-    $cacheKey = '{0}\{1}\{2}\{3}' -f $ProjectName, $ResourceType, $ResourceName, $CheckType
+    $cacheKey = '{0}\{1}\{2}\{3}' -f $ProjectName, $ResourceType, $TargetResourceName, $CheckType
     $check = Get-CacheItem -Key $cacheKey -Type 'LiveCheckConfigurations'
 
     if (-not $check) { Write-Error "[Set-AzDoCheckConfiguration] Check configuration not found."; return }

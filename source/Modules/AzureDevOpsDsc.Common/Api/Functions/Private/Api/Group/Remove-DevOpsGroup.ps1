@@ -45,7 +45,7 @@ Function Remove-DevOpsGroup
     if (-not $ApiVersion) { $ApiVersion = Get-AzDevOpsApiVersion -Default }
 
     $params = @{
-        Uri = '{0}/_apis/graph/groups/{1}?api-version={2}' -f $ApiUri, $GroupDescriptor, $ApiVersion
+        Uri = '{0}/_apis/graph/groups/{1}?api-version={2}' -f $ApiUri.TrimEnd('/'), $GroupDescriptor, $ApiVersion
         Method = 'Delete'
         ContentType = 'application/json'
     }

@@ -55,6 +55,19 @@ if ($ClearAll -or $ClearOrganizationGroups)
 }
 
 #
+# Purge artifact feed recycle bin (org-level) to prevent "name reserved" errors on re-run
+if ($ClearAll -or $ClearProjects)
+{
+    Write-Verbose "[Teardown] Purging artifact feed recycle bin..."
+    $recycleBinFeeds = List-DevOpsArtifactFeedRecycleBin -OrganizationName $OrganizationName
+    foreach ($feed in $recycleBinFeeds)
+    {
+        Write-Verbose "[Teardown] Purging feed '$($feed.name)' ($($feed.id)) from recycle bin."
+        Remove-DevOpsArtifactFeedFromRecycleBin -OrganizationName $OrganizationName -FeedId $feed.id
+    }
+}
+
+#
 # Remove Test Agent Pools (non-hosted pools whose names start with TEST_)
 if ($ClearAll -or $ClearAgentPools)
 {

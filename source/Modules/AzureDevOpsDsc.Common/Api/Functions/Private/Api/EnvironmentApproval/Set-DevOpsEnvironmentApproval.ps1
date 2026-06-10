@@ -15,7 +15,7 @@ Function Set-DevOpsEnvironmentApproval
     )
     $approvers = $ApproverIds | ForEach-Object { @{ id = $_ } }
     $params = @{
-        Uri         = '{0}/{1}/_apis/pipelines/checks/configurations/{2}?api-version={3}' -f $ApiUri, $ProjectName, $CheckId, $ApiVersion
+        Uri         = '{0}/{1}/_apis/pipelines/checks/configurations/{2}?api-version={3}' -f $ApiUri.TrimEnd('/'), $ProjectName, $CheckId, $ApiVersion
         Method      = 'PATCH'
         ContentType = 'application/json'
         Body        = @{

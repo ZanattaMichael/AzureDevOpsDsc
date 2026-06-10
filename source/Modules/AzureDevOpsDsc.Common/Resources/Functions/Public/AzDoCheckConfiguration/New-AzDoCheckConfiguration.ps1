@@ -3,7 +3,7 @@ Function New-AzDoCheckConfiguration
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)][string]$ProjectName,
-        [Parameter(Mandatory = $true)][string]$ResourceName,
+        [Parameter(Mandatory = $true)][string]$TargetResourceName,
         [Parameter(Mandatory = $true)][string]$ResourceType,
         [Parameter(Mandatory = $true)][string]$CheckType,
         [Parameter()][HashTable]$Settings,
@@ -13,27 +13,27 @@ Function New-AzDoCheckConfiguration
         [Parameter()][Ensure]$Ensure,
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
     )
-    Write-Verbose "[New-AzDoCheckConfiguration] Creating check '$CheckType' on $ResourceType '$ResourceName'."
+    Write-Verbose "[New-AzDoCheckConfiguration] Creating check '$CheckType' on $ResourceType '$TargetResourceName'."
 
     # Resolve the resource ID from the appropriate cache
     $resourceId = switch ($ResourceType)
     {
         'environment' {
-            $env = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $ResourceName) -Type 'LivePipelineEnvironments'
+            $env = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $TargetResourceName) -Type 'LivePipelineEnvironments'
             if ($env) { $env.id.ToString() } else { $null }
         }
         'repository' {
-            $repo = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $ResourceName) -Type 'LiveRepositories'
+            $repo = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $TargetResourceName) -Type 'LiveRepositories'
             if ($repo) { $repo.id } else { $null }
         }
         'endpoint' {
-            $sc = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $ResourceName) -Type 'LiveServiceConnections'
+            $sc = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $TargetResourceName) -Type 'LiveServiceConnections'
             if ($sc) { $sc.id } else { $null }
         }
-        default { $ResourceName }
+        default { $TargetResourceName }
     }
 
-    if (-not $resourceId) { Write-Error "[New-AzDoCheckConfiguration] Resource '$ResourceName' not found."; return }
+    if (-not $resourceId) { Write-Error "[New-AzDoCheckConfiguration] Resource '$TargetResourceName' not found."; return }
 
     # Look up a known check type ID (common ones)
     $checkTypeId = switch ($CheckType)
@@ -65,7 +65,7 @@ Function New-AzDoCheckConfiguration
         return
     }
 
-    $cacheKey = '{0}\{1}\{2}\{3}' -f $ProjectName, $ResourceType, $ResourceName, $CheckType
+    $cacheKey = '{0}\{1}\{2}\{3}' -f $ProjectName, $ResourceType, $TargetResourceName, $CheckType
     Add-CacheItem -Key $cacheKey -Value $value -Type 'LiveCheckConfigurations'
     Export-CacheObject -CacheType 'LiveCheckConfigurations' -Content $AzDoLiveCheckConfigurations
     Refresh-CacheObject -CacheType 'LiveCheckConfigurations'

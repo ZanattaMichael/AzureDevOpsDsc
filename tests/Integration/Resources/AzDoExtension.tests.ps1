@@ -3,9 +3,9 @@ Describe "AzDoExtension Integration Tests" {
     BeforeAll {
 
         # Use a well-known, free Marketplace extension that is safe to install/uninstall
-        # in a test organisation: the "Azure DevOps Open in Excel" extension.
-        $PUBLISHERID  = 'ms'
-        $EXTENSIONID  = 'vss-open-in-excel'
+        # in a test organisation: the Microsoft DevLabs "Feature Timeline & Epic Roadmap" extension.
+        $PUBLISHERID  = 'ms-devlabs'
+        $EXTENSIONID  = 'featuretimeline'
 
         $parameters = @{
             Name       = 'AzDoExtension'

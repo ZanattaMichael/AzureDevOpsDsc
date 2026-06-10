@@ -6,7 +6,7 @@ Function List-DevOpsArtifactFeeds
         [Parameter()][string]$ProjectName,
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )
-    $baseUri = if ($ProjectName) { '{0}/{1}' -f $ApiUri, $ProjectName } else { $ApiUri }
+    $baseUri = if ($ProjectName) { '{0}/{1}' -f $ApiUri.TrimEnd('/'), $ProjectName } else { $ApiUri }
     $params = @{
         Uri    = '{0}/_apis/packaging/feeds?api-version={1}' -f $baseUri, $ApiVersion
         Method = 'GET'

@@ -5,6 +5,7 @@ Function Get-AzDoTeam
     param (
         [Parameter(Mandatory = $true)][string]$ProjectName,
         [Parameter(Mandatory = $true)][string]$TeamName,
+        [Parameter()][string]$Description,
         [Parameter()][HashTable]$LookupResult,
         [Parameter()][Ensure]$Ensure,
         [Parameter()][System.Management.Automation.SwitchParameter]$Force

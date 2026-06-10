@@ -8,7 +8,7 @@ Function Remove-DevOpsDeploymentGroup
         [Parameter()][string]$ApiVersion = '7.1'
     )
     $params = @{
-        Uri    = '{0}/{1}/_apis/distributedtask/deploymentgroups/{2}?api-version={3}' -f $ApiUri, $ProjectName, $DeploymentGroupId, $ApiVersion
+        Uri    = '{0}/{1}/_apis/distributedtask/deploymentgroups/{2}?api-version={3}' -f $ApiUri.TrimEnd('/'), $ProjectName, $DeploymentGroupId, $ApiVersion
         Method = 'DELETE'
     }
     try   { return Invoke-AzDevOpsApiRestMethod @params }

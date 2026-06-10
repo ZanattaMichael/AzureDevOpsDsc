@@ -27,11 +27,26 @@ Function Get-AzDoOrganizationSettings
         $settings = Get-DevOpsOrganizationSettings @params
         $result.liveCache = $settings
 
+        # Extract actual live values from the API response
+        $liveValues = $settings.value
+        $liveAllowPublicProjects        = $liveValues.'Microsoft.VisualStudio.Services.EnablePublicProjects' -eq 'true'
+        $liveAllowExternalGuestAccess   = $liveValues.'Microsoft.VisualStudio.Services.Security.EnableAADGuestPolicy' -eq 'false'
+        $liveEnableOAuth                = $liveValues.'Microsoft.VisualStudio.Services.Security.EnableOAuthToken' -eq 'true'
+        $liveEnableSSH                  = $liveValues.'Microsoft.VisualStudio.Services.Security.EnableSSHPolicy' -eq 'true'
+        $liveDisallowAadGuestUserPolicy = $liveValues.'Microsoft.VisualStudio.Services.Security.DisallowAADGuestUserPolicy' -eq 'true'
+
+        $result.AllowPublicProjects        = $liveAllowPublicProjects
+        $result.AllowExternalGuestAccess   = $liveAllowExternalGuestAccess
+        $result.EnableOAuthAuthentication  = $liveEnableOAuth
+        $result.EnableSSHAuthentication    = $liveEnableSSH
+        $result.DisallowAadGuestUserPolicy = $liveDisallowAadGuestUserPolicy
+
         $changed = @()
-        # Compare desired vs live — only check params that were explicitly bound
-        if ($PSBoundParameters.ContainsKey('AllowPublicProjects') -and
-            $settings.'Microsoft.VisualStudio.Services.EnablePublicProjects' -ne $AllowPublicProjects.ToString().ToLower())
-        { $changed += 'AllowPublicProjects' }
+        if ($PSBoundParameters.ContainsKey('AllowPublicProjects')        -and $liveAllowPublicProjects        -ne $AllowPublicProjects)        { $changed += 'AllowPublicProjects' }
+        if ($PSBoundParameters.ContainsKey('AllowExternalGuestAccess')   -and $liveAllowExternalGuestAccess   -ne $AllowExternalGuestAccess)   { $changed += 'AllowExternalGuestAccess' }
+        if ($PSBoundParameters.ContainsKey('EnableOAuthAuthentication')  -and $liveEnableOAuth                -ne $EnableOAuthAuthentication)  { $changed += 'EnableOAuthAuthentication' }
+        if ($PSBoundParameters.ContainsKey('EnableSSHAuthentication')    -and $liveEnableSSH                  -ne $EnableSSHAuthentication)    { $changed += 'EnableSSHAuthentication' }
+        if ($PSBoundParameters.ContainsKey('DisallowAadGuestUserPolicy') -and $liveDisallowAadGuestUserPolicy -ne $DisallowAadGuestUserPolicy) { $changed += 'DisallowAadGuestUserPolicy' }
 
         $result.propertiesChanged = $changed
         $result.status = if ($changed.Count -eq 0) { [DSCGetSummaryState]::Unchanged } else { [DSCGetSummaryState]::Changed }

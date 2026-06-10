@@ -8,7 +8,7 @@ Function Get-DevOpsRepositorySettings
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )
     $params = @{
-        Uri    = '{0}/{1}/_apis/git/repositories/{2}/settings?api-version={3}' -f $ApiUri, $ProjectName, $RepositoryId, $ApiVersion
+        Uri    = '{0}/{1}/_apis/git/repositories/{2}/settings?api-version={3}' -f $ApiUri.TrimEnd('/'), $ProjectName, $RepositoryId, $ApiVersion
         Method = 'GET'
     }
     try

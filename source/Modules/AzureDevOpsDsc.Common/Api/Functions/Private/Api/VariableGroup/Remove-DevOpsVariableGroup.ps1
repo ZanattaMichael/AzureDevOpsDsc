@@ -8,7 +8,7 @@ Function Remove-DevOpsVariableGroup
         [Parameter()][string]$ApiVersion = '7.1-preview.2'
     )
     $params = @{
-        Uri    = '{0}/{1}/_apis/distributedtask/variablegroups/{2}?api-version={3}' -f $ApiUri, $ProjectName, $VariableGroupId, $ApiVersion
+        Uri    = '{0}/{1}/_apis/distributedtask/variablegroups?groupIds={2}&api-version={3}' -f $ApiUri.TrimEnd('/'), $ProjectName, $VariableGroupId, $ApiVersion
         Method = 'DELETE'
     }
     try   { return Invoke-AzDevOpsApiRestMethod @params }

@@ -8,7 +8,7 @@ Function List-DevOpsBranchPolicies
         [Parameter()][string]$RefName,
         [Parameter()][string]$ApiVersion = '7.1'
     )
-    $uri = '{0}/{1}/_apis/policy/configurations?api-version={2}' -f $ApiUri, $ProjectName, $ApiVersion
+    $uri = '{0}/{1}/_apis/policy/configurations?api-version={2}' -f $ApiUri.TrimEnd('/'), $ProjectName, $ApiVersion
     if ($RepositoryId) { $uri += '&repositoryId={0}' -f $RepositoryId }
     if ($RefName)      { $uri += '&refName={0}' -f [uri]::EscapeDataString($RefName) }
     $params = @{
