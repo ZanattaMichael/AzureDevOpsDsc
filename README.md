@@ -33,6 +33,68 @@ Additionally, please [`AzureDevOpsDsc` contribution guidelines](CONTRIBUTING.md)
 for more information about contributing to this module (including an overview of
 module structure, design and setup of Integration tests).
 
+## Testing
+
+This module is tested with [Pester 5](https://pester.dev/). Tests live under
+[`tests/`](tests) and are split into:
+
+- **Unit tests** ([`tests/Unit`](tests/Unit)) — fast, no external dependencies.
+- **Integration tests** ([`tests/Integration`](tests/Integration)) — run against a
+  live Azure DevOps organization and require authentication.
+
+### Test tags
+
+Every `Describe` block is tagged with a **type** tag and a **service** tag:
+
+- **Type tag** — `Unit` or `Integration`.
+- **Service tag** — the resource/service the test covers (for example
+  `ArtifactFeed`, `Project`, `GitPermission`). The same service tag is applied to a
+  service's unit *and* integration tests, so one tag selects both.
+
+Some unit tests also keep an additional category tag (`API`, `Cache`, `ACL`,
+`Helper`, `Authentication`).
+
+```powershell
+Invoke-Pester -Tag Unit            # all unit tests
+Invoke-Pester -Tag Integration     # all integration tests
+Invoke-Pester -Tag ArtifactFeed    # unit + integration for one service
+Invoke-Pester -Tag Unit, API       # unit tests for the private API functions
+```
+
+### Running the unit tests
+
+```powershell
+# Build the module first so the compiled module and classes are available.
+./build.ps1 -Tasks build
+
+Invoke-Pester -Path ./tests/Unit -Tag Unit
+```
+
+### Running the integration tests
+
+Integration tests create and tear down real Azure DevOps resources, so they run
+through a test framework that handles authentication, setup and teardown. Set the
+cache directory, then invoke the framework:
+
+```powershell
+$env:AZDODSC_CACHE_DIRECTORY = '<path-to-a-writable-cache-folder>'
+
+Set-Location ./tests/Integration
+. ./Invoke-Tests.ps1 -TestFrameworkConfigurationPath ./TestFrameworkConfiguration.json
+```
+
+To iterate on a subset (specific files and/or `Context` blocks) without running the
+whole suite, use the targeted runner:
+
+```powershell
+. ./Invoke-TargetedTests.ps1 `
+    -TestFrameworkConfigurationPath ./TestFrameworkConfiguration.json `
+    -TestFile AzDoArtifactFeed `
+    -FullName '*Creating*'
+```
+
+See [`tests/README.md`](tests/README.md) for the full tag taxonomy and more detail.
+
 ## Change log
 
 A full list of changes in each version can be found in the [change log](CHANGELOG.md).
