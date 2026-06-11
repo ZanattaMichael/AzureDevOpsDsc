@@ -1,4 +1,4 @@
-Describe "AzDoBranchPolicy Integration Tests" {
+Describe "AzDoBranchPolicy Integration Tests (Minimum Reviewer Count policy)" {
 
     BeforeAll {
 
@@ -40,7 +40,7 @@ Describe "AzDoBranchPolicy Integration Tests" {
         New-Repository -ProjectName $PROJECTNAME -RepositoryName $REPONAME
     }
 
-    Context "Testing if the branch policy exists" {
+    Context "Testing if the Minimum Reviewer Count branch policy exists" {
 
         BeforeAll {
             $parameters.Method = 'Test'
@@ -56,7 +56,7 @@ Describe "AzDoBranchPolicy Integration Tests" {
         }
     }
 
-    Context "Creating the branch policy" {
+    Context "Creating the Minimum Reviewer Count branch policy" {
 
         BeforeAll {
             $parameters.Method = 'Set'
@@ -73,7 +73,7 @@ Describe "AzDoBranchPolicy Integration Tests" {
         }
     }
 
-    Context "Updating the branch policy" {
+    Context "Updating the Minimum Reviewer Count branch policy" {
 
         BeforeAll {
             $parameters.Method = 'Set'
@@ -97,7 +97,7 @@ Describe "AzDoBranchPolicy Integration Tests" {
         }
     }
 
-    Context "Removing the branch policy" {
+    Context "Removing the Minimum Reviewer Count branch policy" {
 
         BeforeAll {
             $parameters.Method   = 'Set'

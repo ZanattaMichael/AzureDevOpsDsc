@@ -1,4 +1,4 @@
-Describe "AzDoServiceConnection Integration Tests" {
+Describe "AzDoServiceConnection Integration Tests (Generic UsernamePassword connection)" {
 
     BeforeAll {
 
@@ -33,7 +33,7 @@ Describe "AzDoServiceConnection Integration Tests" {
         New-Project $PROJECTNAME
     }
 
-    Context "Testing if the service connection exists" {
+    Context "Testing if the Generic service connection exists" {
 
         BeforeAll {
             $parameters.Method = 'Test'
@@ -49,7 +49,7 @@ Describe "AzDoServiceConnection Integration Tests" {
         }
     }
 
-    Context "Creating the service connection" {
+    Context "Creating the Generic service connection" {
 
         BeforeAll {
             $parameters.Method = 'Set'
@@ -66,7 +66,7 @@ Describe "AzDoServiceConnection Integration Tests" {
         }
     }
 
-    Context "Updating the service connection description" {
+    Context "Updating the Generic service connection description" {
 
         BeforeAll {
             $parameters.Method = 'Set'
@@ -84,7 +84,7 @@ Describe "AzDoServiceConnection Integration Tests" {
         }
     }
 
-    Context "Removing the service connection" {
+    Context "Removing the Generic service connection" {
 
         BeforeAll {
             $parameters.Method = 'Set'

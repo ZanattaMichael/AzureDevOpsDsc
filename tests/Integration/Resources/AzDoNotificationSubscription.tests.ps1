@@ -1,4 +1,4 @@
-Describe "AzDoNotificationSubscription Integration Tests" {
+Describe "AzDoNotificationSubscription Integration Tests (work item changed, Email channel)" {
 
     BeforeAll {
 
@@ -29,7 +29,7 @@ Describe "AzDoNotificationSubscription Integration Tests" {
         New-Project $PROJECTNAME
     }
 
-    Context "Testing if the notification subscription exists" {
+    Context "Testing if the work item changed notification subscription exists" {
 
         BeforeAll {
             $parameters.Method = 'Test'
@@ -45,7 +45,7 @@ Describe "AzDoNotificationSubscription Integration Tests" {
         }
     }
 
-    Context "Creating the notification subscription" {
+    Context "Creating the work item changed notification subscription" {
 
         BeforeAll {
             $parameters.Method = 'Set'
@@ -62,7 +62,7 @@ Describe "AzDoNotificationSubscription Integration Tests" {
         }
     }
 
-    Context "Disabling the notification subscription" {
+    Context "Disabling the work item changed notification subscription" {
 
         BeforeAll {
             $parameters.Method = 'Set'
@@ -80,7 +80,7 @@ Describe "AzDoNotificationSubscription Integration Tests" {
         }
     }
 
-    Context "Removing the notification subscription" {
+    Context "Removing the work item changed notification subscription" {
 
         BeforeAll {
             $parameters.Method = 'Set'

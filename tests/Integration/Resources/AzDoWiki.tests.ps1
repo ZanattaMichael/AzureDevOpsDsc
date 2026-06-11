@@ -1,4 +1,4 @@
-Describe "AzDoWiki Integration Tests" {
+Describe "AzDoWiki Integration Tests (code wiki)" {
 
     BeforeAll {
 
@@ -45,7 +45,7 @@ Describe "AzDoWiki Integration Tests" {
         Initialize-Repo -ProjectName $PROJECTNAME -Organization $GLOBAL:DSCAZDO_OrganizationName
     }
 
-    Context "Testing if the wiki exists" {
+    Context "Testing if the code wiki exists" {
 
         BeforeAll {
             $parameters.Method = 'Test'
@@ -61,7 +61,7 @@ Describe "AzDoWiki Integration Tests" {
         }
     }
 
-    Context "Creating the wiki" {
+    Context "Creating the code wiki" {
 
         BeforeAll {
             $parameters.Method = 'Set'
@@ -78,7 +78,7 @@ Describe "AzDoWiki Integration Tests" {
         }
     }
 
-    Context "Removing the wiki" {
+    Context "Removing the code wiki" {
 
         BeforeAll {
             $parameters.Method = 'Set'
