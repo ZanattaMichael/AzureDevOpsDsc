@@ -37,19 +37,19 @@ Describe "Set-AzDoCheckConfiguration" -Tag "Unit", "CheckConfiguration" {
         }
 
         It "calls Set-DevOpsCheckConfiguration" {
-            Set-AzDoCheckConfiguration -ProjectName 'TestProject' -ResourceName 'TestEnv' `
+            Set-AzDoCheckConfiguration -ProjectName 'TestProject' -TargetResourceName 'TestEnv' `
                 -ResourceType 'environment' -CheckType 'Approval'
             Assert-MockCalled -CommandName Set-DevOpsCheckConfiguration -Exactly -Times 1
         }
 
         It "calls Add-CacheItem to update cache" {
-            Set-AzDoCheckConfiguration -ProjectName 'TestProject' -ResourceName 'TestEnv' `
+            Set-AzDoCheckConfiguration -ProjectName 'TestProject' -TargetResourceName 'TestEnv' `
                 -ResourceType 'environment' -CheckType 'Approval'
             Assert-MockCalled -CommandName Add-CacheItem -Times 1
         }
 
         It "calls Export-CacheObject" {
-            Set-AzDoCheckConfiguration -ProjectName 'TestProject' -ResourceName 'TestEnv' `
+            Set-AzDoCheckConfiguration -ProjectName 'TestProject' -TargetResourceName 'TestEnv' `
                 -ResourceType 'environment' -CheckType 'Approval'
             Assert-MockCalled -CommandName Export-CacheObject -Times 1
         }
@@ -61,7 +61,7 @@ Describe "Set-AzDoCheckConfiguration" -Tag "Unit", "CheckConfiguration" {
         }
 
         It "writes an error and does not call Set-DevOpsCheckConfiguration" {
-            Set-AzDoCheckConfiguration -ProjectName 'TestProject' -ResourceName 'NonExistent' `
+            Set-AzDoCheckConfiguration -ProjectName 'TestProject' -TargetResourceName 'NonExistent' `
                 -ResourceType 'environment' -CheckType 'Approval'
             Assert-MockCalled -CommandName Write-Error -Times 1
             Assert-MockCalled -CommandName Set-DevOpsCheckConfiguration -Times 0

@@ -32,13 +32,13 @@ Describe "Get-AzDoCheckConfiguration" -Tag "Unit", "CheckConfiguration" {
         }
 
         It "returns status Unchanged" {
-            $result = Get-AzDoCheckConfiguration -ProjectName 'TestProject' -ResourceName 'TestEnv' `
+            $result = Get-AzDoCheckConfiguration -ProjectName 'TestProject' -TargetResourceName 'TestEnv' `
                 -ResourceType 'environment' -CheckType 'Approval'
             $result.status | Should -Be 'Unchanged'
         }
 
         It "queries cache with composite key" {
-            Get-AzDoCheckConfiguration -ProjectName 'TestProject' -ResourceName 'TestEnv' `
+            Get-AzDoCheckConfiguration -ProjectName 'TestProject' -TargetResourceName 'TestEnv' `
                 -ResourceType 'environment' -CheckType 'Approval'
             Assert-MockCalled -CommandName Get-CacheItem -ParameterFilter {
                 $Key -eq 'TestProject\environment\TestEnv\Approval' -and $Type -eq 'LiveCheckConfigurations'
@@ -46,7 +46,7 @@ Describe "Get-AzDoCheckConfiguration" -Tag "Unit", "CheckConfiguration" {
         }
 
         It "populates liveCache" {
-            $result = Get-AzDoCheckConfiguration -ProjectName 'TestProject' -ResourceName 'TestEnv' `
+            $result = Get-AzDoCheckConfiguration -ProjectName 'TestProject' -TargetResourceName 'TestEnv' `
                 -ResourceType 'environment' -CheckType 'Approval'
             $result.liveCache | Should -Not -BeNullOrEmpty
         }
@@ -58,7 +58,7 @@ Describe "Get-AzDoCheckConfiguration" -Tag "Unit", "CheckConfiguration" {
         }
 
         It "returns status NotFound" {
-            $result = Get-AzDoCheckConfiguration -ProjectName 'TestProject' -ResourceName 'TestEnv' `
+            $result = Get-AzDoCheckConfiguration -ProjectName 'TestProject' -TargetResourceName 'TestEnv' `
                 -ResourceType 'environment' -CheckType 'Approval'
             $result.status | Should -Be 'NotFound'
         }

@@ -35,13 +35,13 @@ Describe "New-AzDoCheckConfiguration" -Tag "Unit", "CheckConfiguration" {
         }
 
         It "calls New-DevOpsCheckConfiguration" {
-            New-AzDoCheckConfiguration -ProjectName 'TestProject' -ResourceName 'TestEnv' `
+            New-AzDoCheckConfiguration -ProjectName 'TestProject' -TargetResourceName 'TestEnv' `
                 -ResourceType 'environment' -CheckType 'Approval'
             Assert-MockCalled -CommandName New-DevOpsCheckConfiguration -Exactly -Times 1
         }
 
         It "calls Add-CacheItem with LiveCheckConfigurations" {
-            New-AzDoCheckConfiguration -ProjectName 'TestProject' -ResourceName 'TestEnv' `
+            New-AzDoCheckConfiguration -ProjectName 'TestProject' -TargetResourceName 'TestEnv' `
                 -ResourceType 'environment' -CheckType 'Approval'
             Assert-MockCalled -CommandName Add-CacheItem -ParameterFilter {
                 $Type -eq 'LiveCheckConfigurations'
@@ -49,7 +49,7 @@ Describe "New-AzDoCheckConfiguration" -Tag "Unit", "CheckConfiguration" {
         }
 
         It "calls Export-CacheObject and Refresh-CacheObject" {
-            New-AzDoCheckConfiguration -ProjectName 'TestProject' -ResourceName 'TestEnv' `
+            New-AzDoCheckConfiguration -ProjectName 'TestProject' -TargetResourceName 'TestEnv' `
                 -ResourceType 'environment' -CheckType 'Approval'
             Assert-MockCalled -CommandName Export-CacheObject -Times 1
             Assert-MockCalled -CommandName Refresh-CacheObject -Times 1
@@ -62,7 +62,7 @@ Describe "New-AzDoCheckConfiguration" -Tag "Unit", "CheckConfiguration" {
         }
 
         It "writes an error and does not call New-DevOpsCheckConfiguration" {
-            New-AzDoCheckConfiguration -ProjectName 'TestProject' -ResourceName 'NonExistent' `
+            New-AzDoCheckConfiguration -ProjectName 'TestProject' -TargetResourceName 'NonExistent' `
                 -ResourceType 'environment' -CheckType 'Approval'
             Assert-MockCalled -CommandName Write-Error -Times 1
             Assert-MockCalled -CommandName New-DevOpsCheckConfiguration -Times 0

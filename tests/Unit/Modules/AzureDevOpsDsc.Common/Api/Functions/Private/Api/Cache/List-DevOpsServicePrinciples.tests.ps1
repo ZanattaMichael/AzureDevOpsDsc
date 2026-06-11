@@ -48,13 +48,11 @@ Describe 'List-DevOpsServicePrinciples' -Tag "Unit", "Cache", "API" {
             $result[1].displayName | Should -Be 'Service Principal 2'
         }
 
-        It 'Uses the default API version if not provided' {
+        It 'Uses the default preview API version if not provided' {
             List-DevOpsServicePrinciples -OrganizationName 'MyOrg'
 
-            Assert-MockCalled Get-AzDevOpsApiVersion -Exactly 1 -Scope It
             Assert-MockCalled Invoke-AzDevOpsApiRestMethod -ParameterFilter {
-                $Uri -like 'https://vssps.dev.azure.com/MyOrg/_apis/graph/serviceprincipals*' -and
-                $Method -eq 'Get'
+                $ApiUri -eq 'https://vssps.dev.azure.com/MyOrg/_apis/graph/serviceprincipals?api-version=7.1-preview.1'
             } -Exactly 1 -Scope It
         }
 
@@ -62,8 +60,7 @@ Describe 'List-DevOpsServicePrinciples' -Tag "Unit", "Cache", "API" {
             List-DevOpsServicePrinciples -OrganizationName 'MyOrg' -ApiVersion '5.0-preview.1'
 
             Assert-MockCalled Invoke-AzDevOpsApiRestMethod -ParameterFilter {
-                $Uri -like 'https://vssps.dev.azure.com/MyOrg/_apis/graph/serviceprincipals*' -and
-                $Method -eq 'Get'
+                $ApiUri -eq 'https://vssps.dev.azure.com/MyOrg/_apis/graph/serviceprincipals?api-version=5.0-preview.1'
             } -Exactly 1 -Scope It
         }
     }

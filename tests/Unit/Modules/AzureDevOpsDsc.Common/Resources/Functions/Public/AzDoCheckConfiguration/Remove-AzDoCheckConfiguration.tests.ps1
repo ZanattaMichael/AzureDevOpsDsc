@@ -34,13 +34,13 @@ Describe "Remove-AzDoCheckConfiguration" -Tag "Unit", "CheckConfiguration" {
         }
 
         It "calls Remove-DevOpsCheckConfiguration" {
-            Remove-AzDoCheckConfiguration -ProjectName 'TestProject' -ResourceName 'TestEnv' `
+            Remove-AzDoCheckConfiguration -ProjectName 'TestProject' -TargetResourceName 'TestEnv' `
                 -ResourceType 'environment' -CheckType 'Approval'
             Assert-MockCalled -CommandName Remove-DevOpsCheckConfiguration -Exactly -Times 1
         }
 
         It "calls Remove-CacheItem" {
-            Remove-AzDoCheckConfiguration -ProjectName 'TestProject' -ResourceName 'TestEnv' `
+            Remove-AzDoCheckConfiguration -ProjectName 'TestProject' -TargetResourceName 'TestEnv' `
                 -ResourceType 'environment' -CheckType 'Approval'
             Assert-MockCalled -CommandName Remove-CacheItem -ParameterFilter {
                 $Type -eq 'LiveCheckConfigurations'
@@ -48,7 +48,7 @@ Describe "Remove-AzDoCheckConfiguration" -Tag "Unit", "CheckConfiguration" {
         }
 
         It "calls Export-CacheObject" {
-            Remove-AzDoCheckConfiguration -ProjectName 'TestProject' -ResourceName 'TestEnv' `
+            Remove-AzDoCheckConfiguration -ProjectName 'TestProject' -TargetResourceName 'TestEnv' `
                 -ResourceType 'environment' -CheckType 'Approval'
             Assert-MockCalled -CommandName Export-CacheObject -Times 1
         }
@@ -60,7 +60,7 @@ Describe "Remove-AzDoCheckConfiguration" -Tag "Unit", "CheckConfiguration" {
         }
 
         It "writes an error and does not call Remove-DevOpsCheckConfiguration" {
-            Remove-AzDoCheckConfiguration -ProjectName 'TestProject' -ResourceName 'NonExistent' `
+            Remove-AzDoCheckConfiguration -ProjectName 'TestProject' -TargetResourceName 'NonExistent' `
                 -ResourceType 'environment' -CheckType 'Approval'
             Assert-MockCalled -CommandName Write-Error -Times 1
             Assert-MockCalled -CommandName Remove-DevOpsCheckConfiguration -Times 0

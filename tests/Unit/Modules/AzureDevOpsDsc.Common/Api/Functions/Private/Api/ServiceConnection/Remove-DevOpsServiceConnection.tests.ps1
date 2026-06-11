@@ -17,19 +17,19 @@ Describe 'Remove-DevOpsServiceConnection' -Tag "Unit", "ServiceConnection", "API
     }
 
     It 'Calls Invoke-AzDevOpsApiRestMethod with DELETE method' {
-        Remove-DevOpsServiceConnection -ApiUri 'https://dev.azure.com/myorg' -ProjectName 'TestProject' -ServiceConnectionId 'sc-id'
+        Remove-DevOpsServiceConnection -ApiUri 'https://dev.azure.com/myorg' -ProjectId 'proj-guid' -ServiceConnectionId 'sc-id'
         Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -ParameterFilter {
-            $Method -eq 'DELETE'
+            $HttpMethod -eq 'DELETE'
         } -Times 1
     }
 
     It 'Returns the API response' {
-        $result = Remove-DevOpsServiceConnection -ApiUri 'https://dev.azure.com/myorg' -ProjectName 'TestProject' -ServiceConnectionId 'sc-id'
+        $result = Remove-DevOpsServiceConnection -ApiUri 'https://dev.azure.com/myorg' -ProjectId 'proj-guid' -ServiceConnectionId 'sc-id'
         $result | Should -Not -BeNullOrEmpty
     }
 
     It 'Throws when the API call fails' {
         Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { throw 'API error' }
-        { Remove-DevOpsServiceConnection -ApiUri 'https://dev.azure.com/myorg' -ProjectName 'TestProject' -ServiceConnectionId 'sc-id' } | Should -Throw
+        { Remove-DevOpsServiceConnection -ApiUri 'https://dev.azure.com/myorg' -ProjectId 'proj-guid' -ServiceConnectionId 'sc-id' } | Should -Throw
     }
 }

@@ -17,20 +17,20 @@ Describe 'Remove-DevOpsVariableGroup' -Tag "Unit", "VariableGroup", "API" {
     }
 
     It 'Calls Invoke-AzDevOpsApiRestMethod with DELETE method' {
-        Remove-DevOpsVariableGroup -ApiUri 'https://dev.azure.com/myorg' -ProjectName 'TestProject' -VariableGroupId 1
+        Remove-DevOpsVariableGroup -ApiUri 'https://dev.azure.com/myorg' -ProjectId 'proj-guid' -VariableGroupId 1
         Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -ParameterFilter {
-            $Method -eq 'DELETE'
+            $HttpMethod -eq 'DELETE'
         } -Times 1
     }
 
     It 'Returns the API response' {
-        $result = Remove-DevOpsVariableGroup -ApiUri 'https://dev.azure.com/myorg' -ProjectName 'TestProject' -VariableGroupId 1
+        $result = Remove-DevOpsVariableGroup -ApiUri 'https://dev.azure.com/myorg' -ProjectId 'proj-guid' -VariableGroupId 1
         $result | Should -Not -BeNullOrEmpty
     }
 
     It 'Throws when the API call fails' {
         Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { throw 'API error' }
-        { Remove-DevOpsVariableGroup -ApiUri 'https://dev.azure.com/myorg' -ProjectName 'TestProject' -VariableGroupId 1 } | Should -Throw
+        { Remove-DevOpsVariableGroup -ApiUri 'https://dev.azure.com/myorg' -ProjectId 'proj-guid' -VariableGroupId 1 } | Should -Throw
     }
 
 }

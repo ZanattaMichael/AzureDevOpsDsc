@@ -33,7 +33,10 @@ Describe 'Remove-AzDoServiceConnection Tests' -Tag "Unit", "ServiceConnection" {
     Context 'When the service connection exists in cache' {
 
         BeforeEach {
+            # The resource resolves the connection from 'LiveServiceConnections' and the project id
+            # from 'LiveProjects', so the mock returns different objects per cache type.
             Mock -CommandName Get-CacheItem -MockWith {
+                if ($Type -eq 'LiveProjects') { return @{ id = 'proj-id'; name = 'TestProject' } }
                 return @{ id = 'sc-id'; name = 'TestSC' }
             }
         }
@@ -42,7 +45,7 @@ Describe 'Remove-AzDoServiceConnection Tests' -Tag "Unit", "ServiceConnection" {
             Remove-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic'
 
             Assert-MockCalled -CommandName Remove-DevOpsServiceConnection -Exactly 1 -ParameterFilter {
-                $ServiceConnectionId -eq 'sc-id' -and $ProjectName -eq 'TestProject'
+                $ServiceConnectionId -eq 'sc-id' -and $ProjectId -eq 'proj-id'
             }
         }
 

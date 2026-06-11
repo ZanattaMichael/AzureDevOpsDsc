@@ -41,15 +41,17 @@ Describe 'List-DevOpsGroups' -Tag "Unit", "Cache", "API" {
             Assert-MockCalled Invoke-AzDevOpsApiRestMethod -Exactly 1
         }
 
-        It 'should call Get-AzDevOpsApiVersion if no ApiVersion is specified' {
+        It 'should use the default preview API version when none is specified' {
             List-DevOpsGroups -Organization 'myOrg'
-            Assert-MockCalled Get-AzDevOpsApiVersion -Exactly 1
+            Assert-MockCalled Invoke-AzDevOpsApiRestMethod -Exactly 1 -ParameterFilter {
+                $ApiUri -eq 'https://vssps.dev.azure.com/myOrg/_apis/graph/groups?api-version=7.1-preview.1'
+            }
         }
 
-        It 'should not call Get-AzDevOpsApiVersion if ApiVersion is specified' {
+        It 'should use the specified ApiVersion when provided' {
             List-DevOpsGroups -Organization 'myOrg' -ApiVersion '5.1'
-            Assert-MockCalled Get-AzDevOpsApiVersion -Exactly 0 -ParameterFilter {
-                $Uri -eq 'https://dev.azure.com/myOrg/_apis/graph/groups?api-version=5.1'
+            Assert-MockCalled Invoke-AzDevOpsApiRestMethod -Exactly 1 -ParameterFilter {
+                $ApiUri -eq 'https://vssps.dev.azure.com/myOrg/_apis/graph/groups?api-version=5.1'
             }
         }
 

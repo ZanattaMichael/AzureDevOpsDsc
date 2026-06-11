@@ -33,7 +33,10 @@ Describe 'Remove-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
     Context 'When the variable group exists in cache' {
 
         BeforeEach {
+            # The resource resolves the variable group from 'LiveVariableGroups' and the project id
+            # from 'LiveProjects', so the mock returns different objects per cache type.
             Mock -CommandName Get-CacheItem -MockWith {
+                if ($Type -eq 'LiveProjects') { return @{ id = 'proj-id'; name = 'TestProject' } }
                 return @{ id = 'vg-id'; name = 'TestVG' }
             }
         }
@@ -42,7 +45,7 @@ Describe 'Remove-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
             Remove-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG'
 
             Assert-MockCalled -CommandName Remove-DevOpsVariableGroup -Exactly 1 -ParameterFilter {
-                $VariableGroupId -eq 'vg-id' -and $ProjectName -eq 'TestProject'
+                $VariableGroupId -eq 'vg-id' -and $ProjectId -eq 'proj-id'
             }
         }
 

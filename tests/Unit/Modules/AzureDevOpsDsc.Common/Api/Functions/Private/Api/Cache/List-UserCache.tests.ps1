@@ -61,14 +61,14 @@ Describe 'List-UserCache' -Tag "Unit", "Cache", "API" {
     }
 
     Context 'when ApiVersion is not provided' {
-        It 'should call Get-AzDevOpsApiVersion' {
+        It 'should use the default preview API version' {
             $OrganizationName = 'TestOrg'
-
-            Mock -CommandName  Get-AzDevOpsApiVersion { return "5.0-preview.1" }
 
             $result = List-UserCache -OrganizationName $OrganizationName
 
-            Assert-MockCalled -CommandName Get-AzDevOpsApiVersion -Exactly 1
+            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Exactly 1 -ParameterFilter {
+                $ApiUri -eq 'https://vssps.dev.azure.com/TestOrg/_apis/graph/users?api-version=7.1-preview.1'
+            }
         }
     }
 }
