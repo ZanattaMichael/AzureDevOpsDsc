@@ -71,7 +71,9 @@ Function Set-DevOpsGroup
         $ProjectScopeDescriptor # Scope descriptor for the project within which the group exists.
     )
 
-    if (-not $ApiVersion) { $ApiVersion = Get-AzDevOpsApiVersion -Default }
+    # The graph (vssps) endpoints are preview-only; a bare '7.1' is rejected with
+    # VssInvalidPreviewVersionException. Default to the preview version, matching New-DevOpsGroup.
+    if (-not $ApiVersion) { $ApiVersion = '7.1-preview.1' }
 
     # A hashtable is created to hold parameters that will be used in the REST method invocation.
     $params = @{
@@ -106,8 +108,7 @@ Function Set-DevOpsGroup
     }
     catch
     {
-        # Write an error message to the console if the REST method call fails.
-        Write-Error "Failed to create group: $_"
+        throw "Failed to update group '$GroupName': $_"
     }
 
 }

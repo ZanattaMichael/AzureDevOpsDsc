@@ -118,8 +118,9 @@ Function Parse-ACLToken
         'DistributedTask' {
             switch -regex ($Token.Trim())
             {
-                $LocalizedDataAzACLTokenPatten.EnvironmentPermission { $result.type = 'Environment';            break }
-                default                                              { $result.type = 'DistributedTaskUnknown'        }
+                $LocalizedDataAzACLTokenPatten.EnvironmentPermission { $result.type = 'Environment'; break }
+                $LocalizedDataAzACLTokenPatten.AgentPoolPermission   { $result.type = 'AgentPool';   break }
+                default                                              { $result.type = 'DistributedTaskUnknown' }
             }
         }
 

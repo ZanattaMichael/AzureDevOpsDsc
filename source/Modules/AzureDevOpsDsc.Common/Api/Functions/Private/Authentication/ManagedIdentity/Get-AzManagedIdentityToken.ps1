@@ -36,6 +36,46 @@ Function Get-AzManagedIdentityToken
 
     Write-Verbose "[Get-AzManagedIdentityToken] Getting the managed identity token for the organization $OrganizationName."
 
+    # Check for a valid cached token before attempting IMDS.
+    # Re-fetching via IMDS requires Azure Arc secret-file access, which needs admin rights.
+    if ($ENV:AZDODSC_CACHE_DIRECTORY)
+    {
+        $cachedSettingsPath = Join-Path -Path $ENV:AZDODSC_CACHE_DIRECTORY -ChildPath 'ModuleSettings.clixml'
+        if (Test-Path -LiteralPath $cachedSettingsPath)
+        {
+            try
+            {
+                $cachedSettings = Import-Clixml -LiteralPath $cachedSettingsPath -ErrorAction Stop
+                $cachedToken    = $cachedSettings.Token
+                $isMI = ($cachedToken.tokenType.ToString() -eq 'ManagedIdentity' -or [int]$cachedToken.tokenType -eq 0)
+                if ($cachedToken -and $isMI -and $cachedToken.access_token -and
+                    $cachedToken.expires_on -gt (Get-Date).AddSeconds(60))
+                {
+                    Write-Verbose "[Get-AzManagedIdentityToken] Reusing valid cached managed identity token (expires $($cachedToken.expires_on))."
+                    $epochStart    = [datetime]::new(1970, 1, 1, 0, 0, 0, [DateTimeKind]::Utc)
+                    $expiresOnUnix = [long]($cachedToken.expires_on.ToUniversalTime() - $epochStart).TotalSeconds
+                    $bstr          = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($cachedToken.access_token)
+                    $plainToken    = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+                    [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+                    $tokenData = [PSCustomObject]@{
+                        access_token = $plainToken
+                        expires_on   = $expiresOnUnix
+                        expires_in   = [int]$cachedToken.expires_in
+                        resource     = [string]$cachedToken.resource
+                        token_type   = [string]$cachedToken.token_type
+                    }
+                    $ManagedIdentity = New-ManagedIdentityToken $tokenData
+                    if (-not $Verify -or (Test-AzToken $ManagedIdentity))
+                    {
+                        return $ManagedIdentity
+                    }
+                    Write-Verbose "[Get-AzManagedIdentityToken] Cached token failed verification — fetching a fresh token."
+                }
+            }
+            catch { Write-Verbose "[Get-AzManagedIdentityToken] Could not reuse cached token: $_" }
+        }
+    }
+
     # Import the parameters
     $ManagedIdentityParams = @{
         # Define the Azure instance metadata endpoint to get the access token
@@ -52,12 +92,13 @@ Function Get-AzManagedIdentityToken
 
         $OSInfo = Get-OperatingSystemInfo
 
-        # Test if console is being run as Administrator
+        # Test if console is being run as Administrator — emit a warning but allow
+        # the request to proceed; Azure Arc IMDS security is enforced via the
+        # WWW-Authenticate secret-file challenge, not solely by process elevation.
         if ($OSInfo.Windows)
         {
-            # Check if the current user is in the Administrator role
             if (-not(Test-isWindowsAdmin)) {
-                throw "[Get-AzManagedIdentityToken] Error: Authentication to Azure Arc requires Administrator privileges."
+                Write-Warning "[Get-AzManagedIdentityToken] Not running as Administrator. Azure Arc authentication may fail if the secret file is not accessible."
             }
         }
 

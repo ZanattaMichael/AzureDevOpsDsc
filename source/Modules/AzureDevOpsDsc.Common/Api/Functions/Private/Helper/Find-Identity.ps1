@@ -93,7 +93,13 @@ Function Find-Identity
     }
     $groupFilter = if ($SearchType -eq 'principalName')
     {
-        { $_.value.principalName.replace('[','').replace(']','') -eq $Name }
+        # Organisation-level groups have a principalName like "[orgName]\GroupName".
+        # When the caller uses "[]\GroupName" (empty org prefix), after bracket-stripping
+        # $Name becomes "\GroupName". We match by suffix so "[orgName]\GroupName" resolves correctly.
+        {
+            $normalizedPrincipal = $_.value.principalName.replace('[','').replace(']','')
+            ($normalizedPrincipal -eq $Name) -or ($Name.StartsWith('\') -and $normalizedPrincipal.EndsWith($Name))
+        }
     }
     else
     {

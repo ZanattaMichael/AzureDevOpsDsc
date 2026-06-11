@@ -45,8 +45,19 @@ Function New-AzDoBranchPolicy
     {
         Write-Verbose "[New-AzDoBranchPolicy] PolicyType '$PolicyType' not in cache, querying API."
         $orgUri = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
+        # Map camelCase/short names to actual Azure DevOps display names returned by the API
+        $policyDisplayNameAliases = @{
+            'MinimumReviewerCount' = 'Minimum number of reviewers'
+            'BuildValidation'      = 'Build'
+            'CommentRequirements'  = 'Comment requirements'
+            'WorkItemLinking'      = 'Work item linking'
+            'MergeStrategy'        = 'Require a merge strategy'
+            'StatusCheck'          = 'Status'
+        }
+        $lookupName = if ($policyDisplayNameAliases.ContainsKey($PolicyType)) { $policyDisplayNameAliases[$PolicyType] } else { $PolicyType }
         $policyTypes = List-DevOpsPolicyTypes -ApiUri $orgUri -ProjectName $ProjectName
-        $policyTypeObj = $policyTypes | Where-Object { $_.displayName -eq $PolicyType }
+        $policyTypeObj = $policyTypes | Where-Object { $_.displayName -eq $lookupName }
+        # Also store using both the short name and the actual display name as keys
         if ($policyTypeObj)
         {
             foreach ($pt in $policyTypes)

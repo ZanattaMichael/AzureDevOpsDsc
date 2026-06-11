@@ -13,9 +13,9 @@ Function Get-DevOpsRepositorySettings
     }
     try
     {
-        $result = Invoke-AzDevOpsApiRestMethod @params
-        if ($null -eq $result.value) { return $null }
-        return $result
+        # The git repository settings endpoint returns the settings object directly,
+        # not wrapped in a { value: [...] } envelope.
+        return Invoke-AzDevOpsApiRestMethod @params
     }
     catch { Throw "[Get-DevOpsRepositorySettings] Failed to get repository settings for '$RepositoryId': $_" }
 }

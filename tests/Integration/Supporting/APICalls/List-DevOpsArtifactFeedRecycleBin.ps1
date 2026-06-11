@@ -14,7 +14,7 @@ function List-DevOpsArtifactFeedRecycleBin
     $params = @{
         Uri    = '{0}/_apis/packaging/feedrecyclebin?api-version={1}' -f $baseUri, $ApiVersion
         Method = 'GET'
-        Headers = @{ Authorization = "Bearer $Global:DSCAZDO_AuthenticationToken" }
+        Headers = @{ Authorization = "Bearer $($Global:DSCAZDO_AuthenticationToken.token)" }
     }
     try
     {

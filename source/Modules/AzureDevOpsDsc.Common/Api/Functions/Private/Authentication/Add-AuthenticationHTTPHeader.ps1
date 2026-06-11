@@ -42,8 +42,23 @@ Function Add-AuthenticationHTTPHeader
                 {
                     if ($tokenType -eq 'ManagedIdentity' -or $tokenType -eq 0)
                     {
-                        $Global:DSCAZDO_AuthenticationToken = Get-AzManagedIdentityToken -OrganizationName $organizationName
-                        $Global:DSCAZDO_OrganizationName = $organizationName
+                        # Reconstruct a live ManagedIdentityToken from the deserialized cached token.
+                        # Avoid calling the IMDS endpoint (requires Azure Arc secret-file ACL access).
+                        $ct            = $objectSettings.Token
+                        $epochStart    = [datetime]::new(1970, 1, 1, 0, 0, 0, [DateTimeKind]::Utc)
+                        $expiresOnUnix = [long]($ct.expires_on.ToUniversalTime() - $epochStart).TotalSeconds
+                        $bstr          = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($ct.access_token)
+                        $plainToken    = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+                        [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+                        $tokenData = [PSCustomObject]@{
+                            access_token = $plainToken
+                            expires_on   = $expiresOnUnix
+                            expires_in   = [int]$ct.expires_in
+                            resource     = [string]$ct.resource
+                            token_type   = [string]$ct.token_type
+                        }
+                        $Global:DSCAZDO_AuthenticationToken = New-ManagedIdentityToken $tokenData
+                        $Global:DSCAZDO_OrganizationName    = $organizationName
                     }
                     elseif ($tokenType -eq 'PersonalAccessToken' -or $tokenType -eq 1)
                     {

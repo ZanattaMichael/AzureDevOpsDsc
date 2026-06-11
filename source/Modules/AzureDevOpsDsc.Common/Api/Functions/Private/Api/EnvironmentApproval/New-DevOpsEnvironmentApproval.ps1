@@ -20,10 +20,13 @@ Function New-DevOpsEnvironmentApproval
         Body        = @{
             type     = @{ id = '8c6f20a7-a545-4486-9777-f762fafe0d4d'; name = 'Approval' }
             settings = @{
-                approvers                       = @($approvers)
-                requiredApproverCount           = $RequiredApproverCount
-                allowApproverToApproveOwnRuns   = $AllowApproverToApproveOwnRuns
-                instructions                    = $Instructions
+                # Azure DevOps approval-check settings use 'minRequiredApprovers' and
+                # 'requesterCannotBeApprover' — NOT 'requiredApproverCount'/'allowApproverToApproveOwnRuns'
+                # (those names are silently ignored by the API, so the values never persist).
+                approvers                 = @($approvers)
+                minRequiredApprovers      = $RequiredApproverCount
+                requesterCannotBeApprover = (-not $AllowApproverToApproveOwnRuns)
+                instructions              = $Instructions
             }
             timeout  = $TimeoutInMinutes
             resource = @{

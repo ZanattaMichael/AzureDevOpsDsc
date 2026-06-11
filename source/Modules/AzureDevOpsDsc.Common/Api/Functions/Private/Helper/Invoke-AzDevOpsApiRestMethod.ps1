@@ -201,8 +201,14 @@ function Invoke-AzDevOpsApiRestMethod
 
                 # If so, set the continuation token to True
                 $isContinuationToken = $true
-                # Update the URI to include the continuation token
-                $invokeRestMethodParameters.Uri = '{0}&continuationToken={1}&{2}' -f $ApiUri, $responseHeaders.'x-ms-continuationtoken', $ApiVersion
+                # Response headers are returned as string arrays; take the first value so the token
+                # is not stringified as 'System.String[]'.
+                $continuationToken = @($responseHeaders.'x-ms-continuationtoken')[0]
+                # Update the URI to include the continuation token. $ApiUri already carries the
+                # correct 'api-version' query parameter, so only the continuation token is appended.
+                # (Previously a bare '&7.1' was appended, producing a malformed query and, for the
+                # preview-only graph endpoints, a 'version 7.1 is under preview' 400 error.)
+                $invokeRestMethodParameters.Uri = '{0}&continuationToken={1}' -f $ApiUri, $continuationToken
                 # Reset the RetryAttempts counter
                 $CurrentNoOfRetryAttempts = -1
 

@@ -15,7 +15,7 @@ function Remove-DevOpsArtifactFeedFromRecycleBin
     $params = @{
         Uri    = '{0}/_apis/packaging/feedrecyclebin/{1}?api-version={2}' -f $baseUri, $FeedId, $ApiVersion
         Method = 'DELETE'
-        Headers = @{ Authorization = "Bearer $Global:DSCAZDO_AuthenticationToken" }
+        Headers = @{ Authorization = "Bearer $($Global:DSCAZDO_AuthenticationToken.token)" }
     }
     try
     {

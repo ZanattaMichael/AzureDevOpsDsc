@@ -28,25 +28,58 @@ Function Get-AzDoEnvironmentApproval
         return $result
     }
 
-    # Look up the approval check from the environment approval cache
+    # Look up the approval check from the environment approval cache.
+    # If not cached, query the API — LiveEnvironmentApprovals is not populated during Construct().
     $cacheKey = '{0}\{1}' -f $ProjectName, $EnvironmentName
     $approval = Get-CacheItem -Key $cacheKey -Type 'LiveEnvironmentApprovals'
+
+    if (-not $approval)
+    {
+        Write-Verbose "[GetApproval] Cache miss for '$EnvironmentName' (key=$cacheKey). Querying API with envId=$($env.id)."
+        $orgUri = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
+        $approvalTypeId = '8c6f20a7-a545-4486-9777-f762fafe0d4d'
+        try
+        {
+            $checks = List-DevOpsEnvironmentApprovals -ApiUri $orgUri -ProjectName $ProjectName -EnvironmentId $env.id
+            Write-Verbose "[GetApproval] API returned $($checks.Count) checks. Types: $(($checks | ForEach-Object { $_.type.id }) -join ',')"
+            $approval = $checks | Where-Object { $_.type.id -eq $approvalTypeId } | Select-Object -First 1
+            if ($approval)
+            {
+                Write-Verbose "[GetApproval] Approval found via API: id=$($approval.id)"
+                Add-CacheItem -Key $cacheKey -Value $approval -Type 'LiveEnvironmentApprovals'
+            }
+        }
+        catch
+        {
+            Write-Warning "[Get-AzDoEnvironmentApproval] Failed to query API for environment approval: $_"
+        }
+    }
+    else
+    {
+        Write-Verbose "[GetApproval] Approval found in cache: id=$($approval.id) type=$($approval.GetType().Name)"
+    }
 
     if ($approval)
     {
         Write-Verbose "[Get-AzDoEnvironmentApproval] Approval found."
-        $result.liveCache = $approval
+        $result.liveCache   = $approval
+        $result.Ensure      = [Ensure]::Present
 
         # Compare key properties
         $changed = @()
-        if ($approval.settings.requiredApproverCount -ne $RequiredApproverCount) { $changed += 'RequiredApproverCount' }
-        if ($approval.settings.allowApproverToApproveOwnRuns -ne $AllowApproverToSelf) { $changed += 'AllowApproverToSelf' }
+        # Azure DevOps stores these as 'minRequiredApprovers' and 'requesterCannotBeApprover'
+        # (the latter is the inverse of "allow approver to approve their own runs").
+        $liveCount     = [int]($approval.settings.minRequiredApprovers)
+        $liveSelf      = (-not [bool]($approval.settings.requesterCannotBeApprover))
+        if ($liveCount -ne [int]$RequiredApproverCount)   { $changed += 'RequiredApproverCount' }
+        if ($liveSelf  -ne [bool]$AllowApproverToSelf)    { $changed += 'AllowApproverToSelf' }
 
         $result.propertiesChanged = $changed
         $result.status = if ($changed.Count -eq 0) { [DSCGetSummaryState]::Unchanged } else { [DSCGetSummaryState]::Changed }
     }
     else
     {
+        Write-Verbose "[GetApproval] No approval found for env=$EnvironmentName project=$ProjectName"
         $result.status = [DSCGetSummaryState]::NotFound
     }
 

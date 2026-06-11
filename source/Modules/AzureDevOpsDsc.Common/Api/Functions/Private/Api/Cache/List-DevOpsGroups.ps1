@@ -37,7 +37,8 @@ Function List-DevOpsGroups
         $ApiVersion
     )
 
-    if (-not $ApiVersion) { $ApiVersion = Get-AzDevOpsApiVersion -Default }
+    # vssps graph endpoints are preview-only; a bare '7.1' is rejected. Default to preview.
+    if (-not $ApiVersion) { $ApiVersion = '7.1-preview.1' }
 
     $params = @{
         Uri = "https://vssps.dev.azure.com/$Organization/_apis/graph/groups?api-version=$ApiVersion"

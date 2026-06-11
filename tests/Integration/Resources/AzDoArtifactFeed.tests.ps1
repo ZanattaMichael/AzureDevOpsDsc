@@ -3,6 +3,10 @@ Describe "AzDoArtifactFeed Integration Tests" {
     BeforeAll {
 
         $PROJECTNAME = 'TEST_ARTIFACT_FEED'
+        # Azure DevOps reserves a feed name for a cooldown period after the feed is permanently
+        # deleted (even once it is gone from the recycle bin), so reusing a fixed name across runs
+        # fails with "feed name is currently reserved". Use a unique name per run for isolation.
+        $FEEDNAME = "testfeed$(Get-Random -Maximum 99999)"
 
         function New-Project { param([string]$ProjectName)
             $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
@@ -13,7 +17,7 @@ Describe "AzDoArtifactFeed Integration Tests" {
             ModuleName = 'AzureDevOpsDsc'
             property   = @{
                 ProjectName              = $PROJECTNAME
-                FeedName                 = 'testfeed'
+                FeedName                 = $FEEDNAME
                 Description              = 'Test artifact feed'
                 BadgesEnabled            = $false
                 HideDeletedPackageVersions = $true
@@ -82,7 +86,7 @@ Describe "AzDoArtifactFeed Integration Tests" {
             $parameters.Method = 'Set'
             $parameters.property = @{
                 ProjectName = $PROJECTNAME
-                FeedName    = 'testfeed'
+                FeedName    = $FEEDNAME
                 Ensure      = 'Absent'
             }
         }

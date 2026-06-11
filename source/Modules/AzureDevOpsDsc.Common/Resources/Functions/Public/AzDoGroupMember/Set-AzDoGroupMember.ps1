@@ -108,8 +108,9 @@ Function Set-AzDoGroupMember
 
             $result = New-DevOpsGroupMember @params -MemberIdentity $identity
 
-            # Add the member to the list
-            $members.Add($identity)
+            # Add the member to the list (suppress ArrayList.Add()'s index return so it does not
+            # leak to the output stream as bare numbers).
+            $null = $members.Add($identity)
             Write-Verbose "[Set-AzDoGroupMember][ADD] Member '$($identity.displayName)' added to the internal list."
 
         }

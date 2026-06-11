@@ -19,12 +19,12 @@ Describe "AzDoTaskGroup Integration Tests" {
                 Category      = 'Build'
                 Tasks         = @(
                     @{
-                        taskId          = '5541a522-603c-47ad-91fc-a4b1d163081b'
-                        version         = '2.*'
-                        name            = 'PowerShellStep'
-                        displayName     = 'Run PowerShell'
-                        enabled         = $true
-                        inputs          = @{ scriptType = 'inlineScript'; inlineScript = 'Write-Host "Hello"' }
+                        taskId      = 'd9bafed4-0b18-4f58-968d-86655b4d2ce9'
+                        version     = '2.*'
+                        name        = 'CmdLineStep'
+                        displayName = 'Run Command'
+                        enabled     = $true
+                        inputs      = @{ script = 'echo hello' }
                     }
                 )
                 Inputs        = @()

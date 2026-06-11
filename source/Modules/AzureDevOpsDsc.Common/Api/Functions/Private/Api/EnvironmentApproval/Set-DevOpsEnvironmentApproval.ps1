@@ -22,10 +22,12 @@ Function Set-DevOpsEnvironmentApproval
             id       = $CheckId
             type     = @{ id = '8c6f20a7-a545-4486-9777-f762fafe0d4d'; name = 'Approval' }
             settings = @{
-                approvers                       = @($approvers)
-                requiredApproverCount           = $RequiredApproverCount
-                allowApproverToApproveOwnRuns   = $AllowApproverToApproveOwnRuns
-                instructions                    = $Instructions
+                # Azure DevOps approval-check settings use 'minRequiredApprovers' and
+                # 'requesterCannotBeApprover' — see New-DevOpsEnvironmentApproval.
+                approvers                 = @($approvers)
+                minRequiredApprovers      = $RequiredApproverCount
+                requesterCannotBeApprover = (-not $AllowApproverToApproveOwnRuns)
+                instructions              = $Instructions
             }
             timeout  = $TimeoutInMinutes
             resource = @{

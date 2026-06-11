@@ -23,9 +23,16 @@ Function Remove-AzDoVariableGroup
         return
     }
 
+    $project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
+    if (-not $project)
+    {
+        Write-Error "[Remove-AzDoVariableGroup] Project '$ProjectName' not found in cache; cannot resolve project id."
+        return
+    }
+
     $params = @{
         ApiUri          = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
-        ProjectName     = $ProjectName
+        ProjectId       = $project.id
         VariableGroupId = $vg.id
     }
 

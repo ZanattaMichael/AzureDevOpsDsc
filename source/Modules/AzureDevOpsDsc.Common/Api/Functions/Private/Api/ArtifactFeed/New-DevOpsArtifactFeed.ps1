@@ -22,6 +22,33 @@ Function New-DevOpsArtifactFeed
             badgesEnabled               = $BadgesEnabled
         } | ConvertTo-Json
     }
-    try   { return Invoke-AzDevOpsApiRestMethod @params }
-    catch { Throw "[New-DevOpsArtifactFeed] Failed to create artifact feed '$FeedName': $_" }
+    try
+    {
+        return Invoke-AzDevOpsApiRestMethod @params
+    }
+    catch
+    {
+        # A feed name stays reserved while a same-named feed sits in the recycle bin (e.g. left over
+        # from a previous run). Purge it from the recycle bin (project and org scope) and retry once.
+        if ("$_" -match 'reserved|recycle bin')
+        {
+            $orgName = Get-AzDoOrganizationName
+            $projBin = @(List-DevOpsArtifactFeedRecycleBin -OrganizationName $orgName -ProjectName $ProjectName)
+            $orgBin  = @(List-DevOpsArtifactFeedRecycleBin -OrganizationName $orgName)
+            $recycled = @()
+            $recycled += $projBin | Where-Object { $_.name -eq $FeedName }
+            $recycled += $orgBin  | Where-Object { $_.name -eq $FeedName }
+            foreach ($rf in $recycled)
+            {
+                Write-Verbose "[New-DevOpsArtifactFeed] Purging reserved feed '$FeedName' ($($rf.id)) from recycle bin before retry."
+                Remove-DevOpsArtifactFeedFromRecycleBin -OrganizationName $orgName -ProjectName $ProjectName -FeedId $rf.id
+                Remove-DevOpsArtifactFeedFromRecycleBin -OrganizationName $orgName -FeedId $rf.id
+            }
+
+            try   { return Invoke-AzDevOpsApiRestMethod @params }
+            catch { Throw "[New-DevOpsArtifactFeed] Failed to create artifact feed '$FeedName' after purging recycle bin: $_" }
+        }
+
+        Throw "[New-DevOpsArtifactFeed] Failed to create artifact feed '$FeedName': $_"
+    }
 }

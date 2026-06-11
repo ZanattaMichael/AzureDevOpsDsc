@@ -23,5 +23,5 @@ Function Remove-AzDoEnvironmentApproval
     }
     Remove-DevOpsEnvironmentApproval @params
     Remove-CacheItem -Key ('{0}\{1}' -f $ProjectName, $EnvironmentName) -Type 'LiveEnvironmentApprovals'
-    Export-CacheObject -CacheType 'LiveEnvironmentApprovals' -Content $AzDoLiveEnvironmentApprovals
+    Export-CacheObject -CacheType 'LiveEnvironmentApprovals' -Content (Get-CacheObject -CacheType 'LiveEnvironmentApprovals')
 }

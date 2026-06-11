@@ -9,6 +9,7 @@ Function Set-DevOpsCheckConfiguration
         [Parameter(Mandatory)][string]$CheckTypeName,
         [Parameter(Mandatory)][string]$ResourceType,
         [Parameter(Mandatory)][string]$ResourceId,
+        [Parameter()][string]$ResourceName,
         [Parameter(Mandatory)][hashtable]$Settings,
         [Parameter()][int]$TimeoutInMinutes = 43200,
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
@@ -25,6 +26,7 @@ Function Set-DevOpsCheckConfiguration
             resource = @{
                 type = $ResourceType
                 id   = $ResourceId
+                name = $ResourceName
             }
         } | ConvertTo-Json -Depth 10
     }

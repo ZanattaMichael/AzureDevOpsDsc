@@ -47,6 +47,7 @@ Function Set-AzDoEnvironmentApproval
     }
 
     $value = Set-DevOpsEnvironmentApproval @params
+    Write-Verbose "[SetApproval] Set-DevOpsEnvironmentApproval returned: $(if ($null -eq $value) { 'NULL' } else { $value.GetType().Name + ' id=' + $value.id })"
 
     if ($null -eq $value)
     {
@@ -56,5 +57,7 @@ Function Set-AzDoEnvironmentApproval
 
     $cacheKey = '{0}\{1}' -f $ProjectName, $EnvironmentName
     Add-CacheItem -Key $cacheKey -Value $value -Type 'LiveEnvironmentApprovals'
-    Export-CacheObject -CacheType 'LiveEnvironmentApprovals' -Content $AzDoLiveEnvironmentApprovals
+    $currentCache = Get-CacheObject -CacheType 'LiveEnvironmentApprovals'
+    Write-Verbose "[SetApproval] Cache count after Add-CacheItem: $($currentCache.Count)"
+    Export-CacheObject -CacheType 'LiveEnvironmentApprovals' -Content $currentCache
 }

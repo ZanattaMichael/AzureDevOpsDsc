@@ -58,6 +58,9 @@ function Import-CacheObject
         if (-not (Test-Path -Path $cacheFile))
         {
             Write-Warning "[Import-CacheObject] Cache file not found at path: $cacheFile"
+            # Return an empty in-memory cache so callers always receive a valid collection.
+            Set-Variable -Name "AzDo$CacheType" -Value ([System.Collections.Generic.List[CacheItem]]::New()) -Scope Global -Force
+            return
         }
 
         Write-Verbose "[Import-CacheObject] Importing content from cache file at path: $cacheFile"

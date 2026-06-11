@@ -177,14 +177,16 @@ Function New-ACLToken
             break
         }
 
-        # Build / Pipeline permissions
+        # Build / Pipeline permissions — resolve pipeline name to numeric ID for the API token.
         'Build' {
             if ($TokenName -match $LocalizedDataAzResourceTokenPatten.BuildPermission)
             {
-                $result.type = 'Build'
-                $result.ProjectId  = (Get-CacheItem -Key $matches.ProjectName.Trim() -Type 'LiveProjects').id
+                $result.type      = 'Build'
+                $result.ProjectId = (Get-CacheItem -Key $matches.ProjectName.Trim() -Type 'LiveProjects').id
                 if ($matches.PipelineName) {
-                    $result.PipelineId = $matches.PipelineName.Trim()
+                    $pipelineCacheKey  = '{0}\{1}' -f $matches.ProjectName.Trim(), $matches.PipelineName.Trim()
+                    $pipelineEntry     = Get-CacheItem -Key $pipelineCacheKey -Type 'LivePipelines'
+                    $result.PipelineId = if ($pipelineEntry) { $pipelineEntry.id.ToString() } else { $matches.PipelineName.Trim() }
                 }
             }
             else
@@ -195,14 +197,16 @@ Function New-ACLToken
             break
         }
 
-        # Library / VariableGroup permissions
+        # Library / VariableGroup permissions — resolve variable group name to numeric ID.
         'Library' {
             if ($TokenName -match $LocalizedDataAzResourceTokenPatten.LibraryPermission)
             {
                 $result.type      = 'Library'
                 $result.ProjectId = (Get-CacheItem -Key $matches.ProjectName.Trim() -Type 'LiveProjects').id
                 if ($matches.VariableGroupName) {
-                    $result.VariableGroupId = $matches.VariableGroupName.Trim()
+                    $vgCacheKey             = '{0}\{1}' -f $matches.ProjectName.Trim(), $matches.VariableGroupName.Trim()
+                    $vgEntry                = Get-CacheItem -Key $vgCacheKey -Type 'LiveVariableGroups'
+                    $result.VariableGroupId = if ($vgEntry) { $vgEntry.id.ToString() } else { $matches.VariableGroupName.Trim() }
                 }
             }
             else
@@ -213,14 +217,16 @@ Function New-ACLToken
             break
         }
 
-        # ServiceEndpoints / ServiceConnection permissions
+        # ServiceEndpoints / ServiceConnection permissions — resolve endpoint name to GUID.
         'ServiceEndpoints' {
             if ($TokenName -match $LocalizedDataAzResourceTokenPatten.ServiceEndpointPermission)
             {
                 $result.type      = 'ServiceEndpoints'
                 $result.ProjectId = (Get-CacheItem -Key $matches.ProjectName.Trim() -Type 'LiveProjects').id
                 if ($matches.EndpointName) {
-                    $result.EndpointId = $matches.EndpointName.Trim()
+                    $scCacheKey        = '{0}\{1}' -f $matches.ProjectName.Trim(), $matches.EndpointName.Trim()
+                    $scEntry           = Get-CacheItem -Key $scCacheKey -Type 'LiveServiceConnections'
+                    $result.EndpointId = if ($scEntry) { $scEntry.id } else { $matches.EndpointName.Trim() }
                 }
             }
             else
@@ -231,12 +237,13 @@ Function New-ACLToken
             break
         }
 
-        # DistributedTask — AgentPool permissions
+        # AgentPool permissions — TokenName is the pool name; resolve to numeric ID for the API token.
         'AgentPool' {
             if ($TokenName -match $LocalizedDataAzResourceTokenPatten.AgentPoolPermission)
             {
                 $result.type   = 'AgentPool'
-                $result.PoolId = $TokenName.Trim()
+                $poolEntry     = Get-CacheItem -Key $TokenName.Trim() -Type 'LiveAgentPools'
+                $result.PoolId = if ($poolEntry) { $poolEntry.id.ToString() } else { $TokenName.Trim() }
             }
             else
             {
@@ -246,15 +253,26 @@ Function New-ACLToken
             break
         }
 
-        # DistributedTask — Environment permissions
+        # DistributedTask — covers both Environment and AgentPool permissions.
         'DistributedTask' {
             if ($TokenName -match $LocalizedDataAzResourceTokenPatten.EnvironmentPermission)
             {
                 $result.type      = 'Environment'
                 $result.ProjectId = (Get-CacheItem -Key $matches.ProjectName.Trim() -Type 'LiveProjects').id
                 if ($matches.EnvironmentName) {
-                    $result.EnvironmentId = $matches.EnvironmentName.Trim()
+                    # Resolve the environment numeric ID from cache so the token matches
+                    # what Parse-ACLToken extracts from the API's Environments/{ProjectId}/{EnvironmentId} format.
+                    $envCacheKey          = '{0}\{1}' -f $matches.ProjectName.Trim(), $matches.EnvironmentName.Trim()
+                    $envCacheEntry        = Get-CacheItem -Key $envCacheKey -Type 'LivePipelineEnvironments'
+                    $result.EnvironmentId = if ($envCacheEntry) { $envCacheEntry.id.ToString() } else { $matches.EnvironmentName.Trim() }
                 }
+            }
+            elseif ($TokenName -match $LocalizedDataAzResourceTokenPatten.AgentPoolPermission)
+            {
+                # Pool name passed — resolve to numeric ID for the ACL token.
+                $result.type   = 'AgentPool'
+                $poolEntry     = Get-CacheItem -Key $TokenName.Trim() -Type 'LiveAgentPools'
+                $result.PoolId = if ($poolEntry) { $poolEntry.id.ToString() } else { $TokenName.Trim() }
             }
             else
             {
