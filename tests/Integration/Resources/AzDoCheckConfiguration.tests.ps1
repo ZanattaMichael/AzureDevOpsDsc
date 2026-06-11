@@ -4,6 +4,7 @@ Describe "AzDoCheckConfiguration Integration Tests" {
 
         $PROJECTNAME = 'TEST_CHECK_CONFIG'
         $ENVNAME     = 'TEST_CHECK_ENV'
+        $ORG         = $GLOBAL:DSCAZDO_OrganizationName
 
         function New-Project { param([string]$ProjectName)
             $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
@@ -16,23 +17,42 @@ Describe "AzDoCheckConfiguration Integration Tests" {
             }
         }
 
-        # ExclusiveLock check on an environment is a simple, side-effect-free check type.
-        $parameters = @{
-            Name       = 'AzDoCheckConfiguration'
-            ModuleName = 'AzureDevOpsDsc'
-            property   = @{
-                ProjectName          = $PROJECTNAME
-                TargetResourceName   = $ENVNAME
-                ResourceType         = 'environment'
-                CheckType        = 'ExclusiveLock'
-                Settings         = @{ requestedCoalescingTimeout = 5 }
-                TimeoutInMinutes = 43200
-                Enabled          = $true
-            }
+        # Resolve a real identity id to use as the approver. We use the project's built-in
+        # 'Project Administrators' group, scoped via the project's graph descriptor so the lookup
+        # returns a small, single-page result.
+        function Get-ApproverId { param([string]$Organization, [string]$ProjectName, [string]$GroupDisplayName)
+            $proj   = Invoke-APIRestMethod -Uri ("https://dev.azure.com/{0}/_apis/projects/{1}?api-version=7.1-preview.4" -f $Organization, $ProjectName) -Method Get
+            $desc   = Invoke-APIRestMethod -Uri ("https://vssps.dev.azure.com/{0}/_apis/graph/descriptors/{1}?api-version=7.1-preview.1" -f $Organization, $proj.id) -Method Get
+            $groups = Invoke-APIRestMethod -Uri ("https://vssps.dev.azure.com/{0}/_apis/graph/groups?scopeDescriptor={1}&api-version=7.1-preview.1" -f $Organization, $desc.value) -Method Get
+            $group  = $groups.value | Where-Object { $_.displayName -eq $GroupDisplayName } | Select-Object -First 1
+            if (-not $group) { throw "[AzDoCheckConfiguration.tests] Could not resolve approver group '$GroupDisplayName' in '$ProjectName'." }
+            return $group.originId
         }
 
         New-Project $PROJECTNAME
         New-Environment -ProjectName $PROJECTNAME -EnvironmentName $ENVNAME
+        $APPROVERID = Get-ApproverId -Organization $ORG -ProjectName $PROJECTNAME -GroupDisplayName 'Project Administrators'
+
+        # Approval check — the only check type verified against the Azure DevOps API.
+        $parameters = @{
+            Name       = 'AzDoCheckConfiguration'
+            ModuleName = 'AzureDevOpsDsc'
+            property   = @{
+                ProjectName        = $PROJECTNAME
+                TargetResourceName = $ENVNAME
+                ResourceType       = 'environment'
+                CheckType          = 'Approval'
+                Settings           = @{
+                    approvers            = @( @{ id = $APPROVERID } )
+                    executionOrder       = 'anyOrder'
+                    minRequiredApprovers = 1
+                    instructions         = 'Please review before deploying.'
+                    blockedApprovers     = @()
+                }
+                TimeoutInMinutes   = 43200
+                Enabled            = $true
+            }
+        }
     }
 
     Context "Testing if the check configuration exists" {
@@ -72,7 +92,7 @@ Describe "AzDoCheckConfiguration Integration Tests" {
 
         BeforeAll {
             $parameters.Method = 'Set'
-            $parameters.property.Settings = @{ requestedCoalescingTimeout = 10 }
+            $parameters.property.Settings.instructions = 'Updated review instructions.'
         }
 
         It "Should not throw any exceptions" {
@@ -91,12 +111,12 @@ Describe "AzDoCheckConfiguration Integration Tests" {
         BeforeAll {
             $parameters.Method = 'Set'
             $parameters.property = @{
-                ProjectName          = $PROJECTNAME
-                TargetResourceName   = $ENVNAME
-                ResourceType         = 'environment'
-                CheckType    = 'ExclusiveLock'
-                Settings     = @{}
-                Ensure       = 'Absent'
+                ProjectName        = $PROJECTNAME
+                TargetResourceName = $ENVNAME
+                ResourceType       = 'environment'
+                CheckType          = 'Approval'
+                Settings           = @{}
+                Ensure             = 'Absent'
             }
         }
 

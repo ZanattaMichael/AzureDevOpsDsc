@@ -22,9 +22,10 @@ Function Set-AzDoCheckConfiguration
 
     $resourceId = $check.resource.id
 
+    # Only 'Approval' is verified against the Azure DevOps API. ExclusiveLock was removed for now —
+    # its check-type GUID/payload could not be confirmed. Remaining entries are unverified.
     $checkTypeMap = @{
         'Approval'          = @{ Id = '8c6f20a7-a545-4486-9777-f762fafe0d4d'; Name = 'Approval' }
-        'ExclusiveLock'     = @{ Id = 'fe1de3ee-a436-41b4-bb20-f6eb4cb879a7'; Name = 'Exclusive Lock' }
         'BusinessHours'     = @{ Id = '9db4e9c1-5588-4ee0-bc64-5d00c5abcfb0'; Name = 'Business Hours' }
         'Task Check'        = @{ Id = '4020e66e-f157-4524-8af1-c5fb8d1e4b12'; Name = 'Task Check' }
         'QueryAzureMonitor' = @{ Id = '9aeb1606-d5b5-4b35-ac09-7a38bfa3fc38'; Name = 'Query Azure Monitor Alerts' }
