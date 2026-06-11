@@ -23,6 +23,9 @@ Describe "New-AzDoBranchPolicy" -Tag "Unit", "BranchPolicy" {
 
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
         Mock -CommandName New-DevOpsBranchPolicy -MockWith { return @{ id = 'new-policy-id' } }
+        # On a policy-type cache miss the resource queries the API; return nothing so the
+        # not-found path is exercised without hitting a live endpoint.
+        Mock -CommandName List-DevOpsPolicyTypes -MockWith { @() }
         Mock -CommandName Add-CacheItem
         Mock -CommandName Export-CacheObject
         Mock -CommandName Refresh-CacheObject

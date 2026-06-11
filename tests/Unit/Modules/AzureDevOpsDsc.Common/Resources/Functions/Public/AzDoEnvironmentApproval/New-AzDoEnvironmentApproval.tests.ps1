@@ -25,6 +25,7 @@ Describe "New-AzDoEnvironmentApproval" -Tag "Unit", "EnvironmentApproval" {
         Mock -CommandName New-DevOpsEnvironmentApproval -MockWith { return @{ id = 'approval-id' } }
         Mock -CommandName Add-CacheItem
         Mock -CommandName Export-CacheObject
+        Mock -CommandName Get-CacheObject -MockWith { @() }
         Mock -CommandName Write-Error
     }
 

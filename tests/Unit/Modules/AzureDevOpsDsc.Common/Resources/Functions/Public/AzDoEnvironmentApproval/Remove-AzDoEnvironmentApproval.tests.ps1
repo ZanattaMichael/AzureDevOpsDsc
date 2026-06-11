@@ -25,6 +25,7 @@ Describe "Remove-AzDoEnvironmentApproval" -Tag "Unit", "EnvironmentApproval" {
         Mock -CommandName Remove-DevOpsEnvironmentApproval
         Mock -CommandName Remove-CacheItem
         Mock -CommandName Export-CacheObject
+        Mock -CommandName Get-CacheObject -MockWith { @() }
         Mock -CommandName Write-Error
     }
 

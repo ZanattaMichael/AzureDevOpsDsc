@@ -34,7 +34,7 @@ Describe "Get-AzDoEnvironmentApproval" -Tag "Unit", "EnvironmentApproval" {
                     'LivePipelineEnvironments' { return @{ id = 1; name = 'TestEnv' } }
                     'LiveEnvironmentApprovals' { return @{
                         id = 'approval-id'
-                        settings = @{ requiredApproverCount = 1; allowApproverToApproveOwnRuns = $false }
+                        settings = @{ minRequiredApprovers = 1; requesterCannotBeApprover = $true }
                     }}
                 }
             }

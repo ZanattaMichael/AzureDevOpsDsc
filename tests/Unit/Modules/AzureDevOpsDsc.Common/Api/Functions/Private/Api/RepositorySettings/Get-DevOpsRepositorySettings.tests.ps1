@@ -22,7 +22,7 @@ Describe 'Get-DevOpsRepositorySettings' -Tag "Unit", "RepositorySettings", "API"
     }
 
     It 'Returns null when API returns no data' {
-        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return @{ value = $null } }
+        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
         $result = Get-DevOpsRepositorySettings -ApiUri 'https://dev.azure.com/myorg' -ProjectName 'TestProject' -RepositoryId 'repo-id'
         $result | Should -BeNullOrEmpty
     }
