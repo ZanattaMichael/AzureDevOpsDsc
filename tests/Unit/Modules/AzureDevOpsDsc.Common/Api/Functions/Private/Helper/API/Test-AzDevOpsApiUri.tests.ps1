@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Test-AzDevOpsApiUri' {
+Describe 'Test-AzDevOpsApiUri' -Tag "Unit", "API" {
 
     BeforeAll {
         # Load the functions to test

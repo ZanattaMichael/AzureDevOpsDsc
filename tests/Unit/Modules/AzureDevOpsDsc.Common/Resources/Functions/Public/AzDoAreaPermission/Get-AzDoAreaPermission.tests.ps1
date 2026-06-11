@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Get-AzDoAreaPermission Tests' {
+Describe 'Get-AzDoAreaPermission Tests' -Tag "Unit", "AreaPermission" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

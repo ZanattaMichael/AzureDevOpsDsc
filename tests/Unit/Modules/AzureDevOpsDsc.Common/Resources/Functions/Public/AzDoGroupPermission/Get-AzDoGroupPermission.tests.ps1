@@ -2,7 +2,7 @@ $currentFile = $MyInvocation.MyCommand.Path
 
 
 # Tests are currently disabled.
-Describe 'Get-AzDoGroupPermission' -skip {
+Describe 'Get-AzDoGroupPermission' -Tag "Unit", "GroupPermission" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

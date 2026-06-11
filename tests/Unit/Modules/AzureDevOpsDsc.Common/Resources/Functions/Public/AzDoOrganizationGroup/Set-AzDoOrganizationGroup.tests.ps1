@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Set-AzDoOrganizationGroup' {
+Describe 'Set-AzDoOrganizationGroup' -Tag "Unit", "OrganizationGroup" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

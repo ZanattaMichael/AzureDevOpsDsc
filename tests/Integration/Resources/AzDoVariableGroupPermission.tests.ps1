@@ -1,4 +1,4 @@
-Describe "AzDoVariableGroupPermission Integration Tests" {
+Describe "AzDoVariableGroupPermission Integration Tests" -Tag "Integration", "VariableGroupPermission" {
 
     BeforeAll {
 

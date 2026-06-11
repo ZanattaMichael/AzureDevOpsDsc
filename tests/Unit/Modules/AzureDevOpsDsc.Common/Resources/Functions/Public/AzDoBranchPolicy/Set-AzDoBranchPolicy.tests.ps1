@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Set-AzDoBranchPolicy" {
+Describe "Set-AzDoBranchPolicy" -Tag "Unit", "BranchPolicy" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

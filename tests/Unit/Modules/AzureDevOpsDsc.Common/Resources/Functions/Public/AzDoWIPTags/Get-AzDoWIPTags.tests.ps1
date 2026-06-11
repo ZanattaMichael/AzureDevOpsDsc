@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Get-AzDoWIPTags" {
+Describe "Get-AzDoWIPTags" -Tag "Unit", "WIPTags" {
 
 
     AfterAll {

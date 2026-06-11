@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "New-AzDoCheckConfiguration" {
+Describe "New-AzDoCheckConfiguration" -Tag "Unit", "CheckConfiguration" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

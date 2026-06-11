@@ -1,4 +1,4 @@
-Describe "AzDoAgentQueue Integration Tests" {
+Describe "AzDoAgentQueue Integration Tests" -Tag "Integration", "AgentQueue" {
 
     BeforeAll {
 

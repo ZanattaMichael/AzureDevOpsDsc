@@ -1,7 +1,7 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
 # Pester tests for New-AzDoGitRepository function
-Describe "New-AzDoGitRepository Tests" {
+Describe "New-AzDoGitRepository Tests" -Tag "Unit", "GitRepository" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

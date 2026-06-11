@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Remove-AzDoGroupMember Tests' {
+Describe 'Remove-AzDoGroupMember Tests' -Tag "Unit", "GroupMember" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

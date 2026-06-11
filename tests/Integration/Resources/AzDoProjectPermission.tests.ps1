@@ -1,4 +1,4 @@
-Describe "AzDoProjectPermission Integration Tests" {
+Describe "AzDoProjectPermission Integration Tests" -Tag "Integration", "ProjectPermission" {
 
     BeforeAll {
 

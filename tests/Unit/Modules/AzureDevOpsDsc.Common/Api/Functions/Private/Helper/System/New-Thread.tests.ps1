@@ -1,4 +1,4 @@
-Describe 'New-Thread' -skip {
+Describe 'New-Thread' -Tag "Unit", "System" {
     BeforeAll {
         function New-Thread {
             [CmdletBinding()]

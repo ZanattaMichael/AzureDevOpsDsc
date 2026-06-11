@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Remove-AzDoAuditStream" {
+Describe "Remove-AzDoAuditStream" -Tag "Unit", "AuditStream" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

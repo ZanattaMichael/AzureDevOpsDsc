@@ -1,7 +1,7 @@
 $currentFile = $MyInvocation.MyCommand.Path
 # Pester tests for Get-AzDoProject
 
-Describe "Get-AzDoProject" {
+Describe "Get-AzDoProject" -Tag "Unit", "Project" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

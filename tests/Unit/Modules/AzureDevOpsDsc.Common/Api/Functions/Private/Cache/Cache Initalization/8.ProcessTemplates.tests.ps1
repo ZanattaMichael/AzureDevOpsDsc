@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'AzDoAPI_8_ProjectProcessTemplates' -Tags "Unit", "Cache" {
+Describe 'AzDoAPI_8_ProjectProcessTemplates' -Tag "Unit", "Cache Initalization", "Cache" {
 
     BeforeAll {
 

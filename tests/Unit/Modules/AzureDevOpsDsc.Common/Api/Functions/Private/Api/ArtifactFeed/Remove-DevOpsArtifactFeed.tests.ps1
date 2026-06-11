@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Remove-DevOpsArtifactFeed' -Tags "Unit", "API" {
+Describe 'Remove-DevOpsArtifactFeed' -Tag "Unit", "ArtifactFeed", "API" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'New-DevOpsPipeline' -Tags "Unit", "API" {
+Describe 'New-DevOpsPipeline' -Tag "Unit", "Pipeline", "API" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

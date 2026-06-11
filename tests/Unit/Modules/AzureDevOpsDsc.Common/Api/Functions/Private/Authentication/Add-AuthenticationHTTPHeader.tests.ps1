@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Add-AuthenticationHTTPHeader" -Tags "Unit", "Authentication" {
+Describe "Add-AuthenticationHTTPHeader" -Tag "Unit", "Authentication" {
 
     BeforeAll {
 

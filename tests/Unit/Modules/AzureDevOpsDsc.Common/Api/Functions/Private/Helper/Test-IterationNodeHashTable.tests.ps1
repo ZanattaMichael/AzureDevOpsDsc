@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Test-IterationNodeHashTable Tests" {
+Describe "Test-IterationNodeHashTable Tests" -Tag "Unit", "Helper" {
 
     BeforeAll {
 

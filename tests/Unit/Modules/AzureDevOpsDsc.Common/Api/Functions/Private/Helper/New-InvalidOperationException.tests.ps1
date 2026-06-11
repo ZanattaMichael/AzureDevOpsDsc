@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'New-InvalidOperationException' -Skip {
+Describe 'New-InvalidOperationException' -Tag "Unit", "Helper" {
 
     BeforeAll {
 

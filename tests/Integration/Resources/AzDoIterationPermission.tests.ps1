@@ -1,4 +1,4 @@
-Describe "AzDoIterationPermission Integration Tests" {
+Describe "AzDoIterationPermission Integration Tests" -Tag "Integration", "IterationPermission" {
 
     BeforeAll {
 

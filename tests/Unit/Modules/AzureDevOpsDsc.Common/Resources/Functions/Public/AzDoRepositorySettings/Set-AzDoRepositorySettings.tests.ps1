@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Set-AzDoRepositorySettings" {
+Describe "Set-AzDoRepositorySettings" -Tag "Unit", "RepositorySettings" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Get-AllAzDoClassificationNodePaths Function Tests" {
+Describe "Get-AllAzDoClassificationNodePaths Function Tests" -Tag "Unit", "Helper" {
 
     BeforeAll {
         # Load the functions to test

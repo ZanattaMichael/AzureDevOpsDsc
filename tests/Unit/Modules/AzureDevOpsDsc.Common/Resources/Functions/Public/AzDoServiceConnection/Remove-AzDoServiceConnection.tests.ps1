@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Remove-AzDoServiceConnection Tests' {
+Describe 'Remove-AzDoServiceConnection Tests' -Tag "Unit", "ServiceConnection" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global -ErrorAction SilentlyContinue

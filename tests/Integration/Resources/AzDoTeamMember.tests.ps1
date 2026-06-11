@@ -1,4 +1,4 @@
-Describe "AzDoTeamMember Integration Tests" {
+Describe "AzDoTeamMember Integration Tests" -Tag "Integration", "TeamMember" {
 
     BeforeAll {
 

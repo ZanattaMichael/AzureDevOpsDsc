@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'New-DevOpsServiceConnection' -Tags "Unit", "API" {
+Describe 'New-DevOpsServiceConnection' -Tag "Unit", "ServiceConnection", "API" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

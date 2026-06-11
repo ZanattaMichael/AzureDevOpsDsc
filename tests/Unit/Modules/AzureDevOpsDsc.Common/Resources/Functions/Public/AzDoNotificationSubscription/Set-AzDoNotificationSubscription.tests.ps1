@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Set-AzDoNotificationSubscription" {
+Describe "Set-AzDoNotificationSubscription" -Tag "Unit", "NotificationSubscription" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

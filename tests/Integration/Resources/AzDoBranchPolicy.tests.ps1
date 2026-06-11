@@ -1,4 +1,4 @@
-Describe "AzDoBranchPolicy Integration Tests (Minimum Reviewer Count policy)" {
+Describe "AzDoBranchPolicy Integration Tests (Minimum Reviewer Count policy)" -Tag "Integration", "BranchPolicy" {
 
     BeforeAll {
 

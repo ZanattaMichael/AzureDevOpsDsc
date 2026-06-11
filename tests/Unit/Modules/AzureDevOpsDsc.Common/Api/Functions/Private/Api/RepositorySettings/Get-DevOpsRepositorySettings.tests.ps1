@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Get-DevOpsRepositorySettings' -Tags "Unit", "API" {
+Describe 'Get-DevOpsRepositorySettings' -Tag "Unit", "RepositorySettings", "API" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

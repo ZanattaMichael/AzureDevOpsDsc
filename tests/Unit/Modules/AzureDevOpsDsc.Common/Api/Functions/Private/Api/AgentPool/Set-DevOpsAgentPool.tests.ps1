@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Set-DevOpsAgentPool' -Tags "Unit", "API" {
+Describe 'Set-DevOpsAgentPool' -Tag "Unit", "AgentPool", "API" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

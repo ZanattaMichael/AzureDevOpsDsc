@@ -1,4 +1,4 @@
-Describe "AzDoAreaNodes Integration Tests" {
+Describe "AzDoAreaNodes Integration Tests" -Tag "Integration", "AreaNodes" {
 
     BeforeAll {
 

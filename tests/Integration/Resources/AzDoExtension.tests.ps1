@@ -1,4 +1,4 @@
-Describe "AzDoExtension Integration Tests (ms-devlabs.team-calendar)" {
+Describe "AzDoExtension Integration Tests (ms-devlabs.team-calendar)" -Tag "Integration", "Extension" {
 
     BeforeAll {
 

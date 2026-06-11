@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Get-AzDoServiceConnectionPermission" {
+Describe "Get-AzDoServiceConnectionPermission" -Tag "Unit", "ServiceConnectionPermission" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

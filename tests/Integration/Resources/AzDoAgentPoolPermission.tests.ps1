@@ -1,4 +1,4 @@
-Describe "AzDoAgentPoolPermission Integration Tests" {
+Describe "AzDoAgentPoolPermission Integration Tests" -Tag "Integration", "AgentPoolPermission" {
 
     BeforeAll {
 

@@ -1,4 +1,4 @@
-Describe "AzDoAuditStream Integration Tests" {
+Describe "AzDoAuditStream Integration Tests" -Tag "Integration", "AuditStream" {
 
     BeforeAll {
 

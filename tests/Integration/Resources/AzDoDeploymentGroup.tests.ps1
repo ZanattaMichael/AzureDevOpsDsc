@@ -1,4 +1,4 @@
-Describe "AzDoDeploymentGroup Integration Tests" {
+Describe "AzDoDeploymentGroup Integration Tests" -Tag "Integration", "DeploymentGroup" {
 
     BeforeAll {
 

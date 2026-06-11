@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Remove-AzDoAreaPermission Tests" {
+Describe "Remove-AzDoAreaPermission Tests" -Tag "Unit", "AreaPermission" {
 
 
     AfterAll {

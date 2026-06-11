@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Set-AzDoAgentQueue" {
+Describe "Set-AzDoAgentQueue" -Tag "Unit", "AgentQueue" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

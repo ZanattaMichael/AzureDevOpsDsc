@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Remove-DevOpsEnvironmentApproval' -Tags "Unit", "API" {
+Describe 'Remove-DevOpsEnvironmentApproval' -Tag "Unit", "EnvironmentApproval", "API" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Set-DevOpsVariableGroup' -Tags "Unit", "API" {
+Describe 'Set-DevOpsVariableGroup' -Tag "Unit", "VariableGroup", "API" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

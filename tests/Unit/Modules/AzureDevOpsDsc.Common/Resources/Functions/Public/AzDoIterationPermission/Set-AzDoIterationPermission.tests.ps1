@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Set-AzDoIterationPermission Tests' {
+Describe 'Set-AzDoIterationPermission Tests' -Tag "Unit", "IterationPermission" {
 
 
     AfterAll {

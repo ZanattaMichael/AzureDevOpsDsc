@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Set-AzDoGitPermission Tests' {
+Describe 'Set-AzDoGitPermission Tests' -Tag "Unit", "AreaNodes" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Remove-AzDoPipelinePermission" {
+Describe "Remove-AzDoPipelinePermission" -Tag "Unit", "PipelinePermission" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Wait-AzDevOpsApiResource' -skip {
+Describe 'Wait-AzDevOpsApiResource' -Tag "Unit", "API" {
 
     BeforeAll {
         # Load the functions to test

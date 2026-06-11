@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Test-AzDoProjectServices" {
+Describe "Test-AzDoProjectServices" -Tag "Unit", "ProjectServices" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

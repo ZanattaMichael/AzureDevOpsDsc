@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'New-AzDoVariableGroup Tests' {
+Describe 'New-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global -ErrorAction SilentlyContinue

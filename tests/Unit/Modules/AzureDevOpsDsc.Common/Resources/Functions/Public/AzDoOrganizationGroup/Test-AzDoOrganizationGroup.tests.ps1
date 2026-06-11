@@ -2,7 +2,7 @@ $currentFile = $MyInvocation.MyCommand.Path
 
 # Pester tests
 # Not required to run in the pipeline
-Describe "Test-AzDoOrganizationGroup" -skip {
+Describe "Test-AzDoOrganizationGroup" -Tag "Unit", "OrganizationGroup" {
 
     BeforeAll {
         # Load the functions to test

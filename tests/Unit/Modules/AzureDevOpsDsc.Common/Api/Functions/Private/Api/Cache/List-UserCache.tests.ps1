@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'List-UserCache' -Tags "Unit", "API" {
+Describe 'List-UserCache' -Tag "Unit", "Cache", "API" {
 
     BeforeAll {
 

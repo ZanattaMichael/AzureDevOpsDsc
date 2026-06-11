@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Get-AzDoArtifactFeed" {
+Describe "Get-AzDoArtifactFeed" -Tag "Unit", "ArtifactFeed" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'New-DevOpsProject' -Tags "Unit", "API" {
+Describe 'New-DevOpsProject' -Tag "Unit", "Project", "API" {
     BeforeAll {
 
         # Load the functions to test

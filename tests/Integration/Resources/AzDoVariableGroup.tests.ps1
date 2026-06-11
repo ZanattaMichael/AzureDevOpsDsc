@@ -1,4 +1,4 @@
-Describe "AzDoVariableGroup Integration Tests" {
+Describe "AzDoVariableGroup Integration Tests" -Tag "Integration", "VariableGroup" {
 
     BeforeAll {
 

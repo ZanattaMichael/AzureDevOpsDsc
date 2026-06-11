@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Set-AzDoEnvironmentApproval" {
+Describe "Set-AzDoEnvironmentApproval" -Tag "Unit", "EnvironmentApproval" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

@@ -10,7 +10,7 @@ if ($null -eq $Global:ClassesLoaded)
     . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
 }
 
-Describe 'APIRateLimit' {
+Describe 'APIRateLimit' -Tag "Unit", "API" {
 
     BeforeAll {
         Mock Write-Warning

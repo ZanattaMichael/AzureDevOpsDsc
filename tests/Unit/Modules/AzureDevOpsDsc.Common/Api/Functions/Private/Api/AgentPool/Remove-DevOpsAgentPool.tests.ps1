@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Remove-DevOpsAgentPool' -Tags "Unit", "API" {
+Describe 'Remove-DevOpsAgentPool' -Tag "Unit", "AgentPool", "API" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

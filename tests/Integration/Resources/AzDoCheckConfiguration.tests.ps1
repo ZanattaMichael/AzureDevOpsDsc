@@ -1,4 +1,4 @@
-Describe "AzDoCheckConfiguration Integration Tests (Approval check on an environment)" {
+Describe "AzDoCheckConfiguration Integration Tests (Approval check on an environment)" -Tag "Integration", "CheckConfiguration" {
 
     BeforeAll {
 

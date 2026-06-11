@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Remove-AzDoProjectGroup' {
+Describe 'Remove-AzDoProjectGroup' -Tag "Unit", "ProjectGroup" {
 
     AfterAll {
         # Clean up

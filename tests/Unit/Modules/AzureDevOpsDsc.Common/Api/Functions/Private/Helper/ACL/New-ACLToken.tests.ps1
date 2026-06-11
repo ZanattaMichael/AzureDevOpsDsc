@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'New-ACLToken Function Tests' -Tags "Unit", "ACL", "Helper" {
+Describe 'New-ACLToken Function Tests' -Tag "Unit", "ACL", "Helper" {
 
     BeforeAll {
 

@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Get-AzDoCacheObjects' {
+Describe 'Get-AzDoCacheObjects' -Tag "Unit", "Helper" {
 
     BeforeAll {
 

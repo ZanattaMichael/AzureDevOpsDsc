@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Remove-DevOpsExtension' -Tags "Unit", "API" {
+Describe 'Remove-DevOpsExtension' -Tag "Unit", "Extension", "API" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

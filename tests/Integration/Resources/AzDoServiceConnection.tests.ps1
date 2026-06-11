@@ -1,4 +1,4 @@
-Describe "AzDoServiceConnection Integration Tests (Generic UsernamePassword connection)" {
+Describe "AzDoServiceConnection Integration Tests (Generic UsernamePassword connection)" -Tag "Integration", "ServiceConnection" {
 
     BeforeAll {
 

@@ -1,4 +1,4 @@
-Describe "AzDoSecurityNamespacePermission Integration Tests" {
+Describe "AzDoSecurityNamespacePermission Integration Tests" -Tag "Integration", "SecurityNamespacePermission" {
 
     BeforeAll {
 

@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 # Not used
-Describe 'Get-AzDevOpsApiUriAreaName' -skip {
+Describe 'Get-AzDevOpsApiUriAreaName' -Tag "Unit", "Helper" {
     BeforeAll {
 
         # Load the functions to test

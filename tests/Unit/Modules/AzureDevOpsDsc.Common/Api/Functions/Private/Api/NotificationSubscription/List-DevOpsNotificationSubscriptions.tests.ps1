@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'List-DevOpsNotificationSubscriptions' -Tags "Unit", "API" {
+Describe 'List-DevOpsNotificationSubscriptions' -Tag "Unit", "NotificationSubscription", "API" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 # Not used
-Describe 'Get-AzDevOpsApiResourceUri' -skip {
+Describe 'Get-AzDevOpsApiResourceUri' -Tag "Unit", "Helper" {
     Mock Get-AzDevOpsApiVersion { return '6.0' }
     Mock Test-AzDevOpsApiUri { return $true }
     Mock Test-AzDevOpsApiVersion { return $true }

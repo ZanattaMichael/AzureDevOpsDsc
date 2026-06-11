@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Remove-AzDoGitPermission" {
+Describe "Remove-AzDoGitPermission" -Tag "Unit", "GitPermission" {
 
 
     AfterAll {

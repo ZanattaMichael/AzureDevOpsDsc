@@ -2,7 +2,7 @@
 
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'New-AzDoProjectGroup' {
+Describe 'New-AzDoProjectGroup' -Tag "Unit", "ProjectGroup" {
 
     BeforeAll {
 

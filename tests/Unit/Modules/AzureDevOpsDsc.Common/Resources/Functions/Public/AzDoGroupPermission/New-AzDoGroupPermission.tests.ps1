@@ -1,7 +1,7 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
 # Resource is currently disabled
-Describe 'New-AzDoGroupPermission' -skip {
+Describe 'New-AzDoGroupPermission' -Tag "Unit", "GroupPermission" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

@@ -1,4 +1,4 @@
-Describe "AzDoGitRepository Integration Tests" {
+Describe "AzDoGitRepository Integration Tests" -Tag "Integration", "GitRepository" {
 
     BeforeAll {
 

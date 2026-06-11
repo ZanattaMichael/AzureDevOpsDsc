@@ -5,7 +5,7 @@ $currentFile = $MyInvocation.MyCommand.Path
 # Import the module or the script containing the function
 # Import-Module 'Path\To\Your\Module.psd1' or . .\Path\To\YourScript.ps1
 
-Describe 'Find-CacheItem' -Tags "Unit", "Cache" {
+Describe 'Find-CacheItem' -Tag "Unit", "Cache" {
 
     AfterAll {
         Remove-Variable -Name AzDoProject -ErrorAction SilentlyContinue

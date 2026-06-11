@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Get-AzDoAreaNodes Tests' {
+Describe 'Get-AzDoAreaNodes Tests' -Tag "Unit", "AreaNodes" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

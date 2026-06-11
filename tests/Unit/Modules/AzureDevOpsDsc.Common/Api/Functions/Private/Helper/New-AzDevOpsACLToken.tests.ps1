@@ -1,7 +1,7 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
 # Unit Tests for New-AzDevOpsACLToken function
-Describe 'New-AzDevOpsACLToken' -Skip {
+Describe 'New-AzDevOpsACLToken' -Tag "Unit", "Helper" {
 
     BeforeAll {
 

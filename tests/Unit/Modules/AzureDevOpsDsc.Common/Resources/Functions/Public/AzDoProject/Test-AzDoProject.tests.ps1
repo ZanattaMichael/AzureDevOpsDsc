@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Test-AzDevOpsProject" -Skip {
+Describe "Test-AzDevOpsProject" -Tag "Unit", "Project" {
 
     BeforeAll {
 

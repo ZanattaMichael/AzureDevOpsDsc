@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Remove-DevOpsServiceConnection' -Tags "Unit", "API" {
+Describe 'Remove-DevOpsServiceConnection' -Tag "Unit", "ServiceConnection", "API" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

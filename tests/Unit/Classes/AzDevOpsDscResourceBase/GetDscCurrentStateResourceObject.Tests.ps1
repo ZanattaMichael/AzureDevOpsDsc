@@ -1,5 +1,5 @@
 
-Describe "[AzDevOpsDscResourceBase]::GetDscCurrentStateResourceObject() Tests" -Tag 'Unit', 'AzDevOpsDscResourceBase' {
+Describe "[AzDevOpsDscResourceBase]::GetDscCurrentStateResourceObject() Tests" -Tag "Unit", "AzDevOpsDscResourceBase" {
 
 
     Context 'When no "DscCurrentStateResourceObject" object returned'{

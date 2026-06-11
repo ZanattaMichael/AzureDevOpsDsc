@@ -1,4 +1,4 @@
-Describe "AzDoArtifactFeed Integration Tests" {
+Describe "AzDoArtifactFeed Integration Tests" -Tag "Integration", "ArtifactFeed" {
 
     BeforeAll {
 

@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'List-DevOpsTaskGroups' -Tags "Unit", "API" {
+Describe 'List-DevOpsTaskGroups' -Tag "Unit", "TaskGroup", "API" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

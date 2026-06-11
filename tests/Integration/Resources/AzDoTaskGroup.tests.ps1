@@ -1,4 +1,4 @@
-Describe "AzDoTaskGroup Integration Tests" {
+Describe "AzDoTaskGroup Integration Tests" -Tag "Integration", "TaskGroup" {
 
     BeforeAll {
 

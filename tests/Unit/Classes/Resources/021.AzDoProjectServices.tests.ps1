@@ -7,7 +7,7 @@ if ($null -eq $Global:ClassesLoaded)
     . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
 }
 
-Describe 'AzDoProjectServices Class' {
+Describe 'AzDoProjectServices Class' -Tag "Unit", "Resources" {
 
     BeforeAll {
 

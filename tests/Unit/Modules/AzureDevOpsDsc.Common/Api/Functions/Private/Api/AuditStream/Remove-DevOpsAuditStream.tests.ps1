@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Remove-DevOpsAuditStream' -Tags "Unit", "API" {
+Describe 'Remove-DevOpsAuditStream' -Tag "Unit", "AuditStream", "API" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

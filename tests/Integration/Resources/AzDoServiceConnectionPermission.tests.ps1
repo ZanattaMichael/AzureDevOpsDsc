@@ -1,4 +1,4 @@
-Describe "AzDoServiceConnectionPermission Integration Tests" {
+Describe "AzDoServiceConnectionPermission Integration Tests" -Tag "Integration", "ServiceConnectionPermission" {
 
     BeforeAll {
 

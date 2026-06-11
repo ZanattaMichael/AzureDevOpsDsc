@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Get-AzManagedIdentityToken Tests" -Tags "Unit", "Authentication" {
+Describe "Get-AzManagedIdentityToken Tests" -Tag "Unit", "ManagedIdentity", "Authentication" {
 
     BeforeAll {
 

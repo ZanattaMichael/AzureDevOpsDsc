@@ -1,4 +1,4 @@
-Describe "AzDoProjectServices Integration Tests" {
+Describe "AzDoProjectServices Integration Tests" -Tag "Integration", "ProjectServices" {
 
     BeforeAll {
 

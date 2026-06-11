@@ -1,4 +1,4 @@
-Describe "AzDoGroupPermission intergration tests" -skip {
+Describe "AzDoGroupPermission intergration tests" -Tag "Integration", "GroupPermission" {
 
     BeforeAll {
 

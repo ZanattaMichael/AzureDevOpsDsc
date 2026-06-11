@@ -1,4 +1,4 @@
-Describe "AzDoNotificationSubscription Integration Tests (work item changed, Email channel)" {
+Describe "AzDoNotificationSubscription Integration Tests (work item changed, Email channel)" -Tag "Integration", "NotificationSubscription" {
 
     BeforeAll {
 

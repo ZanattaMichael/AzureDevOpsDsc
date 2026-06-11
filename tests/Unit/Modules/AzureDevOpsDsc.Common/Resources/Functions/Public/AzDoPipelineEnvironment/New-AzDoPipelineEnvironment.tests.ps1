@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'New-AzDoPipelineEnvironment Tests' {
+Describe 'New-AzDoPipelineEnvironment Tests' -Tag "Unit", "PipelineEnvironment" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global -ErrorAction SilentlyContinue

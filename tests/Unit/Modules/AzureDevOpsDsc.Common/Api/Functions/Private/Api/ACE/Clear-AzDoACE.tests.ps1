@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Clear-AzDoACE Tests' {
+Describe 'Clear-AzDoACE Tests' -Tag "Unit", "ACE" {
 
     BeforeAll {
 

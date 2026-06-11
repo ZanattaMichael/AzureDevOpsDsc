@@ -1,4 +1,4 @@
-Describe "AzDoIterationNodes Integration Tests" {
+Describe "AzDoIterationNodes Integration Tests" -Tag "Integration", "IterationNodes" {
 
     BeforeAll {
 

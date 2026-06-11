@@ -1,4 +1,4 @@
-Describe "AzDoEnvironmentApproval Integration Tests" {
+Describe "AzDoEnvironmentApproval Integration Tests" -Tag "Integration", "EnvironmentApproval" {
 
     BeforeAll {
 

@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Remove-DevOpsCheckConfiguration' -Tags "Unit", "API" {
+Describe 'Remove-DevOpsCheckConfiguration' -Tag "Unit", "CheckConfiguration", "API" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

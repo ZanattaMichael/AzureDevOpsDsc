@@ -1,5 +1,5 @@
 
-Describe "[AzDevOpsApiDscResourceBase]::GetResourceIdPropertyName() tests" -Tag 'Unit', 'AzDevOpsApiDscResourceBase' {
+Describe "[AzDevOpsApiDscResourceBase]::GetResourceIdPropertyName() tests" -Tag "Unit", "AzDevOpsApiDscResourceBase" {
 
     class AzDevOpsApiDscResourceBaseExample : AzDevOpsApiDscResourceBase # Note: Ignore 'TypeNotFound' warning (it is available at runtime)
     {

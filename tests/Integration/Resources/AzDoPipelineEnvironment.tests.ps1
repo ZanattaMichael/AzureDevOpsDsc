@@ -1,4 +1,4 @@
-Describe "AzDoPipelineEnvironment Integration Tests" {
+Describe "AzDoPipelineEnvironment Integration Tests" -Tag "Integration", "PipelineEnvironment" {
 
     BeforeAll {
 

@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Remove-DevOpsAgentQueue' -Tags "Unit", "API" {
+Describe 'Remove-DevOpsAgentQueue' -Tag "Unit", "AgentQueue", "API" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

@@ -1,7 +1,7 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
 # Not used
-Describe 'Test-AzDoProjectGroup' -skip {
+Describe 'Test-AzDoProjectGroup' -Tag "Unit", "ProjectGroup" {
 
     AfterAll {
         # Clean up

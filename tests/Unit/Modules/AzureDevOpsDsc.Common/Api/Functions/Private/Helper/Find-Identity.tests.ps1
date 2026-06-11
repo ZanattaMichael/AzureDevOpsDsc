@@ -1,7 +1,7 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
 # Unit Tests for Find-Identity function
-Describe 'Find-Identity Function Tests' {
+Describe 'Find-Identity Function Tests' -Tag "Unit", "Helper" {
 
     BeforeAll {
 

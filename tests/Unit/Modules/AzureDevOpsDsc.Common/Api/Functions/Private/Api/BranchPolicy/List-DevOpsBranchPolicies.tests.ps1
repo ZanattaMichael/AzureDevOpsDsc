@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'List-DevOpsBranchPolicies' -Tags "Unit", "API" {
+Describe 'List-DevOpsBranchPolicies' -Tag "Unit", "BranchPolicy", "API" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Set-AzDoIterationNodes Tests' {
+Describe 'Set-AzDoIterationNodes Tests' -Tag "Unit", "IterationNodes" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

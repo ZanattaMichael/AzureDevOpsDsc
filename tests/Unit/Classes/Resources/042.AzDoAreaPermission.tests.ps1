@@ -7,7 +7,7 @@ if ($null -eq $Global:ClassesLoaded)
     . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
 }
 
-Describe 'AzDoAreaPermission Class' {
+Describe 'AzDoAreaPermission Class' -Tag "Unit", "Resources" {
 
     BeforeAll {
 

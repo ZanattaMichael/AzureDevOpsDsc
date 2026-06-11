@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Set-AzDoVariableGroupPermission" {
+Describe "Set-AzDoVariableGroupPermission" -Tag "Unit", "VariableGroupPermission" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

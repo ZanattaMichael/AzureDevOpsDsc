@@ -1,4 +1,4 @@
-Describe "AzDoPipelinePermission Integration Tests" {
+Describe "AzDoPipelinePermission Integration Tests" -Tag "Integration", "PipelinePermission" {
 
     BeforeAll {
 

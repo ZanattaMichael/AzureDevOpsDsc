@@ -1,4 +1,4 @@
-Describe "AzDoGitPermission Integration Tests" {
+Describe "AzDoGitPermission Integration Tests" -Tag "Integration", "GitPermission" {
 
     BeforeAll {
 

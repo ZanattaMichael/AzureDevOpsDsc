@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Test-ACLListforChanges" -Tags "Unit", "ACL", "Helper" {
+Describe "Test-ACLListforChanges" -Tag "Unit", "ACL", "Helper" {
 
     BeforeAll {
         # Load the functions to test

@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Get-ProjectServiceStatus' -Tags "Unit", "API" {
+Describe 'Get-ProjectServiceStatus' -Tag "Unit", "ProjectServices", "API" {
 
     BeforeAll {
 

@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Set-DevOpsOrganizationSettings' -Tags "Unit", "API" {
+Describe 'Set-DevOpsOrganizationSettings' -Tag "Unit", "OrganizationSettings", "API" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

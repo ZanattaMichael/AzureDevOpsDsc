@@ -9,7 +9,7 @@ if ($null -eq $Global:ClassesLoaded)
     . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
 }
 
-Describe 'AuthenticationToken Class' {
+Describe 'AuthenticationToken Class' -Tag "Unit", "Authentication" {
     Context 'ConvertFromSecureString Method' {
         It 'Should convert a SecureString to a String correctly' {
             # Arrange

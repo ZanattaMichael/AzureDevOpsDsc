@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Set-DevOpsArtifactFeed' -Tags "Unit", "API" {
+Describe 'Set-DevOpsArtifactFeed' -Tag "Unit", "ArtifactFeed", "API" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

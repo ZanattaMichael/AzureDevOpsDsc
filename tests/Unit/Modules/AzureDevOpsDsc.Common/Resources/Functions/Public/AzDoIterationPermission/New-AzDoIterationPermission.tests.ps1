@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'New-AzDoIterationPermission Tests' {
+Describe 'New-AzDoIterationPermission Tests' -Tag "Unit", "IterationPermission" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

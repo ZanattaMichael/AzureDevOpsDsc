@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Set-DevOpsAuditStream' -Tags "Unit", "API" {
+Describe 'Set-DevOpsAuditStream' -Tag "Unit", "AuditStream", "API" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

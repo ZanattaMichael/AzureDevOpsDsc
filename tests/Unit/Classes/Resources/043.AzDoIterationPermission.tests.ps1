@@ -7,7 +7,7 @@ if ($null -eq $Global:ClassesLoaded)
     . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
 }
 
-Describe 'AzDoIterationPermission Class' {
+Describe 'AzDoIterationPermission Class' -Tag "Unit", "Resources" {
 
     BeforeAll {
 

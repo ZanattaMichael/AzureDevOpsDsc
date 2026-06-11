@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Set-DevOpsGroup' -Tags "Unit", "API" {
+Describe 'Set-DevOpsGroup' -Tag "Unit", "Group", "API" {
     BeforeAll {
 
         # Load the functions to test

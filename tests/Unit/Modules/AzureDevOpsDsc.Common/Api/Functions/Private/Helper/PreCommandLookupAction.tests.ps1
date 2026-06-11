@@ -2,7 +2,7 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
 # Not implemented
-Describe "PreCommandLookupAction" -skip {
+Describe "PreCommandLookupAction" -Tag "Unit", "Helper" {
     BeforeAll {
         $global:ExecutionContext = [pscustomobject]@{
             InvokeCommand = [pscustomobject]@{

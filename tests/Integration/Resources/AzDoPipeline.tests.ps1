@@ -1,4 +1,4 @@
-Describe "AzDoPipeline Integration Tests (YAML pipeline)" {
+Describe "AzDoPipeline Integration Tests (YAML pipeline)" -Tag "Integration", "Pipeline" {
 
     BeforeAll {
 

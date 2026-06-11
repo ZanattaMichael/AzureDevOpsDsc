@@ -10,7 +10,7 @@ if ($null -eq $Global:ClassesLoaded)
 }
 
 
-Describe 'ManagedIdentityToken Class' {
+Describe 'ManagedIdentityToken Class' -Tag "Unit", "Authentication" {
     Context 'Constructor with PSCustomObject Parameter' {
 
         BeforeAll {
@@ -99,7 +99,7 @@ Describe 'ManagedIdentityToken Class' {
 
 }
 
-Describe 'New-ManagedIdentityToken Function' {
+Describe 'New-ManagedIdentityToken Function' -Tag "Unit", "Authentication" {
 
     BeforeAll {
         $epochStart = [datetime]::new(1970, 1, 1, 0, 0, 0, [DateTimeKind]::Utc)

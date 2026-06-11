@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Remove-DevOpsNotificationSubscription' -Tags "Unit", "API" {
+Describe 'Remove-DevOpsNotificationSubscription' -Tag "Unit", "NotificationSubscription", "API" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

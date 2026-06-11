@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "New-AzDoAuthenticationProvider" {
+Describe "New-AzDoAuthenticationProvider" -Tag "Unit", "Public" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

@@ -1,4 +1,4 @@
-Describe "AzDoOrganizationGroup Integration Tests - No Description" {
+Describe "AzDoOrganizationGroup Integration Tests - No Description" -Tag "Integration", "OrganizationGroup" {
 
     BeforeAll {
 

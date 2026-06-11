@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Remove-GitRepository" -Tags "Unit", "API" {
+Describe "Remove-GitRepository" -Tag "Unit", "GitRepository", "API" {
 
     BeforeAll {
 

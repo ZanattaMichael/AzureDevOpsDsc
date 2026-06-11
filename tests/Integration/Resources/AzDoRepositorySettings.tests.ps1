@@ -1,4 +1,4 @@
-Describe "AzDoRepositorySettings Integration Tests" {
+Describe "AzDoRepositorySettings Integration Tests" -Tag "Integration", "RepositorySettings" {
 
     BeforeAll {
 

@@ -1,4 +1,4 @@
-Describe "[DscResourceBase]::GetDscResourceKey() Tests" -Tag 'Unit', 'DscResourceBase' {
+Describe "[DscResourceBase]::GetDscResourceKey() Tests" -Tag "Unit", "DscResourceBase" {
 
 
     Context 'When called from instance of the class without a DSC Resource key' {

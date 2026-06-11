@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "New-AzDoEnvironmentPermission" {
+Describe "New-AzDoEnvironmentPermission" -Tag "Unit", "EnvironmentPermission" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

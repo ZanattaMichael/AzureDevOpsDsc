@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Set-AzDoAreaPermission' {
+Describe 'Set-AzDoAreaPermission' -Tag "Unit", "AreaPermission" {
 
 
     AfterAll {

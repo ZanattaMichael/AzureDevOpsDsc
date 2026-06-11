@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Get-AzDevOpsOperation" {
+Describe "Get-AzDevOpsOperation" -Tag "Unit", "Public" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

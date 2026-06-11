@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "New-AzDoAgentPoolPermission" {
+Describe "New-AzDoAgentPoolPermission" -Tag "Unit", "AgentPoolPermission" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

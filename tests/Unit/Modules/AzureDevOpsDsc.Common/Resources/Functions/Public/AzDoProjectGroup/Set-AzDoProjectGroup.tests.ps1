@@ -3,7 +3,7 @@ $currentFile = $MyInvocation.MyCommand.Path
 # Import the module containing Set-AzDoProjectGroup if it's in a different file.
 # . .\path\to\your\module.psm1
 
-Describe 'Set-AzDoProjectGroup' {
+Describe 'Set-AzDoProjectGroup' -Tag "Unit", "ProjectGroup" {
 
     AfterAll {
         # Clean up

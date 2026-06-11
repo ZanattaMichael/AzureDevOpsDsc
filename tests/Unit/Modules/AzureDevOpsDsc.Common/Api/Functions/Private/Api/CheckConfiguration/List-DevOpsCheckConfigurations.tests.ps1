@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'List-DevOpsCheckConfigurations' -Tags "Unit", "API" {
+Describe 'List-DevOpsCheckConfigurations' -Tag "Unit", "CheckConfiguration", "API" {
 
     BeforeAll {
         if ($null -eq $currentFile) {

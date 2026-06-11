@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Set-AzDoPipelineEnvironment" {
+Describe "Set-AzDoPipelineEnvironment" -Tag "Unit", "PipelineEnvironment" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

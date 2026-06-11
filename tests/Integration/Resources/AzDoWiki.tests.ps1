@@ -1,4 +1,4 @@
-Describe "AzDoWiki Integration Tests (code wiki)" {
+Describe "AzDoWiki Integration Tests (code wiki)" -Tag "Integration", "Wiki" {
 
     BeforeAll {
 

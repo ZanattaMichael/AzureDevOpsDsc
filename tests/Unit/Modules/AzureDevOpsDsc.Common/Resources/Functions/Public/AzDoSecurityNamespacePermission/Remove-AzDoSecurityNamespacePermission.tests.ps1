@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Remove-AzDoSecurityNamespacePermission" {
+Describe "Remove-AzDoSecurityNamespacePermission" -Tag "Unit", "SecurityNamespacePermission" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

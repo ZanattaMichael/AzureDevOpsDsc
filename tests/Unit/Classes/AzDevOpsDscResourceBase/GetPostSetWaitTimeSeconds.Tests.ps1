@@ -1,5 +1,5 @@
 
-Describe "[AzDevOpsDscResourceBase]::GetPostSetWaitTimeSeconds() Tests" -Tag 'Unit', 'AzDevOpsDscResourceBase' {
+Describe "[AzDevOpsDscResourceBase]::GetPostSetWaitTimeSeconds() Tests" -Tag "Unit", "AzDevOpsDscResourceBase" {
 
     class AzDevOpsDscResourceBaseExample : AzDevOpsDscResourceBase # Note: Ignore 'TypeNotFound' warning (it is available at runtime)
     {

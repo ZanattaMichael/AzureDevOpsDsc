@@ -1,4 +1,4 @@
-Describe "AzDoAreaPermission Integration Tests" {
+Describe "AzDoAreaPermission Integration Tests" -Tag "Integration", "AreaPermission" {
 
     BeforeAll {
 

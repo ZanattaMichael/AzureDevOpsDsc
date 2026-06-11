@@ -9,7 +9,7 @@ if ($null -eq $Global:ClassesLoaded)
     . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
 }
 
-Describe 'PersonalAccessToken Class' {
+Describe 'PersonalAccessToken Class' -Tag "Unit", "Authentication" {
     Context 'Constructor with String Parameter' {
         It 'Should initialize with a string personal access token' {
             # Arrange
@@ -52,7 +52,7 @@ Describe 'PersonalAccessToken Class' {
     }
 }
 
-Describe 'New-PersonalAccessToken Function' {
+Describe 'New-PersonalAccessToken Function' -Tag "Unit", "Authentication" {
     It 'Should create a new PersonalAccessToken object with a string token' {
         # Arrange
         $personalAccessToken = "TestToken"

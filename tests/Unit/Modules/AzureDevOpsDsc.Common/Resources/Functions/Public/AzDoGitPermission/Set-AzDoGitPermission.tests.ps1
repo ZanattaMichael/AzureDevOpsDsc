@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Set-AzDoGitPermission' {
+Describe 'Set-AzDoGitPermission' -Tag "Unit", "GitPermission" {
 
 
     AfterAll {

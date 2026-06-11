@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 # Ignore the file. It is not used.
-Describe 'Get-AzDevOpsApiUriResourceName Tests' -skip {
+Describe 'Get-AzDevOpsApiUriResourceName Tests' -Tag "Unit", "Helper" {
 
     BeforeEach {
         function Test-AzDevOpsApiResourceName {

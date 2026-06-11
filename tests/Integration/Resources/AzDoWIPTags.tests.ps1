@@ -1,4 +1,4 @@
-Describe "AzDoWIPTags Integration Tests" {
+Describe "AzDoWIPTags Integration Tests" -Tag "Integration", "WIPTags" {
 
     BeforeAll {
 

@@ -1,7 +1,7 @@
 $currentFile = $MyInvocation.MyCommand.Path
 # Pester tests for New-AzDoProject
 
-Describe "New-AzDoProject" {
+Describe "New-AzDoProject" -Tag "Unit", "Project" {
 
 
     AfterAll {
