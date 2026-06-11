@@ -1,4 +1,4 @@
-Describe "AzDoCheckConfiguration Integration Tests" {
+Describe "AzDoCheckConfiguration Integration Tests (Approval check on an environment)" {
 
     BeforeAll {
 
@@ -55,58 +55,58 @@ Describe "AzDoCheckConfiguration Integration Tests" {
         }
     }
 
-    Context "Testing if the check configuration exists" {
+    Context "Testing if the Approval check configuration exists" {
 
         BeforeAll {
             $parameters.Method = 'Test'
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when testing the Approval check" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return False (check not yet created)" {
+        It "Should return False (Approval check not yet created)" {
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeFalse
         }
     }
 
-    Context "Creating the check configuration" {
+    Context "Creating the Approval check configuration" {
 
         BeforeAll {
             $parameters.Method = 'Set'
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when creating the Approval check" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return True after creation" {
+        It "Should return True after creating the Approval check" {
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
         }
     }
 
-    Context "Updating the check configuration" {
+    Context "Updating the Approval check configuration" {
 
         BeforeAll {
             $parameters.Method = 'Set'
             $parameters.property.Settings.instructions = 'Updated review instructions.'
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when updating the Approval check" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return True after update" {
+        It "Should return True after updating the Approval check" {
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
         }
     }
 
-    Context "Removing the check configuration" {
+    Context "Removing the Approval check configuration" {
 
         BeforeAll {
             $parameters.Method = 'Set'
@@ -120,11 +120,11 @@ Describe "AzDoCheckConfiguration Integration Tests" {
             }
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when removing the Approval check" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return True (Absent is desired state)" {
+        It "Should return True (Approval check absent is the desired state)" {
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
