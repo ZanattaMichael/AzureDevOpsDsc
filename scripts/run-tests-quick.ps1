@@ -1,4 +1,4 @@
-$Global:RepositoryRoot = 'C:\Git\AzureDevOpsDsc'
+$Global:RepositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 Import-Module -Name (Join-Path $Global:RepositoryRoot 'tests\Unit\Modules\TestHelpers\CommonTestCases.psm1') -Force
 Import-Module -Name (Join-Path $Global:RepositoryRoot 'tests\Unit\Modules\TestHelpers\CommonTestHelper.psm1') -Force
 Import-Module -Name (Join-Path $Global:RepositoryRoot 'tests\Unit\Modules\TestHelpers\CommonTestFunctions.psm1') -Force

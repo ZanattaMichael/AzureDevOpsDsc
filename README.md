@@ -101,16 +101,78 @@ A full list of changes in each version can be found in the [change log](CHANGELO
 
 ## Resources
 
+Each resource links to its example/usage documentation.
+
+### Projects, organization, groups and teams
+
 | Resource | Description |
 |---|---|
 | [AzDoProject](source/Examples/Resources/AzDoProject.md) | Creates and manages Azure DevOps projects. |
-| [AzDoProjectServices](source/Examples/Resources/AzDoProjectServices.md) | Enables or disables services (Repos, Boards, Pipelines, etc.) within a project. |
-| [AzDoProjectGroup](source/Examples/Resources/AzDoProjectGroup.md) | Creates and manages groups within an Azure DevOps project. |
-| [AzDoOrganizationGroup](source/Examples/Resources/AzDoOrganizationGroup.md) | Creates and manages groups at the Azure DevOps organization level. |
-| [AzDoGroupMember](source/Examples/Resources/AzDoGroupMember.md) | Manages membership of users and service principals in an Azure DevOps group. |
-| [AzDoGitRepository](source/Examples/Resources/AzDoGitRepository.md) | Creates and manages Git repositories within an Azure DevOps project. |
+| [AzDoProjectServices](source/Examples/Resources/AzDoProjectServices.md) | Enables or disables services (Repos, Boards, Pipelines, Test Plans, Artifacts) within a project. |
+| [AzDoOrganizationSettings](source/Examples/Resources/AzDoOrganizationSettings.md) | Manages organization-level settings. |
+| [AzDoProjectGroup](source/Examples/Resources/AzDoProjectGroup.md) | Creates and manages groups within a project. |
+| [AzDoOrganizationGroup](source/Examples/Resources/AzDoOrganizationGroup.md) | Creates and manages groups at the organization level. |
+| [AzDoGroupMember](source/Examples/Resources/AzDoGroupMember.md) | Manages membership of users, groups and service principals in a group. |
+| [AzDoTeam](source/Examples/Resources/AzDoTeam.md) | Creates and manages teams within a project. |
+| [AzDoTeamMember](source/Examples/Resources/AzDoTeamMember.md) | Manages membership of a team. |
+
+### Repositories and policies
+
+| Resource | Description |
+|---|---|
+| [AzDoGitRepository](source/Examples/Resources/AzDoGitRepository.md) | Creates and manages Git repositories within a project. |
+| [AzDoRepositorySettings](source/Examples/Resources/AzDoRepositorySettings.md) | Manages Git repository settings. |
+| [AzDoBranchPolicy](source/Examples/Resources/AzDoBranchPolicy.md) | Manages branch policies (e.g. minimum reviewer count) on a repository. |
+
+### Permissions
+
+| Resource | Description |
+|---|---|
+| [AzDoProjectPermission](source/Examples/Resources/AzDoProjectPermission.md) | Manages project-level permissions for identities. |
 | [AzDoGitPermission](source/Examples/Resources/AzDoGitPermission.md) | Manages fine-grained Git repository permissions for identities. |
+| [AzDoAreaPermission](source/Examples/Resources/AzDoAreaPermission.md) | Manages area path (classification node) permissions. |
+| [AzDoIterationPermission](source/Examples/Resources/AzDoIterationPermission.md) | Manages iteration path (classification node) permissions. |
+| [AzDoAgentPoolPermission](source/Examples/Resources/AzDoAgentPoolPermission.md) | Manages agent pool permissions. |
+| [AzDoEnvironmentPermission](source/Examples/Resources/AzDoEnvironmentPermission.md) | Manages pipeline environment permissions. |
+| [AzDoPipelinePermission](source/Examples/Resources/AzDoPipelinePermission.md) | Manages build/pipeline permissions. |
+| [AzDoServiceConnectionPermission](source/Examples/Resources/AzDoServiceConnectionPermission.md) | Manages service connection (endpoint) permissions. |
+| [AzDoVariableGroupPermission](source/Examples/Resources/AzDoVariableGroupPermission.md) | Manages variable group (library) permissions. |
+| [AzDoArtifactFeedPermission](source/Examples/Resources/AzDoArtifactFeedPermission.md) | Manages artifact feed permissions. |
+| [AzDoSecurityNamespacePermission](source/Examples/Resources/AzDoSecurityNamespacePermission.md) | Manages permissions for an arbitrary security namespace and token. |
 | [AzDoGroupPermission](source/Examples/Resources/AzDoGroupPermission.md) | *(Not currently supported)* Manages group-level identity permissions. |
+
+### Pipelines, environments and agents
+
+| Resource | Description |
+|---|---|
+| [AzDoPipeline](source/Examples/Resources/AzDoPipeline.md) | Creates and manages YAML pipeline definitions. |
+| [AzDoPipelineEnvironment](source/Examples/Resources/AzDoPipelineEnvironment.md) | Creates and manages pipeline environments. |
+| [AzDoEnvironmentApproval](source/Examples/Resources/AzDoEnvironmentApproval.md) | Manages approval checks on a pipeline environment. |
+| [AzDoCheckConfiguration](source/Examples/Resources/AzDoCheckConfiguration.md) | Manages pipeline checks (e.g. Approval) on a protected resource. |
+| [AzDoDeploymentGroup](source/Examples/Resources/AzDoDeploymentGroup.md) | Creates and manages deployment groups. |
+| [AzDoAgentPool](source/Examples/Resources/AzDoAgentPool.md) | Creates and manages organization agent pools. |
+| [AzDoAgentQueue](source/Examples/Resources/AzDoAgentQueue.md) | Creates and manages project agent queues. |
+| [AzDoTaskGroup](source/Examples/Resources/AzDoTaskGroup.md) | Creates and manages task groups. |
+| [AzDoVariableGroup](source/Examples/Resources/AzDoVariableGroup.md) | Creates and manages variable groups (library). |
+| [AzDoServiceConnection](source/Examples/Resources/AzDoServiceConnection.md) | Creates and manages service connections (service endpoints). |
+
+### Boards and work items
+
+| Resource | Description |
+|---|---|
+| [AzDoAreaNodes](source/Examples/Resources/AzDoAreaNodes.md) | Manages area path classification nodes. |
+| [AzDoIterationNodes](source/Examples/Resources/AzDoIterationNodes.md) | Manages iteration path classification nodes. |
+| [AzDoWIPTags](source/Examples/Resources/AzDoWIPTags.md) | Manages work item tags. |
+| [AzDoNotificationSubscription](source/Examples/Resources/AzDoNotificationSubscription.md) | Manages notification subscriptions. |
+
+### Artifacts, wiki, extensions and auditing
+
+| Resource | Description |
+|---|---|
+| [AzDoArtifactFeed](source/Examples/Resources/AzDoArtifactFeed.md) | Creates and manages artifact feeds. |
+| [AzDoWiki](source/Examples/Resources/AzDoWiki.md) | Creates and manages project and code wikis. |
+| [AzDoExtension](source/Examples/Resources/AzDoExtension.md) | Installs and uninstalls organization extensions. |
+| [AzDoAuditStream](source/Examples/Resources/AzDoAuditStream.md) | Manages audit log streaming. |
 
 ## Documentation
 
