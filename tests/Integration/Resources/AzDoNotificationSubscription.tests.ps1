@@ -35,11 +35,11 @@ Describe "AzDoNotificationSubscription Integration Tests (work item changed, Ema
             $parameters.Method = 'Test'
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when testing the work item changed notification subscription" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return False (subscription does not exist yet)" {
+        It "Should return False (work item changed notification subscription does not exist yet)" {
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeFalse
         }
@@ -51,11 +51,11 @@ Describe "AzDoNotificationSubscription Integration Tests (work item changed, Ema
             $parameters.Method = 'Set'
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when creating the work item changed notification subscription" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return True after creation" {
+        It "Should return True after creating the work item changed notification subscription" {
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
@@ -69,11 +69,11 @@ Describe "AzDoNotificationSubscription Integration Tests (work item changed, Ema
             $parameters.property.Enabled = $false
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when disabling the work item changed notification subscription" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return True after disabling" {
+        It "Should return True after disabling the work item changed notification subscription" {
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
@@ -93,11 +93,11 @@ Describe "AzDoNotificationSubscription Integration Tests (work item changed, Ema
             }
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when removing the work item changed notification subscription" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return True (Absent is desired state)" {
+        It "Should return True (work item changed notification subscription absent is the desired state)" {
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue

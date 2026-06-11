@@ -46,11 +46,11 @@ Describe "AzDoBranchPolicy Integration Tests (Minimum Reviewer Count policy)" {
             $parameters.Method = 'Test'
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when testing the Minimum Reviewer Count branch policy" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return False (policy does not exist yet)" {
+        It "Should return False (Minimum Reviewer Count branch policy does not exist yet)" {
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeFalse
         }
@@ -62,11 +62,11 @@ Describe "AzDoBranchPolicy Integration Tests (Minimum Reviewer Count policy)" {
             $parameters.Method = 'Set'
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when creating the Minimum Reviewer Count branch policy" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return True after creation" {
+        It "Should return True after creating the Minimum Reviewer Count branch policy" {
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
@@ -86,11 +86,11 @@ Describe "AzDoBranchPolicy Integration Tests (Minimum Reviewer Count policy)" {
             }
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when updating the Minimum Reviewer Count branch policy" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return True after update" {
+        It "Should return True after updating the Minimum Reviewer Count branch policy" {
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
@@ -104,11 +104,11 @@ Describe "AzDoBranchPolicy Integration Tests (Minimum Reviewer Count policy)" {
             $parameters.property.Ensure = 'Absent'
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when removing the Minimum Reviewer Count branch policy" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return True (Absent is desired state)" {
+        It "Should return True (Minimum Reviewer Count branch policy absent is the desired state)" {
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue

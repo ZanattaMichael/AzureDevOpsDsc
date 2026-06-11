@@ -1,4 +1,4 @@
-Describe "AzDoExtension Integration Tests" {
+Describe "AzDoExtension Integration Tests (ms-devlabs.team-calendar)" {
 
     BeforeAll {
 
@@ -17,47 +17,47 @@ Describe "AzDoExtension Integration Tests" {
         }
     }
 
-    Context "Testing if the extension is installed" {
+    Context "Testing if the Team Calendar extension is installed" {
 
         BeforeAll {
             $parameters.Method = 'Test'
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when testing the Team Calendar extension" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
     }
 
-    Context "Ensuring the extension is installed (Present)" {
+    Context "Ensuring the Team Calendar extension is installed (Present)" {
 
         BeforeAll {
             $parameters.Method = 'Set'
             $parameters.property.Ensure = 'Present'
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when installing the Team Calendar extension" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should be in desired state after install" {
+        It "Should be in desired state after installing the Team Calendar extension" {
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
         }
     }
 
-    Context "Ensuring the extension is uninstalled (Absent)" {
+    Context "Ensuring the Team Calendar extension is uninstalled (Absent)" {
 
         BeforeAll {
             $parameters.Method = 'Set'
             $parameters.property.Ensure = 'Absent'
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when uninstalling the Team Calendar extension" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should be in desired state after uninstall" {
+        It "Should be in desired state after uninstalling the Team Calendar extension" {
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue

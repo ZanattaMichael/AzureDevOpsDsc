@@ -1,4 +1,4 @@
-Describe "AzDoPipeline Integration Tests" {
+Describe "AzDoPipeline Integration Tests (YAML pipeline)" {
 
     BeforeAll {
 
@@ -34,58 +34,58 @@ Describe "AzDoPipeline Integration Tests" {
         New-Repository -ProjectName $PROJECTNAME -RepositoryName $REPONAME
     }
 
-    Context "Testing if the pipeline exists" {
+    Context "Testing if the YAML pipeline exists" {
 
         BeforeAll {
             $parameters.Method = 'Test'
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when testing the YAML pipeline" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return False (pipeline does not exist yet)" {
+        It "Should return False (YAML pipeline does not exist yet)" {
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeFalse
         }
     }
 
-    Context "Creating the pipeline" {
+    Context "Creating the YAML pipeline" {
 
         BeforeAll {
             $parameters.Method = 'Set'
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when creating the YAML pipeline" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return True after creation" {
+        It "Should return True after creating the YAML pipeline" {
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
         }
     }
 
-    Context "Updating the pipeline folder" {
+    Context "Updating the YAML pipeline folder" {
 
         BeforeAll {
             $parameters.Method = 'Set'
             $parameters.property.FolderPath = '\TestFolder'
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when updating the YAML pipeline folder" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return True after update" {
+        It "Should return True after updating the YAML pipeline folder" {
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
         }
     }
 
-    Context "Removing the pipeline" {
+    Context "Removing the YAML pipeline" {
 
         BeforeAll {
             $parameters.Method = 'Set'
@@ -98,11 +98,11 @@ Describe "AzDoPipeline Integration Tests" {
             }
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when removing the YAML pipeline" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return True (Absent is desired state)" {
+        It "Should return True (YAML pipeline absent is the desired state)" {
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue

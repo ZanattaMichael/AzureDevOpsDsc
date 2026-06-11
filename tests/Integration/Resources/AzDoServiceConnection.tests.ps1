@@ -39,11 +39,11 @@ Describe "AzDoServiceConnection Integration Tests (Generic UsernamePassword conn
             $parameters.Method = 'Test'
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when testing the Generic service connection" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return False (service connection does not exist yet)" {
+        It "Should return False (Generic service connection does not exist yet)" {
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeFalse
         }
@@ -55,11 +55,11 @@ Describe "AzDoServiceConnection Integration Tests (Generic UsernamePassword conn
             $parameters.Method = 'Set'
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when creating the Generic service connection" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return True after creation" {
+        It "Should return True after creating the Generic service connection" {
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
@@ -73,11 +73,11 @@ Describe "AzDoServiceConnection Integration Tests (Generic UsernamePassword conn
             $parameters.property.Description = 'Updated test service connection'
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when updating the Generic service connection" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return True after update" {
+        It "Should return True after updating the Generic service connection" {
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
@@ -96,11 +96,11 @@ Describe "AzDoServiceConnection Integration Tests (Generic UsernamePassword conn
             }
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when removing the Generic service connection" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return True (Absent is desired state)" {
+        It "Should return True (Generic service connection absent is the desired state)" {
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue

@@ -51,11 +51,11 @@ Describe "AzDoWiki Integration Tests (code wiki)" {
             $parameters.Method = 'Test'
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when testing the code wiki" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return False (wiki does not exist yet)" {
+        It "Should return False (code wiki does not exist yet)" {
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeFalse
         }
@@ -67,11 +67,11 @@ Describe "AzDoWiki Integration Tests (code wiki)" {
             $parameters.Method = 'Set'
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when creating the code wiki" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return True after creation" {
+        It "Should return True after creating the code wiki" {
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
@@ -91,11 +91,11 @@ Describe "AzDoWiki Integration Tests (code wiki)" {
             }
         }
 
-        It "Should not throw any exceptions" {
+        It "Should not throw any exceptions when removing the code wiki" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return True (Absent is desired state)" {
+        It "Should return True (code wiki absent is the desired state)" {
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
