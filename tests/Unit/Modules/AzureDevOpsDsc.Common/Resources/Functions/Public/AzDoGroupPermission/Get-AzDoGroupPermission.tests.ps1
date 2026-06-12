@@ -1,74 +1,42 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-
-# Tests are currently disabled.
 Describe 'Get-AzDoGroupPermission' -Tag "Unit", "GroupPermission" {
 
     AfterAll {
-        Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global
+        Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global -ErrorAction SilentlyContinue
     }
 
     BeforeAll {
 
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
-        . (Get-FunctionItem 'Get-AzDoOrganizationName.ps1').FullName\n
-        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
-        # Load the functions to test
         if ($null -eq $currentFile) {
-            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'Get-AzDoGroupMember.tests.ps1'
+            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'Get-AzDoGroupPermission.tests.ps1'
         }
 
-        # Load the functions to test
         $files = Get-FunctionItem (Find-MockedFunctions -TestFilePath $currentFile)
+        ForEach ($file in $files) { . $file.FullName }
 
-        ForEach ($file in $files) {
-            . $file.FullName
-        }
-
-        # Load the summary state
         . (Get-ClassFilePath 'DSCGetSummaryState')
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
-        # Load Get-AzDoCacheObjects
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
+        Mock -CommandName Write-Warning
 
-
-        # Mock dependencies
         Mock -CommandName Get-CacheItem -MockWith {
-
             switch ($Type) {
-                'LiveGroups' {
-                    return @{
-                        id = 'mockOriginId'
-                        name = 'mockOriginName'
-                    }
-                }
-                'LiveProjects' {
-                    return @{
-                        id = 'mockProjectId'
-                        name = 'mockProjectName'
-                    }
-                }
-                'SecurityNamespaces' {
-                    return @{
-                        namespaceId = 'mockSecurityNamespaceId'
-                        name = 'mockSecurityNamespaceName'
-                    }
-                }
+                'LiveGroups'         { return @{ id = 'mockGroupId'; originId = 'mockOriginId'; name = 'mockGroupName' } }
+                'LiveProjects'       { return @{ id = 'mockProjectId'; name = 'mockProjectName' } }
+                'SecurityNamespaces' { return @{ namespaceId = 'mockSecurityNamespaceId' } }
             }
         }
-
 
         Mock -CommandName Get-DevOpsACL -MockWith {
             return @(
                 @{
-                    Token = @{
-                        Type     = 'GroupPermission'
-                        GroupId  = 'mockOriginId'
-                        ProjectId= 'mockProjectId'
-                    }
+                    Token = @{ Type = 'GroupPermission'; GroupId = 'mockOriginId'; ProjectId = 'mockProjectId' }
                 }
             )
         }
@@ -76,40 +44,28 @@ Describe 'Get-AzDoGroupPermission' -Tag "Unit", "GroupPermission" {
         Mock -CommandName ConvertTo-FormattedACL -MockWith {
             return @(
                 @{
-                    Token = @{
-                        Type     = 'GroupPermission'
-                        GroupId  = 'mockOriginId'
-                        ProjectId= 'mockProjectId'
-                    }
+                    Token = @{ Type = 'GroupPermission'; GroupId = 'mockOriginId'; ProjectId = 'mockProjectId' }
                 }
             )
         }
 
         Mock -CommandName ConvertTo-ACL -MockWith {
             return @{
-                aces = @{
-                    Count = 1
-                }
-                token = @{
-                    Type = 'GroupPermission'
-                }
+                aces  = @{ Count = 1 }
+                token = @{ Type = 'GroupPermission' }
             }
         }
 
         Mock -CommandName Test-ACLListforChanges -MockWith {
             return @{
                 propertiesChanged = @('property1', 'property2')
-                status = 'Compliant'
-                reason = 'No changes detected'
+                status            = 'Unchanged'
+                reason            = 'No changes detected'
             }
         }
-
-        Mock -CommandName Write-Warning
-
     }
 
     It 'Should return group result with correct properties when valid GroupName is provided' {
-
         $result = Get-AzDoGroupPermission -GroupName 'Project\Group' -isInherited $true
 
         $result | Should -Not -BeNullOrEmpty
@@ -117,7 +73,6 @@ Describe 'Get-AzDoGroupPermission' -Tag "Unit", "GroupPermission" {
         $result.groupName | Should -Be 'Group'
         $result.propertiesChanged | Should -Contain 'property1'
         $result.status | Should -Be 'Unchanged'
-
     }
 
     It 'Should not throw an error when GroupName is invalid' {
@@ -126,13 +81,8 @@ Describe 'Get-AzDoGroupPermission' -Tag "Unit", "GroupPermission" {
     }
 
     It 'Should return null when no ACEs found for the group' {
-        Mock -CommandName 'ConvertTo-ACL' -MockWith {
-            param ($Permissions, $SecurityNamespace, $isInherited, $OrganizationName, $TokenName)
-            return @{
-                aces = @{
-                    Count = 0
-                }
-            }
+        Mock -CommandName ConvertTo-ACL -MockWith {
+            return @{ aces = @{ Count = 0 } }
         }
 
         $result = Get-AzDoGroupPermission -GroupName 'Project\Group' -isInherited $true
