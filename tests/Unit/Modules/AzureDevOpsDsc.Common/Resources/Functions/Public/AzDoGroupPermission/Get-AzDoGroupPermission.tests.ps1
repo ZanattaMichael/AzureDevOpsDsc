@@ -80,12 +80,13 @@ Describe 'Get-AzDoGroupPermission' -Tag "Unit", "GroupPermission" {
         $result | Should -BeNullOrEmpty
     }
 
-    It 'Should return null when no ACEs found for the group' {
+    It 'Should return Unchanged status when no ACEs found for the group' {
         Mock -CommandName ConvertTo-ACL -MockWith {
             return @{ aces = @{ Count = 0 } }
         }
 
         $result = Get-AzDoGroupPermission -GroupName 'Project\Group' -isInherited $true
-        $result | Should -BeNullOrEmpty
+        $result | Should -Not -BeNullOrEmpty
+        $result.status | Should -Be ([DSCGetSummaryState]::Unchanged)
     }
 }

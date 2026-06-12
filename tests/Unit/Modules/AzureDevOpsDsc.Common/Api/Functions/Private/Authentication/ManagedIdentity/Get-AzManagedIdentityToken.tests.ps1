@@ -98,6 +98,7 @@ Describe "Get-AzManagedIdentityToken Tests" -Tag "Unit", "ManagedIdentity", "Aut
             Mock -CommandName Test-isWindowsAdmin -MockWith {
                 return $false
             }
+            Mock -CommandName Test-Path -MockWith { return $false } -ParameterFilter { $LiteralPath -like '*ModuleSettings.clixml' }
         }
 
         It "should warn about Administrator privileges but not throw" {
@@ -125,6 +126,7 @@ Describe "Get-AzManagedIdentityToken Tests" -Tag "Unit", "ManagedIdentity", "Aut
             Mock -CommandName Test-isWindowsAdmin -MockWith {
                 return $true
             }
+            Mock -CommandName Test-Path -MockWith { return $false } -ParameterFilter { $LiteralPath -like '*ModuleSettings.clixml' }
 
         }
 
@@ -202,6 +204,7 @@ Describe "Get-AzManagedIdentityToken Tests" -Tag "Unit", "ManagedIdentity", "Aut
             Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith {
                 Throw "MOCK ERROR"
             }
+            Mock -CommandName Test-Path -MockWith { return $false } -ParameterFilter { $LiteralPath -like '*ModuleSettings.clixml' }
         }
 
         It "should throw error" {

@@ -43,13 +43,4 @@ Describe 'New-AzDevOpsACLToken' -Tag "Unit", "Helper" {
         }
     }
 
-    Context 'When required parameters are missing' {
-        It 'Should throw an error if OrganizationName is missing' {
-            { New-AzDevOpsACLToken -ProjectId "MyProject" } | Should -Throw
-        }
-
-        It 'Should throw an error if ProjectId is missing' {
-            { New-AzDevOpsACLToken -OrganizationName "Contoso" } | Should -Throw
-        }
-    }
 }

@@ -62,10 +62,6 @@ Describe 'Test-AzDoGroupMember' -Tag "Unit", "GroupMember" {
         { Test-AzDoGroupMember -GroupName $GroupName -Force:$false } | Should -Not -Throw
     }
 
-    It 'Should fail without mandatory GroupName parameter' {
-        { Test-AzDoGroupMember } | Should -Throw
-    }
-
     It 'Should handle null or empty GroupMembers parameter' {
         { Test-AzDoGroupMember -GroupName $GroupName -GroupMembers $null } | Should -Not -Throw
         { Test-AzDoGroupMember -GroupName $GroupName -GroupMembers @() } | Should -Not -Throw

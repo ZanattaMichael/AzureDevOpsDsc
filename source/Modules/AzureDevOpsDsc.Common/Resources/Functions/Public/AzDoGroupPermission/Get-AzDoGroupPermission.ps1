@@ -171,7 +171,8 @@ Function Get-AzDoGroupPermission
     if ($ReferenceACLs.aces.Count -eq 0)
     {
         Write-Verbose "[Get-AzDoGroupPermission] No ACEs found for the group."
-        return
+        $getGroupResult.status = [DSCGetSummaryState]::Unchanged
+        return $getGroupResult
     }
 
     # Compare the Reference ACLs to the Difference ACLs
