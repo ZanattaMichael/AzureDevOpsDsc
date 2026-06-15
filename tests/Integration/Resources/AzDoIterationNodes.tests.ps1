@@ -9,7 +9,7 @@ Describe "AzDoIterationNodes Integration Tests" -Tag "Integration", "IterationNo
             ModuleName = 'AzureDevOpsDsc'
         }
 
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
 
         # Clear any pre-existing iterations so tests start from a known state
         $null = Invoke-DscResource -Name 'AzDoIterationNodes' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{

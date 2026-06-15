@@ -18,7 +18,7 @@ Describe "AzDoVariableGroup Integration Tests" -Tag "Integration", "VariableGrou
             }
         }
 
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
     }
 
     Context "Testing if the variable group exists" {

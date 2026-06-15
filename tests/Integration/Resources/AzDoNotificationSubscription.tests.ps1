@@ -22,7 +22,7 @@ Describe "AzDoNotificationSubscription Integration Tests (work item changed, Ema
             }
         }
 
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
     }
 
     Context "Testing if the work item changed notification subscription exists" {

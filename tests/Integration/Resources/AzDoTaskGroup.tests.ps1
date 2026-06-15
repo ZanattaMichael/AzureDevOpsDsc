@@ -27,7 +27,7 @@ Describe "AzDoTaskGroup Integration Tests" -Tag "Integration", "TaskGroup" {
             }
         }
 
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
     }
 
     Context "Testing if the task group exists" {

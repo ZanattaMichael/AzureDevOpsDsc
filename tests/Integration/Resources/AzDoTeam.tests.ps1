@@ -14,7 +14,7 @@ Describe "AzDoTeam Integration Tests" -Tag "Integration", "Team" {
             }
         }
 
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
     }
 
     Context "Testing if the team exists" {

@@ -30,9 +30,9 @@ Describe "AzDoGitPermission Integration Tests" -Tag "Integration", "GitPermissio
             }
         }
 
-        New-Project $PROJECTNAME
-        New-Repository -ProjectName $PROJECTNAME -RepositoryName 'TESTREPOSITORY'
-        'Group1', 'Group2' | ForEach-Object { New-Group -ProjectName $PROJECTNAME -GroupName $_ }
+        New-TestProject -ProjectName $PROJECTNAME
+        New-TestGitRepository -ProjectName $PROJECTNAME -RepositoryName 'TESTREPOSITORY'
+        'Group1', 'Group2' | ForEach-Object { New-TestGroup -ProjectName $PROJECTNAME -GroupName $_ }
     }
 
     Context "Testing if the permissions exist" {

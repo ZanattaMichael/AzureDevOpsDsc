@@ -24,8 +24,8 @@ Describe "AzDoProjectPermission Integration Tests" -Tag "Integration", "ProjectP
             }
         }
 
-        New-Project $PROJECTNAME
-        New-Group -ProjectName $PROJECTNAME -GroupName $GROUPNAME
+        New-TestProject -ProjectName $PROJECTNAME
+        New-TestGroup -ProjectName $PROJECTNAME -GroupName $GROUPNAME
     }
 
     Context "Testing if project permissions exist" {

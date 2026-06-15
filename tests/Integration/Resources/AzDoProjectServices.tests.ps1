@@ -16,7 +16,7 @@ Describe "AzDoProjectServices Integration Tests" -Tag "Integration", "ProjectSer
             ModuleName = 'AzureDevOpsDsc'
         }
 
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
 
         # Reset services to all-enabled to ensure clean state before testing
         $null = Invoke-DscResource -Name 'AzDoProjectServices' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{

@@ -34,13 +34,13 @@ Describe "AzDoGroupPermission intergration tests" -Tag "Integration", "GroupPerm
         #
         # Create a new project
 
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
 
         #
         # Create a new group
 
-        New-Group -ProjectName $PROJECTNAME -GroupName $GroupName
-        New-Group -ProjectName $PROJECTNAME -GroupName 'Group1'
+        New-TestGroup -ProjectName $PROJECTNAME -GroupName $GroupName
+        New-TestGroup -ProjectName $PROJECTNAME -GroupName 'Group1'
 
     }
 

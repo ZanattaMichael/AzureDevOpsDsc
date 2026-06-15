@@ -10,7 +10,7 @@ Describe "AzDoProjectGroup Integration Tests - No Description" -Tag "Integration
             ModuleName = 'AzureDevOpsDsc'
         }
 
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
 
         # Ensure group does not exist before starting
         $null = Invoke-DscResource -Name 'AzDoProjectGroup' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{

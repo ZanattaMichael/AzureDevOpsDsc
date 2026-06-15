@@ -11,7 +11,7 @@ Describe "AzDoGitRepository Integration Tests" -Tag "Integration", "GitRepositor
             ModuleName = 'AzureDevOpsDsc'
         }
 
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
 
     }
 

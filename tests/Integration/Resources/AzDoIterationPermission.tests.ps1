@@ -23,7 +23,7 @@ Describe "AzDoIterationPermission Integration Tests" -Tag "Integration", "Iterat
             }
         }
 
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
     }
 
     Context "Testing if permissions exist on default iteration" {

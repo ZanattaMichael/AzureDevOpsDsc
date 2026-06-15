@@ -23,7 +23,7 @@ Describe "AzDoAreaPermission Integration Tests" -Tag "Integration", "AreaPermiss
             }
         }
 
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
     }
 
     Context "Testing if permissions exist on default area" {

@@ -23,9 +23,9 @@ Describe "AzDoTeamMember Integration Tests" -Tag "Integration", "TeamMember" {
             }
         }
 
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
         New-Team -ProjectName $PROJECTNAME -TeamName $TEAMNAME
-        New-Group -ProjectName $PROJECTNAME -GroupName $GROUPNAME
+        New-TestGroup -ProjectName $PROJECTNAME -GroupName $GROUPNAME
     }
 
     Context "Testing if the team member exists" {

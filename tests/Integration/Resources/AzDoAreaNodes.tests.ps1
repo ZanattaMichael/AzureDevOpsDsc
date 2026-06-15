@@ -9,7 +9,7 @@ Describe "AzDoAreaNodes Integration Tests" -Tag "Integration", "AreaNodes" {
             ModuleName = 'AzureDevOpsDsc'
         }
 
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
     }
 
     Context "Initial state - no custom area nodes" {

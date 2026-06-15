@@ -40,9 +40,9 @@ Describe "AzDoServiceConnectionPermission Integration Tests" -Tag "Integration",
             }
         }
 
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
         New-ServiceConnection -ProjectName $PROJECTNAME -ConnectionName $SCNAME
-        New-Group -ProjectName $PROJECTNAME -GroupName $GROUPNAME
+        New-TestGroup -ProjectName $PROJECTNAME -GroupName $GROUPNAME
     }
 
     Context "Testing if service connection permissions exist" {

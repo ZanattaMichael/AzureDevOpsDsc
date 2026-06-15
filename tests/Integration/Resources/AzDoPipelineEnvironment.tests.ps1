@@ -14,7 +14,7 @@ Describe "AzDoPipelineEnvironment Integration Tests" -Tag "Integration", "Pipeli
             }
         }
 
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
     }
 
     Context "Testing if the environment exists" {

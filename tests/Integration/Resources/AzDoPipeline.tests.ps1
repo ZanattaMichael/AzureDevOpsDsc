@@ -19,8 +19,8 @@ Describe "AzDoPipeline Integration Tests (YAML pipeline)" -Tag "Integration", "P
             }
         }
 
-        New-Project $PROJECTNAME
-        New-Repository -ProjectName $PROJECTNAME -RepositoryName $REPONAME
+        New-TestProject -ProjectName $PROJECTNAME
+        New-TestGitRepository -ProjectName $PROJECTNAME -RepositoryName $REPONAME
     }
 
     Context "Testing if the YAML pipeline exists" {

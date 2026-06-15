@@ -19,8 +19,8 @@ Describe "AzDoRepositorySettings Integration Tests" -Tag "Integration", "Reposit
             }
         }
 
-        New-Project $PROJECTNAME
-        New-Repository -ProjectName $PROJECTNAME -RepositoryName $REPONAME
+        New-TestProject -ProjectName $PROJECTNAME
+        New-TestGitRepository -ProjectName $PROJECTNAME -RepositoryName $REPONAME
     }
 
     Context "Testing if the repository settings are in desired state" {

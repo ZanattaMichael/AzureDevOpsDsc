@@ -26,8 +26,8 @@ Describe "AzDoSecurityNamespacePermission Integration Tests" -Tag "Integration",
             }
         }
 
-        New-Project $PROJECTNAME
-        New-Group -ProjectName $PROJECTNAME -GroupName $GROUPNAME
+        New-TestProject -ProjectName $PROJECTNAME
+        New-TestGroup -ProjectName $PROJECTNAME -GroupName $GROUPNAME
 
         # Ensure the ACL is in inherited/empty state before tests begin so we start clean
         $null = Invoke-DscResource -Name 'AzDoSecurityNamespacePermission' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{

@@ -11,8 +11,8 @@ Describe "AzDoGroupMember Integration Tests" -Tag "Integration", "GroupMember" {
             ModuleName = 'AzureDevOpsDsc'
         }
 
-        New-Project $PROJECTNAME
-        'TESTGROUP', 'Group1', 'Group2' | ForEach-Object { New-Group -ProjectName $PROJECTNAME -GroupName $_ }
+        New-TestProject -ProjectName $PROJECTNAME
+        'TESTGROUP', 'Group1', 'Group2' | ForEach-Object { New-TestGroup -ProjectName $PROJECTNAME -GroupName $_ }
 
     }
 

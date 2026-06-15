@@ -222,25 +222,3 @@ function New-TestAgentPool
         if ("$_" -notmatch '409|already exist') { throw "[New-TestAgentPool] Failed to create agent pool '$PoolName': $_" }
     }
 }
-
-# ---------------------------------------------------------------------------
-# Legacy aliases — kept for the 27 test files that call New-Project etc.
-# ---------------------------------------------------------------------------
-
-function New-Project
-{
-    param([string]$ProjectName)
-    New-TestProject -Organization (Resolve-TestOrg) -ProjectName $ProjectName -AuthHeader (Resolve-TestAuthHeader)
-}
-
-function New-Repository
-{
-    param([string]$ProjectName, [string]$RepositoryName)
-    New-TestGitRepository -Organization (Resolve-TestOrg) -ProjectName $ProjectName -RepositoryName $RepositoryName -AuthHeader (Resolve-TestAuthHeader)
-}
-
-function New-Group
-{
-    param([string]$ProjectName, [string]$GroupName)
-    New-TestGroup -Organization (Resolve-TestOrg) -ProjectName $ProjectName -GroupName $GroupName -AuthHeader (Resolve-TestAuthHeader)
-}

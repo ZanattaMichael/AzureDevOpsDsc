@@ -34,9 +34,9 @@ Describe "AzDoVariableGroupPermission Integration Tests" -Tag "Integration", "Va
             }
         }
 
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
         New-VariableGroup -ProjectName $PROJECTNAME -VariableGroupName $VGNAME
-        New-Group -ProjectName $PROJECTNAME -GroupName $GROUPNAME
+        New-TestGroup -ProjectName $PROJECTNAME -GroupName $GROUPNAME
     }
 
     Context "Testing if variable group permissions exist" {

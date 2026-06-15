@@ -34,10 +34,10 @@ Describe "AzDoPipelinePermission Integration Tests" -Tag "Integration", "Pipelin
             }
         }
 
-        New-Project $PROJECTNAME
-        New-Repository -ProjectName $PROJECTNAME -RepositoryName $REPONAME
+        New-TestProject -ProjectName $PROJECTNAME
+        New-TestGitRepository -ProjectName $PROJECTNAME -RepositoryName $REPONAME
         New-Pipeline -ProjectName $PROJECTNAME -PipelineName 'TEST_PIPELINE_PP' -RepositoryName $REPONAME
-        New-Group -ProjectName $PROJECTNAME -GroupName 'PipelineGroup'
+        New-TestGroup -ProjectName $PROJECTNAME -GroupName 'PipelineGroup'
     }
 
     Context "Testing if pipeline permissions exist" {

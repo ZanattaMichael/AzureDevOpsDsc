@@ -14,7 +14,7 @@ Describe "AzDoProjectGroup Integration Tests - With Description" -Tag "Integrati
             ModuleName = 'AzureDevOpsDsc'
         }
 
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
     }
 
     # This context is used to test if a project group exists.

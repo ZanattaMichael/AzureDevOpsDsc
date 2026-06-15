@@ -13,7 +13,7 @@ Describe "AzDoWIPTags Integration Tests" -Tag "Integration", "WIPTags" {
             ModuleName = 'AzureDevOpsDsc'
         }
 
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
 
         # Clear any existing tags to ensure clean state
         $null = Invoke-DscResource -Name 'AzDoWIPTags' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{

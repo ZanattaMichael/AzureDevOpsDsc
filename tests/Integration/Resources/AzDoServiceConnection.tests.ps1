@@ -26,7 +26,7 @@ Describe "AzDoServiceConnection Integration Tests (Generic UsernamePassword conn
             }
         }
 
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
     }
 
     Context "Testing if the Generic service connection exists" {
