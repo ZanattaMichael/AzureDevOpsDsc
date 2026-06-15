@@ -6,12 +6,9 @@ Describe "AzDoEnvironmentApproval Integration Tests" -Tag "Integration", "Enviro
         $ENVNAME     = 'TEST_APPROVAL_ENV'
         $GROUPNAME   = 'ApprovalGroup'
 
-        $authHeader = New-TestAuthHeader
-        $ORG        = Get-TestOrganizationName
-
-        New-TestProject             -Organization $ORG -ProjectName $PROJECTNAME -AuthHeader $authHeader
-        New-TestPipelineEnvironment -Organization $ORG -ProjectName $PROJECTNAME -EnvironmentName $ENVNAME -AuthHeader $authHeader
-        New-TestGroup               -Organization $ORG -ProjectName $PROJECTNAME -GroupName $GROUPNAME -AuthHeader $authHeader
+        New-TestProject             -ProjectName $PROJECTNAME
+        New-TestPipelineEnvironment -ProjectName $PROJECTNAME -EnvironmentName $ENVNAME
+        New-TestGroup               -ProjectName $PROJECTNAME -GroupName $GROUPNAME
 
         $parameters = @{
             Name       = 'AzDoEnvironmentApproval'

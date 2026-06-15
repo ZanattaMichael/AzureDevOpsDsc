@@ -5,11 +5,8 @@ Describe "AzDoBranchPolicy Integration Tests (Minimum Reviewer Count policy)" -T
         $PROJECTNAME = 'TEST_BRANCHPOLICY'
         $REPONAME    = 'TESTREPOSITORY'
 
-        $authHeader = New-TestAuthHeader
-        $ORG        = Get-TestOrganizationName
-
-        New-TestProject       -Organization $ORG -ProjectName $PROJECTNAME -AuthHeader $authHeader
-        New-TestGitRepository -Organization $ORG -ProjectName $PROJECTNAME -RepositoryName $REPONAME -AuthHeader $authHeader
+        New-TestProject       -ProjectName $PROJECTNAME
+        New-TestGitRepository -ProjectName $PROJECTNAME -RepositoryName $REPONAME
 
         $parameters = @{
             Name       = 'AzDoBranchPolicy'

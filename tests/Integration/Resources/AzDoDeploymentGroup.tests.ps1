@@ -4,10 +4,7 @@ Describe "AzDoDeploymentGroup Integration Tests" -Tag "Integration", "Deployment
 
         $PROJECTNAME = 'TEST_DEPLOYGROUP'
 
-        $authHeader = New-TestAuthHeader
-        $ORG        = Get-TestOrganizationName
-
-        New-TestProject -Organization $ORG -ProjectName $PROJECTNAME -AuthHeader $authHeader
+        New-TestProject -ProjectName $PROJECTNAME
 
         $parameters = @{
             Name       = 'AzDoDeploymentGroup'

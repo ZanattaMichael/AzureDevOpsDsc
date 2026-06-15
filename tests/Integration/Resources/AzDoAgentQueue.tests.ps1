@@ -5,11 +5,8 @@ Describe "AzDoAgentQueue Integration Tests" -Tag "Integration", "AgentQueue" {
         $PROJECTNAME = 'TEST_AGENTQUEUE'
         $POOLNAME    = 'TEST_AGENTPOOL_QUEUE'
 
-        $authHeader = New-TestAuthHeader
-        $ORG        = Get-TestOrganizationName
-
-        New-TestProject   -Organization $ORG -ProjectName $PROJECTNAME -AuthHeader $authHeader
-        New-TestAgentPool -Organization $ORG -PoolName $POOLNAME       -AuthHeader $authHeader
+        New-TestProject   -ProjectName $PROJECTNAME
+        New-TestAgentPool -PoolName $POOLNAME
 
         $parameters = @{
             Name       = 'AzDoAgentQueue'

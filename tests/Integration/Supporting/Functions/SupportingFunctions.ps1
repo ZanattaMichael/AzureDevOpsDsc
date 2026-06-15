@@ -2,11 +2,10 @@
 # Shared REST API helpers for integration test setup (BeforeAll blocks).
 # These functions are dot-sourced by Invoke-Tests.ps1 and are available to all test files.
 #
-# All functions accept -Organization and -AuthHeader explicitly so they work regardless of
-# whether $Global:DSCAZDO_OrganizationName is set in the calling scope.
-#
-# Auth pattern: call New-TestAuthHeader once in BeforeAll and pass the result around.
-# Org pattern:  call Get-TestOrganizationName once in BeforeAll and pass the result around.
+# Organization and AuthHeader parameters are optional in all New-Test* functions.
+# When omitted they resolve from $Global:TestOrg / $Global:TestAuthHeader (set by
+# Invoke-Tests.ps1) and fall back to reading ModuleSettings.clixml directly, so
+# test files need no per-file auth/org boilerplate.
 #
 
 function New-TestAuthHeader
@@ -32,15 +31,29 @@ function Get-TestOrganizationName
     return (Import-Clixml -Path (Join-Path $ENV:AZDODSC_CACHE_DIRECTORY 'ModuleSettings.clixml')).OrganizationName
 }
 
+# ---------------------------------------------------------------------------
+# Internal helpers — resolve effective org/auth from globals or clixml.
+# ---------------------------------------------------------------------------
+
+function Resolve-TestOrg        { if ($Global:TestOrg)        { $Global:TestOrg }        else { Get-TestOrganizationName } }
+function Resolve-TestAuthHeader { if ($Global:TestAuthHeader) { $Global:TestAuthHeader } else { New-TestAuthHeader } }
+
+# ---------------------------------------------------------------------------
+# Setup helpers
+# ---------------------------------------------------------------------------
+
 function New-TestProject
 {
     param(
-        [Parameter(Mandatory)][string]$Organization,
+        [string]$Organization,
         [Parameter(Mandatory)][string]$ProjectName,
-        [Parameter(Mandatory)][hashtable]$AuthHeader,
+        [hashtable]$AuthHeader,
         [string]$ProcessTemplate = 'Agile',
         [int]$TimeoutSeconds     = 120
     )
+
+    if (-not $Organization) { $Organization = Resolve-TestOrg }
+    if (-not $AuthHeader)   { $AuthHeader   = Resolve-TestAuthHeader }
 
     # Idempotent — return immediately if already wellFormed
     try
@@ -87,11 +100,14 @@ function New-TestProject
 function New-TestGitRepository
 {
     param(
-        [Parameter(Mandatory)][string]$Organization,
+        [string]$Organization,
         [Parameter(Mandatory)][string]$ProjectName,
         [Parameter(Mandatory)][string]$RepositoryName,
-        [Parameter(Mandatory)][hashtable]$AuthHeader
+        [hashtable]$AuthHeader
     )
+
+    if (-not $Organization) { $Organization = Resolve-TestOrg }
+    if (-not $AuthHeader)   { $AuthHeader   = Resolve-TestAuthHeader }
 
     $body = @{ name = $RepositoryName; project = @{ name = $ProjectName } } | ConvertTo-Json
     try
@@ -108,11 +124,14 @@ function New-TestGitRepository
 function New-TestGroup
 {
     param(
-        [Parameter(Mandatory)][string]$Organization,
+        [string]$Organization,
         [Parameter(Mandatory)][string]$ProjectName,
         [Parameter(Mandatory)][string]$GroupName,
-        [Parameter(Mandatory)][hashtable]$AuthHeader
+        [hashtable]$AuthHeader
     )
+
+    if (-not $Organization) { $Organization = Resolve-TestOrg }
+    if (-not $AuthHeader)   { $AuthHeader   = Resolve-TestAuthHeader }
 
     # Get the project's graph scope descriptor so the group is project-scoped
     $proj = Invoke-RestMethod -Uri "https://dev.azure.com/$Organization/_apis/projects/$ProjectName`?api-version=7.1-preview.4" -Headers $AuthHeader
@@ -133,12 +152,15 @@ function New-TestGroup
 function New-TestPipelineEnvironment
 {
     param(
-        [Parameter(Mandatory)][string]$Organization,
+        [string]$Organization,
         [Parameter(Mandatory)][string]$ProjectName,
         [Parameter(Mandatory)][string]$EnvironmentName,
-        [Parameter(Mandatory)][hashtable]$AuthHeader,
+        [hashtable]$AuthHeader,
         [string]$Description = ''
     )
+
+    if (-not $Organization) { $Organization = Resolve-TestOrg }
+    if (-not $AuthHeader)   { $AuthHeader   = Resolve-TestAuthHeader }
 
     $body = @{ name = $EnvironmentName; description = $Description } | ConvertTo-Json
     try
@@ -155,12 +177,15 @@ function New-TestPipelineEnvironment
 function New-TestArtifactFeed
 {
     param(
-        [Parameter(Mandatory)][string]$Organization,
+        [string]$Organization,
         [Parameter(Mandatory)][string]$ProjectName,
         [Parameter(Mandatory)][string]$FeedName,
-        [Parameter(Mandatory)][hashtable]$AuthHeader,
+        [hashtable]$AuthHeader,
         [string]$Description = ''
     )
+
+    if (-not $Organization) { $Organization = Resolve-TestOrg }
+    if (-not $AuthHeader)   { $AuthHeader   = Resolve-TestAuthHeader }
 
     $body = @{ name = $FeedName; description = $Description } | ConvertTo-Json
     try
@@ -177,11 +202,14 @@ function New-TestArtifactFeed
 function New-TestAgentPool
 {
     param(
-        [Parameter(Mandatory)][string]$Organization,
+        [string]$Organization,
         [Parameter(Mandatory)][string]$PoolName,
-        [Parameter(Mandatory)][hashtable]$AuthHeader,
+        [hashtable]$AuthHeader,
         [string]$PoolType = 'automation'
     )
+
+    if (-not $Organization) { $Organization = Resolve-TestOrg }
+    if (-not $AuthHeader)   { $AuthHeader   = Resolve-TestAuthHeader }
 
     $body = @{ name = $PoolName; poolType = $PoolType; autoProvision = $false } | ConvertTo-Json
     try
@@ -196,32 +224,23 @@ function New-TestAgentPool
 }
 
 # ---------------------------------------------------------------------------
-# Legacy aliases kept for any caller that still uses the old names.
-# These pass through to the new implementations using the injected globals
-# $Global:TestOrg and $Global:TestAuthHeader which Invoke-Tests.ps1 sets after
-# calling Initalize-TestFramework.ps1.
+# Legacy aliases — kept for the 27 test files that call New-Project etc.
 # ---------------------------------------------------------------------------
 
 function New-Project
 {
     param([string]$ProjectName)
-    $org = if ($Global:TestOrg) { $Global:TestOrg } else { Get-TestOrganizationName }
-    $hdr = if ($Global:TestAuthHeader) { $Global:TestAuthHeader } else { New-TestAuthHeader }
-    New-TestProject -Organization $org -ProjectName $ProjectName -AuthHeader $hdr
+    New-TestProject -Organization (Resolve-TestOrg) -ProjectName $ProjectName -AuthHeader (Resolve-TestAuthHeader)
 }
 
 function New-Repository
 {
     param([string]$ProjectName, [string]$RepositoryName)
-    $org = if ($Global:TestOrg) { $Global:TestOrg } else { Get-TestOrganizationName }
-    $hdr = if ($Global:TestAuthHeader) { $Global:TestAuthHeader } else { New-TestAuthHeader }
-    New-TestGitRepository -Organization $org -ProjectName $ProjectName -RepositoryName $RepositoryName -AuthHeader $hdr
+    New-TestGitRepository -Organization (Resolve-TestOrg) -ProjectName $ProjectName -RepositoryName $RepositoryName -AuthHeader (Resolve-TestAuthHeader)
 }
 
 function New-Group
 {
     param([string]$ProjectName, [string]$GroupName)
-    $org = if ($Global:TestOrg) { $Global:TestOrg } else { Get-TestOrganizationName }
-    $hdr = if ($Global:TestAuthHeader) { $Global:TestAuthHeader } else { New-TestAuthHeader }
-    New-TestGroup -Organization $org -ProjectName $ProjectName -GroupName $GroupName -AuthHeader $hdr
+    New-TestGroup -Organization (Resolve-TestOrg) -ProjectName $ProjectName -GroupName $GroupName -AuthHeader (Resolve-TestAuthHeader)
 }

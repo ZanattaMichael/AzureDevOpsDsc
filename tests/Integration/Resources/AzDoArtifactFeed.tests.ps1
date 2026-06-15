@@ -7,10 +7,7 @@ Describe "AzDoArtifactFeed Integration Tests" -Tag "Integration", "ArtifactFeed"
         # Use a unique name per run to avoid "feed name reserved" conflicts.
         $FEEDNAME = "testfeed$(Get-Random -Maximum 99999)"
 
-        $authHeader = New-TestAuthHeader
-        $ORG        = Get-TestOrganizationName
-
-        New-TestProject -Organization $ORG -ProjectName $PROJECTNAME -AuthHeader $authHeader
+        New-TestProject -ProjectName $PROJECTNAME
 
         $parameters = @{
             Name       = 'AzDoArtifactFeed'

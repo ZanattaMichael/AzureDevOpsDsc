@@ -5,17 +5,14 @@ Describe "AzDoAgentPoolPermission Integration Tests" -Tag "Integration", "AgentP
         $POOLNAME  = 'TEST_POOL_PERM'
         $GROUPNAME = 'PoolPermGroup'
 
-        $authHeader = New-TestAuthHeader
-        $ORG        = Get-TestOrganizationName
-
-        New-TestAgentPool -Organization $ORG -PoolName $POOLNAME -AuthHeader $authHeader
+        New-TestAgentPool -PoolName $POOLNAME
 
         # Create an org-level group for permission testing
         $body = @{ displayName = $GROUPNAME; description = 'Group for agent pool permission testing' } | ConvertTo-Json
         try
         {
-            $null = Invoke-RestMethod -Uri "https://vssps.dev.azure.com/$ORG/_apis/graph/groups?api-version=7.1-preview.1" `
-                -Method Post -Headers $authHeader -Body $body -ContentType 'application/json'
+            $null = Invoke-RestMethod -Uri "https://vssps.dev.azure.com/$(Resolve-TestOrg)/_apis/graph/groups?api-version=7.1-preview.1" `
+                -Method Post -Headers (Resolve-TestAuthHeader) -Body $body -ContentType 'application/json'
         }
         catch { if ("$_" -notmatch '409|already exist') { throw } }
 

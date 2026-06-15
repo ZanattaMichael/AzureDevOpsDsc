@@ -6,12 +6,9 @@ Describe "AzDoArtifactFeedPermission Integration Tests" -Tag "Integration", "Art
         $FEEDNAME    = 'fp{0}' -f (Get-Date -Format 'MMddHHmmss')
         $GROUPNAME   = 'FeedPermGroup'
 
-        $authHeader = New-TestAuthHeader
-        $ORG        = Get-TestOrganizationName
-
-        New-TestProject      -Organization $ORG -ProjectName $PROJECTNAME -AuthHeader $authHeader
-        New-TestArtifactFeed -Organization $ORG -ProjectName $PROJECTNAME -FeedName $FEEDNAME -AuthHeader $authHeader
-        New-TestGroup        -Organization $ORG -ProjectName $PROJECTNAME -GroupName $GROUPNAME -AuthHeader $authHeader
+        New-TestProject      -ProjectName $PROJECTNAME
+        New-TestArtifactFeed -ProjectName $PROJECTNAME -FeedName $FEEDNAME
+        New-TestGroup        -ProjectName $PROJECTNAME -GroupName $GROUPNAME
 
         $parameters = @{
             Name       = 'AzDoArtifactFeedPermission'

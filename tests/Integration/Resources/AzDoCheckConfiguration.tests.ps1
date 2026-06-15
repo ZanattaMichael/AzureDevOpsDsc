@@ -5,18 +5,17 @@ Describe "AzDoCheckConfiguration Integration Tests (Approval check on an environ
         $PROJECTNAME = 'TEST_CHECK_CONFIG'
         $ENVNAME     = 'TEST_CHECK_ENV'
 
-        $authHeader = New-TestAuthHeader
-        $ORG        = Get-TestOrganizationName
-
-        New-TestProject             -Organization $ORG -ProjectName $PROJECTNAME -AuthHeader $authHeader
-        New-TestPipelineEnvironment -Organization $ORG -ProjectName $PROJECTNAME -EnvironmentName $ENVNAME -AuthHeader $authHeader
+        New-TestProject             -ProjectName $PROJECTNAME
+        New-TestPipelineEnvironment -ProjectName $PROJECTNAME -EnvironmentName $ENVNAME
 
         # Resolve a real identity id to use as the approver using the project's built-in
         # 'Project Administrators' group, scoped via the project's graph descriptor.
-        $proj   = Invoke-RestMethod -Uri ("https://dev.azure.com/{0}/_apis/projects/{1}?api-version=7.1-preview.4" -f $ORG, $PROJECTNAME) -Headers $authHeader
-        $desc   = Invoke-RestMethod -Uri ("https://vssps.dev.azure.com/{0}/_apis/graph/descriptors/{1}?api-version=7.1-preview.1" -f $ORG, $proj.id) -Headers $authHeader
-        $groups = Invoke-RestMethod -Uri ("https://vssps.dev.azure.com/{0}/_apis/graph/groups?scopeDescriptor={1}&api-version=7.1-preview.1" -f $ORG, $desc.value) -Headers $authHeader
-        $group  = $groups.value | Where-Object { $_.displayName -eq 'Project Administrators' } | Select-Object -First 1
+        $org_    = Resolve-TestOrg
+        $hdr_    = Resolve-TestAuthHeader
+        $proj    = Invoke-RestMethod -Uri ("https://dev.azure.com/{0}/_apis/projects/{1}?api-version=7.1-preview.4" -f $org_, $PROJECTNAME) -Headers $hdr_
+        $desc    = Invoke-RestMethod -Uri ("https://vssps.dev.azure.com/{0}/_apis/graph/descriptors/{1}?api-version=7.1-preview.1" -f $org_, $proj.id) -Headers $hdr_
+        $groups  = Invoke-RestMethod -Uri ("https://vssps.dev.azure.com/{0}/_apis/graph/groups?scopeDescriptor={1}&api-version=7.1-preview.1" -f $org_, $desc.value) -Headers $hdr_
+        $group   = $groups.value | Where-Object { $_.displayName -eq 'Project Administrators' } | Select-Object -First 1
         if (-not $group) { throw "[AzDoCheckConfiguration.tests] Could not resolve 'Project Administrators' in '$PROJECTNAME'." }
         $APPROVERID = $group.originId
 
