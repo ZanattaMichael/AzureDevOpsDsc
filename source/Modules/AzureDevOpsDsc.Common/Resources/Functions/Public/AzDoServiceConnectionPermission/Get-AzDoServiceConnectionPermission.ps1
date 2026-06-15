@@ -21,9 +21,23 @@ Function Get-AzDoServiceConnectionPermission
     $getResult = @{ Ensure = [Ensure]::Absent; propertiesChanged = @(); status = $null; reason = $null }
 
     $projectCache = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
-    $scCache      = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $ConnectionName) -Type 'LiveServiceConnections'
-
+    if (-not $projectCache)
+    {
+        Write-Verbose "[Get-AzDoServiceConnectionPermission] Project '$ProjectName' not in cache — falling back to live API lookup."
+        $projectCache = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($projectCache) { Add-CacheItem -Key $ProjectName -Value $projectCache -Type 'LiveProjects' }
+    }
     if (-not $projectCache) { $getResult.status = [DSCGetSummaryState]::Error; $getResult.reason = "Project not found."; return $getResult }
+
+    $scCacheKey = '{0}\{1}' -f $ProjectName, $ConnectionName
+    $scCache    = Get-CacheItem -Key $scCacheKey -Type 'LiveServiceConnections'
+    if (-not $scCache)
+    {
+        Write-Verbose "[Get-AzDoServiceConnectionPermission] Service connection '$ConnectionName' not in cache — falling back to live API lookup."
+        $allSCs  = List-DevOpsServiceConnections -ApiUri "https://dev.azure.com/$OrganizationName" -ProjectName $ProjectName
+        $scCache = $allSCs | Where-Object { $_.name -eq $ConnectionName } | Select-Object -First 1
+        if ($scCache) { Add-CacheItem -Key $scCacheKey -Value $scCache -Type 'LiveServiceConnections' }
+    }
 
     $namespace = Get-CacheItem -Key $SecurityNamespace -Type 'SecurityNamespaces'
     if (-not $namespace) { Write-Error "[Get-AzDoServiceConnectionPermission] Security namespace not found."; $getResult.status = [DSCGetSummaryState]::Error; return $getResult }

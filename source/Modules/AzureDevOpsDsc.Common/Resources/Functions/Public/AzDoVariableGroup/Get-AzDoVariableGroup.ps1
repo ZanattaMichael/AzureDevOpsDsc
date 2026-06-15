@@ -22,7 +22,17 @@ Function Get-AzDoVariableGroup
         status            = $null
     }
 
-    $vg = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $VariableGroupName) -Type 'LiveVariableGroups'
+    $cacheKey = '{0}\{1}' -f $ProjectName, $VariableGroupName
+    $vg = Get-CacheItem -Key $cacheKey -Type 'LiveVariableGroups'
+
+    if (-not $vg)
+    {
+        Write-Verbose "[Get-AzDoVariableGroup] Variable group '$VariableGroupName' not in cache — falling back to live API lookup."
+        $OrgName = Get-AzDoOrganizationName
+        $allVGs  = List-DevOpsVariableGroups -ApiUri "https://dev.azure.com/$OrgName" -ProjectName $ProjectName
+        $vg      = $allVGs | Where-Object { $_.name -eq $VariableGroupName } | Select-Object -First 1
+        if ($vg) { Add-CacheItem -Key $cacheKey -Value $vg -Type 'LiveVariableGroups' }
+    }
 
     if ($vg)
     {

@@ -15,11 +15,20 @@ Function New-AzDoCheckConfiguration
     )
     Write-Verbose "[New-AzDoCheckConfiguration] Creating check '$CheckType' on $ResourceType '$TargetResourceName'."
 
-    # Resolve the resource ID from the appropriate cache
+    $OrgName = Get-AzDoOrganizationName
+
+    # Resolve the resource ID from the appropriate cache, with live fallback for cache misses
     $resourceId = switch ($ResourceType)
     {
         'environment' {
             $env = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $TargetResourceName) -Type 'LivePipelineEnvironments'
+            if (-not $env)
+            {
+                Write-Verbose "[New-AzDoCheckConfiguration] Environment '$TargetResourceName' not in cache — falling back to live API lookup."
+                $allEnvs = List-DevOpsPipelineEnvironments -ApiUri "https://dev.azure.com/$OrgName" -ProjectName $ProjectName
+                $env = $allEnvs | Where-Object { $_.name -eq $TargetResourceName } | Select-Object -First 1
+                if ($env) { Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $TargetResourceName) -Value $env -Type 'LivePipelineEnvironments' }
+            }
             if ($env) { $env.id.ToString() } else { $null }
         }
         'repository' {

@@ -90,8 +90,23 @@ Function Set-AzDoProjectServices
         $Force
     )
 
-    # Retrive the Repositories from the Live Cache.
+    $OrganizationName = Get-AzDoOrganizationName
+
+    # Retrieve the Project from the Live Cache, with live fallback.
     $Project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
+
+    if ($null -eq $Project)
+    {
+        Write-Verbose "[Set-AzDoProjectServices] Project '$ProjectName' not in cache — falling back to live API lookup."
+        $Project = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($Project) { Add-CacheItem -Key $ProjectName -Value $Project -Type 'LiveProjects' }
+    }
+
+    if (-not $Project)
+    {
+        Write-Error "[Set-AzDoProjectServices] Project '$ProjectName' not found. Cannot set services."
+        return
+    }
 
     # Construct a hashtable detailing the group
     ForEach ($PropertyChanged in $LookupResult.propertiesChanged)
@@ -111,7 +126,7 @@ Function Set-AzDoProjectServices
         $bodyObject.state = ($PropertyChanged.Expected -eq 'Enabled') ? 'enabled' : 'disabled'
 
         $params = @{
-            Organization = (Get-AzDoOrganizationName)
+            Organization = $OrganizationName
             ProjectId    = $Project.id
             ServiceName  = $PropertyChanged.FeatureId
             Body         = $bodyObject

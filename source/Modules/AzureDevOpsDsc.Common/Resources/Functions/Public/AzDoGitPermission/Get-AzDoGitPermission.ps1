@@ -106,8 +106,14 @@ Function Get-AzDoGitPermission
     # Define the ACL List
     $ACLList = [System.Collections.Generic.List[Hashtable]]::new()
 
-    # Perform a Lookup within the Cache for the Project
+    # Perform a Lookup within the Cache for the Project, with live fallback
     $projectCache = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
+    if (-not $projectCache)
+    {
+        Write-Verbose "[Get-AzDoGitPermission] Project '$ProjectName' not in cache — falling back to live API lookup."
+        $projectCache = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($projectCache) { Add-CacheItem -Key $ProjectName -Value $projectCache -Type 'LiveProjects' }
+    }
 
     # Test if the Project was found
     if (-not $projectCache)
@@ -127,7 +133,16 @@ Function Get-AzDoGitPermission
 
         #
         # Perform a Lookup within the Cache for the Repository
-        $repositoryCache = Get-CacheItem -Key $('{0}\{1}' -f $ProjectName, $RepositoryName) -Type 'LiveRepositories'
+        $repoCacheKey    = '{0}\{1}' -f $ProjectName, $RepositoryName
+        $repositoryCache = Get-CacheItem -Key $repoCacheKey -Type 'LiveRepositories'
+
+        if (-not $repositoryCache)
+        {
+            Write-Verbose "[Get-AzDoGitPermission] Repository '$RepositoryName' not in cache — falling back to live API lookup."
+            $allRepos        = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/$ProjectName/_apis/git/repositories?api-version=7.1-preview.1" -Method Get
+            $repositoryCache = $allRepos.value | Where-Object { $_.name -eq $RepositoryName } | Select-Object -First 1
+            if ($repositoryCache) { Add-CacheItem -Key $repoCacheKey -Value $repositoryCache -Type 'LiveRepositories' }
+        }
 
         # Test if the Repository was found, however only if the ProjectName was specified
         if (-not $repositoryCache)

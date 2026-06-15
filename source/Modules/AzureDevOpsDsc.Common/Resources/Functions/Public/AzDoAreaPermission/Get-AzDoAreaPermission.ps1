@@ -70,6 +70,14 @@ Function Get-AzDoAreaPermission
     # Perform a Lookup within the Cache for the Project
     $projectCache = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
 
+    # If not in cache, fall back to a live API lookup
+    if (-not $projectCache)
+    {
+        Write-Verbose "[Get-AzDoAreaPermission] Project '$ProjectName' not in cache — falling back to live API lookup."
+        $projectCache = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($projectCache) { Add-CacheItem -Key $ProjectName -Value $projectCache -Type 'LiveProjects' }
+    }
+
     # Test if the Project was found
     if (-not $projectCache)
     {
@@ -96,6 +104,24 @@ Function Get-AzDoAreaPermission
         Write-Verbose "[Get-AzDoAreaPermission] AreaPath: $_"
         # Get the cached item for the AreaPath and add it to the list
         Get-CacheItem -Key $_ -Type 'LiveAreaNodes'
+    }
+
+    # If area nodes not in cache, fall back to a live API lookup
+    if ($AreaPaths.count -ne $FormattedAreaPaths.Count)
+    {
+        Write-Verbose "[Get-AzDoAreaPermission] Area path nodes not in cache — falling back to live API lookup."
+        $liveNodes = List-DevOpsClassificationNodes -OrganizationName $OrganizationName -ProjectName $ProjectName
+        foreach ($node in $liveNodes)
+        {
+            if ($node.structureType -eq 'area')
+            {
+                Format-ClassificationNode -Node $node -CacheType 'LiveAreaNodes'
+            }
+        }
+
+        [Array]$AreaPaths = $FormattedAreaPaths | ForEach-Object {
+            Get-CacheItem -Key $_ -Type 'LiveAreaNodes'
+        }
     }
 
     # Ensure that the number of cached area path nodes is the same as the formatted nodes.

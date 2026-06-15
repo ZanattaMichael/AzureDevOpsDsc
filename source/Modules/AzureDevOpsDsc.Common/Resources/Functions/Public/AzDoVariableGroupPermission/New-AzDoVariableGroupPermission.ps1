@@ -14,8 +14,16 @@ Function New-AzDoVariableGroupPermission
 
     Write-Verbose "[New-AzDoVariableGroupPermission] Started."
 
+    $OrganizationName  = Get-AzDoOrganizationName
     $SecurityNamespace = Get-CacheItem -Key 'Library' -Type 'SecurityNamespaces'
     $Project           = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
+
+    if (-not $Project)
+    {
+        Write-Verbose "[New-AzDoVariableGroupPermission] Project '$ProjectName' not in cache — falling back to live API lookup."
+        $Project = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($Project) { Add-CacheItem -Key $ProjectName -Value $Project -Type 'LiveProjects' }
+    }
 
     if ((-not $SecurityNamespace) -or (-not $Project)) { Write-Error "[New-AzDoVariableGroupPermission] Cache miss."; return }
 
@@ -26,7 +34,7 @@ Function New-AzDoVariableGroupPermission
     }
 
     $params = @{
-        OrganizationName    = (Get-AzDoOrganizationName)
+        OrganizationName    = $OrganizationName
         SecurityNamespaceID = $SecurityNamespace.namespaceId
         SerializedACLs      = ConvertTo-ACLHashtable @serializeACLParams
     }

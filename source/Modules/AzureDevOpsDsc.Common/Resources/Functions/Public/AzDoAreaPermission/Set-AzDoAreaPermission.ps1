@@ -42,7 +42,15 @@ Function Set-AzDoAreaPermission
 
     if ($Project -eq $null)
     {
-        Write-Error "[Set-AzDoAreaPermission] Project not found."
+        Write-Verbose "[Set-AzDoAreaPermission] Project '$ProjectName' not in cache — falling back to live API lookup."
+        $OrganizationName = Get-AzDoOrganizationName
+        $Project = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($Project) { Add-CacheItem -Key $ProjectName -Value $Project -Type 'LiveProjects' }
+    }
+
+    if ($Project -eq $null)
+    {
+        Write-Error "[Set-AzDoAreaPermission] Project not found: $ProjectName"
         return
     }
 

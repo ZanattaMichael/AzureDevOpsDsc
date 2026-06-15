@@ -12,8 +12,15 @@ Function Set-AzDoServiceConnectionPermission
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
     )
     Write-Verbose "[Set-AzDoServiceConnectionPermission] Started."
+    $OrganizationName  = Get-AzDoOrganizationName
     $SecurityNamespace = Get-CacheItem -Key 'ServiceEndpoints' -Type 'SecurityNamespaces'
     $Project           = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
+    if (-not $Project)
+    {
+        Write-Verbose "[Set-AzDoServiceConnectionPermission] Project '$ProjectName' not in cache — falling back to live API lookup."
+        $Project = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($Project) { Add-CacheItem -Key $ProjectName -Value $Project -Type 'LiveProjects' }
+    }
     if ((-not $SecurityNamespace) -or (-not $Project)) { Write-Error "[Set-AzDoServiceConnectionPermission] Cache miss."; return }
     $serializeACLParams = @{
         ReferenceACLs        = $LookupResult.propertiesChanged
@@ -21,7 +28,7 @@ Function Set-AzDoServiceConnectionPermission
         DescriptorMatchToken = ($LocalizedDataAzSerializationPatten.ServiceEndpointPermission -f $Project.id)
     }
     $params = @{
-        OrganizationName    = (Get-AzDoOrganizationName)
+        OrganizationName    = $OrganizationName
         SecurityNamespaceID = $SecurityNamespace.namespaceId
         SerializedACLs      = ConvertTo-ACLHashtable @serializeACLParams
         ClearACEs           = $true

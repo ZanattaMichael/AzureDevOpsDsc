@@ -27,6 +27,26 @@ Function Get-AzDoBranchPolicy
     $cacheKey = '{0}\{1}\{2}\{3}' -f $ProjectName, $RepositoryName, $BranchName, $PolicyType
     $policy = Get-CacheItem -Key $cacheKey -Type 'LiveBranchPolicies'
 
+    if (-not $policy)
+    {
+        Write-Verbose "[Get-AzDoBranchPolicy] Policy not in cache — falling back to live API lookup."
+        $OrgName  = Get-AzDoOrganizationName
+        $repoCacheKey    = '{0}\{1}' -f $ProjectName, $RepositoryName
+        $repositoryCache = Get-CacheItem -Key $repoCacheKey -Type 'LiveRepositories'
+        if (-not $repositoryCache)
+        {
+            $allRepos        = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrgName/$ProjectName/_apis/git/repositories?api-version=7.1-preview.1" -Method Get
+            $repositoryCache = $allRepos.value | Where-Object { $_.name -eq $RepositoryName } | Select-Object -First 1
+            if ($repositoryCache) { Add-CacheItem -Key $repoCacheKey -Value $repositoryCache -Type 'LiveRepositories' }
+        }
+        if ($repositoryCache)
+        {
+            $allPolicies = List-DevOpsBranchPolicies -ApiUri "https://dev.azure.com/$OrgName" -ProjectName $ProjectName -RepositoryId $repositoryCache.id -RefName ('refs/heads/{0}' -f $BranchName.TrimStart('refs/heads/'))
+            $policy = $allPolicies | Where-Object { $_.type.displayName -eq $PolicyType } | Select-Object -First 1
+            if ($policy) { Add-CacheItem -Key $cacheKey -Value $policy -Type 'LiveBranchPolicies' }
+        }
+    }
+
     if ($policy)
     {
         Write-Verbose "[Get-AzDoBranchPolicy] Branch policy found."

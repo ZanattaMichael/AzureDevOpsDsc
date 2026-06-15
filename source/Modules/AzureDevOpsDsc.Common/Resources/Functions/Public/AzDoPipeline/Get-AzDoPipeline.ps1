@@ -22,7 +22,17 @@ Function Get-AzDoPipeline
         status            = $null
     }
 
-    $pipeline = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $PipelineName) -Type 'LivePipelines'
+    $cacheKey = '{0}\{1}' -f $ProjectName, $PipelineName
+    $pipeline = Get-CacheItem -Key $cacheKey -Type 'LivePipelines'
+
+    if (-not $pipeline)
+    {
+        Write-Verbose "[Get-AzDoPipeline] Pipeline '$PipelineName' not in cache — falling back to live API lookup."
+        $OrgName     = Get-AzDoOrganizationName
+        $allPipelines = List-DevOpsPipelines -ApiUri "https://dev.azure.com/$OrgName" -ProjectName $ProjectName
+        $pipeline    = $allPipelines | Where-Object { $_.name -eq $PipelineName } | Select-Object -First 1
+        if ($pipeline) { Add-CacheItem -Key $cacheKey -Value $pipeline -Type 'LivePipelines' }
+    }
 
     if ($pipeline)
     {

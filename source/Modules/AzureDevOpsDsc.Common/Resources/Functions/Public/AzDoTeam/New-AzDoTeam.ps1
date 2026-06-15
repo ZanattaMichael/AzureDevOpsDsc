@@ -12,15 +12,22 @@ Function New-AzDoTeam
 
     Write-Verbose "[New-AzDoTeam] Creating team '$TeamName' in project '$ProjectName'."
 
+    $OrgName = Get-AzDoOrganizationName
     $project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
     if (-not $project)
     {
-        Write-Error "[New-AzDoTeam] Project '$ProjectName' not found in cache."
+        Write-Verbose "[New-AzDoTeam] Project '$ProjectName' not in cache — falling back to live API lookup."
+        $project = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrgName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($project) { Add-CacheItem -Key $ProjectName -Value $project -Type 'LiveProjects' }
+    }
+    if (-not $project)
+    {
+        Write-Error "[New-AzDoTeam] Project '$ProjectName' not found."
         return
     }
 
     $params = @{
-        ApiUri      = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
+        ApiUri      = 'https://dev.azure.com/{0}/' -f $OrgName
         ProjectId   = $project.id
         TeamName    = $TeamName
         Description = $Description
@@ -36,7 +43,7 @@ Function New-AzDoTeam
 
     # The projects/teams API does not return a descriptor. Fetch it from the graph descriptors endpoint
     # so that New-AzDoTeamMember can use it to add members via the VSSPS API.
-    $descriptor = Get-DevOpsSecurityDescriptor -ProjectId $value.id -Organization (Get-AzDoOrganizationName)
+    $descriptor = Get-DevOpsSecurityDescriptor -ProjectId $value.id -Organization $OrgName
     if ($descriptor)
     {
         $value | Add-Member -NotePropertyName 'descriptor' -NotePropertyValue $descriptor -Force

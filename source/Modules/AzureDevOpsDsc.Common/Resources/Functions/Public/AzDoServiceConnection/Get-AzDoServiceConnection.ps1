@@ -23,7 +23,17 @@ Function Get-AzDoServiceConnection
         status            = $null
     }
 
-    $sc = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $ConnectionName) -Type 'LiveServiceConnections'
+    $cacheKey = '{0}\{1}' -f $ProjectName, $ConnectionName
+    $sc = Get-CacheItem -Key $cacheKey -Type 'LiveServiceConnections'
+
+    if (-not $sc)
+    {
+        Write-Verbose "[Get-AzDoServiceConnection] '$ConnectionName' not in cache — falling back to live API lookup."
+        $OrgName = Get-AzDoOrganizationName
+        $allSCs  = List-DevOpsServiceConnections -ApiUri "https://dev.azure.com/$OrgName" -ProjectName $ProjectName
+        $sc      = $allSCs | Where-Object { $_.name -eq $ConnectionName } | Select-Object -First 1
+        if ($sc) { Add-CacheItem -Key $cacheKey -Value $sc -Type 'LiveServiceConnections' }
+    }
 
     if ($sc)
     {

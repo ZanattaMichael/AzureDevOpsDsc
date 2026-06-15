@@ -27,15 +27,21 @@ Function Get-AzDoPipelinePermission
         reason            = $null
     }
 
-    $projectCache  = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
-    $pipelineCache = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $PipelineName) -Type 'LivePipelines'
-
+    $projectCache = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
+    if (-not $projectCache)
+    {
+        Write-Verbose "[Get-AzDoPipelinePermission] Project '$ProjectName' not in cache — falling back to live API lookup."
+        $projectCache = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($projectCache) { Add-CacheItem -Key $ProjectName -Value $projectCache -Type 'LiveProjects' }
+    }
     if (-not $projectCache)
     {
         $getResult.status = [DSCGetSummaryState]::Error
         $getResult.reason = "Project not found: $ProjectName"
         return $getResult
     }
+
+    $pipelineCache = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $PipelineName) -Type 'LivePipelines'
 
     $namespace = Get-CacheItem -Key $SecurityNamespace -Type 'SecurityNamespaces'
     if (-not $namespace)

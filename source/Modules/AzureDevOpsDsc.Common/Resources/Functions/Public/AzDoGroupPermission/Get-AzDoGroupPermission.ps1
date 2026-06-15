@@ -110,10 +110,39 @@ Function Get-AzDoGroupPermission
     $group = Get-CacheItem -Key $('[{0}]\{1}' -f $ProjectName, $GroupName) -Type 'LiveGroups'
     $project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
 
-    # Test if the Group was found
+    # If not in cache (e.g. group created after last cache init), fall back to a live REST lookup
+    if (-not $group)
+    {
+        Write-Verbose "[Get-AzDoGroupPermission] Group not found in cache — falling back to live API lookup."
+        $allGroups = List-DevOpsGroups -Organization $OrganizationName
+        $group = $allGroups | Where-Object { $_.principalName -eq $('[{0}]\{1}' -f $ProjectName, $GroupName) } | Select-Object -First 1
+        if ($group)
+        {
+            Add-CacheItem -Key $group.principalName -Value $group -Type 'LiveGroups'
+        }
+    }
+
     if (-not $group)
     {
         Throw "[Get-AzDoGroupPermission] Group not found: $('[{0}]\{1}' -f $ProjectName, $GroupName)"
+        return
+    }
+
+    # If project not in cache, fall back to a live API lookup
+    if (-not $project)
+    {
+        Write-Verbose "[Get-AzDoGroupPermission] Project not found in cache — falling back to live API lookup."
+        $projectResponse = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($projectResponse)
+        {
+            $project = $projectResponse
+            Add-CacheItem -Key $ProjectName -Value $project -Type 'LiveProjects'
+        }
+    }
+
+    if (-not $project)
+    {
+        Throw "[Get-AzDoGroupPermission] Project not found: $ProjectName"
         return
     }
 

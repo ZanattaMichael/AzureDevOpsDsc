@@ -16,22 +16,31 @@ Function New-AzDoEnvironmentApproval
 
     Write-Verbose "[New-AzDoEnvironmentApproval] Creating approval for '$EnvironmentName'."
 
+    $OrgName = Get-AzDoOrganizationName
     $env = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $EnvironmentName) -Type 'LivePipelineEnvironments'
+
+    if (-not $env)
+    {
+        Write-Verbose "[New-AzDoEnvironmentApproval] Environment '$EnvironmentName' not in cache — falling back to live API lookup."
+        $allEnvs = List-DevOpsPipelineEnvironments -ApiUri "https://dev.azure.com/$OrgName" -ProjectName $ProjectName
+        $env = $allEnvs | Where-Object { $_.name -eq $EnvironmentName } | Select-Object -First 1
+        if ($env) { Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $EnvironmentName) -Value $env -Type 'LivePipelineEnvironments' }
+    }
+
     if (-not $env) { Write-Error "[New-AzDoEnvironmentApproval] Environment not found."; return }
 
-    # Resolve approver IDs from group/user cache.
+    # Resolve approver IDs from group/user cache, with live fallback for cache misses.
     # Approver strings are expected in [ProjectName]\GroupName or UPN format (the PrincipalName used as cache key).
     $approverIds = @()
     foreach ($approver in $Approvers)
     {
-        $resolved = Get-CacheItem -Key $approver -Type 'LiveGroups'
-        if (-not $resolved) { $resolved = Get-CacheItem -Key $approver -Type 'LiveUsers' }
+        $resolved = Find-AzDoIdentity -Identity $approver
         if ($resolved) { $approverIds += $resolved.originId }
         else            { $approverIds += $approver }
     }
 
     $params = @{
-        ApiUri                      = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
+        ApiUri                      = 'https://dev.azure.com/{0}/' -f $OrgName
         ProjectName                 = $ProjectName
         EnvironmentId               = $env.id
         ApproverIds                 = $approverIds

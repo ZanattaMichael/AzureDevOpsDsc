@@ -11,7 +11,17 @@ Function New-AzDoAgentQueue
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
     )
     Write-Verbose "[New-AzDoAgentQueue] Creating agent queue '$QueueName'."
+    $OrganizationName = Get-AzDoOrganizationName
     $pool = Get-CacheItem -Key $PoolName -Type 'LiveAgentPools'
+
+    if (-not $pool)
+    {
+        Write-Verbose "[New-AzDoAgentQueue] Pool '$PoolName' not in cache — falling back to live API lookup."
+        $allPools = List-DevOpsAgentPools -ApiUri "https://dev.azure.com/$OrganizationName"
+        $pool = $allPools | Where-Object { $_.name -eq $PoolName } | Select-Object -First 1
+        if ($pool) { Add-CacheItem -Key $PoolName -Value $pool -Type 'LiveAgentPools' }
+    }
+
     if (-not $pool) { Write-Error "[New-AzDoAgentQueue] Pool '$PoolName' not found."; return }
     $params = @{
         ApiUri               = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)

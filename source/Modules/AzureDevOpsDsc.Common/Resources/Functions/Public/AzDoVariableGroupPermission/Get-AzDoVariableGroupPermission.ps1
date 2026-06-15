@@ -21,13 +21,27 @@ Function Get-AzDoVariableGroupPermission
     $getResult = @{ Ensure = [Ensure]::Absent; propertiesChanged = @(); status = $null; reason = $null }
 
     $projectCache = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
-    $vgCache      = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $VariableGroupName) -Type 'LiveVariableGroups'
-
+    if (-not $projectCache)
+    {
+        Write-Verbose "[Get-AzDoVariableGroupPermission] Project '$ProjectName' not in cache — falling back to live API lookup."
+        $projectCache = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($projectCache) { Add-CacheItem -Key $ProjectName -Value $projectCache -Type 'LiveProjects' }
+    }
     if (-not $projectCache)
     {
         $getResult.status = [DSCGetSummaryState]::Error
         $getResult.reason = "Project not found: $ProjectName"
         return $getResult
+    }
+
+    $vgCacheKey = '{0}\{1}' -f $ProjectName, $VariableGroupName
+    $vgCache    = Get-CacheItem -Key $vgCacheKey -Type 'LiveVariableGroups'
+    if (-not $vgCache)
+    {
+        Write-Verbose "[Get-AzDoVariableGroupPermission] Variable group '$VariableGroupName' not in cache — falling back to live API lookup."
+        $allVGs  = List-DevOpsVariableGroups -ApiUri "https://dev.azure.com/$OrganizationName" -ProjectName $ProjectName
+        $vgCache = $allVGs | Where-Object { $_.name -eq $VariableGroupName } | Select-Object -First 1
+        if ($vgCache) { Add-CacheItem -Key $vgCacheKey -Value $vgCache -Type 'LiveVariableGroups' }
     }
 
     $namespace = Get-CacheItem -Key $SecurityNamespace -Type 'SecurityNamespaces'

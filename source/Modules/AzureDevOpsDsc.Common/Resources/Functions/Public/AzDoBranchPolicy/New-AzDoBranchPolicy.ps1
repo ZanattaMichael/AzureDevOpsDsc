@@ -16,8 +16,24 @@ Function New-AzDoBranchPolicy
 
     Write-Verbose "[New-AzDoBranchPolicy] Creating branch policy '$PolicyType' on '$BranchName'."
 
+    $OrgName    = Get-AzDoOrganizationName
     $project    = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
-    $repository = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $RepositoryName) -Type 'LiveRepositories'
+    if (-not $project)
+    {
+        Write-Verbose "[New-AzDoBranchPolicy] Project '$ProjectName' not in cache — falling back to live API lookup."
+        $project = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrgName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($project) { Add-CacheItem -Key $ProjectName -Value $project -Type 'LiveProjects' }
+    }
+
+    $repoCacheKey = '{0}\{1}' -f $ProjectName, $RepositoryName
+    $repository   = Get-CacheItem -Key $repoCacheKey -Type 'LiveRepositories'
+    if (-not $repository)
+    {
+        Write-Verbose "[New-AzDoBranchPolicy] Repository '$RepositoryName' not in cache — falling back to live API lookup."
+        $allRepos   = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrgName/$ProjectName/_apis/git/repositories?api-version=7.1-preview.1" -Method Get
+        $repository = $allRepos.value | Where-Object { $_.name -eq $RepositoryName } | Select-Object -First 1
+        if ($repository) { Add-CacheItem -Key $repoCacheKey -Value $repository -Type 'LiveRepositories' }
+    }
 
     if ((-not $project) -or (-not $repository))
     {
@@ -44,7 +60,7 @@ Function New-AzDoBranchPolicy
     if (-not $policyTypeObj)
     {
         Write-Verbose "[New-AzDoBranchPolicy] PolicyType '$PolicyType' not in cache, querying API."
-        $orgUri = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
+        $orgUri = 'https://dev.azure.com/{0}/' -f $OrgName
         # Map camelCase/short names to actual Azure DevOps display names returned by the API
         $policyDisplayNameAliases = @{
             'MinimumReviewerCount' = 'Minimum number of reviewers'
@@ -89,7 +105,7 @@ Function New-AzDoBranchPolicy
     }
 
     $params = @{
-        ApiUri       = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
+        ApiUri       = 'https://dev.azure.com/{0}/' -f $OrgName
         ProjectName  = $ProjectName
         PolicyTypeId = $policyTypeObj.id
         IsEnabled    = $isEnabled

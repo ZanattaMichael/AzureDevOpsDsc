@@ -20,6 +20,14 @@ Function Get-AzDoAgentPoolPermission
     $getResult = @{ Ensure = [Ensure]::Absent; propertiesChanged = @(); status = $null; reason = $null }
 
     $poolCache = Get-CacheItem -Key $PoolName -Type 'LiveAgentPools'
+    if (-not $poolCache)
+    {
+        Write-Verbose "[Get-AzDoAgentPoolPermission] Pool '$PoolName' not in cache — falling back to live API lookup."
+        $allPools  = List-DevOpsAgentPools -ApiUri "https://dev.azure.com/$OrganizationName"
+        $poolCache = $allPools | Where-Object { $_.name -eq $PoolName } | Select-Object -First 1
+        if ($poolCache) { Add-CacheItem -Key $PoolName -Value $poolCache -Type 'LiveAgentPools' }
+    }
+
     $namespace = Get-CacheItem -Key $SecurityNamespace -Type 'SecurityNamespaces'
     if (-not $namespace) { Write-Error "[Get-AzDoAgentPoolPermission] Security namespace not found."; $getResult.status = [DSCGetSummaryState]::Error; return $getResult }
 

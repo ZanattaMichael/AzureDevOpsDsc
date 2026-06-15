@@ -19,7 +19,16 @@ Function Get-AzDoEnvironmentApproval
 
     $result = @{ Ensure = [Ensure]::Absent; propertiesChanged = @(); status = $null }
 
+    $OrgName = Get-AzDoOrganizationName
     $env = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $EnvironmentName) -Type 'LivePipelineEnvironments'
+
+    if (-not $env)
+    {
+        Write-Verbose "[Get-AzDoEnvironmentApproval] Environment '$EnvironmentName' not in cache — falling back to live API lookup."
+        $allEnvs = List-DevOpsPipelineEnvironments -ApiUri "https://dev.azure.com/$OrgName" -ProjectName $ProjectName
+        $env = $allEnvs | Where-Object { $_.name -eq $EnvironmentName } | Select-Object -First 1
+        if ($env) { Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $EnvironmentName) -Value $env -Type 'LivePipelineEnvironments' }
+    }
 
     if (-not $env)
     {
@@ -36,7 +45,7 @@ Function Get-AzDoEnvironmentApproval
     if (-not $approval)
     {
         Write-Verbose "[GetApproval] Cache miss for '$EnvironmentName' (key=$cacheKey). Querying API with envId=$($env.id)."
-        $orgUri = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
+        $orgUri = 'https://dev.azure.com/{0}/' -f $OrgName
         $approvalTypeId = '8c6f20a7-a545-4486-9777-f762fafe0d4d'
         try
         {

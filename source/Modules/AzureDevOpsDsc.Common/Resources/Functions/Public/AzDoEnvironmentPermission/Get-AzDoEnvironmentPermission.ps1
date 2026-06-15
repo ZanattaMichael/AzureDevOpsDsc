@@ -21,9 +21,23 @@ Function Get-AzDoEnvironmentPermission
     $getResult = @{ Ensure = [Ensure]::Absent; propertiesChanged = @(); status = $null; reason = $null }
 
     $projectCache = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
-    $envCache     = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $EnvironmentName) -Type 'LivePipelineEnvironments'
+    if (-not $projectCache)
+    {
+        Write-Verbose "[Get-AzDoEnvironmentPermission] Project '$ProjectName' not in cache — falling back to live API lookup."
+        $projectCache = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($projectCache) { Add-CacheItem -Key $ProjectName -Value $projectCache -Type 'LiveProjects' }
+    }
 
     if (-not $projectCache) { $getResult.status = [DSCGetSummaryState]::Error; $getResult.reason = "Project not found."; return $getResult }
+
+    $envCache = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $EnvironmentName) -Type 'LivePipelineEnvironments'
+    if (-not $envCache)
+    {
+        Write-Verbose "[Get-AzDoEnvironmentPermission] Environment '$EnvironmentName' not in cache — falling back to live API lookup."
+        $allEnvs = List-DevOpsPipelineEnvironments -ApiUri "https://dev.azure.com/$OrganizationName" -ProjectName $ProjectName
+        $envCache = $allEnvs | Where-Object { $_.name -eq $EnvironmentName } | Select-Object -First 1
+        if ($envCache) { Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $EnvironmentName) -Value $envCache -Type 'LivePipelineEnvironments' }
+    }
 
     $namespace = Get-CacheItem -Key $SecurityNamespace -Type 'SecurityNamespaces'
     if (-not $namespace) { Write-Error "[Get-AzDoEnvironmentPermission] Security namespace not found."; $getResult.status = [DSCGetSummaryState]::Error; return $getResult }

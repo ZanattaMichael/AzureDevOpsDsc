@@ -70,6 +70,14 @@ Function Get-AzDoIterationPermission
     # Perform a Lookup within the Cache for the Project
     $projectCache = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
 
+    # If not in cache, fall back to a live API lookup
+    if (-not $projectCache)
+    {
+        Write-Verbose "[Get-AzDoIterationPermission] Project '$ProjectName' not in cache — falling back to live API lookup."
+        $projectCache = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($projectCache) { Add-CacheItem -Key $ProjectName -Value $projectCache -Type 'LiveProjects' }
+    }
+
     # Test if the Project was found
     if (-not $projectCache)
     {
@@ -96,6 +104,24 @@ Function Get-AzDoIterationPermission
         Write-Verbose "[Get-AzDoIterationPermission] IterationPath: $_"
         # Get the cached item for the IterationPath and add it to the list
         Get-CacheItem -Key $_ -Type 'LiveIterations'
+    }
+
+    # If iteration nodes not in cache, fall back to a live API lookup
+    if ($IterationPaths.count -ne $FormattedIterationPaths.Count)
+    {
+        Write-Verbose "[Get-AzDoIterationPermission] Iteration path nodes not in cache — falling back to live API lookup."
+        $liveNodes = List-DevOpsClassificationNodes -OrganizationName $OrganizationName -ProjectName $ProjectName
+        foreach ($node in $liveNodes)
+        {
+            if ($node.structureType -eq 'iteration')
+            {
+                Format-ClassificationNode -Node $node -CacheType 'LiveIterations'
+            }
+        }
+
+        [Array]$IterationPaths = $FormattedIterationPaths | ForEach-Object {
+            Get-CacheItem -Key $_ -Type 'LiveIterations'
+        }
     }
 
     # Ensure that the number of cached iteration path nodes is the same as the formatted nodes.

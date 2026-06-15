@@ -15,7 +15,18 @@ Function Get-AzDoWiki
     )
     Write-Verbose "[Get-AzDoWiki] Started."
     $result = @{ Ensure = [Ensure]::Absent; propertiesChanged = @(); status = $null }
-    $wiki = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $WikiName) -Type 'LiveWikis'
+    $cacheKey = '{0}\{1}' -f $ProjectName, $WikiName
+    $wiki = Get-CacheItem -Key $cacheKey -Type 'LiveWikis'
+
+    if (-not $wiki)
+    {
+        Write-Verbose "[Get-AzDoWiki] Wiki '$WikiName' not in cache — falling back to live API lookup."
+        $OrgName   = Get-AzDoOrganizationName
+        $allWikis  = List-DevOpsWikis -ApiUri "https://dev.azure.com/$OrgName" -ProjectName $ProjectName
+        $wiki      = $allWikis | Where-Object { $_.name -eq $WikiName } | Select-Object -First 1
+        if ($wiki) { Add-CacheItem -Key $cacheKey -Value $wiki -Type 'LiveWikis' }
+    }
+
     if ($wiki) { $result.liveCache = $wiki; $result.status = [DSCGetSummaryState]::Unchanged }
     else        { $result.status = [DSCGetSummaryState]::NotFound }
     return $result

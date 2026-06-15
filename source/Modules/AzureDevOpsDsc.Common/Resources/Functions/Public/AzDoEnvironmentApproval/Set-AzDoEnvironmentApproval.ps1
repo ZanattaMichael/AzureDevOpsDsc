@@ -16,8 +16,27 @@ Function Set-AzDoEnvironmentApproval
 
     Write-Verbose "[Set-AzDoEnvironmentApproval] Updating approval for '$EnvironmentName'."
 
-    $env      = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $EnvironmentName) -Type 'LivePipelineEnvironments'
-    $approval = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $EnvironmentName) -Type 'LiveEnvironmentApprovals'
+    $OrgName  = Get-AzDoOrganizationName
+    $cacheKey = '{0}\{1}' -f $ProjectName, $EnvironmentName
+    $env      = Get-CacheItem -Key $cacheKey -Type 'LivePipelineEnvironments'
+    $approval = Get-CacheItem -Key $cacheKey -Type 'LiveEnvironmentApprovals'
+
+    if (-not $env)
+    {
+        Write-Verbose "[Set-AzDoEnvironmentApproval] Environment '$EnvironmentName' not in cache — falling back to live API lookup."
+        $allEnvs = List-DevOpsPipelineEnvironments -ApiUri "https://dev.azure.com/$OrgName" -ProjectName $ProjectName
+        $env = $allEnvs | Where-Object { $_.name -eq $EnvironmentName } | Select-Object -First 1
+        if ($env) { Add-CacheItem -Key $cacheKey -Value $env -Type 'LivePipelineEnvironments' }
+    }
+
+    if (-not $approval)
+    {
+        Write-Verbose "[Set-AzDoEnvironmentApproval] Approval not in cache — querying API."
+        $approvalTypeId = '8c6f20a7-a545-4486-9777-f762fafe0d4d'
+        $checks = List-DevOpsEnvironmentApprovals -ApiUri "https://dev.azure.com/$OrgName/" -ProjectName $ProjectName -EnvironmentId $env.id
+        $approval = $checks | Where-Object { $_.type.id -eq $approvalTypeId } | Select-Object -First 1
+        if ($approval) { Add-CacheItem -Key $cacheKey -Value $approval -Type 'LiveEnvironmentApprovals' }
+    }
 
     if ((-not $env) -or (-not $approval))
     {
@@ -28,14 +47,13 @@ Function Set-AzDoEnvironmentApproval
     $approverIds = @()
     foreach ($approver in $Approvers)
     {
-        $resolved = Get-CacheItem -Key $approver -Type 'LiveGroups'
-        if (-not $resolved) { $resolved = Get-CacheItem -Key $approver -Type 'LiveUsers' }
+        $resolved = Find-AzDoIdentity -Identity $approver
         if ($resolved) { $approverIds += $resolved.originId }
         else            { $approverIds += $approver }
     }
 
     $params = @{
-        ApiUri                        = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
+        ApiUri                        = 'https://dev.azure.com/{0}/' -f $OrgName
         ProjectName                   = $ProjectName
         CheckId                       = $approval.id
         EnvironmentId                 = $env.id

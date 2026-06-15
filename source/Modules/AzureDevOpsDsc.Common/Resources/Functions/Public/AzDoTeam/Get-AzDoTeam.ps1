@@ -19,11 +19,30 @@ Function Get-AzDoTeam
         status            = $null
     }
 
-    $team = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $TeamName) -Type 'LiveTeams'
+    $cacheKey = '{0}\{1}' -f $ProjectName, $TeamName
+    $team = Get-CacheItem -Key $cacheKey -Type 'LiveTeams'
+
+    if (-not $team)
+    {
+        Write-Verbose "[Get-AzDoTeam] Team '$TeamName' not in cache — falling back to live API lookup."
+        $OrgName = Get-AzDoOrganizationName
+        $project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
+        if (-not $project)
+        {
+            $project = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrgName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+            if ($project) { Add-CacheItem -Key $ProjectName -Value $project -Type 'LiveProjects' }
+        }
+        if ($project)
+        {
+            $allTeams = List-DevOpsTeams -ApiUri "https://dev.azure.com/$OrgName" -ProjectId $project.id
+            $team = $allTeams | Where-Object { $_.name -eq $TeamName } | Select-Object -First 1
+            if ($team) { Add-CacheItem -Key $cacheKey -Value $team -Type 'LiveTeams' }
+        }
+    }
 
     if ($team)
     {
-        Write-Verbose "[Get-AzDoTeam] Team '$TeamName' found in cache."
+        Write-Verbose "[Get-AzDoTeam] Team '$TeamName' found."
         $result.liveCache = $team
         $result.status    = [DSCGetSummaryState]::Unchanged
     }

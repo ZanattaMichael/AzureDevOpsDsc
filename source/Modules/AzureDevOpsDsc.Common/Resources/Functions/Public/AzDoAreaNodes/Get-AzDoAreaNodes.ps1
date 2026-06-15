@@ -106,8 +106,8 @@ Function Get-AzDoAreaNodes {
     $isTopLevel = $cachedAreaNodesPath | Where-Object { $_ -eq "\$ProjectName\Area" }
     Write-Verbose "[Get-AzDoAreaNodes] Is top-level node present: $isTopLevel"
 
-    # Handle case where no area paths are specified and only top-level node exists
-    if ($AreaPaths.Count -eq 0 -and $cachedAreaNodesPath.Count -eq 1 -and $isTopLevel) {
+    # Handle case where no area paths are specified and only top-level node exists (or cache is empty for this project)
+    if ($AreaPaths.Count -eq 0 -and ($null -eq $cachedAreaNodesPath -or $cachedAreaNodesPath.Count -eq 0 -or ($cachedAreaNodesPath.Count -eq 1 -and $isTopLevel))) {
         Write-Verbose "[Get-AzDoAreaNodes] AreaPaths is not specified and no Area Nodes exist in cache"
 
         $getAreaResult.status = [DSCGetSummaryState]::Unchanged
@@ -133,8 +133,8 @@ Function Get-AzDoAreaNodes {
         return $getAreaResult
     }
 
-    # Handle case where only top-level node exists
-    if ($cachedAreaNodesPath.Count -eq 1 -and $isTopLevel) {
+    # Handle case where only top-level node exists (or cache is entirely empty for this project)
+    if ($null -eq $cachedAreaNodesPath -or $cachedAreaNodesPath.Count -eq 0 -or ($cachedAreaNodesPath.Count -eq 1 -and $isTopLevel)) {
         Write-Verbose "[Get-AzDoAreaNodes] Only top-level node exists"
 
         $getAreaResult.status = [DSCGetSummaryState]::NotFound

@@ -109,7 +109,7 @@ function New-TestGitRepository
     if (-not $Organization) { $Organization = Resolve-TestOrg }
     if (-not $AuthHeader)   { $AuthHeader   = Resolve-TestAuthHeader }
 
-    $body = @{ name = $RepositoryName; project = @{ name = $ProjectName } } | ConvertTo-Json
+    $body = @{ name = $RepositoryName } | ConvertTo-Json
     try
     {
         $null = Invoke-RestMethod -Uri "https://dev.azure.com/$Organization/$ProjectName/_apis/git/repositories?api-version=7.1-preview.1" `

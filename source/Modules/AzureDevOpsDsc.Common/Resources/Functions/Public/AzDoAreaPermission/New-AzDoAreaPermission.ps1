@@ -34,9 +34,23 @@ Function New-AzDoAreaPermission
     $SecurityNamespace = Get-CacheItem -Key 'CSS' -Type 'SecurityNamespaces'
     $Project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
 
-    if (($null -eq $SecurityNamespace) -or ($null -eq $Project))
+    if ($null -eq $SecurityNamespace)
     {
-        Write-Warning "[New-AzDoAreaPermission] Security Namespace or Project not found."
+        Write-Warning "[New-AzDoAreaPermission] Security Namespace not found."
+        return
+    }
+
+    if ($null -eq $Project)
+    {
+        Write-Verbose "[New-AzDoAreaPermission] Project '$ProjectName' not in cache — falling back to live API lookup."
+        $OrganizationName = Get-AzDoOrganizationName
+        $Project = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($Project) { Add-CacheItem -Key $ProjectName -Value $Project -Type 'LiveProjects' }
+    }
+
+    if ($null -eq $Project)
+    {
+        Write-Warning "[New-AzDoAreaPermission] Project not found: $ProjectName"
         return
     }
 

@@ -19,7 +19,17 @@ Function Get-AzDoRepositorySettings
 
     $result = @{ Ensure = [Ensure]::Present; propertiesChanged = @(); status = $null }
 
-    $repository = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $RepositoryName) -Type 'LiveRepositories'
+    $OrgName     = Get-AzDoOrganizationName
+    $repoCacheKey = '{0}\{1}' -f $ProjectName, $RepositoryName
+    $repository  = Get-CacheItem -Key $repoCacheKey -Type 'LiveRepositories'
+
+    if (-not $repository)
+    {
+        Write-Verbose "[Get-AzDoRepositorySettings] Repository '$RepositoryName' not in cache — falling back to live API lookup."
+        $allRepos   = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrgName/$ProjectName/_apis/git/repositories?api-version=7.1-preview.1" -Method Get
+        $repository = $allRepos.value | Where-Object { $_.name -eq $RepositoryName } | Select-Object -First 1
+        if ($repository) { Add-CacheItem -Key $repoCacheKey -Value $repository -Type 'LiveRepositories' }
+    }
 
     if (-not $repository)
     {
@@ -31,7 +41,7 @@ Function Get-AzDoRepositorySettings
     try
     {
         $params = @{
-            ApiUri       = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
+            ApiUri       = 'https://dev.azure.com/{0}/' -f $OrgName
             ProjectName  = $ProjectName
             RepositoryId = $repository.id
         }

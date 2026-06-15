@@ -72,12 +72,31 @@ Function New-AzDoProjectGroup
         $Force
     )
 
+    $OrgName = Get-AzDoOrganizationName
+    $projectObj = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
+
+    # If project not in cache or missing ProjectDescriptor, do a live lookup
+    if ($null -eq $projectObj -or $null -eq $projectObj.ProjectDescriptor)
+    {
+        Write-Verbose "[New-AzDoProjectGroup] Project '$ProjectName' missing from cache or has no descriptor — falling back to live API lookup."
+        if ($null -eq $projectObj)
+        {
+            $projectObj = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrgName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        }
+        if ($projectObj)
+        {
+            $descriptor = Get-DevOpsSecurityDescriptor -ProjectId $projectObj.Id -Organization $OrgName
+            $projectObj = $projectObj | Select-Object *, @{ Name = 'ProjectDescriptor'; Expression = { $descriptor } }
+            Add-CacheItem -Key $ProjectName -Value $projectObj -Type 'LiveProjects'
+        }
+    }
+
     # Define parameters for creating a new DevOps group
     $params = @{
         GroupName = $GroupName
         GroupDescription = $GroupDescription
-        ApiUri = 'https://vssps.dev.azure.com/{0}' -f (Get-AzDoOrganizationName)
-        ProjectScopeDescriptor = (Get-CacheItem -Key $ProjectName -Type 'LiveProjects').ProjectDescriptor
+        ApiUri = 'https://vssps.dev.azure.com/{0}' -f $OrgName
+        ProjectScopeDescriptor = $projectObj.ProjectDescriptor
     }
 
     # If the project scope descriptor is not found, write a warning message to the console and return.
