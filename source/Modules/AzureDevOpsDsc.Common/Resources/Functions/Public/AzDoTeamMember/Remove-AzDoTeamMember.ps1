@@ -12,18 +12,41 @@ Function Remove-AzDoTeamMember
 
     Write-Verbose "[Remove-AzDoTeamMember] Removing '$MemberName' from team '$TeamName'."
 
-    $team   = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $TeamName) -Type 'LiveTeams'
+    $OrgName = Get-AzDoOrganizationName
+    $teamKey = '{0}\{1}' -f $ProjectName, $TeamName
+
+    # Lookup the team group descriptor from the cache, with live fallback (team may have been
+    # created after the cache was built at init).
+    $team = Get-CacheItem -Key $teamKey -Type 'LiveTeams'
+    if (-not $team)
+    {
+        $project = Resolve-AzDoProject -ProjectName $ProjectName
+        if ($project)
+        {
+            $allTeams = List-DevOpsTeams -ApiUri "https://dev.azure.com/$OrgName" -ProjectId $project.id
+            $team = $allTeams | Where-Object { $_.name -eq $TeamName } | Select-Object -First 1
+            if ($team)
+            {
+                $descriptor = Get-DevOpsSecurityDescriptor -ProjectId $team.id -Organization $OrgName
+                if ($descriptor) { $team | Add-Member -NotePropertyName 'descriptor' -NotePropertyValue $descriptor -Force }
+                Add-CacheItem -Key $teamKey -Value $team -Type 'LiveTeams'
+            }
+        }
+    }
+
     # $MemberName is already fully qualified (e.g. "[ProjectName]\GroupName") — look up directly.
     $member = Get-CacheItem -Key $MemberName -Type 'LiveGroups'
-
+    if (-not $member) { $member = Get-CacheItem -Key $MemberName -Type 'LiveUsers' }
     if (-not $member)
     {
-        $member = Get-CacheItem -Key $MemberName -Type 'LiveUsers'
+        # Fall back to Find-AzDoIdentity which has live API lookups for both groups and users.
+        $member = Find-AzDoIdentity -Identity $MemberName
     }
 
     if ((-not $team) -or (-not $member))
     {
-        Write-Error "[Remove-AzDoTeamMember] Team or member not found in cache."
+        # Team or member already absent — nothing to remove (desired state achieved).
+        Write-Verbose "[Remove-AzDoTeamMember] Team or member not found; treating as already absent."
         return
     }
 

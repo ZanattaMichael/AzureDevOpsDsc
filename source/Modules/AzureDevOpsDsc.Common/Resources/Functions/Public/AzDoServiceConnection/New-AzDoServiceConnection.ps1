@@ -16,11 +16,11 @@ Function New-AzDoServiceConnection
 
     Write-Verbose "[New-AzDoServiceConnection] Creating service connection '$ConnectionName'."
 
-    $project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
+    $project = Resolve-AzDoProject -ProjectName $ProjectName
 
     if (-not $project)
     {
-        Write-Error "[New-AzDoServiceConnection] Project '$ProjectName' not found in cache."
+        Write-Error "[New-AzDoServiceConnection] Project '$ProjectName' not found."
         return
     }
 

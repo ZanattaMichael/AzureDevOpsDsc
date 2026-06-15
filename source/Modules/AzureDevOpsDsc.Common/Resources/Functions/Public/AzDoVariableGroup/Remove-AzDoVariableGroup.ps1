@@ -15,18 +15,25 @@ Function Remove-AzDoVariableGroup
 
     Write-Verbose "[Remove-AzDoVariableGroup] Removing variable group '$VariableGroupName'."
 
-    $vg = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $VariableGroupName) -Type 'LiveVariableGroups'
-
-    if (-not $vg)
+    $project = Resolve-AzDoProject -ProjectName $ProjectName
+    if (-not $project)
     {
-        Write-Error "[Remove-AzDoVariableGroup] Variable group '$VariableGroupName' not found in cache."
+        Write-Error "[Remove-AzDoVariableGroup] Project '$ProjectName' not found; cannot resolve project id."
         return
     }
 
-    $project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
-    if (-not $project)
+    $vg = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $VariableGroupName) -Type 'LiveVariableGroups'
+    if (-not $vg)
     {
-        Write-Error "[Remove-AzDoVariableGroup] Project '$ProjectName' not found in cache; cannot resolve project id."
+        # Variable group may have been created after the cache was built at init — fall back to a live lookup.
+        $allVGs = List-DevOpsVariableGroups -ApiUri ('https://dev.azure.com/{0}' -f (Get-AzDoOrganizationName)) -ProjectName $ProjectName
+        $vg     = $allVGs | Where-Object { $_.name -eq $VariableGroupName } | Select-Object -First 1
+    }
+
+    if (-not $vg)
+    {
+        # Already absent — nothing to remove (desired state achieved).
+        Write-Verbose "[Remove-AzDoVariableGroup] Variable group '$VariableGroupName' not found; already absent."
         return
     }
 

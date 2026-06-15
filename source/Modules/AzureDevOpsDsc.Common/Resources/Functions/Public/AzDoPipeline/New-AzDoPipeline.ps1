@@ -15,13 +15,21 @@ Function New-AzDoPipeline
 
     Write-Verbose "[New-AzDoPipeline] Creating pipeline '$PipelineName'."
 
-    $project    = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
-    $repository = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $RepositoryName) -Type 'LiveRepositories'
+    $project    = Resolve-AzDoProject -ProjectName $ProjectName
 
     if (-not $project)
     {
-        Write-Error "[New-AzDoPipeline] Project '$ProjectName' not found in cache."
+        Write-Error "[New-AzDoPipeline] Project '$ProjectName' not found."
         return
+    }
+
+    $repository = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $RepositoryName) -Type 'LiveRepositories'
+    if (-not $repository)
+    {
+        # Repository may have been created after the cache was built at init — fall back to a live lookup.
+        Write-Verbose "[New-AzDoPipeline] Repository '$RepositoryName' not in cache — falling back to live API lookup."
+        $allRepos   = List-DevOpsGitRepository -OrganizationName (Get-AzDoOrganizationName) -ProjectName $ProjectName
+        $repository = $allRepos | Where-Object { $_.name -eq $RepositoryName } | Select-Object -First 1
     }
 
     $params = @{

@@ -16,18 +16,27 @@ Function Remove-AzDoServiceConnection
 
     Write-Verbose "[Remove-AzDoServiceConnection] Removing service connection '$ConnectionName'."
 
-    $sc = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $ConnectionName) -Type 'LiveServiceConnections'
-
-    if (-not $sc)
+    $project = Resolve-AzDoProject -ProjectName $ProjectName
+    if (-not $project)
     {
-        Write-Error "[Remove-AzDoServiceConnection] Service connection '$ConnectionName' not found in cache."
+        Write-Error "[Remove-AzDoServiceConnection] Project '$ProjectName' not found; cannot resolve project id."
         return
     }
 
-    $project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
-    if (-not $project)
+    $scKey = '{0}\{1}' -f $ProjectName, $ConnectionName
+    $sc    = Get-CacheItem -Key $scKey -Type 'LiveServiceConnections'
+    if (-not $sc)
     {
-        Write-Error "[Remove-AzDoServiceConnection] Project '$ProjectName' not found in cache; cannot resolve project id."
+        # Created earlier in this run but not on disk for this runspace — fall back to a live lookup.
+        $orgName = Get-AzDoOrganizationName
+        $allSCs  = List-DevOpsServiceConnections -ApiUri "https://dev.azure.com/$orgName" -ProjectName $ProjectName
+        $sc      = $allSCs | Where-Object { $_.name -eq $ConnectionName } | Select-Object -First 1
+    }
+
+    if (-not $sc)
+    {
+        # Already absent — nothing to remove (desired state achieved).
+        Write-Verbose "[Remove-AzDoServiceConnection] Service connection '$ConnectionName' not found; already absent."
         return
     }
 

@@ -13,10 +13,17 @@ Function New-AzDoWiki
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
     )
     Write-Verbose "[New-AzDoWiki] Creating wiki '$WikiName'."
-    $project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
+    $project = Resolve-AzDoProject -ProjectName $ProjectName
     if (-not $project) { Write-Error "[New-AzDoWiki] Project not found."; return }
 
     $repo = if ($RepositoryName) { Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $RepositoryName) -Type 'LiveRepositories' } else { $null }
+    if ($RepositoryName -and (-not $repo))
+    {
+        # Repository may have been created after the cache was built at init — fall back to a live lookup.
+        Write-Verbose "[New-AzDoWiki] Repository '$RepositoryName' not in cache — falling back to live API lookup."
+        $allRepos = List-DevOpsGitRepository -OrganizationName (Get-AzDoOrganizationName) -ProjectName $ProjectName
+        $repo     = $allRepos | Where-Object { $_.name -eq $RepositoryName } | Select-Object -First 1
+    }
 
     $params = @{
         ApiUri       = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)

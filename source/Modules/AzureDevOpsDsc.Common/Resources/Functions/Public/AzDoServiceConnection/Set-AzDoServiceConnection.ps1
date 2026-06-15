@@ -16,12 +16,23 @@ Function Set-AzDoServiceConnection
 
     Write-Verbose "[Set-AzDoServiceConnection] Updating service connection '$ConnectionName'."
 
-    $project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
-    $sc      = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $ConnectionName) -Type 'LiveServiceConnections'
+    $orgName = Get-AzDoOrganizationName
+    $project = Resolve-AzDoProject -ProjectName $ProjectName
+
+    $scKey = '{0}\{1}' -f $ProjectName, $ConnectionName
+    $sc    = Get-CacheItem -Key $scKey -Type 'LiveServiceConnections'
+    if ((-not $sc) -and $project)
+    {
+        # Service connection may have been created earlier in this run — fall back to a live lookup.
+        Write-Verbose "[Set-AzDoServiceConnection] Service connection '$ConnectionName' not in cache — falling back to live API lookup."
+        $allSCs = List-DevOpsServiceConnections -ApiUri "https://dev.azure.com/$orgName" -ProjectName $ProjectName
+        $sc     = $allSCs | Where-Object { $_.name -eq $ConnectionName } | Select-Object -First 1
+        if ($sc) { Add-CacheItem -Key $scKey -Value $sc -Type 'LiveServiceConnections' }
+    }
 
     if ((-not $project) -or (-not $sc))
     {
-        Write-Error "[Set-AzDoServiceConnection] Project or service connection not found in cache."
+        Write-Error "[Set-AzDoServiceConnection] Project or service connection not found."
         return
     }
 

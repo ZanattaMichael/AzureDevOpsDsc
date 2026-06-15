@@ -62,18 +62,33 @@ Function Remove-AzDoGitRepository
 
     Write-Verbose "[Remove-AzDoGitRepository] Removing repository '$($RepositoryName)' in project '$($ProjectName)'"
 
-    # Define parameters for creating a new DevOps group
-    $params = @{
-        ApiUri = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
-        Project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
-        Repository  = Get-CacheItem -Key "$ProjectName\$RepositoryName" -Type 'LiveRepositories'
+    $project = Resolve-AzDoProject -ProjectName $ProjectName
+    if ($null -eq $project)
+    {
+        Write-Error "[Remove-AzDoGitRepository] Project '$($ProjectName)' not found. Skipping change."
+        return
     }
 
-    # Check if the project exists in the LiveProjects cache
-    if (($null -eq $params.Project) -or ($null -eq $params.Repository))
+    $repository = Get-CacheItem -Key "$ProjectName\$RepositoryName" -Type 'LiveRepositories'
+    if ($null -eq $repository)
     {
-        Write-Error "[Remove-AzDoGitRepository] Project '$($ProjectName)' or Repository '$($RepositoryName)' does not exist in the LiveProjects or LiveRepositories cache. Skipping change."
+        # Repository may have been created after the cache was built at init — fall back to a live lookup.
+        $allRepos   = List-DevOpsGitRepository -OrganizationName (Get-AzDoOrganizationName) -ProjectName $ProjectName
+        $repository = $allRepos | Where-Object { $_.name -eq $RepositoryName } | Select-Object -First 1
+    }
+
+    if ($null -eq $repository)
+    {
+        # Already absent — nothing to remove (desired state achieved).
+        Write-Verbose "[Remove-AzDoGitRepository] Repository '$RepositoryName' not found; already absent."
         return
+    }
+
+    # Define parameters for removing the repository
+    $params = @{
+        ApiUri     = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
+        Project    = $project
+        Repository = $repository
     }
 
     # Create a new repository
