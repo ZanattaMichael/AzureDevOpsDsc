@@ -124,8 +124,67 @@ Function Find-Identity
         return $null
     }
 
-    # Nothing in cache — fall back to the API.
-    Write-Warning "[Find-Identity] No identity found for '$Name'. Performing a lookup via the API."
+    # Nothing in cache. For name-based searches the identity may be a group created AFTER the
+    # cache was built at module init (e.g. a group created in the same DSC configuration just
+    # before a permission resource references it). A descriptor-based API lookup cannot resolve a
+    # name, so first perform a live groups query, match by principalName (handling the org-level
+    # "[]\Group" => "\Group" suffix form) or displayName, enrich it with its ACL identity, cache it,
+    # and return it in the CacheItem shape the cache uses (callers read
+    # .value.ACLIdentity.descriptor / .value.principalName).
+    if ($SearchType -in 'principalName', 'displayName')
+    {
+        Write-Verbose "[Find-Identity] '$Name' not in cache. Attempting a live groups lookup."
+        try
+        {
+            $liveGroups = List-DevOpsGroups -Organization $OrganizationName
+        }
+        catch
+        {
+            Write-Error "[Find-Identity] Live groups lookup failed: $_"
+            $liveGroups = @()
+        }
+
+        $match = $liveGroups | Where-Object {
+            $normalizedPrincipal = $_.principalName.Replace('[', '').Replace(']', '')
+            if ($SearchType -eq 'principalName')
+            {
+                ($normalizedPrincipal -eq $Name) -or ($Name.StartsWith('\') -and $normalizedPrincipal.EndsWith($Name))
+            }
+            else
+            {
+                $_.displayName -eq $Name
+            }
+        } | Select-Object -First 1
+
+        if ($match)
+        {
+            try
+            {
+                $aclIdentitySource = Get-DevOpsDescriptorIdentity -OrganizationName $OrganizationName -SubjectDescriptor $match.descriptor
+                $match | Add-Member -MemberType NoteProperty -Name 'ACLIdentity' -Force -Value ([PSCustomObject]@{
+                    id                  = $aclIdentitySource.id
+                    descriptor          = $aclIdentitySource.descriptor
+                    subjectDescriptor   = $aclIdentitySource.subjectDescriptor
+                    providerDisplayName = $aclIdentitySource.providerDisplayName
+                    isActive            = $aclIdentitySource.isActive
+                    isContainer         = $aclIdentitySource.isContainer
+                })
+
+                # Cache for subsequent lookups within this run, mirroring the init-time shape.
+                Add-CacheItem -Key $match.principalName -Value $match -Type 'LiveGroups' -SuppressWarning
+
+                Write-Verbose "[Find-Identity] Resolved '$Name' via live groups lookup."
+                return [CacheItem]::New($match.principalName, $match)
+            }
+            catch
+            {
+                Write-Error "[Find-Identity] Failed to enrich live group '$($match.principalName)': $_"
+            }
+        }
+    }
+
+    # Descriptor-based API fallback (used when $Name is an actual descriptor).
+    Write-Warning "[Find-Identity] No identity found for '$Name' in cache. Performing a descriptor lookup via the API."
     try
     {
         $identity = Get-DevOpsDescriptorIdentity -OrganizationName $OrganizationName -Descriptor $Name
@@ -145,6 +204,42 @@ Function Find-Identity
     {
         Write-Verbose "[Find-Identity] Found identity for '$Name' via API."
         return $resolved
+    }
+
+    # The descriptor resolved to an identity, but it is not in the init-time cache (e.g. a group
+    # created after init). This is the Difference/live-ACL side of a permission comparison: an ACE
+    # is keyed by its ACL descriptor and ConvertTo-FormattedACL resolves it here by descriptor.
+    # Match the identity to a live group via its subjectDescriptor (graph descriptor), enrich it with
+    # the resolved ACL identity, cache it, and return it so the ACE carries a real originId (without
+    # this, the live-side ACE Identity is null and the Set->Test comparison never converges).
+    if ($identity -and $identity.subjectDescriptor)
+    {
+        Write-Verbose "[Find-Identity] '$Name' resolved via API but absent from cache. Matching a live group by subjectDescriptor."
+        try
+        {
+            $liveGroups = List-DevOpsGroups -Organization $OrganizationName
+        }
+        catch
+        {
+            Write-Error "[Find-Identity] Live groups lookup failed: $_"
+            $liveGroups = @()
+        }
+
+        $match = $liveGroups | Where-Object { $_.descriptor -eq $identity.subjectDescriptor } | Select-Object -First 1
+        if ($match)
+        {
+            $match | Add-Member -MemberType NoteProperty -Name 'ACLIdentity' -Force -Value ([PSCustomObject]@{
+                id                  = $identity.id
+                descriptor          = $identity.descriptor
+                subjectDescriptor   = $identity.subjectDescriptor
+                providerDisplayName = $identity.providerDisplayName
+                isActive            = $identity.isActive
+                isContainer         = $identity.isContainer
+            })
+            Add-CacheItem -Key $match.principalName -Value $match -Type 'LiveGroups' -SuppressWarning
+            Write-Verbose "[Find-Identity] Resolved '$Name' to live group '$($match.principalName)' via subjectDescriptor."
+            return [CacheItem]::New($match.principalName, $match)
+        }
     }
 
     Write-Warning "[Find-Identity] No identity found for '$Name'."
