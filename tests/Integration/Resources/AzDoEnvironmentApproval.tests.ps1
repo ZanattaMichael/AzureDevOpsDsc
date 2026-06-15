@@ -6,23 +6,12 @@ Describe "AzDoEnvironmentApproval Integration Tests" -Tag "Integration", "Enviro
         $ENVNAME     = 'TEST_APPROVAL_ENV'
         $GROUPNAME   = 'ApprovalGroup'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
+        $authHeader = New-TestAuthHeader
+        $ORG        = Get-TestOrganizationName
 
-        function New-Environment { param([string]$ProjectName, [string]$EnvironmentName)
-            $null = Invoke-DscResource -Name 'AzDoPipelineEnvironment' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
-                ProjectName     = $ProjectName
-                EnvironmentName = $EnvironmentName
-            }
-        }
-
-        function New-Group { param([string]$ProjectName, [string]$GroupName)
-            $null = Invoke-DscResource -Name 'AzDoProjectGroup' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
-                ProjectName = $ProjectName
-                GroupName   = $GroupName
-            }
-        }
+        New-TestProject             -Organization $ORG -ProjectName $PROJECTNAME -AuthHeader $authHeader
+        New-TestPipelineEnvironment -Organization $ORG -ProjectName $PROJECTNAME -EnvironmentName $ENVNAME -AuthHeader $authHeader
+        New-TestGroup               -Organization $ORG -ProjectName $PROJECTNAME -GroupName $GROUPNAME -AuthHeader $authHeader
 
         $parameters = @{
             Name       = 'AzDoEnvironmentApproval'
@@ -37,10 +26,6 @@ Describe "AzDoEnvironmentApproval Integration Tests" -Tag "Integration", "Enviro
                 Instructions          = 'Please review before deploying.'
             }
         }
-
-        New-Project $PROJECTNAME
-        New-Environment -ProjectName $PROJECTNAME -EnvironmentName $ENVNAME
-        New-Group -ProjectName $PROJECTNAME -GroupName $GROUPNAME
     }
 
     Context "Testing if the environment approval exists" {

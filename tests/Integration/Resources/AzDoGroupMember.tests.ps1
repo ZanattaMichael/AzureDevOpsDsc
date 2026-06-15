@@ -5,17 +5,6 @@ Describe "AzDoGroupMember Integration Tests" -Tag "Integration", "GroupMember" {
         # Perform setup tasks here
         $PROJECTNAME = 'TESTPROJECT_GROUPMEMBER'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
-
-        function New-Group { param([string]$ProjectName, [string]$GroupName)
-            $null = Invoke-DscResource -Name 'AzDoProjectGroup' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
-                ProjectName = $ProjectName
-                GroupName   = $GroupName
-            }
-        }
-
         # Define common parameters
         $parameters = @{
             Name = 'AzDoGroupMember'

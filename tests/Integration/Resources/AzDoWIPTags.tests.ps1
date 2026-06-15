@@ -7,10 +7,6 @@ Describe "AzDoWIPTags Integration Tests" -Tag "Integration", "WIPTags" {
 
         $PROJECTNAME = 'TEST_PROJECT_WIP_TAGS'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
-
         # Define common parameters
         $parameters = @{
             Name = 'AzDoWIPTags'

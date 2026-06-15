@@ -21,6 +21,10 @@ Get-ChildItem -Path "$($CurrentLocation.Path)\Supporting\APICalls" -Filter "*.ps
 # Firstly Initialize the test environment
 . "$($CurrentLocation.Path)\Supporting\Initalize-TestFramework.ps1" -TestFrameworkConfigurationPath $TestFrameworkConfigurationPath
 
+# Populate globals used by the shared REST helper aliases in SupportingFunctions.ps1
+$Global:TestOrg        = $GLOBAL:DSCAZDO_OrganizationName
+$Global:TestAuthHeader = New-TestAuthHeader
+
 #
 # Pre-run teardown: ensure a clean slate before tests start
 # This removes any resources left over from a previous (possibly failed) test run.

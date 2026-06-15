@@ -4,10 +4,6 @@ Describe "AzDoNotificationSubscription Integration Tests (work item changed, Ema
 
         $PROJECTNAME = 'TEST_NOTIFICATION'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
-
         # Use a project-scoped work-item changed event with a group email channel.
         # The subscriber identity must be a valid group/user descriptor in the org.
         # Using the built-in "[ProjectName]\Build Service (OrgName)" identity would

@@ -4,10 +4,6 @@ Describe "AzDoServiceConnection Integration Tests (Generic UsernamePassword conn
 
         $PROJECTNAME = 'TEST_SERVICECONNECTION'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
-
         # Generic (no-secrets) service connection using a placeholder endpoint type.
         # Uses 'Generic' connection type which requires username+password but is broadly
         # available without external service dependency.

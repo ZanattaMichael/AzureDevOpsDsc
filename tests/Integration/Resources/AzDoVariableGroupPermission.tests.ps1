@@ -6,22 +6,11 @@ Describe "AzDoVariableGroupPermission Integration Tests" -Tag "Integration", "Va
         $VGNAME      = 'TEST_VG_PERMISSION'
         $GROUPNAME   = 'VGPermGroup'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
-
         function New-VariableGroup { param([string]$ProjectName, [string]$VariableGroupName)
             $null = Invoke-DscResource -Name 'AzDoVariableGroup' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
                 ProjectName       = $ProjectName
                 VariableGroupName = $VariableGroupName
                 Variables         = @{ SomeVar = @{ value = 'val'; isSecret = $false } }
-            }
-        }
-
-        function New-Group { param([string]$ProjectName, [string]$GroupName)
-            $null = Invoke-DscResource -Name 'AzDoProjectGroup' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
-                ProjectName = $ProjectName
-                GroupName   = $GroupName
             }
         }
 

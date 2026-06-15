@@ -4,10 +4,6 @@ Describe "AzDoTeam Integration Tests" -Tag "Integration", "Team" {
 
         $PROJECTNAME = 'TEST_TEAM'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
-
         $parameters = @{
             Name       = 'AzDoTeam'
             ModuleName = 'AzureDevOpsDsc'

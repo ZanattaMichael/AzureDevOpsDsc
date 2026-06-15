@@ -6,23 +6,12 @@ Describe "AzDoArtifactFeedPermission Integration Tests" -Tag "Integration", "Art
         $FEEDNAME    = 'fp{0}' -f (Get-Date -Format 'MMddHHmmss')
         $GROUPNAME   = 'FeedPermGroup'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
+        $authHeader = New-TestAuthHeader
+        $ORG        = Get-TestOrganizationName
 
-        function New-Feed { param([string]$ProjectName, [string]$FeedName)
-            $null = Invoke-DscResource -Name 'AzDoArtifactFeed' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
-                ProjectName = $ProjectName
-                FeedName    = $FeedName
-            }
-        }
-
-        function New-Group { param([string]$ProjectName, [string]$GroupName)
-            $null = Invoke-DscResource -Name 'AzDoProjectGroup' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
-                ProjectName = $ProjectName
-                GroupName   = $GroupName
-            }
-        }
+        New-TestProject      -Organization $ORG -ProjectName $PROJECTNAME -AuthHeader $authHeader
+        New-TestArtifactFeed -Organization $ORG -ProjectName $PROJECTNAME -FeedName $FEEDNAME -AuthHeader $authHeader
+        New-TestGroup        -Organization $ORG -ProjectName $PROJECTNAME -GroupName $GROUPNAME -AuthHeader $authHeader
 
         $parameters = @{
             Name       = 'AzDoArtifactFeedPermission'
@@ -38,10 +27,6 @@ Describe "AzDoArtifactFeedPermission Integration Tests" -Tag "Integration", "Art
                 )
             }
         }
-
-        New-Project $PROJECTNAME
-        New-Feed -ProjectName $PROJECTNAME -FeedName $FEEDNAME
-        New-Group -ProjectName $PROJECTNAME -GroupName $GROUPNAME
     }
 
     Context "Testing if feed permissions exist" {

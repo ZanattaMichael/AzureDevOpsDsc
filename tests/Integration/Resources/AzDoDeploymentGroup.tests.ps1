@@ -4,9 +4,10 @@ Describe "AzDoDeploymentGroup Integration Tests" -Tag "Integration", "Deployment
 
         $PROJECTNAME = 'TEST_DEPLOYGROUP'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
+        $authHeader = New-TestAuthHeader
+        $ORG        = Get-TestOrganizationName
+
+        New-TestProject -Organization $ORG -ProjectName $PROJECTNAME -AuthHeader $authHeader
 
         $parameters = @{
             Name       = 'AzDoDeploymentGroup'
@@ -18,8 +19,6 @@ Describe "AzDoDeploymentGroup Integration Tests" -Tag "Integration", "Deployment
                 Tags                = @('tag1', 'tag2')
             }
         }
-
-        New-Project $PROJECTNAME
     }
 
     Context "Testing if the deployment group exists" {

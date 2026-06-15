@@ -5,30 +5,12 @@ Describe "AzDoPipelinePermission Integration Tests" -Tag "Integration", "Pipelin
         $PROJECTNAME = 'TEST_PIPELINE_PERM'
         $REPONAME    = 'TESTREPOSITORY_PP'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
-
-        function New-Repository { param([string]$ProjectName, [string]$RepositoryName)
-            $null = Invoke-DscResource -Name 'AzDoGitRepository' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
-                ProjectName    = $ProjectName
-                RepositoryName = $RepositoryName
-            }
-        }
-
         function New-Pipeline { param([string]$ProjectName, [string]$PipelineName, [string]$RepositoryName)
             $null = Invoke-DscResource -Name 'AzDoPipeline' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
                 ProjectName    = $ProjectName
                 PipelineName   = $PipelineName
                 RepositoryName = $RepositoryName
                 YamlPath       = 'azure-pipelines.yml'
-            }
-        }
-
-        function New-Group { param([string]$ProjectName, [string]$GroupName)
-            $null = Invoke-DscResource -Name 'AzDoProjectGroup' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
-                ProjectName = $ProjectName
-                GroupName   = $GroupName
             }
         }
 

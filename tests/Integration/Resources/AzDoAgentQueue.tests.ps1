@@ -5,30 +5,22 @@ Describe "AzDoAgentQueue Integration Tests" -Tag "Integration", "AgentQueue" {
         $PROJECTNAME = 'TEST_AGENTQUEUE'
         $POOLNAME    = 'TEST_AGENTPOOL_QUEUE'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
+        $authHeader = New-TestAuthHeader
+        $ORG        = Get-TestOrganizationName
 
-        function New-Pool { param([string]$PoolName)
-            $null = Invoke-DscResource -Name 'AzDoAgentPool' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
-                PoolName = $PoolName
-                PoolType = 'automation'
-            }
-        }
+        New-TestProject   -Organization $ORG -ProjectName $PROJECTNAME -AuthHeader $authHeader
+        New-TestAgentPool -Organization $ORG -PoolName $POOLNAME       -AuthHeader $authHeader
 
         $parameters = @{
             Name       = 'AzDoAgentQueue'
             ModuleName = 'AzureDevOpsDsc'
             property   = @{
-                ProjectName          = $PROJECTNAME
-                QueueName            = 'TEST_QUEUE'
-                PoolName             = $POOLNAME
+                ProjectName           = $PROJECTNAME
+                QueueName             = 'TEST_QUEUE'
+                PoolName              = $POOLNAME
                 AuthorizeAllPipelines = $false
             }
         }
-
-        New-Project $PROJECTNAME
-        New-Pool $POOLNAME
     }
 
     Context "Testing if the agent queue exists" {

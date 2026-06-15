@@ -4,10 +4,6 @@ Describe "AzDoPipelineEnvironment Integration Tests" -Tag "Integration", "Pipeli
 
         $PROJECTNAME = 'TEST_PIPELINE_ENV'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
-
         $parameters = @{
             Name       = 'AzDoPipelineEnvironment'
             ModuleName = 'AzureDevOpsDsc'

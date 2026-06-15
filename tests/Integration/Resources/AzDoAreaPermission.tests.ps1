@@ -4,10 +4,6 @@ Describe "AzDoAreaPermission Integration Tests" -Tag "Integration", "AreaPermiss
 
         $PROJECTNAME = 'TESTPROJECT_AREA_PERMISSION'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
-
         $parameters = @{
             Name       = 'AzDoAreaPermission'
             ModuleName = 'AzureDevOpsDsc'

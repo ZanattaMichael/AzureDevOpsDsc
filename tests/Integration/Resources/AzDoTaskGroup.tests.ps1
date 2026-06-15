@@ -4,10 +4,6 @@ Describe "AzDoTaskGroup Integration Tests" -Tag "Integration", "TaskGroup" {
 
         $PROJECTNAME = 'TEST_TASKGROUP'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
-
         # A minimal task group with a single PowerShell step.
         $parameters = @{
             Name       = 'AzDoTaskGroup'

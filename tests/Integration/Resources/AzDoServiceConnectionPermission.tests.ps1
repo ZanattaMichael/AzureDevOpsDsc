@@ -6,10 +6,6 @@ Describe "AzDoServiceConnectionPermission Integration Tests" -Tag "Integration",
         $SCNAME      = 'TEST_SC_PERMISSION'
         $GROUPNAME   = 'SCPermGroup'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
-
         function New-ServiceConnection { param([string]$ProjectName, [string]$ConnectionName)
             $null = Invoke-DscResource -Name 'AzDoServiceConnection' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
                 ProjectName    = $ProjectName
@@ -21,13 +17,6 @@ Describe "AzDoServiceConnectionPermission Integration Tests" -Tag "Integration",
                     password = 'testpassword'
                 }
                 Data           = @{ url = 'https://test.example.com' }
-            }
-        }
-
-        function New-Group { param([string]$ProjectName, [string]$GroupName)
-            $null = Invoke-DscResource -Name 'AzDoProjectGroup' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
-                ProjectName = $ProjectName
-                GroupName   = $GroupName
             }
         }
 

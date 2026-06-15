@@ -6,17 +6,6 @@ Describe "AzDoPipeline Integration Tests (YAML pipeline)" -Tag "Integration", "P
         $REPONAME    = 'TESTREPOSITORY_PIPELINE'
         $YAMLPATH    = 'azure-pipelines.yml'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
-
-        function New-Repository { param([string]$ProjectName, [string]$RepositoryName)
-            $null = Invoke-DscResource -Name 'AzDoGitRepository' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
-                ProjectName    = $ProjectName
-                RepositoryName = $RepositoryName
-            }
-        }
-
         $parameters = @{
             Name       = 'AzDoPipeline'
             ModuleName = 'AzureDevOpsDsc'

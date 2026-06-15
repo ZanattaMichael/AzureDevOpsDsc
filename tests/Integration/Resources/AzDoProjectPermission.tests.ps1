@@ -5,17 +5,6 @@ Describe "AzDoProjectPermission Integration Tests" -Tag "Integration", "ProjectP
         $PROJECTNAME = 'TEST_PROJECT_PERM'
         $GROUPNAME   = 'ProjectPermGroup'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
-
-        function New-Group { param([string]$ProjectName, [string]$GroupName)
-            $null = Invoke-DscResource -Name 'AzDoProjectGroup' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
-                ProjectName = $ProjectName
-                GroupName   = $GroupName
-            }
-        }
-
         $parameters = @{
             Name       = 'AzDoProjectPermission'
             ModuleName = 'AzureDevOpsDsc'

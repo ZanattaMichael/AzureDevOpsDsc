@@ -2,19 +2,14 @@ Describe "AzDoBranchPolicy Integration Tests (Minimum Reviewer Count policy)" -T
 
     BeforeAll {
 
-        $PROJECTNAME   = 'TEST_BRANCHPOLICY'
-        $REPONAME      = 'TESTREPOSITORY'
+        $PROJECTNAME = 'TEST_BRANCHPOLICY'
+        $REPONAME    = 'TESTREPOSITORY'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
+        $authHeader = New-TestAuthHeader
+        $ORG        = Get-TestOrganizationName
 
-        function New-Repository { param([string]$ProjectName, [string]$RepositoryName)
-            $null = Invoke-DscResource -Name 'AzDoGitRepository' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
-                ProjectName    = $ProjectName
-                RepositoryName = $RepositoryName
-            }
-        }
+        New-TestProject       -Organization $ORG -ProjectName $PROJECTNAME -AuthHeader $authHeader
+        New-TestGitRepository -Organization $ORG -ProjectName $PROJECTNAME -RepositoryName $REPONAME -AuthHeader $authHeader
 
         $parameters = @{
             Name       = 'AzDoBranchPolicy'
@@ -27,17 +22,14 @@ Describe "AzDoBranchPolicy Integration Tests (Minimum Reviewer Count policy)" -T
                 isEnabled      = $true
                 isBlocking     = $true
                 PolicySettings = @{
-                    minimumApproverCount         = 1
-                    creatorVoteCounts            = $false
-                    allowDownvotes               = $false
-                    resetOnSourcePush            = $false
-                    requireVoteOnLastIteration   = $false
+                    minimumApproverCount       = 1
+                    creatorVoteCounts          = $false
+                    allowDownvotes             = $false
+                    resetOnSourcePush          = $false
+                    requireVoteOnLastIteration = $false
                 }
             }
         }
-
-        New-Project $PROJECTNAME
-        New-Repository -ProjectName $PROJECTNAME -RepositoryName $REPONAME
     }
 
     Context "Testing if the Minimum Reviewer Count branch policy exists" {
@@ -78,11 +70,11 @@ Describe "AzDoBranchPolicy Integration Tests (Minimum Reviewer Count policy)" -T
         BeforeAll {
             $parameters.Method = 'Set'
             $parameters.property.PolicySettings = @{
-                minimumApproverCount         = 2
-                creatorVoteCounts            = $false
-                allowDownvotes               = $false
-                resetOnSourcePush            = $true
-                requireVoteOnLastIteration   = $false
+                minimumApproverCount       = 2
+                creatorVoteCounts          = $false
+                allowDownvotes             = $false
+                resetOnSourcePush          = $true
+                requireVoteOnLastIteration = $false
             }
         }
 

@@ -6,21 +6,10 @@ Describe "AzDoTeamMember Integration Tests" -Tag "Integration", "TeamMember" {
         $TEAMNAME    = 'TESTTEAM_MEMBER'
         $GROUPNAME   = 'TESTGROUP_MEMBER'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
-
         function New-Team { param([string]$ProjectName, [string]$TeamName)
             $null = Invoke-DscResource -Name 'AzDoTeam' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
                 ProjectName = $ProjectName
                 TeamName    = $TeamName
-            }
-        }
-
-        function New-Group { param([string]$ProjectName, [string]$GroupName)
-            $null = Invoke-DscResource -Name 'AzDoProjectGroup' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
-                ProjectName = $ProjectName
-                GroupName   = $GroupName
             }
         }
 

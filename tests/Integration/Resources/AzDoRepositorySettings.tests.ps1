@@ -5,17 +5,6 @@ Describe "AzDoRepositorySettings Integration Tests" -Tag "Integration", "Reposit
         $PROJECTNAME = 'TEST_REPO_SETTINGS'
         $REPONAME    = 'TESTREPOSITORY_SETTINGS'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
-
-        function New-Repository { param([string]$ProjectName, [string]$RepositoryName)
-            $null = Invoke-DscResource -Name 'AzDoGitRepository' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
-                ProjectName    = $ProjectName
-                RepositoryName = $RepositoryName
-            }
-        }
-
         $parameters = @{
             Name       = 'AzDoRepositorySettings'
             ModuleName = 'AzureDevOpsDsc'

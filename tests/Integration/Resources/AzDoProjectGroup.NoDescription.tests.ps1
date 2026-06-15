@@ -5,10 +5,6 @@ Describe "AzDoProjectGroup Integration Tests - No Description" -Tag "Integration
         $PROJECTNAME = 'TESTPROJECT_PROJECTGROUP_NODESC'
         $GROUPNAME   = 'TESTPROJECTGROUP_NODESC'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
-
         $parameters = @{
             Name       = 'AzDoProjectGroup'
             ModuleName = 'AzureDevOpsDsc'

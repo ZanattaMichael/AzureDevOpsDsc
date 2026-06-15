@@ -4,10 +4,6 @@ Describe "AzDoAreaNodes Integration Tests" -Tag "Integration", "AreaNodes" {
 
         $PROJECTNAME = 'TEST_PROJECT_AREA_NODES'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
-
         $parameters = @{
             Name       = 'AzDoAreaNodes'
             ModuleName = 'AzureDevOpsDsc'

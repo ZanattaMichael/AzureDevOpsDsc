@@ -4,24 +4,6 @@ Describe "AzDoGitPermission Integration Tests" -Tag "Integration", "GitPermissio
 
         $PROJECTNAME = 'TESTPROJECT_GIT_PERMISSION'
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
-
-        function New-Repository { param([string]$ProjectName, [string]$RepositoryName)
-            $null = Invoke-DscResource -Name 'AzDoGitRepository' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
-                ProjectName    = $ProjectName
-                RepositoryName = $RepositoryName
-            }
-        }
-
-        function New-Group { param([string]$ProjectName, [string]$GroupName)
-            $null = Invoke-DscResource -Name 'AzDoProjectGroup' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
-                ProjectName = $ProjectName
-                GroupName   = $GroupName
-            }
-        }
-
         $parameters = @{
             Name = 'AzDoGitPermission'
             ModuleName = 'AzureDevOpsDsc'

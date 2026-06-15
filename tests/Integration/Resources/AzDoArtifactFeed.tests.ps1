@@ -3,29 +3,27 @@ Describe "AzDoArtifactFeed Integration Tests" -Tag "Integration", "ArtifactFeed"
     BeforeAll {
 
         $PROJECTNAME = 'TEST_ARTIFACT_FEED'
-        # Azure DevOps reserves a feed name for a cooldown period after the feed is permanently
-        # deleted (even once it is gone from the recycle bin), so reusing a fixed name across runs
-        # fails with "feed name is currently reserved". Use a unique name per run for isolation.
+        # Azure DevOps reserves a feed name for a cooldown period after deletion.
+        # Use a unique name per run to avoid "feed name reserved" conflicts.
         $FEEDNAME = "testfeed$(Get-Random -Maximum 99999)"
 
-        function New-Project { param([string]$ProjectName)
-            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
-        }
+        $authHeader = New-TestAuthHeader
+        $ORG        = Get-TestOrganizationName
+
+        New-TestProject -Organization $ORG -ProjectName $PROJECTNAME -AuthHeader $authHeader
 
         $parameters = @{
             Name       = 'AzDoArtifactFeed'
             ModuleName = 'AzureDevOpsDsc'
             property   = @{
-                ProjectName              = $PROJECTNAME
-                FeedName                 = $FEEDNAME
-                Description              = 'Test artifact feed'
-                BadgesEnabled            = $false
+                ProjectName                = $PROJECTNAME
+                FeedName                   = $FEEDNAME
+                Description                = 'Test artifact feed'
+                BadgesEnabled              = $false
                 HideDeletedPackageVersions = $true
-                UpstreamEnabled          = $false
+                UpstreamEnabled            = $false
             }
         }
-
-        New-Project $PROJECTNAME
     }
 
     Context "Testing if the artifact feed exists" {
