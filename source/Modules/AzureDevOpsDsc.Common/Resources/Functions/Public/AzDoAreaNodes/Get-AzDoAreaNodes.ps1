@@ -91,6 +91,20 @@ Function Get-AzDoAreaNodes {
         CachedAreaNodes = $null
     }
 
+    # Refresh this project's area nodes from the live API before reading them.
+    # The init-time cache does not contain projects created later (so the top-level area node —
+    # required to reclassify work items on removal — would be missing), and changes made in a
+    # previous DSC runspace are not reliably reflected in this runspace's in-memory cache. Clearing
+    # and repopulating from live makes the comparison authoritative and idempotent.
+    $existingKeys = @((Get-CacheObject -CacheType 'LiveAreaNodes' | Where-Object { $_.Key -like "\$ProjectName\Area*" }).Key | Where-Object { $_ })
+    ForEach ($existingKey in $existingKeys) { Remove-CacheItem -Key $existingKey -Type 'LiveAreaNodes' }
+
+    $liveAreaNodes = List-DevOpsClassificationNodes -ProjectName $ProjectName -OrganizationName $OrganizationName
+    ForEach ($liveNode in $liveAreaNodes)
+    {
+        if ($liveNode.structureType -eq 'area') { Format-ClassificationNode -Node $liveNode -CacheType 'LiveAreaNodes' }
+    }
+
     # Retrieve cached area nodes from cache
     $cachedAreaNodes = (Get-CacheObject -CacheType 'LiveAreaNodes' | Where-Object { $_.Key -like "\$ProjectName\Area*" }).Value
     Write-Verbose "[Get-AzDoAreaNodes] Retrieved cached area nodes: $($cachedAreaNodes | Out-String)"
