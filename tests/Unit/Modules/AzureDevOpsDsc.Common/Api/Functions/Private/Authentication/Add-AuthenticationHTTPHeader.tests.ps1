@@ -61,15 +61,13 @@ Describe "Add-AuthenticationHTTPHeader" -Tag "Unit", "Authentication" {
         $Global:DSCAZDO_AuthenticationToken | Add-Member -MemberType ScriptMethod -Name isExpired -Value { return $true }
 
 
-        # Mock Update-AzManagedIdentity cmdlet
+        # Mock Update-AzManagedIdentity: update the global directly (as the real function does) and
+        # return nothing — returning a value would leak into the caller's output stream.
         Mock -CommandName Update-AzManagedIdentity -MockWith {
-            $obj = [PSCustomObject]@{
-                tokenType = 'ManagedIdentity'
-            }
+            $obj = [PSCustomObject]@{ tokenType = 'ManagedIdentity' }
             $obj | Add-Member -MemberType ScriptMethod -Name Get -Value { return "newMIToken" }
             $obj | Add-Member -MemberType ScriptMethod -Name isExpired -Value { return $false }
-
-            return $obj
+            $Global:DSCAZDO_AuthenticationToken = $obj
         }
 
         $result = Add-AuthenticationHTTPHeader

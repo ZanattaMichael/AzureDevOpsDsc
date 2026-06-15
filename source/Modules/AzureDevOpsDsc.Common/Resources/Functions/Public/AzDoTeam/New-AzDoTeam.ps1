@@ -34,6 +34,14 @@ Function New-AzDoTeam
         return
     }
 
+    # The projects/teams API does not return a descriptor. Fetch it from the graph descriptors endpoint
+    # so that New-AzDoTeamMember can use it to add members via the VSSPS API.
+    $descriptor = Get-DevOpsSecurityDescriptor -ProjectId $value.id -Organization (Get-AzDoOrganizationName)
+    if ($descriptor)
+    {
+        $value | Add-Member -NotePropertyName 'descriptor' -NotePropertyValue $descriptor -Force
+    }
+
     Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $TeamName) -Value $value -Type 'LiveTeams'
     Export-CacheObject -CacheType 'LiveTeams' -Content $AzDoLiveTeams
     Refresh-CacheObject -CacheType 'LiveTeams'

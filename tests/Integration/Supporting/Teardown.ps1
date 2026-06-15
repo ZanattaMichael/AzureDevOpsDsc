@@ -89,7 +89,7 @@ if ($ClearAll -or $ClearProjects)
     foreach ($proj in $deletedProjects)
     {
         Write-Host "[Teardown] Permanently deleting project '$($proj.Name)' ($($proj.id)) from recycle bin."
-        Remove-DevOpsProject -ProjectId $proj.id -Organization $OrganizationName
+        try { Remove-DevOpsProject -ProjectId $proj.id -Organization $OrganizationName } catch { Write-Warning "[Teardown] Could not purge '$($proj.Name)' from recycle bin (may already be gone): $_" }
     }
     if ($deletedProjects.Count -gt 0)
     {

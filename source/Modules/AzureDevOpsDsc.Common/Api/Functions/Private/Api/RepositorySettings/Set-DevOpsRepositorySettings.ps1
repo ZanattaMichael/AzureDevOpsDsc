@@ -12,7 +12,7 @@ Function Set-DevOpsRepositorySettings
         [Parameter()][nullable[bool]]$AllowRebaseMerge,
         [Parameter()][nullable[bool]]$AllowEditDescriptionDuringCompletion,
         [Parameter()][nullable[bool]]$AllowDeletionOfLockedBranches,
-        [Parameter()][string]$ApiVersion = '7.1-preview.1'
+        [Parameter()][string]$ApiVersion = '7.1'
     )
     $body = @{}
     if ($PSBoundParameters.ContainsKey('AllowSquashMerge'))                    { $body['allowSquashMerge']                    = $AllowSquashMerge }
@@ -28,5 +28,14 @@ Function Set-DevOpsRepositorySettings
         Body        = $body | ConvertTo-Json
     }
     try   { return Invoke-AzDevOpsApiRestMethod @params }
-    catch { Throw "[Set-DevOpsRepositorySettings] Failed to update repository settings for '$RepositoryId': $_" }
+    catch {
+        # Invoke-AzDevOpsApiRestMethod wraps errors in a string exception, so check the message.
+        # 404 means this org/version does not support PATCH on this settings endpoint.
+        if ($_.Exception.Message -match '404')
+        {
+            Write-Warning "[Set-DevOpsRepositorySettings] PATCH settings returned 404 for '$RepositoryId' — endpoint may not be supported on this org. Settings not applied."
+            return
+        }
+        Throw "[Set-DevOpsRepositorySettings] Failed to update repository settings for '$RepositoryId': $_"
+    }
 }

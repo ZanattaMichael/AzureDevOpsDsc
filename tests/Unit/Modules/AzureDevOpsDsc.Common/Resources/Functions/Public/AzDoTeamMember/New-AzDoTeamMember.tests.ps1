@@ -48,7 +48,7 @@ Describe "New-AzDoTeamMember" -Tag "Unit", "TeamMember" {
             } -MockWith { return $mockTeam }
 
             Mock -CommandName Get-CacheItem -ParameterFilter {
-                $Key -eq '[TestProject]\user@example.com' -and $Type -eq 'LiveGroups'
+                $Key -eq 'user@example.com' -and $Type -eq 'LiveGroups'
             } -MockWith { return $mockMember }
         }
 

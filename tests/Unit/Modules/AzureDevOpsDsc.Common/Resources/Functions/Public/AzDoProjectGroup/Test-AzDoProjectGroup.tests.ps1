@@ -27,12 +27,12 @@ Describe 'Test-AzDoProjectGroup' -Tag "Unit", "ProjectGroup" {
             function Format-AzDoGroup { param([string]$Prefix, [string]$GroupName) return "$Prefix\$GroupName" }
         }
 
-        Mock -CommandName 'Get-CacheItem' -MockWith {
+        Mock -CommandName Get-CacheItem -MockWith {
             param ($Key, $Type)
             if ($Key -eq 'groupKey' -and $Type -eq 'LiveGroups') { return $true }
             return $false
         }
-        Mock -CommandName 'Format-AzDoGroup' -MockWith { return "groupKey" }
+        Mock -CommandName Format-AzDoGroup -MockWith { return "groupKey" }
     }
 
     Context 'When parameters are valid' {

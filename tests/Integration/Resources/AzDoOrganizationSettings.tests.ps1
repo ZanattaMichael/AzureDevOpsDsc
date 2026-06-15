@@ -2,9 +2,10 @@ Describe "AzDoOrganizationSettings Integration Tests" -Tag "Integration", "Organ
 
     BeforeAll {
 
-        # Retrieve the organisation name from the module's global variable which is
-        # populated by New-AzDoAuthenticationProvider during test framework init.
-        $ORGNAME = $Global:DSCAZDO_OrganizationName
+        # Read the org name from the module settings file so this test does not depend on
+        # $Global:DSCAZDO_OrganizationName being pre-populated before BeforeAll runs.
+        $settings = Import-Clixml -Path (Join-Path $ENV:AZDODSC_CACHE_DIRECTORY 'ModuleSettings.clixml')
+        $ORGNAME  = $settings.OrganizationName
 
         $parameters = @{
             Name       = 'AzDoOrganizationSettings'

@@ -97,6 +97,11 @@ Function ConvertTo-FormattedToken {
                       else                      { 'Environments/{0}' -f $Token.ProjectId }
             break
         }
+        # Identity / Group Permission: token format is {projectId}\{groupOriginId}
+        {$_.type -eq 'Identity'} {
+            $string = '{0}\{1}' -f $Token.projectId, $Token.groupId
+            break
+        }
         # Generic / passthrough — token stored verbatim
         {$_.type -eq 'Generic'} {
             $string = $Token.TokenValue

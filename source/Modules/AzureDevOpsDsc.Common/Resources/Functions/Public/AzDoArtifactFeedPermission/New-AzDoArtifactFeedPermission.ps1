@@ -10,19 +10,23 @@ Function New-AzDoArtifactFeedPermission
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
     )
     Write-Verbose "[New-AzDoArtifactFeedPermission] Started."
-    $SecurityNamespace = Get-CacheItem -Key 'Packaging' -Type 'SecurityNamespaces'
-    $feedCache         = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $FeedName) -Type 'LiveArtifactFeeds'
-    if (-not $SecurityNamespace) { Write-Error "[New-AzDoArtifactFeedPermission] Namespace not found."; return }
-    $tokenId = if ($feedCache) { $feedCache.id } else { $FeedName }
-    $serializeACLParams = @{
-        ReferenceACLs        = $LookupResult.propertiesChanged
-        DescriptorACLList    = Get-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'
-        DescriptorMatchToken = ($LocalizedDataAzSerializationPatten.GenericPermission -f [regex]::Escape($tokenId))
-    }
-    $params = @{
-        OrganizationName    = (Get-AzDoOrganizationName)
-        SecurityNamespaceID = $SecurityNamespace.namespaceId
-        SerializedACLs      = ConvertTo-ACLHashtable @serializeACLParams
-    }
-    Set-AzDoPermission @params
+
+    $feedCache = if ($LookupResult.feedCache) { $LookupResult.feedCache }
+                 else { Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $FeedName) -Type 'LiveArtifactFeeds' }
+    if (-not $feedCache) { Write-Error "[New-AzDoArtifactFeedPermission] Feed '$FeedName' not found."; return }
+
+    $apiUri      = 'https://feeds.dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
+    $livePerms   = @(if ($LookupResult.livePermissions) { $LookupResult.livePermissions } else { @() })
+    $desiredPerms = @(if ($LookupResult.desiredPermissions) { $LookupResult.desiredPermissions } else { @() })
+
+    # Removals: live perms whose identity is not in the desired set.
+    $desiredDescriptors = @($desiredPerms | ForEach-Object { $_.identityDescriptor })
+    $removals   = @($livePerms | Where-Object { $_.identityDescriptor -notin $desiredDescriptors } | ForEach-Object {
+        [PSCustomObject]@{ role = 'none'; identityDescriptor = $_.identityDescriptor }
+    })
+
+    $patchBody = @($removals) + @($desiredPerms)
+    if ($patchBody.Count -eq 0) { return }
+
+    Set-DevOpsArtifactFeedPermission -ApiUri $apiUri -ProjectName $ProjectName -FeedId $feedCache.id -Permissions $patchBody
 }

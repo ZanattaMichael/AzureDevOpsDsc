@@ -56,6 +56,7 @@ Describe "AzDoRepositorySettings Integration Tests" -Tag "Integration", "Reposit
         }
 
         It "Should return True after applying settings" {
+            Start-Sleep -Seconds 3
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
@@ -77,6 +78,7 @@ Describe "AzDoRepositorySettings Integration Tests" -Tag "Integration", "Reposit
         }
 
         It "Should return True after changing settings" {
+            Start-Sleep -Seconds 3
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
@@ -98,6 +100,7 @@ Describe "AzDoRepositorySettings Integration Tests" -Tag "Integration", "Reposit
         }
 
         It "Should return True after reverting" {
+            Start-Sleep -Seconds 3
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue

@@ -72,10 +72,13 @@ Function Get-AzDoProjectPermission
     }
 
     # Filter the raw ACLs to just the target project's token BEFORE the expensive formatting.
-    $projectTokenPattern = $LocalizedDataAzSerializationPatten.ProjectPermission -f $projectCache.id
-    $DevOpsACLs = $DevOpsACLs | Where-Object { $_.token -match $projectTokenPattern }
+    # Use exact-match (-eq) so child tokens (e.g. BoardGroup sub-paths) are not included.
+    $DevOpsACLs = $DevOpsACLs | Where-Object { $_.token -eq $projectToken }
 
-    $DifferenceACLs = $DevOpsACLs | ConvertTo-FormattedACL -SecurityNamespace $SecurityNamespace -OrganizationName $OrganizationName
+    # Wrap in @() so $DifferenceACLs is always an array; ConvertTo-FormattedACL returns a
+    # generic List that PowerShell unrolls to a bare hashtable when there is only one entry,
+    # making [0] indexing in Test-ACLListforChanges return $null.
+    $DifferenceACLs = @($DevOpsACLs | ConvertTo-FormattedACL -SecurityNamespace $SecurityNamespace -OrganizationName $OrganizationName)
 
     # The reference token must use the project GUID, exactly like the live ACL token. Using the
     # project *name* fails the project token regex (it does not allow underscores) and resolves to
@@ -88,9 +91,26 @@ Function Get-AzDoProjectPermission
         TokenName         = $projectToken
     }
 
-    $ReferenceACLs = ConvertTo-ACL @params
+    # Wrap in @() so $ReferenceACLs is always an array; Test-ACLListforChanges uses [0] indexing
+    # and a raw hashtable returns $null at index 0.
+    $ReferenceACLs = @(ConvertTo-ACL @params | Where-Object { $_.token.Type -ne 'ProjectUnknown' })
+
+    # The Project namespace has protected system-group ACEs (Project Admins, Contributors, etc.)
+    # that Azure DevOps auto-creates and cannot remove. Comparing the full ACL count would always
+    # fail. Instead, filter DifferenceACLs.aces to only the identities we are managing so that
+    # Test-ACLListforChanges compares only the relevant ACE(s).
+    if ($ReferenceACLs.Count -gt 0 -and $DifferenceACLs.Count -gt 0) {
+        $desiredOriginIds = @($ReferenceACLs[0].aces | ForEach-Object { $_.Identity.value.originId } | Where-Object { $_ })
+        if ($desiredOriginIds.Count -gt 0) {
+            $DifferenceACLs[0]['aces'] = @($DifferenceACLs[0].aces | Where-Object { $_.Identity.value.originId -in $desiredOriginIds })
+        } else {
+            # No desired identities (empty permissions) — treat live as having no relevant ACEs.
+            $DifferenceACLs[0]['aces'] = @()
+        }
+    }
 
     $compareResult = Test-ACLListforChanges -ReferenceACLs $ReferenceACLs -DifferenceACLs $DifferenceACLs
+
     $getResult.propertiesChanged = $compareResult.propertiesChanged
     $getResult.status = [DSCGetSummaryState]::"$($compareResult.status)"
     $getResult.reason = $compareResult.reason

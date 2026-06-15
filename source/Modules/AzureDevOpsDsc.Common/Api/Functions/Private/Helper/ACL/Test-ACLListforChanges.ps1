@@ -47,7 +47,9 @@ Function Test-ACLListforChanges
     # If the Reference ACL is null/empty (no ACEs desired), check whether current state also has no ACEs.
     if (($null -eq $ReferenceACLs) -or ($null -eq $ReferenceACLs.aces) -or ($ReferenceACLs[0].aces.Count -eq 0))
     {
-        if (($null -eq $DifferenceACLs) -or ($DifferenceACLs[0].aces.Count -eq 0))
+        # DifferenceACLs is empty when the live state has no explicit ACEs (only inherited).
+        # An empty list (Count=0) or null both mean "no explicit ACEs present".
+        if (($null -eq $DifferenceACLs) -or ($DifferenceACLs.Count -eq 0) -or ($DifferenceACLs[0].aces.Count -eq 0))
         {
             Write-Verbose "[Test-ACLListforChanges] No ACEs desired and none present - state is Unchanged."
             return $result

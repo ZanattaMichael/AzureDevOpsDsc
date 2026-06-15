@@ -6,6 +6,17 @@ Describe "AzDoGroupPermission intergration tests" -Tag "Integration", "GroupPerm
         $PROJECTNAME = 'TESTPROJECT_GIT_GROUP_PERMISSION'
         $GroupName = 'TESTGROUP'
 
+        function New-Project { param([string]$ProjectName)
+            $null = Invoke-DscResource -Name 'AzDoProject' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{ ProjectName = $ProjectName }
+        }
+
+        function New-Group { param([string]$GroupName, [string]$ProjectName)
+            $null = Invoke-DscResource -Name 'AzDoProjectGroup' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
+                ProjectName = $ProjectName
+                GroupName   = $GroupName
+            }
+        }
+
         $parameters = @{
             Name = 'AzDoGroupPermission'
             ModuleName = 'AzureDevOpsDsc'

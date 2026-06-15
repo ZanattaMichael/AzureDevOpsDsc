@@ -97,8 +97,10 @@ Function Add-AuthenticationHTTPHeader
             if ($Global:DSCAZDO_AuthenticationToken.isExpired())
             {
                 Write-Verbose "[Add-AuthenticationHTTPHeader] Managed Identity Token has expired. Obtaining a new token."
-                # If so, get a new token
-                $Global:DSCAZDO_AuthenticationToken = Update-AzManagedIdentity -OrganizationName $Global:DSCAZDO_OrganizationName
+                # Update-AzManagedIdentity sets $Global:DSCAZDO_AuthenticationToken directly; do NOT capture
+                # its return value or the assignment would overwrite the global with $null (the function
+                # has no explicit return statement).
+                Update-AzManagedIdentity -OrganizationName $Global:DSCAZDO_OrganizationName
             }
 
             # Add the Managed Identity Token to the header

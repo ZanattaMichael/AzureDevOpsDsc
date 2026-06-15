@@ -24,7 +24,7 @@ Function Set-AzDoProjectPermission
 
     $serializeACLParams = @{
         ReferenceACLs        = $LookupResult.propertiesChanged
-        DescriptorACLList    = Get-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'
+        DescriptorACLList    = @()
         DescriptorMatchToken = ($LocalizedDataAzSerializationPatten.ProjectPermission -f $Project.id)
     }
 
@@ -32,8 +32,6 @@ Function Set-AzDoProjectPermission
         OrganizationName    = (Get-AzDoOrganizationName)
         SecurityNamespaceID = $SecurityNamespace.namespaceId
         SerializedACLs      = ConvertTo-ACLHashtable @serializeACLParams
-        ClearACEs           = $true
-        DifferenceACLs      = $LookupResult.DifferenceACLs
     }
 
     Set-AzDoPermission @params

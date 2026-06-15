@@ -58,13 +58,16 @@ Describe 'New-AzDoAreaPermission Tests' -Tag "Unit", "AreaPermission" {
 
     Context "When Ensure is Present" {
 
-        It "Should not proceed when AreaPath is not specified" {
+        It "Should proceed and call Set-AzDoPermission when AreaPath is not specified (top-level project area)" {
             # Act
-            $result = New-AzDoAreaPermission -ProjectName "TestProject" -isInherited $true
+            New-AzDoAreaPermission -ProjectName "TestProject" -isInherited $true -LookupResult @{
+                identifiers       = @('guid-1')
+                propertiesChanged = @()
+            }
 
-            # Assert
-            $result | Should -BeNullOrEmpty
-            Assert-MockCalled -CommandName Get-CacheItem -Exactly 0
+            # Assert — function proceeds past the namespace/project lookup
+            Assert-MockCalled -CommandName Get-CacheItem -Times 3
+            Assert-MockCalled -CommandName Set-AzDoPermission -Times 1
         }
 
         It "Should return warning when Security Namespace or Project is not found" {
@@ -90,21 +93,15 @@ Describe 'New-AzDoAreaPermission Tests' -Tag "Unit", "AreaPermission" {
                 return $null
             }
 
-            Mock -CommandName Export-CLixml {
-                param($InputObject, $Path)
-                # Simulate export behavior
-            }
-
             # Act
             $result = New-AzDoAreaPermission -ProjectName "TestProject" -AreaPath "ValidAreaPath" -isInherited $true -LookupResult @{
-                propertiesChanged = @{
-                    identifiers = @('12345', '67890')
-                }
+                identifiers       = @('12345', '67890')
+                propertiesChanged = @()
             }
 
             # Assert
             $result | Should -BeNullOrEmpty
-
+            Assert-MockCalled -CommandName Set-AzDoPermission -Times 1
         }
     }
 }

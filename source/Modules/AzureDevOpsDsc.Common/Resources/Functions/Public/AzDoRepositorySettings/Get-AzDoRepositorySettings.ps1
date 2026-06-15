@@ -39,17 +39,30 @@ Function Get-AzDoRepositorySettings
         $result.liveCache = $settings
 
         $changed = @()
-        if ($settings.allowSquashMerge    -ne $AllowSquashMerge)    { $changed += 'AllowSquashMerge' }
-        if ($settings.allowNoFastForward  -ne $AllowNoFastForward)  { $changed += 'AllowNoFastForward' }
-        if ($settings.allowRebaseMerge    -ne $AllowRebaseMerge)    { $changed += 'AllowRebaseMerge' }
+        # Only report a field as Changed if the live value is non-null AND differs.
+        # The /settings endpoint for many orgs does not return merge-strategy fields;
+        # treating null as "no data" avoids an infinite Set→PATCH→404 loop.
+        if ($null -ne $settings.allowSquashMerge   -and $settings.allowSquashMerge    -ne $AllowSquashMerge)    { $changed += 'AllowSquashMerge' }
+        if ($null -ne $settings.allowNoFastForward -and $settings.allowNoFastForward  -ne $AllowNoFastForward)  { $changed += 'AllowNoFastForward' }
+        if ($null -ne $settings.allowRebaseMerge   -and $settings.allowRebaseMerge    -ne $AllowRebaseMerge)    { $changed += 'AllowRebaseMerge' }
 
         $result.propertiesChanged = $changed
         $result.status = if ($changed.Count -eq 0) { [DSCGetSummaryState]::Unchanged } else { [DSCGetSummaryState]::Changed }
     }
     catch
     {
-        Write-Warning "[Get-AzDoRepositorySettings] Error retrieving settings: $_"
-        $result.status = [DSCGetSummaryState]::Error
+        # If the settings endpoint is unavailable for this org (e.g. 404), report Unchanged
+        # so the resource does not repeatedly try to Set settings it cannot read or write.
+        if ($_ -match '404')
+        {
+            Write-Warning "[Get-AzDoRepositorySettings] Settings endpoint returned 404 — treating as Unchanged."
+            $result.status = [DSCGetSummaryState]::Unchanged
+        }
+        else
+        {
+            Write-Warning "[Get-AzDoRepositorySettings] Error retrieving settings: $_"
+            $result.status = [DSCGetSummaryState]::Error
+        }
     }
 
     return $result

@@ -3,7 +3,7 @@ $currentFile = $MyInvocation.MyCommand.Path
 Describe "Remove-AzDoArtifactFeedPermission" -Tag "Unit", "ArtifactFeedPermission" {
 
     AfterAll {
-        Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global
+        Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global -ErrorAction SilentlyContinue
     }
 
     BeforeAll {
@@ -22,39 +22,38 @@ Describe "Remove-AzDoArtifactFeedPermission" -Tag "Unit", "ArtifactFeedPermissio
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
-        Mock -CommandName Remove-AzDoPermission
-        Mock -CommandName Write-Error
+        Mock -CommandName Set-DevOpsArtifactFeedPermission
+        Mock -CommandName Get-DevOpsArtifactFeedPermission -MockWith { return @() }
+        Mock -CommandName Write-Verbose
     }
 
-    Context "when namespace is found" {
+    Context "when feed is found" {
         BeforeEach {
             Mock -CommandName Get-CacheItem -MockWith {
                 param ($Key, $Type)
-                switch ($Type) {
-                    'SecurityNamespaces' { return @{ namespaceId = 'mock-ns-id' } }
-                    'LiveProjects'       { return @{ id = 'mock-project-id' } }
-                    'LiveAgentPools'     { return @{ id = 1 } }
-                    'LiveArtifactFeeds'  { return @{ id = 'feed-id' } }
-                    'LiveACLList'        { return @{} }
-                    default { return @{ id = 'mock-id' } }
-                }
+                if ($Type -eq 'LiveArtifactFeeds') { return @{ id = 'feed-id'; name = 'TestFeed' } }
+                return $null
             }
         }
 
         It "performs the expected operation" {
-            Remove-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed'
-            Assert-MockCalled -CommandName Remove-AzDoPermission -Exactly -Times 1
+            $lookupResult = @{
+                feedCache       = @{ id = 'feed-id'; name = 'TestFeed' }
+                livePermissions = @([PSCustomObject]@{ identityDescriptor = 'desc-1'; role = 'reader'; isInheritedRole = $false })
+            }
+            Remove-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed' -LookupResult $lookupResult
+            Assert-MockCalled -CommandName Set-DevOpsArtifactFeedPermission -Exactly -Times 1
         }
     }
 
-    Context "when namespace not found" {
+    Context "when feed not found" {
         BeforeEach {
             Mock -CommandName Get-CacheItem -MockWith { return $null }
         }
 
-        It "writes an error" {
-            Remove-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed'
-            Assert-MockCalled -CommandName Write-Error -Times 1
+        It "does not throw and does not call Set-DevOpsArtifactFeedPermission" {
+            { Remove-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed' } | Should -Not -Throw
+            Assert-MockCalled -CommandName Set-DevOpsArtifactFeedPermission -Times 0
         }
     }
 }

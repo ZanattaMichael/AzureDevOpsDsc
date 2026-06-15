@@ -68,10 +68,8 @@ Function New-GitRepository
         Method = 'POST'
         ContentType = 'application/json'
         Body = @{
-            name = $RepositoryName
-            project = @{
-                id = $Project.id
-            }
+            name    = $RepositoryName
+            project = @{ id = $Project.id }
         } | ConvertTo-Json
     }
 

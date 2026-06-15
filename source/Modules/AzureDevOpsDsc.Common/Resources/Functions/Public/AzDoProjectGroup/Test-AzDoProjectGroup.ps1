@@ -61,7 +61,6 @@ Function Test-AzDoProjectGroup
 
         if ($GroupDescription -eq $GetResult.Current.description)
         {
-            $GetResult.
             $result = $false
         }
 

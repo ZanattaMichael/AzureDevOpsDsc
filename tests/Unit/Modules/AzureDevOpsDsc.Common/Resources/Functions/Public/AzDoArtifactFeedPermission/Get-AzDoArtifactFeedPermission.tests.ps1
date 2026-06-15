@@ -3,7 +3,7 @@ $currentFile = $MyInvocation.MyCommand.Path
 Describe "Get-AzDoArtifactFeedPermission" -Tag "Unit", "ArtifactFeedPermission" {
 
     AfterAll {
-        Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global
+        Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global -ErrorAction SilentlyContinue
     }
 
     BeforeAll {
@@ -22,42 +22,47 @@ Describe "Get-AzDoArtifactFeedPermission" -Tag "Unit", "ArtifactFeedPermission" 
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
-        Mock -CommandName Get-DevOpsACL -MockWith { return @(@{ Token = 'mock' }) }
-        Mock -CommandName ConvertTo-FormattedACL -MockWith { return @() }
-        Mock -CommandName ConvertTo-ACL -MockWith { return @{} }
-        Mock -CommandName Test-ACLListforChanges -MockWith { return @{ propertiesChanged = @(); status = 'Compliant'; reason = '' } }
-        Mock -CommandName Write-Error
+        Mock -CommandName Get-DevOpsArtifactFeedPermission -MockWith { return @() }
+        Mock -CommandName List-DevOpsArtifactFeeds -MockWith { return @() }
+        Mock -CommandName Find-Identity -MockWith { return $null }
+        Mock -CommandName Add-CacheItem
+        Mock -CommandName Write-Warning
+        Mock -CommandName Write-Verbose
     }
 
-    Context "when namespace is found" {
+    Context "when feed is found" {
         BeforeEach {
             Mock -CommandName Get-CacheItem -MockWith {
                 param ($Key, $Type)
-                switch ($Type) {
-                    'SecurityNamespaces' { return @{ namespaceId = 'mock-ns-id' } }
-                    'LiveProjects'       { return @{ id = 'mock-project-id' } }
-                    'LiveAgentPools'     { return @{ id = 1 } }
-                    'LiveArtifactFeeds'  { return @{ id = 'feed-id' } }
-                    'LiveACLList'        { return @{} }
-                    default { return @{ id = 'mock-id' } }
-                }
+                if ($Type -eq 'LiveArtifactFeeds') { return @{ id = 'feed-id'; name = 'TestFeed' } }
+                return $null
             }
         }
 
         It "performs the expected operation" {
             Get-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed'
-            Assert-MockCalled -CommandName Test-ACLListforChanges -Times 1
+            Assert-MockCalled -CommandName Get-DevOpsArtifactFeedPermission -Times 1
+        }
+
+        It "returns a result with Ensure Present" {
+            $result = Get-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed'
+            $result.Ensure | Should -Be ([Ensure]::Present)
         }
     }
 
-    Context "when namespace not found" {
+    Context "when feed not found" {
         BeforeEach {
             Mock -CommandName Get-CacheItem -MockWith { return $null }
         }
 
-        It "writes an error" {
+        It "returns NotFound status" {
+            $result = Get-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed'
+            $result.status | Should -Be ([DSCGetSummaryState]::NotFound)
+        }
+
+        It "does not call Get-DevOpsArtifactFeedPermission" {
             Get-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed'
-            Assert-MockCalled -CommandName Write-Error -Times 1
+            Assert-MockCalled -CommandName Get-DevOpsArtifactFeedPermission -Times 0
         }
     }
 }

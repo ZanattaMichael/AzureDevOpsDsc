@@ -66,6 +66,7 @@ Describe "AzDoProjectPermission Integration Tests" -Tag "Integration", "ProjectP
         }
 
         It "Should return True after setting permissions" {
+            Start-Sleep -Seconds 5
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
@@ -92,6 +93,7 @@ Describe "AzDoProjectPermission Integration Tests" -Tag "Integration", "ProjectP
         }
 
         It "Should return True after changing permissions" {
+            Start-Sleep -Seconds 5
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
@@ -111,6 +113,7 @@ Describe "AzDoProjectPermission Integration Tests" -Tag "Integration", "ProjectP
         }
 
         It "Should return True after reverting to inherited" {
+            Start-Sleep -Seconds 5
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue

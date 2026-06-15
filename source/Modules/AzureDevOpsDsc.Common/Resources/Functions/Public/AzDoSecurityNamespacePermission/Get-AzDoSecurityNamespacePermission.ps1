@@ -31,18 +31,29 @@ Function Get-AzDoSecurityNamespacePermission
     $getResult.namespace = $namespace
 
     $DevOpsACLs     = Get-DevOpsACL -OrganizationName $OrganizationName -SecurityDescriptorId $namespace.namespaceId
-    $DifferenceACLs = $DevOpsACLs | ConvertTo-FormattedACL -SecurityNamespace 'Generic' -OrganizationName $OrganizationName
-    $DifferenceACLs = $DifferenceACLs | Where-Object { $_.Token.TokenValue -eq $Token }
+    # New-ACLToken (called by ConvertTo-FormattedACL) strips [ ] from token names.
+    # Strip brackets here so the filter matches: "$/[PROJECT]" → "$/PROJECT".
+    $strippedToken  = $Token.Replace('[', '').Replace(']', '')
+    # Wrap in @() so $DifferenceACLs is always an array; ConvertTo-FormattedACL returns a
+    # generic List that PowerShell unrolls to a bare hashtable when there is only one entry,
+    # making [0] indexing in Test-ACLListforChanges return $null.
+    # Use the actual $SecurityNamespace so Format-ACEs and Parse-ACLToken can resolve permission
+    # bits against the real namespace descriptor. Both functions fall through to a Generic passthrough
+    # for namespaces not explicitly handled, preserving the raw token string with brackets intact.
+    $DifferenceACLs = @($DevOpsACLs | ConvertTo-FormattedACL -SecurityNamespace $SecurityNamespace -OrganizationName $OrganizationName |
+        Where-Object { $_.Token.TokenValue -eq $strippedToken })
 
     $params = @{
         Permissions       = $Permissions
-        SecurityNamespace = 'Generic'
+        SecurityNamespace = $SecurityNamespace  # use actual namespace so ConvertTo-ACETokenList can resolve permission bits
         isInherited       = $isInherited
         OrganizationName  = $OrganizationName
         TokenName         = $Token
     }
 
-    $ReferenceACLs = ConvertTo-ACL @params
+    # Wrap in @() so $ReferenceACLs is always an array; Test-ACLListforChanges uses [0] indexing
+    # and a raw hashtable returns $null at index 0.
+    $ReferenceACLs = @(ConvertTo-ACL @params)
 
     $compareResult = Test-ACLListforChanges -ReferenceACLs $ReferenceACLs -DifferenceACLs $DifferenceACLs
     $getResult.propertiesChanged = $compareResult.propertiesChanged

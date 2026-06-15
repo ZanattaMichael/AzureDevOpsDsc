@@ -35,7 +35,8 @@ Describe 'Get-AzDoProjectPermission' -Tag "Unit", "ProjectPermission" {
         }
 
         Mock -CommandName Get-DevOpsACL -MockWith {
-            return @( @{ Token = 'mock-token'; ace = 'mock-ace' } )
+            # token must match the format built in the source: '$PROJECT:vstfs:///Classification/TeamProject/{id}'
+            return @( @{ token = '$PROJECT:vstfs:///Classification/TeamProject/mock-project-id'; ace = 'mock-ace' } )
         }
 
         Mock -CommandName ConvertTo-FormattedACL -MockWith {

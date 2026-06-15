@@ -84,10 +84,23 @@ Function Set-AzDoGroupPermission
     #
     # Serialize the ACLs
 
+    # The cache key for a token-scoped ACL fetch is "{namespaceId}|{token}"; the old whole-namespace
+    # key no longer exists. Fall back to an empty list so ConvertTo-ACLHashtable still works — the
+    # accesscontrollists POST endpoint merges, so omitting other groups' ACLs is harmless.
+    $cachedACLList = Get-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'
+    if ($null -eq $cachedACLList) { $cachedACLList = @() }
+
+    $group = Get-CacheItem -Key $GroupName -Type 'LiveGroups'
+    $descriptorMatchToken = if ($null -ne $group) {
+        $LocalizedDataAzSerializationPatten.GroupPermission -f $Project.id, $group.originId
+    } else {
+        $LocalizedDataAzSerializationPatten.GroupPermission -f $Project.id, '.*'
+    }
+
     $serializeACLParams = @{
-        ReferenceACLs = $LookupResult.propertiesChanged
-        DescriptorACLList = Get-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'
-        DescriptorMatchToken = ($LocalizedDataAzSerializationPatten.GitRepository -f $Project.id)
+        ReferenceACLs        = $LookupResult.propertiesChanged
+        DescriptorACLList    = $cachedACLList
+        DescriptorMatchToken = $descriptorMatchToken
     }
 
     $params = @{

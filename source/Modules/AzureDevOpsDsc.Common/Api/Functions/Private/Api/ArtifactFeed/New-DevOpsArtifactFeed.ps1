@@ -28,25 +28,56 @@ Function New-DevOpsArtifactFeed
     }
     catch
     {
-        # A feed name stays reserved while a same-named feed sits in the recycle bin (e.g. left over
-        # from a previous run). Purge it from the recycle bin (project and org scope) and retry once.
-        if ("$_" -match 'reserved|recycle bin')
+        # Feed name conflict (409 or FeedNameAlreadyExistsException). The feed already exists.
+        # Try to retrieve it directly by name — list-all may not be available with limited token scope.
+        if ("$_" -match '409|Conflict|FeedNameAlreadyExists')
         {
+            Write-Verbose "[New-DevOpsArtifactFeed] Feed '$FeedName' conflict (409). Fetching existing feed by name..."
+            $getUriParams = @{
+                Uri    = '{0}/_apis/packaging/feeds/{1}?api-version={2}' -f $baseUri, $FeedName, $ApiVersion
+                Method = 'GET'
+            }
+            try
+            {
+                $existing = Invoke-AzDevOpsApiRestMethod @getUriParams
+                if ($existing) { return $existing }
+            }
+            catch { Write-Verbose "[New-DevOpsArtifactFeed] Direct GET by name failed: $_" }
+
+            # Try org-scope direct GET as fallback
+            $orgBaseUri = $ApiUri.TrimEnd('/')
+            $getOrgParams = @{
+                Uri    = '{0}/_apis/packaging/feeds/{1}?api-version={2}' -f $orgBaseUri, $FeedName, $ApiVersion
+                Method = 'GET'
+            }
+            try
+            {
+                $existing = Invoke-AzDevOpsApiRestMethod @getOrgParams
+                if ($existing) { return $existing }
+            }
+            catch { Write-Verbose "[New-DevOpsArtifactFeed] Org-scope GET by name failed: $_" }
+
+            # Feed may be soft-deleted (recycle bin). Purge and retry.
+            Write-Verbose "[New-DevOpsArtifactFeed] Trying recycle bin purge..."
             $orgName = Get-AzDoOrganizationName
-            $projBin = @(List-DevOpsArtifactFeedRecycleBin -OrganizationName $orgName -ProjectName $ProjectName)
-            $orgBin  = @(List-DevOpsArtifactFeedRecycleBin -OrganizationName $orgName)
             $recycled = @()
-            $recycled += $projBin | Where-Object { $_.name -eq $FeedName }
-            $recycled += $orgBin  | Where-Object { $_.name -eq $FeedName }
+            $recycled += @(List-DevOpsArtifactFeedRecycleBin -OrganizationName $orgName -ProjectName $ProjectName) |
+                Where-Object { $_.name -eq $FeedName }
+            $recycled += @(List-DevOpsArtifactFeedRecycleBin -OrganizationName $orgName) |
+                Where-Object { $_.name -eq $FeedName }
             foreach ($rf in $recycled)
             {
-                Write-Verbose "[New-DevOpsArtifactFeed] Purging reserved feed '$FeedName' ($($rf.id)) from recycle bin before retry."
-                Remove-DevOpsArtifactFeedFromRecycleBin -OrganizationName $orgName -ProjectName $ProjectName -FeedId $rf.id
-                Remove-DevOpsArtifactFeedFromRecycleBin -OrganizationName $orgName -FeedId $rf.id
+                Write-Verbose "[New-DevOpsArtifactFeed] Purging feed '$FeedName' ($($rf.id)) from recycle bin."
+                try { Remove-DevOpsArtifactFeedFromRecycleBin -OrganizationName $orgName -ProjectName $ProjectName -FeedId $rf.id } catch {}
+                try { Remove-DevOpsArtifactFeedFromRecycleBin -OrganizationName $orgName -FeedId $rf.id } catch {}
+            }
+            if ($recycled.Count -gt 0)
+            {
+                try   { return Invoke-AzDevOpsApiRestMethod @params }
+                catch { Throw "[New-DevOpsArtifactFeed] Failed to create artifact feed '$FeedName' after recycle bin purge: $_" }
             }
 
-            try   { return Invoke-AzDevOpsApiRestMethod @params }
-            catch { Throw "[New-DevOpsArtifactFeed] Failed to create artifact feed '$FeedName' after purging recycle bin: $_" }
+            Throw "[New-DevOpsArtifactFeed] Feed '$FeedName' already exists but cannot be retrieved (409 with no accessible existing feed)."
         }
 
         Throw "[New-DevOpsArtifactFeed] Failed to create artifact feed '$FeedName': $_"

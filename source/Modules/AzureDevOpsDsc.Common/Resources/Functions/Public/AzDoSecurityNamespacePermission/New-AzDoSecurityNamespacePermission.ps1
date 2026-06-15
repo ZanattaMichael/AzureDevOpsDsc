@@ -14,10 +14,11 @@ Function New-AzDoSecurityNamespacePermission
     Write-Verbose "[New-AzDoSecurityNamespacePermission] Started."
     $ns = Get-CacheItem -Key $SecurityNamespace -Type 'SecurityNamespaces'
     if (-not $ns) { Write-Error "[New-AzDoSecurityNamespacePermission] Namespace not found."; return }
+    $strippedToken = $Token.Replace('[', '').Replace(']', '')
     $serializeACLParams = @{
         ReferenceACLs        = $LookupResult.propertiesChanged
         DescriptorACLList    = Get-CacheItem -Key $ns.namespaceId -Type 'LiveACLList'
-        DescriptorMatchToken = ($LocalizedDataAzSerializationPatten.GenericPermission -f [regex]::Escape($Token))
+        DescriptorMatchToken = ($LocalizedDataAzSerializationPatten.GenericPermission -f [regex]::Escape($strippedToken))
     }
     $params = @{
         OrganizationName    = (Get-AzDoOrganizationName)

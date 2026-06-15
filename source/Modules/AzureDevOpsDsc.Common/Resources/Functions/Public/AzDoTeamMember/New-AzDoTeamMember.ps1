@@ -14,7 +14,8 @@ Function New-AzDoTeamMember
 
     # Lookup the team group descriptor from the cache
     $team   = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $TeamName) -Type 'LiveTeams'
-    $member = Get-CacheItem -Key ('[{0}]\{1}' -f $ProjectName, $MemberName) -Type 'LiveGroups'
+    # $MemberName is already fully qualified (e.g. "[ProjectName]\GroupName") — look up directly.
+    $member = Get-CacheItem -Key $MemberName -Type 'LiveGroups'
 
     if (-not $member)
     {

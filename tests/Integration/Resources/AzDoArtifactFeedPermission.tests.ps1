@@ -3,7 +3,7 @@ Describe "AzDoArtifactFeedPermission Integration Tests" -Tag "Integration", "Art
     BeforeAll {
 
         $PROJECTNAME = 'TEST_FEED_PERM'
-        $FEEDNAME    = 'testfeedperm'
+        $FEEDNAME    = 'fp{0}' -f (Get-Date -Format 'MMddHHmmss')
         $GROUPNAME   = 'FeedPermGroup'
 
         function New-Project { param([string]$ProjectName)

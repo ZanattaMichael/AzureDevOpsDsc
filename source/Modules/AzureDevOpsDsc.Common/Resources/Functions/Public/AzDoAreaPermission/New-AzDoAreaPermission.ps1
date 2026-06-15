@@ -29,15 +29,6 @@ Function New-AzDoAreaPermission
     Write-Verbose "[New-AzDoAreaPermission] Started."
 
     #
-    # Test if the Repository is specified
-    if ([String]::IsNullOrEmpty($AreaPath))
-    {
-        Write-Warning "[New-AzDoAreaPermission] Area Path Name not specified. Defaulting to top-level Project permissions."
-        Write-Warning "[New-AzDoAreaPermission] STOPPING. It is not possible add permissions to a top-level Project."
-        return
-    }
-
-    #
     # Security Namespace ID
 
     $SecurityNamespace = Get-CacheItem -Key 'CSS' -Type 'SecurityNamespaces'
@@ -52,7 +43,7 @@ Function New-AzDoAreaPermission
     #
     # Serialize the ACLs
 
-    $token = $(($LookupResult.propertiesChanged.identifiers | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_ }) -join ':')
+    $token = $(($LookupResult.identifiers | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_ }) -join ':')
 
     $serializeACLParams = @{
         ReferenceACLs = $LookupResult.propertiesChanged
@@ -65,9 +56,6 @@ Function New-AzDoAreaPermission
         SecurityNamespaceID = $SecurityNamespace.namespaceId
         SerializedACLs = ConvertTo-ACLHashtable @serializeACLParams
     }
-
-    #
-    # Set the Git Repository Permissions
 
     Write-Verbose "[New-AzDoAreaPermission] Setting Area Path Permissions for $ProjectName - $AreaPath"
 

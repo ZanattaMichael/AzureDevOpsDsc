@@ -126,9 +126,15 @@ Function Get-AzDoGroupPermission
     # Add to the ACL Lookup Params
     $getGroupResult.namespace = $namespace
 
+    # Build the token for this specific group so Get-DevOpsACL returns only the one ACL we care
+    # about rather than every ACL in the Identity namespace (which can be thousands and very slow).
+    # Azure DevOps Identity ACL tokens use a SINGLE backslash: {projectId}\{groupOriginId}.
+    $groupToken = '{0}\{1}' -f $project.id, $group.originId
+
     $ACLLookupParams = @{
         OrganizationName        = $OrganizationName
         SecurityDescriptorId    = $namespace.namespaceId
+        Token                   = $groupToken
     }
 
     # Get the ACL List and format the ACLS
@@ -161,17 +167,17 @@ Function Get-AzDoGroupPermission
         SecurityNamespace   = $SecurityNamespace
         isInherited         = $isInherited
         OrganizationName    = $OrganizationName
-        TokenName           = '{0}\\{1}' -f $project.id, $group.id
+        TokenName           = '{0}\{1}' -f $project.id, $group.originId
     }
 
     # Convert the Permissions to an ACL Token
     $ReferenceACLs = ConvertTo-ACL @params | Where-Object { $_.token.Type -ne 'GroupUnknown' }
 
-    # if the ACEs are empty, skip
+    # if the ACEs are empty, the desired permissions could not be resolved (unknown identities filtered out)
     if ($ReferenceACLs.aces.Count -eq 0)
     {
-        Write-Verbose "[Get-AzDoGroupPermission] No ACEs found for the group."
-        $getGroupResult.status = [DSCGetSummaryState]::Unchanged
+        Write-Verbose "[Get-AzDoGroupPermission] No resolvable ACEs for the group — treating as NotFound."
+        $getGroupResult.status = [DSCGetSummaryState]::NotFound
         return $getGroupResult
     }
 

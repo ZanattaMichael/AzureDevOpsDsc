@@ -36,6 +36,7 @@ Describe "New-AzDoTeam" -Tag "Unit", "Team" {
         Mock -CommandName Write-Verbose
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
         Mock -CommandName New-DevOpsTeam -MockWith { return $mockTeam }
+        Mock -CommandName Get-DevOpsSecurityDescriptor -MockWith { return 'vssgp.team-descriptor-001' }
         Mock -CommandName Add-CacheItem
         Mock -CommandName Export-CacheObject
         Mock -CommandName Refresh-CacheObject

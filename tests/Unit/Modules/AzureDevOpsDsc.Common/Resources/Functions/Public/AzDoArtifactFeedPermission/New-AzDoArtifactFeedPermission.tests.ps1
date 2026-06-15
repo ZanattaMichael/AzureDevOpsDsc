@@ -3,7 +3,7 @@ $currentFile = $MyInvocation.MyCommand.Path
 Describe "New-AzDoArtifactFeedPermission" -Tag "Unit", "ArtifactFeedPermission" {
 
     AfterAll {
-        Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global
+        Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global -ErrorAction SilentlyContinue
     }
 
     BeforeAll {
@@ -19,37 +19,35 @@ Describe "New-AzDoArtifactFeedPermission" -Tag "Unit", "ArtifactFeedPermission" 
         . (Get-ClassFilePath 'DSCGetSummaryState')
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
-        . (Get-ClassFilePath '002.LocalizedDataAzSerializationPatten')
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
-        Mock -CommandName ConvertTo-ACLHashtable -MockWith { return @{ aces = @() } }
-        Mock -CommandName Set-AzDoPermission
+        Mock -CommandName Set-DevOpsArtifactFeedPermission
         Mock -CommandName Write-Error
+        Mock -CommandName Write-Verbose
     }
 
-    Context "when namespace is found" {
+    Context "when feed is found" {
         BeforeEach {
             Mock -CommandName Get-CacheItem -MockWith {
                 param ($Key, $Type)
-                switch ($Type) {
-                    'SecurityNamespaces' { return @{ namespaceId = 'mock-ns-id' } }
-                    'LiveProjects'       { return @{ id = 'mock-project-id' } }
-                    'LiveAgentPools'     { return @{ id = 1 } }
-                    'LiveArtifactFeeds'  { return @{ id = 'feed-id' } }
-                    'LiveACLList'        { return @{} }
-                    default { return @{ id = 'mock-id' } }
-                }
+                if ($Type -eq 'LiveArtifactFeeds') { return @{ id = 'feed-id'; name = 'TestFeed' } }
+                return $null
             }
         }
 
         It "performs the expected operation" {
-            New-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed' -LookupResult @{ propertiesChanged = @(); DifferenceACLs = @() }
-            Assert-MockCalled -CommandName Set-AzDoPermission -Exactly -Times 1
+            $lookupResult = @{
+                feedCache          = @{ id = 'feed-id'; name = 'TestFeed' }
+                livePermissions    = @()
+                desiredPermissions = @([PSCustomObject]@{ role = 'reader'; identityDescriptor = 'desc-1' })
+            }
+            New-AzDoArtifactFeedPermission -ProjectName 'TestProject' -FeedName 'TestFeed' -LookupResult $lookupResult
+            Assert-MockCalled -CommandName Set-DevOpsArtifactFeedPermission -Exactly -Times 1
         }
     }
 
-    Context "when namespace not found" {
+    Context "when feed not found" {
         BeforeEach {
             Mock -CommandName Get-CacheItem -MockWith { return $null }
         }

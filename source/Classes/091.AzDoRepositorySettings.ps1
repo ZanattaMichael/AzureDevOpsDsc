@@ -40,7 +40,7 @@ class AzDoRepositorySettings : AzDevOpsDscResourceBase
 
     hidden [System.String[]]GetDscResourcePropertyNamesWithNoSetSupport()
     {
-        return @('ProjectName','RepositoryName')
+        return @()
     }
 
     hidden [Hashtable]GetDscCurrentStateProperties([PSCustomObject]$CurrentResourceObject)
