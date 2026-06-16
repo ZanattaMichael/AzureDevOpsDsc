@@ -54,6 +54,8 @@ Describe 'Set-AzDoAreaPermission' -Tag "Unit", "AreaPermission" {
         Mock -CommandName Set-AzDoPermission
         Mock -CommandName Remove-CacheItem
 
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
     }
 
     Context "When AreaPath is not specified" {

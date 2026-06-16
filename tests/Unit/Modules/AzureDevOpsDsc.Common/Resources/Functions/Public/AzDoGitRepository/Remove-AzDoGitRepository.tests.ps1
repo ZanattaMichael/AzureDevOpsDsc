@@ -53,6 +53,9 @@ Describe 'Remove-AzDoGitRepository' -Tag "Unit", "GitRepository" {
             Ensure          = "Present"
         }
 
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Resolve-AzDoProject -MockWith { Get-CacheItem -Key $ProjectName -Type 'LiveProjects' }
+        Mock -CommandName List-DevOpsGitRepository -MockWith { return $null }
     }
 
     It 'Calls Get-CacheItem with appropriate parameters for Project' {

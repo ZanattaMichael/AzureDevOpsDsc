@@ -38,6 +38,11 @@ Describe "Remove-AzDoTeamMember" -Tag "Unit", "TeamMember" {
         Mock -CommandName Remove-DevOpsTeamMember
         Mock -CommandName Remove-CacheItem
         Mock -CommandName Export-CacheObject
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Resolve-AzDoProject -MockWith { Get-CacheItem -Key $ProjectName -Type 'LiveProjects' }
+        Mock -CommandName List-DevOpsTeams -MockWith { return $null }
+        Mock -CommandName Find-AzDoIdentity -MockWith { return $null }
+        Mock -CommandName Get-DevOpsSecurityDescriptor -MockWith { return $null }
     }
 
     Context "when team and member are found in cache (member from LiveGroups)" {
@@ -111,12 +116,11 @@ Describe "Remove-AzDoTeamMember" -Tag "Unit", "TeamMember" {
         BeforeEach {
             Mock -CommandName Get-CacheItem -ParameterFilter { $Type -eq 'LiveTeams' } -MockWith { return $null }
             Mock -CommandName Get-CacheItem -ParameterFilter { $Type -eq 'LiveGroups' } -MockWith { return $mockMember }
-            Mock -CommandName Write-Error -Verifiable
+            Mock -CommandName Write-Error
         }
 
-        It "writes an error and returns without calling Remove-DevOpsTeamMember" {
-            Remove-AzDoTeamMember -ProjectName 'TestProject' -TeamName 'NonExistentTeam' -MemberName 'user@example.com'
-            Assert-VerifiableMock
+        It "treats a missing team as already absent (no removal, no throw)" {
+            { Remove-AzDoTeamMember -ProjectName 'TestProject' -TeamName 'NonExistentTeam' -MemberName 'user@example.com' } | Should -Not -Throw
             Assert-MockCalled -CommandName Remove-DevOpsTeamMember -Exactly -Times 0
         }
 
@@ -130,12 +134,11 @@ Describe "Remove-AzDoTeamMember" -Tag "Unit", "TeamMember" {
 
         BeforeEach {
             Mock -CommandName Get-CacheItem -ParameterFilter { $true } -MockWith { return $null }
-            Mock -CommandName Write-Error -Verifiable
+            Mock -CommandName Write-Error
         }
 
-        It "writes an error and does not call Remove-DevOpsTeamMember" {
-            Remove-AzDoTeamMember -ProjectName 'TestProject' -TeamName 'TestTeam' -MemberName 'user@example.com'
-            Assert-VerifiableMock
+        It "treats a missing team and member as already absent (no removal, no throw)" {
+            { Remove-AzDoTeamMember -ProjectName 'TestProject' -TeamName 'TestTeam' -MemberName 'user@example.com' } | Should -Not -Throw
             Assert-MockCalled -CommandName Remove-DevOpsTeamMember -Exactly -Times 0
         }
     }

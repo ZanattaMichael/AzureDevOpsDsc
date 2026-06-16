@@ -24,6 +24,8 @@ Describe "Get-AzDoEnvironmentApproval" -Tag "Unit", "EnvironmentApproval" {
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         Mock -CommandName Write-Warning
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName List-DevOpsPipelineEnvironments -MockWith { return $null }
     }
 
     Context "when environment and approval exist in cache" {

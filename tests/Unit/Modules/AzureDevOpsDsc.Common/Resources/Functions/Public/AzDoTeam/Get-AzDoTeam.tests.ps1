@@ -32,6 +32,8 @@ Describe "Get-AzDoTeam" -Tag "Unit", "Team" {
         }
 
         Mock -CommandName Write-Verbose
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
     }
 
     Context "when the team is found in cache" {

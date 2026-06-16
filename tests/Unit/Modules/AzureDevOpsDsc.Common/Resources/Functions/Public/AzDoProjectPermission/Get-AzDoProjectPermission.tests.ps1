@@ -50,6 +50,8 @@ Describe 'Get-AzDoProjectPermission' -Tag "Unit", "ProjectPermission" {
         Mock -CommandName Test-ACLListforChanges -MockWith {
             return @{ propertiesChanged = @(); status = 'Unchanged'; reason = 'No changes' }
         }
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
     }
 
     Context 'when project and namespace are found' {

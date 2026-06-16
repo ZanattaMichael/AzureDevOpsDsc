@@ -27,6 +27,8 @@ Describe "New-AzDoCheckConfiguration" -Tag "Unit", "CheckConfiguration" {
         Mock -CommandName Export-CacheObject
         Mock -CommandName Refresh-CacheObject
         Mock -CommandName Write-Error
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName List-DevOpsPipelineEnvironments -MockWith { return $null }
     }
 
     Context "when environment resource is found" {

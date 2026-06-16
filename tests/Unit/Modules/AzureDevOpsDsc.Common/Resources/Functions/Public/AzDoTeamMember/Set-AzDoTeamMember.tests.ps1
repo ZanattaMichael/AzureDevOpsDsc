@@ -42,6 +42,11 @@ Describe "Set-AzDoTeamMember" -Tag "Unit", "TeamMember" {
         Mock -CommandName New-DevOpsTeamMember
         Mock -CommandName Add-CacheItem
         Mock -CommandName Export-CacheObject
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
+        Mock -CommandName Find-AzDoIdentity -MockWith { return $null }
+        Mock -CommandName List-DevOpsTeams -MockWith { return $null }
+        Mock -CommandName Get-DevOpsSecurityDescriptor -MockWith { return $null }
     }
 
     Context "when team and member are found in cache" {

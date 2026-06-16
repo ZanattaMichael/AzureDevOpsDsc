@@ -27,6 +27,9 @@ Describe "New-AzDoPipeline" -Tag "Unit", "Pipeline" {
         Mock -CommandName Export-CacheObject
         Mock -CommandName Refresh-CacheObject
         Mock -CommandName Write-Error
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Resolve-AzDoProject -MockWith { Get-CacheItem -Key $ProjectName -Type 'LiveProjects' }
+        Mock -CommandName List-DevOpsGitRepository -MockWith { return $null }
     }
 
     Context "when project is found in cache" {

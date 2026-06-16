@@ -39,6 +39,8 @@ Describe "New-AzDoGitRepository Tests" -Tag "Unit", "GitRepository" {
         Mock -CommandName Export-CacheObject
         Mock -CommandName Refresh-CacheObject
 
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
     }
 
     Context "When mandatory parameters are provided" {

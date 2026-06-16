@@ -30,6 +30,8 @@ Describe "New-AzDoBranchPolicy" -Tag "Unit", "BranchPolicy" {
         Mock -CommandName Export-CacheObject
         Mock -CommandName Refresh-CacheObject
         Mock -CommandName Write-Error
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
     }
 
     Context "when all required cache items are found" {

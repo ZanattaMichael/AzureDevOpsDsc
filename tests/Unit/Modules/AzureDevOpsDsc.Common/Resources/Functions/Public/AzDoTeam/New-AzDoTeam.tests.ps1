@@ -40,6 +40,8 @@ Describe "New-AzDoTeam" -Tag "Unit", "Team" {
         Mock -CommandName Add-CacheItem
         Mock -CommandName Export-CacheObject
         Mock -CommandName Refresh-CacheObject
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
     }
 
     Context "when parameters are valid and project exists in cache" {

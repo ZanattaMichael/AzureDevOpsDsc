@@ -30,6 +30,8 @@ Describe "Get-AzDoPipeline" -Tag "Unit", "Pipeline" {
         }
 
         Mock -CommandName Write-Verbose
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName List-DevOpsPipelines -MockWith { return $null }
     }
 
     Context "when the pipeline is found in cache" {

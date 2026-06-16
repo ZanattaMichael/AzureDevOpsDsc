@@ -36,6 +36,9 @@ Describe "New-AzDoWiki" -Tag "Unit", "Wiki" {
         Mock -CommandName Export-CacheObject
         Mock -CommandName Refresh-CacheObject
 
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Resolve-AzDoProject -MockWith { Get-CacheItem -Key $ProjectName -Type 'LiveProjects' }
+        Mock -CommandName List-DevOpsGitRepository -MockWith { return $null }
     }
 
     Context "When the project exists in the cache" {

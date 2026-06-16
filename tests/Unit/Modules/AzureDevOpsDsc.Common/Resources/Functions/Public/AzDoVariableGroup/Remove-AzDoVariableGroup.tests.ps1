@@ -28,6 +28,9 @@ Describe 'Remove-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
         Mock -CommandName Export-CacheObject
         Mock -CommandName Write-Error
 
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Resolve-AzDoProject -MockWith { Get-CacheItem -Key $ProjectName -Type 'LiveProjects' }
+        Mock -CommandName List-DevOpsVariableGroups -MockWith { return $null }
     }
 
     Context 'When the variable group exists in cache' {

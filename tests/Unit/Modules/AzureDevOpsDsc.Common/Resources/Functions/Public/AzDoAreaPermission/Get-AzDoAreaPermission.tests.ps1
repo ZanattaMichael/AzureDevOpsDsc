@@ -99,6 +99,8 @@ Describe 'Get-AzDoAreaPermission Tests' -Tag "Unit", "AreaPermission" {
 
         Mock -CommandName Write-Warning
 
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
     }
 
     Context "When Ensure is Present" {

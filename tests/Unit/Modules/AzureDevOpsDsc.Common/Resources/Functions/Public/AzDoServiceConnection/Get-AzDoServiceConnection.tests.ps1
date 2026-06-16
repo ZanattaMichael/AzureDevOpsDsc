@@ -24,6 +24,8 @@ Describe 'Get-AzDoServiceConnection Tests' -Tag "Unit", "ServiceConnection" {
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
 
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName List-DevOpsServiceConnections -MockWith { return $null }
     }
 
     Context 'When the service connection is found in cache' {

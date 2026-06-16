@@ -48,6 +48,8 @@ Describe "Get-AzDoProject" -Tag "Unit", "Project" {
         Mock -CommandName Test-AzDevOpsProjectName -MockWith { return $true }
         Mock -CommandName Write-Warning
 
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
     }
 
     Context "when the project exists" {

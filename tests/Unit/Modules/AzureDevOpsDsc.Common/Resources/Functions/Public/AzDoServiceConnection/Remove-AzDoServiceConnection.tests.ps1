@@ -28,6 +28,9 @@ Describe 'Remove-AzDoServiceConnection Tests' -Tag "Unit", "ServiceConnection" {
         Mock -CommandName Export-CacheObject
         Mock -CommandName Write-Error
 
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Resolve-AzDoProject -MockWith { Get-CacheItem -Key $ProjectName -Type 'LiveProjects' }
+        Mock -CommandName List-DevOpsServiceConnections -MockWith { return $null }
     }
 
     Context 'When the service connection exists in cache' {

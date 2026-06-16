@@ -27,6 +27,8 @@ Describe "New-AzDoAgentQueue" -Tag "Unit", "AgentQueue" {
         Mock -CommandName Export-CacheObject
         Mock -CommandName Refresh-CacheObject
         Mock -CommandName Write-Error
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName List-DevOpsAgentPools -MockWith { return $null }
     }
 
     Context "when pool is found in cache" {

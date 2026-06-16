@@ -72,6 +72,10 @@ Describe 'Get-AzDoAreaNodes Tests' -Tag "Unit", "AreaNodes" {
         # Setting up global variable
         $Global:DSCAZDO_OrganizationName = "SampleOrg"
 
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Remove-CacheItem
+        Mock -CommandName List-DevOpsClassificationNodes -MockWith { return $null }
+        Mock -CommandName Format-ClassificationNode
     }
 
     AfterAll {

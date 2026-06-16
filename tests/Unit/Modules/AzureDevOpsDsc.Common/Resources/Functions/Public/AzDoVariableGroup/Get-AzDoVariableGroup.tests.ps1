@@ -24,6 +24,8 @@ Describe 'Get-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
 
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName List-DevOpsVariableGroups -MockWith { return $null }
     }
 
     Context 'When the variable group is found in cache' {

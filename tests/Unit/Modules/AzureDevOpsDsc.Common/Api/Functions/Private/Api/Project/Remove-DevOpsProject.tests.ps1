@@ -25,12 +25,11 @@ Describe "Remove-DevOpsProject" -Tag "Unit", "Project", "API" {
         It "Should call Invoke-AzDevOpsApiRestMethod with correct parameters" {
             $org = "MyOrganization"
             $projectId = "MyProject"
-            $apiVersion = "5.1-preview.1"
 
             Remove-DevOpsProject -Organization $org -ProjectId $projectId
 
             Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Exactly 1 -ParameterFilter {
-                $ApiUri -eq "https://dev.azure.com/MyOrganization/_apis/projects/MyProject?api-version=5.1-preview.1" -and
+                $Uri -eq "https://dev.azure.com/MyOrganization/_apis/projects/MyProject?api-version=7.1-preview.4" -and
                 $Method -eq "DELETE"
             }
         }

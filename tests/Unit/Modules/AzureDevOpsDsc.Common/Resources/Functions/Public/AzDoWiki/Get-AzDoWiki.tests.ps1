@@ -24,6 +24,8 @@ Describe "Get-AzDoWiki" -Tag "Unit", "Wiki" {
         . (Get-ClassFilePath 'Ensure')
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName List-DevOpsWikis -MockWith { return $null }
     }
 
     Context "When the wiki exists in the live cache" {

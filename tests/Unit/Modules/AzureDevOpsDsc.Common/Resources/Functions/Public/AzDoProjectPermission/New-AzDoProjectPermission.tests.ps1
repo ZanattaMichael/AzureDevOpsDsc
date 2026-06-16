@@ -38,6 +38,8 @@ Describe 'New-AzDoProjectPermission' -Tag "Unit", "ProjectPermission" {
 
         Mock -CommandName ConvertTo-ACLHashtable -MockWith { return @{ aces = @() } }
         Mock -CommandName Set-AzDoPermission
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
     }
 
     It 'calls ConvertTo-ACLHashtable' {

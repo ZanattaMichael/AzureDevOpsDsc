@@ -28,6 +28,8 @@ Describe "Get-AzDoPipelinePermission" -Tag "Unit", "PipelinePermission" {
         Mock -CommandName Test-ACLListforChanges -MockWith {
             return @{ propertiesChanged = @(); status = 'Compliant'; reason = '' }
         }
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
     }
 
     Context "when project and namespace are found" {

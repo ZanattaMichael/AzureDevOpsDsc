@@ -27,6 +27,10 @@ Describe "Set-AzDoEnvironmentApproval" -Tag "Unit", "EnvironmentApproval" {
         Mock -CommandName Export-CacheObject
         Mock -CommandName Get-CacheObject -MockWith { @() }
         Mock -CommandName Write-Error
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Find-AzDoIdentity -MockWith { return $null }
+        Mock -CommandName List-DevOpsPipelineEnvironments -MockWith { return $null }
+        Mock -CommandName List-DevOpsEnvironmentApprovals -MockWith { return $null }
     }
 
     Context "when environment and approval exist in cache" {

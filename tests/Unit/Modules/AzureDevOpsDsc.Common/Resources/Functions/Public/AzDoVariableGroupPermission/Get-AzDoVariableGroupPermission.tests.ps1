@@ -27,6 +27,8 @@ Describe "Get-AzDoVariableGroupPermission" -Tag "Unit", "VariableGroupPermission
         Mock -CommandName ConvertTo-ACL -MockWith { return @{} }
         Mock -CommandName Test-ACLListforChanges -MockWith { return @{ propertiesChanged = @(); status = 'Compliant'; reason = '' } }
         Mock -CommandName Write-Error
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName List-DevOpsVariableGroups -MockWith { return $null }
     }
 
     Context "when namespace is found" {

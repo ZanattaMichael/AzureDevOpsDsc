@@ -26,6 +26,8 @@ Describe "New-AzDoServiceConnectionPermission" -Tag "Unit", "ServiceConnectionPe
         Mock -CommandName ConvertTo-ACLHashtable -MockWith { return @{ aces = @() } }
         Mock -CommandName Set-AzDoPermission
         Mock -CommandName Write-Error
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
     }
 
     Context "when namespace is found" {

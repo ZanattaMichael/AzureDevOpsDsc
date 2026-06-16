@@ -41,6 +41,8 @@ Describe 'New-AzDoProjectGroup' -Tag "Unit", "ProjectGroup" {
         Mock -CommandName Set-CacheObject
         Mock -CommandName Refresh-CacheIdentity
 
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
     }
 
     BeforeEach {

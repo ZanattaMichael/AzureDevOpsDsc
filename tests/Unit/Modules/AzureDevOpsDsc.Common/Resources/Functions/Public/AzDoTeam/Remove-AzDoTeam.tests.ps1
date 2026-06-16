@@ -38,6 +38,9 @@ Describe "Remove-AzDoTeam" -Tag "Unit", "Team" {
         Mock -CommandName Remove-DevOpsTeam
         Mock -CommandName Remove-CacheItem
         Mock -CommandName Export-CacheObject
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Resolve-AzDoProject -MockWith { Get-CacheItem -Key $ProjectName -Type 'LiveProjects' }
+        Mock -CommandName List-DevOpsTeams -MockWith { return $null }
     }
 
     Context "when both project and team are found in cache" {
@@ -104,12 +107,11 @@ Describe "Remove-AzDoTeam" -Tag "Unit", "Team" {
         BeforeEach {
             Mock -CommandName Get-CacheItem -ParameterFilter { $Type -eq 'LiveProjects' } -MockWith { return $mockProject }
             Mock -CommandName Get-CacheItem -ParameterFilter { $Type -eq 'LiveTeams' } -MockWith { return $null }
-            Mock -CommandName Write-Error -Verifiable
+            Mock -CommandName Write-Error
         }
 
-        It "writes an error and returns without calling Remove-DevOpsTeam" {
-            Remove-AzDoTeam -ProjectName 'TestProject' -TeamName 'NonExistentTeam'
-            Assert-VerifiableMock
+        It "treats a missing team as already absent (no removal, no throw)" {
+            { Remove-AzDoTeam -ProjectName 'TestProject' -TeamName 'NonExistentTeam' } | Should -Not -Throw
             Assert-MockCalled -CommandName Remove-DevOpsTeam -Exactly -Times 0
         }
     }
