@@ -33,7 +33,12 @@ Function Get-AzDoAgentPoolPermission
 
     $getResult.namespace = $namespace
 
-    $DevOpsACLs     = Get-DevOpsACL -OrganizationName $OrganizationName -SecurityDescriptorId $namespace.namespaceId
+    # Token-scope the ACL fetch to just this pool's ACL (token = pool id) instead of pulling every
+    # ACL in the namespace. Fall back to the full-namespace fetch if the token-scoped query returns
+    # nothing, so behaviour is never worse than the previous full scan.
+    $aclToken   = if ($poolCache) { $poolCache.id.ToString() } else { $null }
+    $DevOpsACLs = if ($aclToken) { Get-DevOpsACL -OrganizationName $OrganizationName -SecurityDescriptorId $namespace.namespaceId -Token $aclToken } else { $null }
+    if (-not $DevOpsACLs) { $DevOpsACLs = Get-DevOpsACL -OrganizationName $OrganizationName -SecurityDescriptorId $namespace.namespaceId }
     $DifferenceACLs = $DevOpsACLs | ConvertTo-FormattedACL -SecurityNamespace $SecurityNamespace -OrganizationName $OrganizationName
 
     if ($poolCache)

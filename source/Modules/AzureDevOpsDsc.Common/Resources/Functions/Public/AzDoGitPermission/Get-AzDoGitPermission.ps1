@@ -163,9 +163,14 @@ Function Get-AzDoGitPermission
     # Add to the ACL Lookup Params
     $getGroupResult.namespace = $namespace
 
+    # Token-scope the ACL fetch to this repository's (or the project's) Git token instead of pulling
+    # every ACL in the namespace. Fall back to the full-namespace fetch if the scoped query returns
+    # nothing, so behaviour is never worse than the previous full scan.
+    $aclToken = if ($RepositoryName) { 'repoV2/{0}/{1}' -f $projectCache.id, $repositoryCache.id } else { 'repoV2/{0}' -f $projectCache.id }
     $ACLLookupParams = @{
         OrganizationName        = $OrganizationName
         SecurityDescriptorId    = $namespace.namespaceId
+        Token                   = $aclToken
     }
 
     # Get the ACL List and format the ACLS
@@ -173,6 +178,7 @@ Function Get-AzDoGitPermission
 
     # Get the ACLs for the Repository
     $DevOpsACLs = Get-DevOpsACL @ACLLookupParams
+    if ($null -eq $DevOpsACLs) { $DevOpsACLs = Get-DevOpsACL -OrganizationName $OrganizationName -SecurityDescriptorId $namespace.namespaceId }
 
     # Test if the ACLs were found
     if ($DevOpsACLs -eq $null)

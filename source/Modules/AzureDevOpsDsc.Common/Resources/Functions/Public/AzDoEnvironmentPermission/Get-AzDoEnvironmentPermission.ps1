@@ -44,7 +44,11 @@ Function Get-AzDoEnvironmentPermission
 
     $getResult.namespace = $namespace
 
-    $DevOpsACLs     = Get-DevOpsACL -OrganizationName $OrganizationName -SecurityDescriptorId $namespace.namespaceId
+    # Token-scope the ACL fetch to this environment's token instead of scanning the whole namespace.
+    # Fall back to the full-namespace fetch if the scoped query returns nothing (never worse than before).
+    $aclToken   = if ($envCache) { 'Environments/{0}/{1}' -f $projectCache.id, $envCache.id } else { 'Environments/{0}' -f $projectCache.id }
+    $DevOpsACLs = Get-DevOpsACL -OrganizationName $OrganizationName -SecurityDescriptorId $namespace.namespaceId -Token $aclToken
+    if (-not $DevOpsACLs) { $DevOpsACLs = Get-DevOpsACL -OrganizationName $OrganizationName -SecurityDescriptorId $namespace.namespaceId }
     $DifferenceACLs = $DevOpsACLs | ConvertTo-FormattedACL -SecurityNamespace $SecurityNamespace -OrganizationName $OrganizationName
 
     if ($envCache)

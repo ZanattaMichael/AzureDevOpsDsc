@@ -147,16 +147,22 @@ Function Get-AzDoAreaPermission
     # Add to the ACL Lookup Params
     $results.namespace = $namespace
 
+    # Token-scope the ACL fetch to this area path's classification-node token instead of scanning the
+    # entire org-wide CSS namespace. Fall back to the full-namespace fetch if the scoped query returns
+    # nothing, so behaviour is never worse than the previous full scan.
+    $aclToken = ($identifierArr | ForEach-Object { 'vstfs:///Classification/Node/{0}' -f $_ }) -join ':'
     $ACLLookupParams = @{
         OrganizationName        = $OrganizationName
         SecurityDescriptorId    = $namespace.namespaceId
     }
+    if ($aclToken) { $ACLLookupParams.Token = $aclToken }
 
     # Get the ACL List and format the ACLS
     Write-Verbose "[Get-AzDoAreaPermission] ACL Lookup Params: $($ACLLookupParams | Out-String)"
 
     # Get the ACLs for the AreaPath
     $DevOpsACLs = Get-DevOpsACL @ACLLookupParams
+    if (($null -eq $DevOpsACLs) -and $aclToken) { $DevOpsACLs = Get-DevOpsACL -OrganizationName $OrganizationName -SecurityDescriptorId $namespace.namespaceId }
 
     # Test if the ACLs were found
     if ($DevOpsACLs -eq $null)

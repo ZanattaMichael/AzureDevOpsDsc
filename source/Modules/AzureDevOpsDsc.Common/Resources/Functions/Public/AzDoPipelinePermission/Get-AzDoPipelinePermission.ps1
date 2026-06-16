@@ -54,7 +54,11 @@ Function Get-AzDoPipelinePermission
 
     $getResult.namespace = $namespace
 
-    $DevOpsACLs     = Get-DevOpsACL -OrganizationName $OrganizationName -SecurityDescriptorId $namespace.namespaceId
+    # Token-scope the ACL fetch to this pipeline's Build token instead of scanning the whole namespace.
+    # Fall back to the full-namespace fetch if the scoped query returns nothing (never worse than before).
+    $aclToken   = if ($pipelineCache) { '{0}/{1}' -f $projectCache.id, $pipelineCache.id } else { '{0}' -f $projectCache.id }
+    $DevOpsACLs = Get-DevOpsACL -OrganizationName $OrganizationName -SecurityDescriptorId $namespace.namespaceId -Token $aclToken
+    if (-not $DevOpsACLs) { $DevOpsACLs = Get-DevOpsACL -OrganizationName $OrganizationName -SecurityDescriptorId $namespace.namespaceId }
     $DifferenceACLs = $DevOpsACLs | ConvertTo-FormattedACL -SecurityNamespace $SecurityNamespace -OrganizationName $OrganizationName
 
     if ($pipelineCache)
