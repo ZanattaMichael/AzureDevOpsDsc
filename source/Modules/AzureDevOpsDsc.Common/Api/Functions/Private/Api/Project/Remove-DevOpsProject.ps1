@@ -32,7 +32,7 @@ function Remove-DevOpsProject
 
         [Parameter()]
         [String]
-        $ApiVersion = $(Get-AzDevOpsApiVersion | Select-Object -Last 1)
+        $ApiVersion = '7.1-preview.4'
 
     )
 
@@ -48,14 +48,13 @@ function Remove-DevOpsProject
 
     try
     {
-        # Invoke the Azure DevOps REST API to create the project
+        # Invoke the Azure DevOps REST API to delete the project
         $response = Invoke-AzDevOpsApiRestMethod @params
-        # Output the response which contains the created project details
         return $response
     }
     catch
     {
-        Write-Error "[Remove-DevOpsProject] Failed to create the Azure DevOps project: $_"
+        Write-Error "[Remove-DevOpsProject] Failed to delete the Azure DevOps project: $_"
     }
 
 }

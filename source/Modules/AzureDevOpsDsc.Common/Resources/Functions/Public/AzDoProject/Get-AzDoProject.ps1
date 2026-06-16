@@ -101,6 +101,14 @@ function Get-AzDoProject
         try
         {
             $project = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+            # Project deletion is asynchronous: a project being removed is still returned for a
+            # short window with state 'deleting'/'deleted'. Treat that as absent so a Test run
+            # immediately after a delete correctly reports the desired (Absent) state.
+            if ($project -and ($project.state -in 'deleting', 'deleted'))
+            {
+                Write-Verbose "[Get-AzDoProject] Project '$ProjectName' is in state '$($project.state)' — treating as absent."
+                $project = $null
+            }
             if ($project) { Add-CacheItem -Key $ProjectName -Value $project -Type 'LiveProjects' }
         }
         catch
