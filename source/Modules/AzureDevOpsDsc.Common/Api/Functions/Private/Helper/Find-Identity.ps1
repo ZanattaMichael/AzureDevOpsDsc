@@ -124,6 +124,20 @@ Function Find-Identity
         return $null
     }
 
+    # Descriptor index fast-path. The List caches frequently lose .value.ACLIdentity.descriptor across
+    # the clixml round-trip / init double-wrap, so a descriptor search that should hit the cache instead
+    # falls through to the expensive API pair below. The flat descriptor index keeps a clixml-safe
+    # descriptor -> identity mapping that survives runspace isolation; check it before paying for the API.
+    if ($SearchType -eq 'descriptor')
+    {
+        $indexHit = Get-IdentityDescriptorIndexItem -AclDescriptor $Name
+        if ($indexHit)
+        {
+            Write-Verbose "[Find-Identity] Resolved '$Name' from the descriptor index."
+            return $indexHit
+        }
+    }
+
     # Nothing in cache. For name-based searches the identity may be a group created AFTER the
     # cache was built at module init (e.g. a group created in the same DSC configuration just
     # before a permission resource references it). A descriptor-based API lookup cannot resolve a
@@ -172,6 +186,11 @@ Function Find-Identity
 
                 # Cache for subsequent lookups within this run, mirroring the init-time shape.
                 Add-CacheItem -Key $match.principalName -Value $match -Type 'LiveGroups' -SuppressWarning
+
+                # Index by ACL descriptor so a later descriptor search for this group hits the index.
+                Add-IdentityDescriptorIndexItem -AclDescriptor $aclIdentitySource.descriptor -PrincipalName $match.principalName `
+                    -OriginId $match.originId -GraphDescriptor $match.descriptor -AclId $aclIdentitySource.id `
+                    -SubjectDescriptor $aclIdentitySource.subjectDescriptor -Persist
 
                 Write-Verbose "[Find-Identity] Resolved '$Name' via live groups lookup."
                 return [CacheItem]::New($match.principalName, $match)
@@ -237,6 +256,14 @@ Function Find-Identity
                 isContainer         = $identity.isContainer
             })
             Add-CacheItem -Key $match.principalName -Value $match -Type 'LiveGroups' -SuppressWarning
+
+            # Record the resolution in the descriptor index and persist it immediately so subsequent
+            # ACEs (and subsequent runspaces) resolve this descriptor from the index instead of repeating
+            # the Get-DevOpsDescriptorIdentity + List-DevOpsGroups API pair.
+            Add-IdentityDescriptorIndexItem -AclDescriptor $identity.descriptor -PrincipalName $match.principalName `
+                -OriginId $match.originId -GraphDescriptor $match.descriptor -AclId $identity.id `
+                -SubjectDescriptor $identity.subjectDescriptor -Persist
+
             Write-Verbose "[Find-Identity] Resolved '$Name' to live group '$($match.principalName)' via subjectDescriptor."
             return [CacheItem]::New($match.principalName, $match)
         }
