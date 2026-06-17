@@ -10,7 +10,7 @@ Function New-AzDoTeamSettings
         [Parameter()][string]$DefaultAreaPath,
         [Parameter()][string[]]$AreaPaths,
         [Parameter()][string[]]$WorkingDays,
-        [Parameter()][ValidateSet('asRequirements', 'asTasks', 'off')][string]$BugsBehavior,
+        [Parameter()][ValidateSet('', 'asRequirements', 'asTasks', 'off')][string]$BugsBehavior,
         [Parameter()][HashTable]$LookupResult,
         [Parameter()][Ensure]$Ensure,
         [Parameter()][System.Management.Automation.SwitchParameter]$Force

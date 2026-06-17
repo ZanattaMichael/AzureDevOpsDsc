@@ -18,6 +18,15 @@ Function Get-AzDoArtifactFeedSettings
 
     $result = @{ Ensure = [Ensure]::Absent; propertiesChanged = @(); status = $null }
 
+    # Feed settings cannot be removed independently of the feed. Treat 'Ensure = Absent' as a no-op
+    # that is already in its desired state so the engine does not loop trying to remove it.
+    if ($Ensure -eq [Ensure]::Absent)
+    {
+        Write-Verbose "[Get-AzDoArtifactFeedSettings] Ensure = Absent; feed settings cannot be removed (no-op)."
+        $result.status = [DSCGetSummaryState]::NotFound
+        return $result
+    }
+
     $feed = Resolve-DevOpsArtifactFeed -ProjectName $ProjectName -FeedName $FeedName
     if (-not $feed)
     {
@@ -35,11 +44,11 @@ Function Get-AzDoArtifactFeedSettings
     if ($PSBoundParameters.ContainsKey('HideDeletedPackageVersions') -and
         [bool]$feed.hideDeletedPackageVersions -ne $HideDeletedPackageVersions) { $propertiesChanged += 'HideDeletedPackageVersions' }
 
-    if ($PSBoundParameters.ContainsKey('UpstreamSources'))
+    if ($UpstreamSources)
     {
         $liveNames    = @($feed.upstreamSources | ForEach-Object { $_.name })
         $desiredNames = @($UpstreamSources       | ForEach-Object { if ($_ -is [string]) { $_ } else { $_.name } })
-        if (Compare-Object -ReferenceObject @($liveNames) -DifferenceObject @($desiredNames)) { $propertiesChanged += 'UpstreamSources' }
+        if (Test-AzDoArrayDrift -Reference $liveNames -Difference $desiredNames) { $propertiesChanged += 'UpstreamSources' }
     }
 
     # Retention policy is only managed when a positive count limit is requested.

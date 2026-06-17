@@ -21,6 +21,7 @@ Describe "Get-AzDoTeamSettings" -Tag "Unit", "TeamSettings" {
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
+        . (Get-FunctionItem 'Test-AzDoArrayDrift.ps1')
 
         $mockProject = @{ id = 'project-id-001'; name = 'TestProject' }
         $mockTeam    = @{ id = 'team-id-001';    name = 'TestTeam' }
@@ -41,6 +42,15 @@ Describe "Get-AzDoTeamSettings" -Tag "Unit", "TeamSettings" {
         Mock -CommandName List-DevOpsTeams -MockWith { return @($mockTeam) }
         Mock -CommandName Add-CacheItem
         Mock -CommandName Get-DevOpsTeamSettings -MockWith { return $mockLiveSettings }
+    }
+
+    Context "when Ensure is Absent (no-op)" {
+
+        It "short-circuits to NotFound without resolving the team" {
+            $result = Get-AzDoTeamSettings -ProjectName 'TestProject' -TeamName 'TestTeam' -Ensure 'Absent'
+            $result.status | Should -Be 'NotFound'
+            Assert-MockCalled -CommandName Get-DevOpsTeamSettings -Exactly -Times 0
+        }
     }
 
     Context "when the project or team cannot be resolved" {
@@ -99,6 +109,46 @@ Describe "Get-AzDoTeamSettings" -Tag "Unit", "TeamSettings" {
                 -DefaultAreaPath 'TestProject\Backend' -IterationPaths @('TestProject\Sprint 9')
             $result.propertiesChanged | Should -Contain 'DefaultAreaPath'
             $result.propertiesChanged | Should -Contain 'IterationPaths'
+        }
+
+        It "detects drift on the backlog and default iteration paths" {
+            $result = Get-AzDoTeamSettings -ProjectName 'TestProject' -TeamName 'TestTeam' `
+                -BacklogIterationPath 'TestProject\Other' -DefaultIterationPath 'TestProject\Sprint 9'
+            $result.propertiesChanged | Should -Contain 'BacklogIterationPath'
+            $result.propertiesChanged | Should -Contain 'DefaultIterationPath'
+        }
+
+        It "detects drift on working days" {
+            $result = Get-AzDoTeamSettings -ProjectName 'TestProject' -TeamName 'TestTeam' -WorkingDays @('monday')
+            $result.propertiesChanged | Should -Contain 'WorkingDays'
+        }
+
+        It "detects drift on the team area paths" {
+            $result = Get-AzDoTeamSettings -ProjectName 'TestProject' -TeamName 'TestTeam' -AreaPaths @('TestProject\Backend', 'TestProject\Api')
+            $result.propertiesChanged | Should -Contain 'AreaPaths'
+        }
+    }
+
+    Context "when project and team are resolved via the live API (cache miss)" {
+
+        BeforeEach {
+            # Cache misses for both project and team force the live-API fallback paths.
+            Mock -CommandName Get-CacheItem -MockWith { return $null }
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $mockProject }
+            Mock -CommandName List-DevOpsTeams -MockWith { return @($mockTeam) }
+        }
+
+        It "resolves project and team from the API and returns Unchanged" {
+            $result = Get-AzDoTeamSettings -ProjectName 'TestProject' -TeamName 'TestTeam'
+            $result.status | Should -Be 'Unchanged'
+            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1
+            Assert-MockCalled -CommandName List-DevOpsTeams -Times 1
+        }
+
+        It "returns NotFound when the team is not in the live list" {
+            Mock -CommandName List-DevOpsTeams -MockWith { return @() }
+            $result = Get-AzDoTeamSettings -ProjectName 'TestProject' -TeamName 'Ghost'
+            $result.status | Should -Be 'NotFound'
         }
     }
 }

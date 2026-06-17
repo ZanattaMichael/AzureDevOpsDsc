@@ -68,5 +68,11 @@ Describe "Get-AzDoArtifactFeedView" -Tag "Unit", "ArtifactFeedView" {
             $result.status | Should -Be 'Changed'
             $result.propertiesChanged | Should -Contain 'ViewVisibility'
         }
+
+        It "returns Changed and reports ViewType" {
+            $result = Get-AzDoArtifactFeedView -ProjectName 'TestProject' -FeedName 'TestFeed' -ViewName 'Release' -ViewType 'implicit'
+            $result.status | Should -Be 'Changed'
+            $result.propertiesChanged | Should -Contain 'ViewType'
+        }
     }
 }

@@ -71,4 +71,19 @@ Describe "Set-AzDoArtifactFeedSettings" -Tag "Unit", "ArtifactFeedSettings" {
             Assert-MockCalled -CommandName Set-DevOpsArtifactFeedSettings -Exactly -Times 0
         }
     }
+
+    Context "when the update returns null" {
+
+        BeforeEach {
+            Mock -CommandName Resolve-DevOpsArtifactFeed -MockWith { return $mockFeed }
+            Mock -CommandName Set-DevOpsArtifactFeedSettings -MockWith { return $null }
+            Mock -CommandName Write-Error -Verifiable
+        }
+
+        It "writes an error and does not cache" {
+            Set-AzDoArtifactFeedSettings -ProjectName 'TestProject' -FeedName 'TestFeed'
+            Assert-VerifiableMock
+            Assert-MockCalled -CommandName Add-CacheItem -Exactly -Times 0
+        }
+    }
 }

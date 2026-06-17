@@ -11,14 +11,14 @@
 class AzDoTeamSettings : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)][System.String]$ProjectName
-    [DscProperty(Key, Mandatory)][System.String]$TeamName
+    [DscProperty(Mandatory)][System.String]$TeamName
     [DscProperty()][System.String]$BacklogIterationPath
     [DscProperty()][System.String]$DefaultIterationPath
     [DscProperty()][System.String[]]$IterationPaths
     [DscProperty()][System.String]$DefaultAreaPath
     [DscProperty()][System.String[]]$AreaPaths
     [DscProperty()][System.String[]]$WorkingDays
-    [DscProperty()][ValidateSet('asRequirements', 'asTasks', 'off')][System.String]$BugsBehavior
+    [DscProperty()][ValidateSet('', 'asRequirements', 'asTasks', 'off')][System.String]$BugsBehavior
 
     AzDoTeamSettings() { $this.Construct() }
     [AzDoTeamSettings] Get() { return [AzDoTeamSettings]$($this.GetDscCurrentStateProperties()) }

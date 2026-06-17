@@ -30,7 +30,7 @@ Function Set-AzDoArtifactFeedSettings
         RetentionCountLimit                  = $RetentionCountLimit
         DaysToKeepRecentlyDownloadedPackages = $DaysToKeepRecentlyDownloadedPackages
     }
-    if ($PSBoundParameters.ContainsKey('UpstreamSources')) { $params.UpstreamSources = $UpstreamSources }
+    if ($UpstreamSources) { $params.UpstreamSources = $UpstreamSources }
 
     $value = Set-DevOpsArtifactFeedSettings @params
 

@@ -25,7 +25,7 @@ Function Set-DevOpsArtifactFeedSettings
 
     # --- Feed-level settings (PATCH) -----------------------------------------------------
     $body = @{ hideDeletedPackageVersions = $HideDeletedPackageVersions }
-    if ($PSBoundParameters.ContainsKey('UpstreamSources')) { $body.upstreamSources = @($UpstreamSources) }
+    if ($UpstreamSources) { $body.upstreamSources = @($UpstreamSources) }
 
     try
     {

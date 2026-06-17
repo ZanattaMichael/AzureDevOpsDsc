@@ -11,7 +11,7 @@ Function Get-AzDoTeamSettings
         [Parameter()][string]$DefaultAreaPath,
         [Parameter()][string[]]$AreaPaths,
         [Parameter()][string[]]$WorkingDays,
-        [Parameter()][ValidateSet('asRequirements', 'asTasks', 'off')][string]$BugsBehavior,
+        [Parameter()][ValidateSet('', 'asRequirements', 'asTasks', 'off')][string]$BugsBehavior,
         [Parameter()][HashTable]$LookupResult,
         [Parameter()][Ensure]$Ensure,
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
@@ -23,6 +23,15 @@ Function Get-AzDoTeamSettings
         Ensure            = [Ensure]::Absent
         propertiesChanged = @()
         status            = $null
+    }
+
+    # Team settings cannot be removed (they always exist for a team). Treat 'Ensure = Absent' as a
+    # no-op that is already in its desired state so the engine does not loop trying to remove it.
+    if ($Ensure -eq [Ensure]::Absent)
+    {
+        Write-Verbose "[Get-AzDoTeamSettings] Ensure = Absent; team settings cannot be removed (no-op)."
+        $result.status = [DSCGetSummaryState]::NotFound
+        return $result
     }
 
     $OrgName = Get-AzDoOrganizationName
@@ -68,14 +77,11 @@ Function Get-AzDoTeamSettings
     if ($PSBoundParameters.ContainsKey('DefaultAreaPath') -and $DefaultAreaPath -and
         $live.DefaultAreaPath -ne $DefaultAreaPath) { $propertiesChanged += 'DefaultAreaPath' }
 
-    if ($PSBoundParameters.ContainsKey('IterationPaths') -and $IterationPaths -and
-        (Compare-Object -ReferenceObject @($live.IterationPaths) -DifferenceObject @($IterationPaths))) { $propertiesChanged += 'IterationPaths' }
+    if ($IterationPaths -and (Test-AzDoArrayDrift -Reference $live.IterationPaths -Difference $IterationPaths)) { $propertiesChanged += 'IterationPaths' }
 
-    if ($PSBoundParameters.ContainsKey('AreaPaths') -and $AreaPaths -and
-        (Compare-Object -ReferenceObject @($live.AreaPaths) -DifferenceObject @($AreaPaths))) { $propertiesChanged += 'AreaPaths' }
+    if ($AreaPaths -and (Test-AzDoArrayDrift -Reference $live.AreaPaths -Difference $AreaPaths)) { $propertiesChanged += 'AreaPaths' }
 
-    if ($PSBoundParameters.ContainsKey('WorkingDays') -and
-        (Compare-Object -ReferenceObject @($live.WorkingDays) -DifferenceObject @($WorkingDays))) { $propertiesChanged += 'WorkingDays' }
+    if ($WorkingDays -and (Test-AzDoArrayDrift -Reference $live.WorkingDays -Difference $WorkingDays)) { $propertiesChanged += 'WorkingDays' }
 
     if ($PSBoundParameters.ContainsKey('BugsBehavior') -and $BugsBehavior -and
         $live.BugsBehavior -ne $BugsBehavior) { $propertiesChanged += 'BugsBehavior' }

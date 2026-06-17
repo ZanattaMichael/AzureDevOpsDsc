@@ -52,4 +52,17 @@ Describe "New-AzDoArtifactFeedView" -Tag "Unit", "ArtifactFeedView" {
             Assert-MockCalled -CommandName New-DevOpsArtifactFeedView -Exactly -Times 0
         }
     }
+
+    Context "when the view creation returns null" {
+
+        BeforeEach {
+            Mock -CommandName New-DevOpsArtifactFeedView -MockWith { return $null }
+            Mock -CommandName Write-Error -Verifiable
+        }
+
+        It "writes an error" {
+            New-AzDoArtifactFeedView -ProjectName 'TestProject' -FeedName 'TestFeed' -ViewName 'Release'
+            Assert-VerifiableMock
+        }
+    }
 }

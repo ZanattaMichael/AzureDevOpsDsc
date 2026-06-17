@@ -19,7 +19,7 @@ Function Set-DevOpsTeamSettings
         [Parameter()][string]$DefaultAreaPath,
         [Parameter()][string[]]$AreaPaths,
         [Parameter()][string[]]$WorkingDays,
-        [Parameter()][ValidateSet('asRequirements', 'asTasks', 'off')][string]$BugsBehavior,
+        [Parameter()][ValidateSet('', 'asRequirements', 'asTasks', 'off')][string]$BugsBehavior,
         [Parameter()][string]$ApiVersion = '7.1'
     )
 

@@ -11,7 +11,7 @@
 class AzDoArtifactFeedSettings : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)][System.String]$ProjectName
-    [DscProperty(Key, Mandatory)][System.String]$FeedName
+    [DscProperty(Mandatory)][System.String]$FeedName
     [DscProperty()][System.String[]]$UpstreamSources
     [DscProperty()][System.Boolean]$HideDeletedPackageVersions = $true
 
