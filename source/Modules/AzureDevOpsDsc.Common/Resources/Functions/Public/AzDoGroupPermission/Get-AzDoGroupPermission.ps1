@@ -118,7 +118,43 @@ Function Get-AzDoGroupPermission
         $group = $allGroups | Where-Object { $_.principalName -eq $('[{0}]\{1}' -f $ProjectName, $GroupName) } | Select-Object -First 1
         if ($group)
         {
-            Add-CacheItem -Key $group.principalName -Value $group -Type 'LiveGroups'
+            # Enrich the group with its ACL identity before caching. The init-time cache guarantees every
+            # LiveGroups entry carries a .value.ACLIdentity (used downstream by Find-Identity ->
+            # ConvertTo-ACLHashtable to key ACEs by descriptor). Caching the raw group here would poison
+            # the cache: a later Find-Identity principalName hit would return an identity whose
+            # ACLIdentity.descriptor is null, crashing ConvertTo-ACLHashtable ("key cannot be null").
+            try
+            {
+                $aclIdentitySource = Get-DevOpsDescriptorIdentity -OrganizationName $OrganizationName -SubjectDescriptor $group.descriptor
+
+                $aclIdentity = [PSCustomObject]@{
+                    id                  = $aclIdentitySource.id
+                    descriptor          = $aclIdentitySource.descriptor
+                    subjectDescriptor   = $aclIdentitySource.subjectDescriptor
+                    providerDisplayName = $aclIdentitySource.providerDisplayName
+                    isActive            = $aclIdentitySource.isActive
+                    isContainer         = $aclIdentitySource.isContainer
+                }
+                $group | Add-Member -MemberType NoteProperty -Name 'ACLIdentity' -Force -Value $aclIdentity
+
+                Add-CacheItem -Key $group.principalName -Value $group -Type 'LiveGroups' -SuppressWarning
+
+                # Register in the descriptor index so a later descriptor search resolves from the index.
+                $descriptorIndexParams = @{
+                    AclDescriptor     = $aclIdentitySource.descriptor
+                    PrincipalName     = $group.principalName
+                    OriginId          = $group.originId
+                    GraphDescriptor   = $group.descriptor
+                    AclId             = $aclIdentitySource.id
+                    SubjectDescriptor = $aclIdentitySource.subjectDescriptor
+                    Persist           = $true
+                }
+                Add-IdentityDescriptorIndexItem @descriptorIndexParams
+            }
+            catch
+            {
+                Write-Warning "[Get-AzDoGroupPermission] Failed to enrich live group '$($group.principalName)' with its ACL identity: $_"
+            }
         }
     }
 
