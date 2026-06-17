@@ -13,7 +13,9 @@ function Add-IdentityDescriptorIndexItem
 {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true)][string]$AclDescriptor,
+        # Not Mandatory: a missing/empty descriptor is a graceful no-op (see guard below) so a single
+        # identity without a descriptor cannot crash a bulk cache-init populate.
+        [Parameter()][string]$AclDescriptor,
         [Parameter()][string]$PrincipalName,
         [Parameter()][string]$OriginId,
         [Parameter()][string]$GraphDescriptor,

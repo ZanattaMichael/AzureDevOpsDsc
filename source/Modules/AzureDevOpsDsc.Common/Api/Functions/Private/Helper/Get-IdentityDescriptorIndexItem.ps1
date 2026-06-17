@@ -19,7 +19,9 @@ function Get-IdentityDescriptorIndexItem
     [CmdletBinding()]
     [OutputType([object])]
     param(
-        [Parameter(Mandatory = $true)][string]$AclDescriptor
+        # Not Mandatory: an empty descriptor simply misses (returns $null) rather than throwing, so
+        # callers can pass a computed descriptor without pre-checking it.
+        [Parameter()][string]$AclDescriptor
     )
 
     if ([string]::IsNullOrEmpty($AclDescriptor)) { return $null }
