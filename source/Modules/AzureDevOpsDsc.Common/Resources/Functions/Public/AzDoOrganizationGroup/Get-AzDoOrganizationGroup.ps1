@@ -49,7 +49,7 @@ Function Get-AzDoOrganizationGroup
     Write-Verbose "[Get-AzDoOrganizationGroup] Retriving the GroupName from the Live and Local Cache."
 
     # Format the Key According to the Principal Name
-    $Key = Format-AzDoGroup -Prefix "[$Global:DSCAZDO_OrganizationName]" -GroupName $GroupName
+    $Key = Format-AzDoGroup -Prefix "[$(Get-AzDoOrganizationName)]" -GroupName $GroupName
 
     # Check the cache for the group
     $livegroup = Get-CacheItem -Key $Key -Type 'LiveGroups'

@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'New-GitRepository Tests' -Tags "Unit", "API" {
+Describe 'New-GitRepository Tests' -Tag "Unit", "GitRepository", "API" {
 
     BeforeAll {
 

@@ -1,4 +1,4 @@
-Describe "[DscResourceBase]::GetDscResourcePropertyNamesWithNoSetSupport() Tests" -Tag 'Unit', 'DscResourceBase' {
+Describe "[DscResourceBase]::GetDscResourcePropertyNamesWithNoSetSupport() Tests" -Tag "Unit", "DscResourceBase" {
 
 
     Context 'When called from instance of a class without any DSC properties with no "Set" support' {

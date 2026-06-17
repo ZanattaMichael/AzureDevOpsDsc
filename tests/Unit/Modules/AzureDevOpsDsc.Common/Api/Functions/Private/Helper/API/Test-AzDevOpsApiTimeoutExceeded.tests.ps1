@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Test-AzDevOpsApiTimeoutExceeded" {
+Describe "Test-AzDevOpsApiTimeoutExceeded" -Tag "Unit", "API" {
 
     BeforeAll {
         # Load the functions to test

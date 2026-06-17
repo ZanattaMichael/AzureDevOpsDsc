@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "ConvertTo-ACL" -Tags "Unit", "ACL", "Helper" {
+Describe "ConvertTo-ACL" -Tag "Unit", "ACL", "Helper" {
 
     BeforeAll {
 

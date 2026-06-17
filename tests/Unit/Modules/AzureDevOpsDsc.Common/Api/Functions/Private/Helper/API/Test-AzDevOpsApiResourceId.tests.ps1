@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Test-AzDevOpsApiResourceId' {
+Describe 'Test-AzDevOpsApiResourceId' -Tag "Unit", "API" {
 
     BeforeAll {
 

@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Format-ACEs' -Tags "Unit", "ACL", "Helper" {
+Describe 'Format-ACEs' -Tag "Unit", "ACL", "Helper" {
 
     BeforeAll {
 

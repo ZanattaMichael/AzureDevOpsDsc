@@ -36,7 +36,7 @@ PS> New-AzDoGitRepository -ProjectName "MyProject" -RepositoryName "MyRepo" -Sou
 Creates a new Git repository named "MyRepo" in the "MyProject" Azure DevOps project, initialized with the contents of "TemplateRepo".
 
 .NOTES
-This function requires the Azure DevOps organization name to be set in the global variable $Global:DSCAZDO_OrganizationName.
+This function requires the Azure DevOps organization name to be set in the global variable (Get-AzDoOrganizationName).
 #>
 
 Function New-AzDoGitRepository
@@ -70,23 +70,40 @@ Function New-AzDoGitRepository
 
     Write-Verbose "[New-AzDoGitRepository] Creating new repository '$($RepositoryName)' in project '$($ProjectName)'"
 
-    # Define parameters for creating a new DevOps group
-    $params = @{
-        ApiUri = 'https://dev.azure.com/{0}/' -f $Global:DSCAZDO_OrganizationName
-        Project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
-        RepositoryName = $RepositoryName
-        SourceRepository = $SourceRepository
+    $OrganizationName = Get-AzDoOrganizationName
+    $project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
+
+    # If not in cache, fall back to a live API lookup
+    if ($null -eq $project)
+    {
+        Write-Verbose "[New-AzDoGitRepository] Project '$ProjectName' not in cache — falling back to live API lookup."
+        $project = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($project) { Add-CacheItem -Key $ProjectName -Value $project -Type 'LiveProjects' }
     }
 
-    if ($null -eq $params.Project)
+    if ($null -eq $project)
     {
-        Write-Error "[New-AzDoGitRepository] Project '$($ProjectName)' does not exist in the LiveProjects cache. Skipping change."
+        Write-Error "[New-AzDoGitRepository] Project '$ProjectName' not found. Skipping change."
         return
+    }
+
+    # Define parameters for creating a new DevOps group
+    $params = @{
+        ApiUri = 'https://dev.azure.com/{0}/' -f $OrganizationName
+        Project = $project
+        RepositoryName = $RepositoryName
+        SourceRepository = $SourceRepository
     }
 
 
     # Create a new repository
     $value = New-GitRepository @params
+
+    if ($null -eq $value)
+    {
+        Write-Error "[New-AzDoGitRepository] New-GitRepository returned null for repository '$RepositoryName' in project '$ProjectName'. Check authentication token and organization settings."
+        return
+    }
 
     # Add the repository to the LiveRepositories cache and write to verbose log
     Add-CacheItem -Key "$ProjectName\$RepositoryName" -Value $value -Type 'LiveRepositories'

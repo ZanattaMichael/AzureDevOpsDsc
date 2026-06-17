@@ -64,7 +64,7 @@ Function Remove-AzDoGroupMember
     $GroupIdentity = Find-AzDoIdentity $GroupName
 
     # Format the  According to the Group Name
-    $Key = Format-AzDoProjectName -GroupName $GroupName -OrganizationName $Global:DSCAZDO_OrganizationName
+    $Key = Format-AzDoProjectName -GroupName $GroupName -OrganizationName (Get-AzDoOrganizationName)
 
     # Check the cache for the group
     $LiveGroupMembers = @(Get-CacheItem -Key $Key -Type 'LiveGroupMembers')
@@ -78,7 +78,7 @@ Function Remove-AzDoGroupMember
 
     $params = @{
         GroupIdentity = $GroupIdentity
-        ApiUri = 'https://vssps.dev.azure.com/{0}/' -f $Global:DSCAZDO_OrganizationName
+        ApiUri = 'https://vssps.dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
     }
 
     Write-Verbose "[Remove-AzDoGroupMember] Starting group member removal process for group '$GroupName'."

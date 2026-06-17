@@ -83,7 +83,8 @@ Function ConvertTo-ACLHashtable
         [Object[]]
         $ReferenceACLs,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter()]
+        [AllowEmptyCollection()]
         [Object[]]
         $DescriptorACLList,
 

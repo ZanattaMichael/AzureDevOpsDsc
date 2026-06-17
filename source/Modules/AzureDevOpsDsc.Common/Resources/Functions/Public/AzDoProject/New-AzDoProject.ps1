@@ -78,7 +78,7 @@ function New-AzDoProject
     )
 
     # Set the organization name
-    $OrganizationName = $Global:DSCAZDO_OrganizationName
+    $OrganizationName = (Get-AzDoOrganizationName)
 
     #
     # Perform a lookup to see if the group exists in Azure DevOps
@@ -100,10 +100,22 @@ function New-AzDoProject
 
     $projectJob = New-DevOpsProject @parameters
 
+    if ($null -eq $projectJob)
+    {
+        Throw "[New-AzDoProject] Failed to create the project '$ProjectName'. New-DevOpsProject returned null. Check that the authentication token is valid and the organization name '$OrganizationName' is correct."
+    }
+
+    $projectURL = if ($projectJob -is [System.Collections.IEnumerable] -and -not ($projectJob -is [string])) { ($projectJob | Select-Object -First 1).url } else { $projectJob.url }
+
+    if ([String]::IsNullOrEmpty($projectURL))
+    {
+        Throw "[New-AzDoProject] Project job returned but URL is empty. Job details: $($projectJob | ConvertTo-Json -Depth 2)"
+    }
+
     #
     # Wait for the project to be created
 
-    Wait-DevOpsProject -ProjectURL $projectJob.url -OrganizationName $OrganizationName
+    Wait-DevOpsProject -ProjectURL $projectURL -OrganizationName $OrganizationName
 
     #
     # Once the project has been created, refresh the entire cache.

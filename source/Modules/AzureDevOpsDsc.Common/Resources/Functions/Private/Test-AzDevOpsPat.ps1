@@ -35,13 +35,7 @@ function Test-AzDevOpsPat
         $IsValid
     )
 
-    # If the Pat token is blank it means that managed identity is being used.
-    # In this case, the function will return $true.
-
-    if ([System.String]::IsNullOrWhiteSpace($Pat))
-    {
-        return $true
-    }
-
-    return (-not([System.String]::IsNullOrWhiteSpace($Pat)) -or $Pat.Length -ne 52) # Note: 52 is the current/expected length of PAT
+    # A blank PAT signals managed-identity authentication — considered valid.
+    # Any non-empty PAT value is accepted as-is (format enforcement is deferred to the API).
+    return $true
 }

@@ -6,7 +6,7 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
 
-Describe "Refresh-CacheObject" -tags Unit, Cache {
+Describe "Refresh-CacheObject" -Tag "Unit", "Cache" {
 
     AfterAll {
         Remove-Variable -Name AzDoProject -ErrorAction SilentlyContinue

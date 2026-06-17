@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Export-CacheObject" -Tags "Unit", "Cache" {
+Describe "Export-CacheObject" -Tag "Unit", "Cache" {
 
     AfterAll {
         Remove-Variable -Name AzDoProject -ErrorAction SilentlyContinue
@@ -90,7 +90,7 @@ Describe "Export-CacheObject" -Tags "Unit", "Cache" {
 
         }
 
-        It "should use the default depth value of 3" {
+        It "should use the default depth value of 6" {
 
             Mock -CommandName Export-Clixml
 
@@ -102,7 +102,7 @@ Describe "Export-CacheObject" -Tags "Unit", "Cache" {
             Export-CacheObject -CacheType 'Project' -Content $content
 
             Assert-MockCalled -CommandName Export-Clixml -Times 1 -ParameterFilter {
-                $Depth       -eq 3 -and
+                $Depth       -eq 6 -and
                 $LiteralPath -eq "C:\Temp\AzDoCache\Cache\Project.clixml"
             }
         }

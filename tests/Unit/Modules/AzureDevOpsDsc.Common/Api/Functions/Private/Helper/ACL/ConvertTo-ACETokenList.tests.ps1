@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "ConvertTo-ACETokenList Tests" -Tags "Unit", "ACL", "Helper" {
+Describe "ConvertTo-ACETokenList Tests" -Tag "Unit", "ACL", "Helper" {
 
     BeforeAll {
 

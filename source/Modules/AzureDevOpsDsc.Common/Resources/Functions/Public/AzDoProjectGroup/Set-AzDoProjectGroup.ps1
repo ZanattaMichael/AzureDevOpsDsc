@@ -72,7 +72,7 @@ Function Set-AzDoProjectGroup
     #
     # Update the group
     $params = @{
-        ApiUri = 'https://vssps.dev.azure.com/{0}' -f $Global:DSCAZDO_OrganizationName
+        ApiUri = 'https://vssps.dev.azure.com/{0}' -f (Get-AzDoOrganizationName)
         GroupName = $GroupName
         GroupDescription = $GroupDescription
         GroupDescriptor = $LookupResult.liveCache.descriptor
@@ -86,6 +86,12 @@ Function Set-AzDoProjectGroup
     catch
     {
         throw $_
+    }
+
+    if ($null -eq $group)
+    {
+        Write-Error "[Set-AzDoProjectGroup] Set-DevOpsGroup returned null for group '$GroupName'. Check authentication and group descriptor."
+        return
     }
 
     #

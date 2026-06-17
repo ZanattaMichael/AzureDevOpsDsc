@@ -86,6 +86,18 @@ Function Find-AzDoIdentity
             Write-Verbose "[Find-AzDoIdentity] Performing a lookup using the group name '$Identity'."
             $cachedItem = Get-CacheItem -Key $Identity -Type 'LiveGroups'
 
+            # If not in cache (e.g. group created after module init), fall back to a live REST lookup
+            if ($null -eq $cachedItem)
+            {
+                Write-Verbose "[Find-AzDoIdentity] Group '$Identity' not found in cache — falling back to live API lookup."
+                $allGroups = List-DevOpsGroups -Organization (Get-AzDoOrganizationName)
+                $cachedItem = $allGroups | Where-Object { $_.principalName -eq $Identity } | Select-Object -First 1
+                if ($cachedItem)
+                {
+                    Add-CacheItem -Key $cachedItem.principalName -Value $cachedItem -Type 'LiveGroups'
+                }
+            }
+
             # Test if the group is found
             if ($null -eq $cachedItem)
             {

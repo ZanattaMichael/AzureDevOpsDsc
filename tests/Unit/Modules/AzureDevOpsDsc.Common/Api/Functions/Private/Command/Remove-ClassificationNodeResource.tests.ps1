@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Remove-ClassificationNodeResource Tests' -Tags "Unit", "Cache" {
+Describe 'Remove-ClassificationNodeResource Tests' -Tag "Unit", "Command", "Cache" {
 
     BeforeAll {
 

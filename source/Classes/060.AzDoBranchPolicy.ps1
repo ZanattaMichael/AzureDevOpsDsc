@@ -35,13 +35,13 @@ class AzDoBranchPolicy : AzDevOpsDscResourceBase
     [DscProperty(Key, Mandatory)]
     [System.String]$ProjectName
 
-    [DscProperty(Key, Mandatory)]
+    [DscProperty(Mandatory)]
     [System.String]$RepositoryName
 
-    [DscProperty(Key, Mandatory)]
+    [DscProperty(Mandatory)]
     [System.String]$BranchName
 
-    [DscProperty(Key, Mandatory)]
+    [DscProperty(Mandatory)]
     [System.String]$PolicyType
 
     [DscProperty()]

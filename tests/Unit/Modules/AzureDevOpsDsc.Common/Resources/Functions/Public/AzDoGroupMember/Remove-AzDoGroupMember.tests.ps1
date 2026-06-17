@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Remove-AzDoGroupMember Tests' {
+Describe 'Remove-AzDoGroupMember Tests' -Tag "Unit", "GroupMember" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global
@@ -10,6 +10,8 @@ Describe 'Remove-AzDoGroupMember Tests' {
     BeforeAll {
 
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        . (Get-FunctionItem 'Get-AzDoOrganizationName.ps1').FullName\n
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
         $global:AzDoLiveGroupMembers = @{}
 
         # Load the functions to test

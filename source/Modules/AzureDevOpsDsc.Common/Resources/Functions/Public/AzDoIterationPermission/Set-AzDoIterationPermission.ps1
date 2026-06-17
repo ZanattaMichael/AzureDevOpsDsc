@@ -59,7 +59,7 @@ Function Set-AzDoIterationPermission
     }
 
     $params = @{
-        OrganizationName = $Global:DSCAZDO_OrganizationName
+        OrganizationName = (Get-AzDoOrganizationName)
         SecurityNamespaceID = $SecurityNamespace.namespaceId
         SerializedACLs = ConvertTo-ACLHashtable @serializeACLParams
     }

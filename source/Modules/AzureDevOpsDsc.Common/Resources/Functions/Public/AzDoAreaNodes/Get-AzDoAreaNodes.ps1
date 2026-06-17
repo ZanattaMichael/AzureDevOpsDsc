@@ -74,7 +74,7 @@ Function Get-AzDoAreaNodes {
     Write-Verbose "[Get-AzDoAreaNodes] FormattedAreaPaths $($AreaPaths | Out-String)"
 
     # Retrieve the global organization name
-    $OrganizationName = $Global:DSCAZDO_OrganizationName
+    $OrganizationName = (Get-AzDoOrganizationName)
     Write-Verbose "[Get-AzDoAreaNodes] OrganizationName: $OrganizationName"
 
     # Initialize the result object with default values
@@ -89,6 +89,20 @@ Function Get-AzDoAreaNodes {
         Status = [DSCGetSummaryState]::Unchanged
         Reason = $null
         CachedAreaNodes = $null
+    }
+
+    # Refresh this project's area nodes from the live API before reading them.
+    # The init-time cache does not contain projects created later (so the top-level area node —
+    # required to reclassify work items on removal — would be missing), and changes made in a
+    # previous DSC runspace are not reliably reflected in this runspace's in-memory cache. Clearing
+    # and repopulating from live makes the comparison authoritative and idempotent.
+    $existingKeys = @((Get-CacheObject -CacheType 'LiveAreaNodes' | Where-Object { $_.Key -like "\$ProjectName\Area*" }).Key | Where-Object { $_ })
+    ForEach ($existingKey in $existingKeys) { Remove-CacheItem -Key $existingKey -Type 'LiveAreaNodes' }
+
+    $liveAreaNodes = List-DevOpsClassificationNodes -ProjectName $ProjectName -OrganizationName $OrganizationName
+    ForEach ($liveNode in $liveAreaNodes)
+    {
+        if ($liveNode.structureType -eq 'area') { Format-ClassificationNode -Node $liveNode -CacheType 'LiveAreaNodes' }
     }
 
     # Retrieve cached area nodes from cache
@@ -106,8 +120,8 @@ Function Get-AzDoAreaNodes {
     $isTopLevel = $cachedAreaNodesPath | Where-Object { $_ -eq "\$ProjectName\Area" }
     Write-Verbose "[Get-AzDoAreaNodes] Is top-level node present: $isTopLevel"
 
-    # Handle case where no area paths are specified and only top-level node exists
-    if ($AreaPaths.Count -eq 0 -and $cachedAreaNodesPath.Count -eq 1 -and $isTopLevel) {
+    # Handle case where no area paths are specified and only top-level node exists (or cache is empty for this project)
+    if ($AreaPaths.Count -eq 0 -and ($null -eq $cachedAreaNodesPath -or $cachedAreaNodesPath.Count -eq 0 -or ($cachedAreaNodesPath.Count -eq 1 -and $isTopLevel))) {
         Write-Verbose "[Get-AzDoAreaNodes] AreaPaths is not specified and no Area Nodes exist in cache"
 
         $getAreaResult.status = [DSCGetSummaryState]::Unchanged
@@ -133,8 +147,8 @@ Function Get-AzDoAreaNodes {
         return $getAreaResult
     }
 
-    # Handle case where only top-level node exists
-    if ($cachedAreaNodesPath.Count -eq 1 -and $isTopLevel) {
+    # Handle case where only top-level node exists (or cache is entirely empty for this project)
+    if ($null -eq $cachedAreaNodesPath -or $cachedAreaNodesPath.Count -eq 0 -or ($cachedAreaNodesPath.Count -eq 1 -and $isTopLevel)) {
         Write-Verbose "[Get-AzDoAreaNodes] Only top-level node exists"
 
         $getAreaResult.status = [DSCGetSummaryState]::NotFound

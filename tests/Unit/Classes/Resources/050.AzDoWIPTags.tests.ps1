@@ -10,7 +10,7 @@ if ($null -eq $Global:ClassesLoaded)
     . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
 }
 
-Describe 'AzDoWIPTags Tests' {
+Describe 'AzDoWIPTags Tests' -Tag "Unit", "Resources" {
 
     BeforeAll {
 

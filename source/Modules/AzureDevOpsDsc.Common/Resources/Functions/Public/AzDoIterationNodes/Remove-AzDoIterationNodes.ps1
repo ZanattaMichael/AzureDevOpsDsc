@@ -29,7 +29,7 @@ $iterationAttributes = @(@{Name="Iteration1"; Path="Path1"}, @{Name="Iteration2"
 Remove-AzDoIterationNodes -ProjectName "MyProject" -IterationAttributes $iterationAttributes
 
 .NOTES
-This function requires the global variable $Global:DSCAZDO_OrganizationName to be set with the organization name.
+This function requires the global variable (Get-AzDoOrganizationName) to be set with the organization name.
 #>
 Function Remove-AzDoIterationNodes {
     [CmdletBinding()]
@@ -57,7 +57,7 @@ Function Remove-AzDoIterationNodes {
     )
 
     # Retrieve the global organization name
-    $OrganizationName = $Global:DSCAZDO_OrganizationName
+    $OrganizationName = (Get-AzDoOrganizationName)
 
     Write-Verbose "[Remove-AzDoIterationNodes] Started."
 
@@ -65,7 +65,7 @@ Function Remove-AzDoIterationNodes {
         ProjectName = $ProjectName
         NodeType = 'Iterations'
         LookupResult = $LookupResult
-        OrganizationName = $Global:DSCAZDO_OrganizationName
+        OrganizationName = (Get-AzDoOrganizationName)
     }
 
     Remove-ClassificationNodeResource @params

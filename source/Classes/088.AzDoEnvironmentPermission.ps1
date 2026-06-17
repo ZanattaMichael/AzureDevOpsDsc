@@ -10,10 +10,10 @@ class AzDoEnvironmentPermission : AzDevOpsDscResourceBase
     [DscProperty(Key, Mandatory)]
     [System.String]$ProjectName
 
-    [DscProperty(Key, Mandatory)]
+    [DscProperty(Mandatory)]
     [System.String]$EnvironmentName
 
-    [DscProperty(Key, Mandatory)]
+    [DscProperty(Mandatory)]
     [System.String]$GroupName
 
     [DscProperty()]

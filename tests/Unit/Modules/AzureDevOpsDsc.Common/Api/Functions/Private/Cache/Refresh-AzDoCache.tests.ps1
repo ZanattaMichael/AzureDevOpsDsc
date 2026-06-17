@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Refresh-AzDoCache Tests" -Tags "Unit", "Cache" {
+Describe "Refresh-AzDoCache Tests" -Tag "Unit", "Cache" {
 
     BeforeAll {
 

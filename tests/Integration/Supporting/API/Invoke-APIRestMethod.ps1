@@ -94,11 +94,8 @@ function Invoke-APIRestMethod
             throw $_
         }
 
-        # Wait before the next attempt/retry
-        Start-Sleep -Milliseconds $RetryIntervalMs
-
-        # Break the continuation token loop so that the next attempt can be made
-        break;
+        Write-Verbose "[Invoke-APIRestMethod] HTTP error calling '$ApiUri': $_"
+        return $null
 
     }
 

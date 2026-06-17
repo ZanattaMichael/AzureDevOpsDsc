@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'New-ACLToken Function Tests' -Tags "Unit", "ACL", "Helper" {
+Describe 'New-ACLToken Function Tests' -Tag "Unit", "ACL", "Helper" {
 
     BeforeAll {
 
@@ -135,9 +135,10 @@ Describe 'New-ACLToken Function Tests' -Tags "Unit", "ACL", "Helper" {
 
     Context 'Unknown SecurityNamespace' {
 
-        It 'Should return UnknownSecurityNamespace type for unrecognized security namespace' {
+        It 'Should return Generic type for unrecognized security namespace (pass-through)' {
             $result = New-ACLToken -SecurityNamespace 'Unknown' -TokenName 'Any/Token'
-            $result.type | Should -Be 'UnknownSecurityNamespace'
+            $result.type | Should -Be 'Generic'
+            $result.TokenValue | Should -Be 'Any/Token'
         }
     }
 }

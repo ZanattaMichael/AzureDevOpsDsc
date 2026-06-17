@@ -33,7 +33,7 @@ function Get-DevOpsSecurityDescriptor
         $Organization,
         [Parameter()]
         [String]
-        $ApiVersion = $(Get-AzDevOpsApiVersion -Default)
+        $ApiVersion = '7.1-preview.1'
     )
 
     # Get the project

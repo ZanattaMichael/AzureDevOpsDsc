@@ -33,7 +33,7 @@
     Ensures that the iteration nodes for the project "MyProject" are present.
 
 .NOTES
-    This function requires the global variable $Global:DSCAZDO_OrganizationName to be set with the organization name.
+    This function requires the global variable (Get-AzDoOrganizationName) to be set with the organization name.
     The function uses cached iteration nodes and compares them with the desired state to determine the necessary changes.
 
 #>
@@ -46,7 +46,7 @@ Function Get-AzDoIterationNodes {
 
         # Optional parameter for specifying Iteration paths
         [Parameter()]
-        [HashTable[]]$IterationAttributes,
+        [object[]]$IterationAttributes,
 
         # Optional hashtable for lookup results
         [Parameter()]
@@ -63,7 +63,7 @@ Function Get-AzDoIterationNodes {
     )
 
     # Retrieve the global organization name
-    $OrganizationName = $Global:DSCAZDO_OrganizationName
+    $OrganizationName = (Get-AzDoOrganizationName)
 
     # Log the start of function execution with verbose output
     Write-Verbose "[Get-AzDoIterationNodes] Start function execution"
@@ -176,45 +176,27 @@ Function Get-AzDoIterationNodes {
             }
 
             # Only process the following if ensure is set to present.
-            $params = @{
-                ReferenceHashTable = $node
-                DifferenceHashTable = @{
-                    StartDate = $matched.StartDate
-                    EndDate = $matched.EndDate
-                    Path = $matched.Path
-                }
-                Keys = @('StartDate','EndDate')
-            }
+            # Azure DevOps API stores dates nested under attributes.startDate/finishDate.
+            $nodeStartDate = if ($node.attributes) { $node.attributes.startDate } else { $null }
+            $nodeEndDate   = if ($node.attributes) { $node.attributes.finishDate } else { $null }
+            $matchedNode   = $matched[0]
 
-            # If the Properties are different, flag and move on.
-            if (-not(Compare-HashtableProperties @params)) {
-                Write-Verbose "[Get-AzDoIterationNodes] Properties differ, updating node: $($node.Path)"
-                $getIterationResult.propertiesChanged.ToUpdate += $node
-                # Move on
-                continue
-            }
+            # Normalize dates to a common format before comparing to avoid type mismatches
+            # (e.g. Deserialized.System.DateTime from cache vs string from desired state).
+            $cachedStartDate  = Format-Date $nodeStartDate
+            $cachedEndDate    = Format-Date $nodeEndDate
+            $matchedStartDate = Format-Date $matchedNode.StartDate
+            $matchedEndDate   = Format-Date $matchedNode.EndDate
 
-            Write-Verbose "[Get-AzDoIterationNodes] Formatting Start and End Dates"
+            Write-Verbose "[Get-AzDoIterationNodes] Comparing dates: cached=[$cachedStartDate/$cachedEndDate] desired=[$matchedStartDate/$matchedEndDate]"
 
-            # Format the DateTime into a common format and compare
-            $cachedStartDate    = Format-Date $node.StartDate
-            $cachedEndDate      = Format-Date $node.EndDate
-            $matchedStartDate   = Format-Date $matched.StartDate
-            $matchedEndDate     = Format-Date $matched.EndDate
-
-            # If the datetime's (dates in this case) have changed, it needs to be updated.
-            if (
-                ($cachedStartDate -ne $matchedStartDate) -or
-                ($cachedEndDate -ne $matchedEndDate)
-            ) {
+            if (($cachedStartDate -ne $matchedStartDate) -or ($cachedEndDate -ne $matchedEndDate)) {
                 Write-Verbose "[Get-AzDoIterationNodes] DateTimes differ, updating node: $($node.Path)"
-
                 $getIterationResult.propertiesChanged.ToUpdate += @{
-                    StartDate = $matched.StartDate
-                    EndDate = $matched.EndDate
-                    Path = $matched.Path
+                    StartDate = $matchedNode.StartDate
+                    EndDate   = $matchedNode.EndDate
+                    Path      = $matchedNode.Path
                 }
-
             }
             # Move to the next item
             continue

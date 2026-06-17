@@ -10,14 +10,14 @@ class AzDoCheckConfiguration : AzDevOpsDscResourceBase
     [DscProperty(Key, Mandatory)]
     [System.String]$ProjectName
 
-    [DscProperty(Key, Mandatory)]
-    [System.String]$ResourceName
+    [DscProperty(Mandatory)]
+    [System.String]$TargetResourceName
 
-    [DscProperty(Key, Mandatory)]
+    [DscProperty(Mandatory)]
     [ValidateSet('environment','repository','endpoint')]
     [System.String]$ResourceType
 
-    [DscProperty(Key, Mandatory)]
+    [DscProperty(Mandatory)]
     [System.String]$CheckType
 
     [DscProperty()]
@@ -48,9 +48,9 @@ class AzDoCheckConfiguration : AzDevOpsDscResourceBase
     {
         $properties = @{ Ensure = [Ensure]::Absent }
         if ($null -eq $CurrentResourceObject) { return $properties }
-        $properties.ProjectName      = $CurrentResourceObject.ProjectName
-        $properties.ResourceName     = $CurrentResourceObject.ResourceName
-        $properties.ResourceType     = $CurrentResourceObject.ResourceType
+        $properties.ProjectName          = $CurrentResourceObject.ProjectName
+        $properties.TargetResourceName   = $CurrentResourceObject.TargetResourceName
+        $properties.ResourceType         = $CurrentResourceObject.ResourceType
         $properties.CheckType        = $CurrentResourceObject.CheckType
         $properties.Settings         = $CurrentResourceObject.Settings
         $properties.TimeoutInMinutes = $CurrentResourceObject.TimeoutInMinutes

@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Get-AzDoAreaNodes Tests' {
+Describe 'Get-AzDoAreaNodes Tests' -Tag "Unit", "AreaNodes" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global
@@ -9,6 +9,8 @@ Describe 'Get-AzDoAreaNodes Tests' {
     BeforeAll {
 
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        . (Get-FunctionItem 'Get-AzDoOrganizationName.ps1').FullName\n
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         # Load the functions to test
         if ($null -eq $currentFile){
@@ -70,6 +72,10 @@ Describe 'Get-AzDoAreaNodes Tests' {
         # Setting up global variable
         $Global:DSCAZDO_OrganizationName = "SampleOrg"
 
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Remove-CacheItem
+        Mock -CommandName List-DevOpsClassificationNodes -MockWith { return $null }
+        Mock -CommandName Format-ClassificationNode
     }
 
     AfterAll {

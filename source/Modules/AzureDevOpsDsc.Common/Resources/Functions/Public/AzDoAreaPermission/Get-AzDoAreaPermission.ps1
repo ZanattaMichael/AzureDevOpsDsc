@@ -32,7 +32,7 @@ Function Get-AzDoAreaPermission
     # Define the Descriptor Type and Organization Name
     # https://learn.microsoft.com/en-us/azure/devops/organizations/security/namespace-reference?view=azure-devops
     $SecurityNamespace = 'CSS' # Manages area path object-level permissions.
-    $OrganizationName = $Global:DSCAZDO_OrganizationName
+    $OrganizationName = (Get-AzDoOrganizationName)
 
     Write-Verbose "[Get-AzDoAreaPermission] Security Namespace: $SecurityNamespace"
     Write-Verbose "[Get-AzDoAreaPermission] Organization Name: $OrganizationName"
@@ -70,6 +70,14 @@ Function Get-AzDoAreaPermission
     # Perform a Lookup within the Cache for the Project
     $projectCache = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
 
+    # If not in cache, fall back to a live API lookup
+    if (-not $projectCache)
+    {
+        Write-Verbose "[Get-AzDoAreaPermission] Project '$ProjectName' not in cache — falling back to live API lookup."
+        $projectCache = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($projectCache) { Add-CacheItem -Key $ProjectName -Value $projectCache -Type 'LiveProjects' }
+    }
+
     # Test if the Project was found
     if (-not $projectCache)
     {
@@ -98,6 +106,24 @@ Function Get-AzDoAreaPermission
         Get-CacheItem -Key $_ -Type 'LiveAreaNodes'
     }
 
+    # If area nodes not in cache, fall back to a live API lookup
+    if ($AreaPaths.count -ne $FormattedAreaPaths.Count)
+    {
+        Write-Verbose "[Get-AzDoAreaPermission] Area path nodes not in cache — falling back to live API lookup."
+        $liveNodes = List-DevOpsClassificationNodes -OrganizationName $OrganizationName -ProjectName $ProjectName
+        foreach ($node in $liveNodes)
+        {
+            if ($node.structureType -eq 'area')
+            {
+                Format-ClassificationNode -Node $node -CacheType 'LiveAreaNodes'
+            }
+        }
+
+        [Array]$AreaPaths = $FormattedAreaPaths | ForEach-Object {
+            Get-CacheItem -Key $_ -Type 'LiveAreaNodes'
+        }
+    }
+
     # Ensure that the number of cached area path nodes is the same as the formatted nodes.
     if ($AreaPaths.count -ne $FormattedAreaPaths.Count)
     {
@@ -121,16 +147,22 @@ Function Get-AzDoAreaPermission
     # Add to the ACL Lookup Params
     $results.namespace = $namespace
 
+    # Token-scope the ACL fetch to this area path's classification-node token instead of scanning the
+    # entire org-wide CSS namespace. Fall back to the full-namespace fetch if the scoped query returns
+    # nothing, so behaviour is never worse than the previous full scan.
+    $aclToken = ($identifierArr | ForEach-Object { 'vstfs:///Classification/Node/{0}' -f $_ }) -join ':'
     $ACLLookupParams = @{
         OrganizationName        = $OrganizationName
         SecurityDescriptorId    = $namespace.namespaceId
     }
+    if ($aclToken) { $ACLLookupParams.Token = $aclToken }
 
     # Get the ACL List and format the ACLS
     Write-Verbose "[Get-AzDoAreaPermission] ACL Lookup Params: $($ACLLookupParams | Out-String)"
 
     # Get the ACLs for the AreaPath
     $DevOpsACLs = Get-DevOpsACL @ACLLookupParams
+    if (($null -eq $DevOpsACLs) -and $aclToken) { $DevOpsACLs = Get-DevOpsACL -OrganizationName $OrganizationName -SecurityDescriptorId $namespace.namespaceId }
 
     # Test if the ACLs were found
     if ($DevOpsACLs -eq $null)
@@ -152,34 +184,20 @@ Function Get-AzDoAreaPermission
         return $results
     }
 
-    # Filter the ACLs for the AreaPath
-    if ($AreaPath) {
+    # Filter the ACLs to only those matching the specific area path token (always applied).
+    $DifferenceACLs = $DifferenceACLs | Where-Object { $_.Token.Type -eq 'AreaPathPermission' } | Where-Object {
 
-        # Construct the AreaPath Token
-        $DifferenceACLs = $DifferenceACLs | Where-Object { $_.Token.Type -eq 'AreaPathPermission' } | Where-Object {
+        # Check if the current array contains all items in the matching list
+        if ($_.token.Identifiers.Count -ne $identifierArr.Count) { return $false }
 
-            # Check if the current array contains all items in the matching list
-            if ($_.token.Identifiers.Count -ne $identifierArr.Count) { return $false }
-
-            # Check if the current array contains all items in the matching list
-            foreach ($item in $identifierArr) {
-                if ($_.token.Identifiers.identifier -notcontains $item) {
-                    return $false
-                }
+        # Check if the current array contains all items in the matching list
+        foreach ($item in $identifierArr) {
+            if ($_.token.Identifiers.identifier -notcontains $item) {
+                return $false
             }
-
-            return $true
-
         }
 
-        # Test if the ACLs were found
-        if ($DifferenceACLs -eq $null)
-        {
-            Write-Warning "[Get-AzDoAreaPermission] No ACLs found for the AreaPath."
-            $results.status = [DSCGetSummaryState]::Error
-            $results.reason = "No ACLs found for the AreaPath."
-            return $results
-        }
+        return $true
 
     }
 

@@ -10,7 +10,7 @@ class AzDoRepositorySettings : AzDevOpsDscResourceBase
     [DscProperty(Key, Mandatory)]
     [System.String]$ProjectName
 
-    [DscProperty(Key, Mandatory)]
+    [DscProperty(Mandatory)]
     [System.String]$RepositoryName
 
     [DscProperty()]
@@ -40,7 +40,7 @@ class AzDoRepositorySettings : AzDevOpsDscResourceBase
 
     hidden [System.String[]]GetDscResourcePropertyNamesWithNoSetSupport()
     {
-        return @('ProjectName','RepositoryName')
+        return @()
     }
 
     hidden [Hashtable]GetDscCurrentStateProperties([PSCustomObject]$CurrentResourceObject)

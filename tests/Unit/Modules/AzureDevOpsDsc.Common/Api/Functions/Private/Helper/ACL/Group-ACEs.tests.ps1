@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Group-ACEs' -Tags "Unit", "ACL", "Helper" {
+Describe 'Group-ACEs' -Tag "Unit", "ACL", "Helper" {
 
     BeforeAll {
 

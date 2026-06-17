@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Get-AzDoCacheObjects' {
+Describe 'Get-AzDoCacheObjects' -Tag "Unit", "Helper" {
 
     BeforeAll {
 
@@ -16,28 +16,49 @@ Describe 'Get-AzDoCacheObjects' {
         }
     }
 
-    It 'Returns an array with 13 elements' {
+    It 'Returns an array with 34 elements' {
         $result = Get-AzDoCacheObjects
-        $result.Length | Should -Be 15
+        $result.Length | Should -Be 34
     }
 
-    It 'Contains expected elements' {
+    It 'Contains all legacy and Live* cache types' {
         $expectedElements = @(
+            # Legacy / non-prefixed types
             'Project',
             'Team',
             'Group',
             'SecurityDescriptor',
-            'LiveAreaNodes',
-            'LiveIterations',
-            'LiveGroups',
-            'LiveProjects',
-            'LiveUsers',
-            'LiveGroupMembers',
-            'LiveRepositories',
-            'LiveServicePrinciples',
+            'SecurityNamespaces',
+            # Live cache types
             'LiveACLList',
+            'LiveAgentPools',
+            'LiveAgentQueues',
+            'LiveAreaNodes',
+            'LiveArtifactFeeds',
+            'LiveAuditStreams',
+            'LiveBranchPolicies',
+            'LiveCheckConfigurations',
+            'LiveDeploymentGroups',
+            'LiveEnvironmentApprovals',
+            'LiveExtensions',
+            'LiveGroupMembers',
+            'LiveGroups',
+            'LiveIterations',
+            'LiveNotificationSubscriptions',
+            'LivePipelineEnvironments',
+            'LivePipelines',
+            'LivePolicyTypes',
             'LiveProcesses',
-            'SecurityNamespaces'
+            'LiveProjects',
+            'LiveRepositories',
+            'LiveServiceConnections',
+            'LiveServicePrinciples',
+            'LiveTaskGroups',
+            'LiveTeamMembers',
+            'LiveTeams',
+            'LiveUsers',
+            'LiveVariableGroups',
+            'LiveWikis'
         )
         $result = Get-AzDoCacheObjects
         $result | Should -Be $expectedElements

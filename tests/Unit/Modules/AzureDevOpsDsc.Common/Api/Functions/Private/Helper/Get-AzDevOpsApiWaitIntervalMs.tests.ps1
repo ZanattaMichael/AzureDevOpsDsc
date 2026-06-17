@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Get-AzDevOpsApiWaitIntervalMs" {
+Describe "Get-AzDevOpsApiWaitIntervalMs" -Tag "Unit", "Helper" {
 
     BeforeAll {
 

@@ -1,4 +1,4 @@
-Describe "AzDoWIPTags Integration Tests" {
+Describe "AzDoWIPTags Integration Tests" -Tag "Integration", "WIPTags" {
 
     BeforeAll {
 
@@ -13,11 +13,13 @@ Describe "AzDoWIPTags Integration Tests" {
             ModuleName = 'AzureDevOpsDsc'
         }
 
-        #
-        # Create a new project
+        New-TestProject -ProjectName $PROJECTNAME
 
-        New-Project $PROJECTNAME
-
+        # Clear any existing tags to ensure clean state
+        $null = Invoke-DscResource -Name 'AzDoWIPTags' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
+            ProjectName             = $PROJECTNAME
+            WorkItemTrackingTagList = @()
+        }
     }
 
     # This context is used to test if a project services exist.

@@ -1,4 +1,4 @@
-Describe "AzDoOrganizationGroup Integration Tests - No Description" {
+Describe "AzDoOrganizationGroup Integration Tests - No Description" -Tag "Integration", "OrganizationGroup" {
 
     BeforeAll {
 
@@ -10,12 +10,7 @@ Describe "AzDoOrganizationGroup Integration Tests - No Description" {
             ModuleName = 'AzureDevOpsDsc'
         }
 
-        $PROJECTNAME = 'TESTORGANIZATIONGROUP'
-
-        #
-        # Create a new project
-
-        New-Project $PROJECTNAME
+        $PROJECTNAME = 'TESTORGGROUP_NODESC'
 
     }
 
@@ -28,9 +23,9 @@ Describe "AzDoOrganizationGroup Integration Tests - No Description" {
             $parameters.Method = 'Test'
 
             # Define properties for the DSC resource.
-            # In this case, we specify a project name 'TESTORGANIZATIONGROUP'.
+            # In this case, we specify a project name 'TESTORGGROUP_NODESC'.
             $parameters.property = @{
-                GroupName = 'TESTORGANIZATIONGROUP'
+                GroupName = 'TESTORGGROUP_NODESC'
                 GroupDescription = 'This is a test organization group.'
             }
 
@@ -62,9 +57,9 @@ Describe "AzDoOrganizationGroup Integration Tests - No Description" {
             $parameters.Method = 'Set'
 
             # Define properties for the DSC resource.
-            # In this case, we specify a project name 'TESTORGANIZATIONGROUP'.
+            # In this case, we specify a project name 'TESTORGGROUP_NODESC'.
             $parameters.property = @{
-                GroupName = 'TESTORGANIZATIONGROUP'
+                GroupName = 'TESTORGGROUP_NODESC'
                 GroupDescription = 'This is a test organization group.'
             }
 
@@ -96,9 +91,9 @@ Describe "AzDoOrganizationGroup Integration Tests - No Description" {
             $parameters.Method = 'Set'
 
             # Define properties for the DSC resource.
-            # In this case, we specify a project name 'TESTORGANIZATIONGROUP'.
+            # In this case, we specify a project name 'TESTORGGROUP_NODESC'.
             $parameters.property = @{
-                GroupName = 'TESTORGANIZATIONGROUP'
+                GroupName = 'TESTORGGROUP_NODESC'
                 GroupDescription = 'This is an updated test organization group.'
             }
 
@@ -130,10 +125,10 @@ Describe "AzDoOrganizationGroup Integration Tests - No Description" {
             $parameters.Method = 'Set'
 
             # Define properties for the DSC resource.
-            # In this case, we specify a project name 'TESTORGANIZATIONGROUP'.
+            # In this case, we specify a project name 'TESTORGGROUP_NODESC'.
             $parameters.property = @{
                 Ensure = 'Absent'
-                GroupName = 'TESTORGANIZATIONGROUP'
+                GroupName = 'TESTORGGROUP_NODESC'
             }
 
         }

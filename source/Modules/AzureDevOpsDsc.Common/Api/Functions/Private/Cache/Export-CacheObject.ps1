@@ -43,7 +43,7 @@ Function Export-CacheObject
         [Object[]]$Content,
 
         [Parameter()]
-        [int]$Depth = 3
+        [int]$Depth = 6
     )
 
     # Write initial verbose message
@@ -70,9 +70,17 @@ Function Export-CacheObject
             New-Item -Path $CacheDirectoryPath -ItemType Directory | Out-Null
         }
 
-        # Save content to cache file
+        # Normalize null content to an empty list so Export-Clixml always receives an object.
+        # Empty arrays MUST be passed via -InputObject (not pipeline); piping zero elements
+        # causes Export-Clixml to write an 82-byte null file instead of a valid empty collection.
+        if ($null -eq $Content)
+        {
+            $Content = [System.Collections.Generic.List[CacheItem]]::New()
+        }
+
+        # Save content to cache file — must use -InputObject (not pipeline).
         Write-Verbose "[Export-ObjectCache] Saving content to cache file: $cacheFilePath"
-        $Content | Export-Clixml -Depth $Depth -LiteralPath $cacheFilePath
+        Export-Clixml -InputObject $Content -Depth $Depth -LiteralPath $cacheFilePath
 
         # Confirm completion of export process
         Write-Verbose "[Export-ObjectCache] Export process completed successfully for cache type: $CacheType"

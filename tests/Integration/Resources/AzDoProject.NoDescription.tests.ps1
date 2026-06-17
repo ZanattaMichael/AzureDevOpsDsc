@@ -1,4 +1,4 @@
-Describe "AzDoProject Integration Tests - No Description" {
+Describe "AzDoProject Integration Tests - No Description" -Tag "Integration", "Project" {
 
     BeforeAll {
 
@@ -10,7 +10,7 @@ Describe "AzDoProject Integration Tests - No Description" {
             ModuleName = 'AzureDevOpsDsc'
         }
 
-        $PROJECTNAME = 'TESTPROJECT'
+        $PROJECTNAME = 'TESTPROJECT_NONDESC'
 
     }
 
@@ -23,7 +23,7 @@ Describe "AzDoProject Integration Tests - No Description" {
             $parameters.Method = 'Test'
 
             # Define properties for the DSC resource.
-            # In this case, we specify a project name 'TESTPROJECT'.
+            # In this case, we specify a project name 'TESTPROJECT_NONDESC'.
             $parameters.property = @{
                 ProjectName = $PROJECTNAME
             }
@@ -39,7 +39,7 @@ Describe "AzDoProject Integration Tests - No Description" {
             $result = Invoke-DscResource @parameters
 
             # Verify that the 'Ensure' property in the result is 'Absent',
-            # indicating that the project 'TESTPROJECT' does not exist.
+            # indicating that the project 'TESTPROJECT_NONDESC' does not exist.
             $result.InDesiredState | Should -BeFalse
         }
 

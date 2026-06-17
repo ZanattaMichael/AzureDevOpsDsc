@@ -1,4 +1,4 @@
-Describe "AzDoProject Integration Tests - With Description" {
+Describe "AzDoProject Integration Tests - With Description" -Tag "Integration", "Project" {
 
     BeforeAll {
 
@@ -10,7 +10,7 @@ Describe "AzDoProject Integration Tests - With Description" {
             ModuleName = 'AzureDevOpsDsc'
         }
 
-        $PROJECTNAME = 'TESTPROJECT_DESC'
+        $PROJECTNAME = 'TESTPROJECT_DESCRIBED'
 
     }
 

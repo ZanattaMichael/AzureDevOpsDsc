@@ -32,7 +32,7 @@ class AzDoPipeline : AzDevOpsDscResourceBase
     [DscProperty(Key, Mandatory)]
     [System.String]$ProjectName
 
-    [DscProperty(Key, Mandatory)]
+    [DscProperty(Mandatory)]
     [System.String]$PipelineName
 
     [DscProperty(Mandatory)]

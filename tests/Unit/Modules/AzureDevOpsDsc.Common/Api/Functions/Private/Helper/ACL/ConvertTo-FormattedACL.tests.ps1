@@ -2,7 +2,7 @@ $currentFile = $MyInvocation.MyCommand.Path
 
 # ConvertTo-FormattedACL.Tests.ps1
 
-Describe "ConvertTo-FormattedACL" -Tags "Unit", "ACL", "Helper" {
+Describe "ConvertTo-FormattedACL" -Tag "Unit", "ACL", "Helper" {
 
     BeforeAll {
 

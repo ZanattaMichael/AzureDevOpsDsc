@@ -21,10 +21,5 @@
 Function Test-Date {
     param ([String]$DateTime)
 
-    try {
-        $result = $DateTime -as [DateTime]
-        return $( if ($result) { $true } else { $false} )
-    } catch {
-        return $false
-    }
+    return $null -ne ($DateTime -as [DateTime])
 }

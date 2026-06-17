@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Get-AzDoGitPermission Tests' {
+Describe 'Get-AzDoGitPermission Tests' -Tag "Unit", "GitPermission" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global
@@ -9,6 +9,8 @@ Describe 'Get-AzDoGitPermission Tests' {
     BeforeAll {
 
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        . (Get-FunctionItem 'Get-AzDoOrganizationName.ps1').FullName\n
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         # Load the functions to test
         if ($null -eq $currentFile) {
@@ -99,6 +101,8 @@ Describe 'Get-AzDoGitPermission Tests' {
         Mock -CommandName ConvertTo-FormattedACL -MockWith { Mock-ConvertTo-FormattedACL -SecurityNamespace $SecurityNamespace -OrganizationName $OrganizationName }
         Mock -CommandName ConvertTo-ACL -MockWith { Mock-ConvertTo-ACL -Permissions $Permissions -SecurityNamespace $SecurityNamespace -isInherited $isInherited -OrganizationName $OrganizationName -TokenName $TokenName }
         Mock -CommandName Test-ACLListforChanges -MockWith { Mock-Test-ACLListforChanges -ReferenceACLs $ReferenceACLs -DifferenceACLs $DifferenceACLs }
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
     }
 
     It 'Should retrieve repository and namespace, and compare ACLs correctly' {

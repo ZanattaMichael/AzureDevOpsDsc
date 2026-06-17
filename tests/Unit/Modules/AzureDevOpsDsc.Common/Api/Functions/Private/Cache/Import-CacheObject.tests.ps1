@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Import-CacheObject Tests" -Tags "Unit", "Cache" {
+Describe "Import-CacheObject Tests" -Tag "Unit", "Cache" {
 
     BeforeAll {
 

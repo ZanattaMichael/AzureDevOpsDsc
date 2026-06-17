@@ -1,7 +1,7 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
 # Define the test suite
-Describe 'Compare-HashtableProperties Function Tests' {
+Describe 'Compare-HashtableProperties Function Tests' -Tag "Unit", "Helper" {
 
     BeforeAll {
         # Load the functions to test

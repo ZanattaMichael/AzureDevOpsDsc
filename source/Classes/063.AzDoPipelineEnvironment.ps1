@@ -7,7 +7,7 @@
 class AzDoPipelineEnvironment : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)][System.String]$ProjectName
-    [DscProperty(Key, Mandatory)][System.String]$EnvironmentName
+    [DscProperty(Mandatory)][System.String]$EnvironmentName
     [DscProperty()][System.String]$Description
 
     AzDoPipelineEnvironment() { $this.Construct() }

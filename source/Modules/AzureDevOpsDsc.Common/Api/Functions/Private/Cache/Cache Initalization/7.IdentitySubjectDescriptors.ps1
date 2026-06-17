@@ -40,6 +40,9 @@ function AzDoAPI_7_IdentitySubjectDescriptors
         $OrganizationName = $Global:DSCAZDO_OrganizationName
     }
 
+    # Reset the descriptor index so it stays consistent with the live caches being rebuilt here.
+    Clear-IdentityDescriptorIndex
+
     # Enumerate the live group cache
     $AzDoLiveGroups = Get-CacheObject -CacheType 'LiveGroups'
     # Enumerate the live users cache
@@ -79,6 +82,12 @@ function AzDoAPI_7_IdentitySubjectDescriptors
         # Add to the cache
         Add-CacheItem @cacheParams
 
+        # Populate the flat descriptor index from the clean in-scope data (avoids the nested/double-wrapped
+        # shape the List cache stores). Persist once after the loop, not per item.
+        Add-IdentityDescriptorIndexItem -AclDescriptor $ACLIdentity.descriptor -PrincipalName $AzDoLiveGroup.value.principalName `
+            -OriginId $AzDoLiveGroup.value.originId -GraphDescriptor $AzDoLiveGroup.value.descriptor -AclId $ACLIdentity.id `
+            -SubjectDescriptor $ACLIdentity.subjectDescriptor
+
     }
 
     # Update the cache
@@ -111,6 +120,11 @@ function AzDoAPI_7_IdentitySubjectDescriptors
 
         # Add to the cache
         Add-CacheItem @cacheParams
+
+        # Populate the flat descriptor index from the clean in-scope data.
+        Add-IdentityDescriptorIndexItem -AclDescriptor $ACLIdentity.descriptor -PrincipalName $AzDoLiveUser.value.principalName `
+            -OriginId $AzDoLiveUser.value.originId -GraphDescriptor $AzDoLiveUser.value.descriptor -AclId $ACLIdentity.id `
+            -SubjectDescriptor $ACLIdentity.subjectDescriptor
 
     }
 
@@ -145,9 +159,17 @@ function AzDoAPI_7_IdentitySubjectDescriptors
         # Add to the cache
         Add-CacheItem @cacheParams
 
+        # Populate the flat descriptor index from the clean in-scope data.
+        Add-IdentityDescriptorIndexItem -AclDescriptor $ACLIdentity.descriptor -PrincipalName $AzDoLiveServicePrinciple.value.principalName `
+            -OriginId $AzDoLiveServicePrinciple.value.originId -GraphDescriptor $AzDoLiveServicePrinciple.value.descriptor -AclId $ACLIdentity.id `
+            -SubjectDescriptor $ACLIdentity.subjectDescriptor
+
     }
 
     # Update the cache
     Export-CacheObject -CacheType 'LiveServicePrinciples' -Content $AzDoLiveServicePrinciples
+
+    # Persist the freshly-built descriptor index once, now that all identities have been added.
+    Save-IdentityDescriptorIndex
 
 }

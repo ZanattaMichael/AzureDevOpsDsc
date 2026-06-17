@@ -75,7 +75,7 @@ function Set-AzDoProject
         $Force
     )
 
-    $OrganizationName = $Global:DSCAZDO_OrganizationName
+    $OrganizationName = (Get-AzDoOrganizationName)
 
     #
     # Perform a lookup to see if the group exists in Azure DevOps
@@ -97,10 +97,22 @@ function Set-AzDoProject
 
     $projectJob = Update-DevOpsProject @parameters
 
+    if ($null -eq $projectJob)
+    {
+        Throw "[Set-AzDoProject] Update-DevOpsProject returned null for project '$ProjectName'."
+    }
+
+    $projectURL = if ($projectJob -is [System.Collections.IEnumerable] -and -not ($projectJob -is [string])) { ($projectJob | Select-Object -First 1).url } else { $projectJob.url }
+
+    if ([String]::IsNullOrEmpty($projectURL))
+    {
+        Throw "[Set-AzDoProject] Project update returned but URL is empty. Job details: $($projectJob | ConvertTo-Json -Depth 2)"
+    }
+
     #
     # Wait for the project to be updated
 
-    Wait-DevOpsProject -ProjectURL $projectJob.url -OrganizationName $OrganizationName
+    Wait-DevOpsProject -ProjectURL $projectURL -OrganizationName $OrganizationName
 
     #
     # Once the project has been created, refresh the entire cache.

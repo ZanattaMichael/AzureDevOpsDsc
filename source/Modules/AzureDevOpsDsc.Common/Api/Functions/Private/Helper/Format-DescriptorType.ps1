@@ -31,18 +31,7 @@ Function Format-DescriptorType
         [System.String]$DescriptorType
     )
 
-    # Switch on the DescriptorType
-    switch ($DescriptorType)
-    {
-
-        # The Descriptor Name in the API is different to the Descriptor Name in the DSC Resource.
-        "GitRepositories" {
-            return "Git Repositories"
-        }
-
-        # All other else, keep the same descriptor type
-        default {
-            return $DescriptorType
-        }
-    }
+    # The API uses "Git Repositories" where the DSC resource uses "GitRepositories".
+    if ($DescriptorType -eq 'GitRepositories') { return 'Git Repositories' }
+    return $DescriptorType
 }

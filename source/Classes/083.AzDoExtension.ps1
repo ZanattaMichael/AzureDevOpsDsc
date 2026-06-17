@@ -10,7 +10,7 @@ class AzDoExtension : AzDevOpsDscResourceBase
     [DscProperty(Key, Mandatory)]
     [System.String]$PublisherId
 
-    [DscProperty(Key, Mandatory)]
+    [DscProperty(Mandatory)]
     [System.String]$ExtensionId
 
     [DscProperty(NotConfigurable)]

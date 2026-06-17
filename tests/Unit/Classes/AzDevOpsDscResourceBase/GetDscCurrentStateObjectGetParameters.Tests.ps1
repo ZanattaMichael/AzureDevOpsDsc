@@ -1,4 +1,4 @@
-Describe "[AzDevOpsDscResourceBase]::GetDscCurrentStateObjectGetParameters() Tests" -Tag 'Unit', 'AzDevOpsDscResourceBase' {
+Describe "[AzDevOpsDscResourceBase]::GetDscCurrentStateObjectGetParameters() Tests" -Tag "Unit", "AzDevOpsDscResourceBase" {
 
 
     Context 'When a "ResourceId" property value is present'{

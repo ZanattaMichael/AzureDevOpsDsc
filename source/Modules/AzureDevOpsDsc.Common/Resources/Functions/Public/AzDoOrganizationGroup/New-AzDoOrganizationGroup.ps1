@@ -58,7 +58,7 @@ Function New-AzDoOrganizationGroup
     $params = @{
         GroupName = $GroupName
         GroupDescription = $GroupDescription
-        ApiUri = 'https://vssps.dev.azure.com/{0}' -f $Global:DSCAZDO_OrganizationName
+        ApiUri = 'https://vssps.dev.azure.com/{0}' -f (Get-AzDoOrganizationName)
     }
 
     # Write verbose log with the parameters used for creating the group
@@ -66,6 +66,12 @@ Function New-AzDoOrganizationGroup
 
     # Create a new group
     $group = New-DevOpsGroup @params
+
+    if ($null -eq $group)
+    {
+        Write-Error "[New-AzDoOrganizationGroup] New-DevOpsGroup returned null for group '$GroupName'. Check authentication token and organization settings."
+        return
+    }
 
     # Update the cache with the new group
     Refresh-CacheIdentity -Identity $group -Key $group.principalName -CacheType 'LiveGroups'

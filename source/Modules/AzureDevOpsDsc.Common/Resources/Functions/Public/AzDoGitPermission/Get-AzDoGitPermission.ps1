@@ -72,7 +72,7 @@ Function Get-AzDoGitPermission
 
     # Define the Descriptor Type and Organization Name
     $SecurityNamespace = 'Git Repositories'
-    $OrganizationName = $Global:DSCAZDO_OrganizationName
+    $OrganizationName = (Get-AzDoOrganizationName)
 
     Write-Verbose "[Get-AzDoGitPermission] Security Namespace: $SecurityNamespace"
     Write-Verbose "[Get-AzDoGitPermission] Organization Name: $OrganizationName"
@@ -106,8 +106,14 @@ Function Get-AzDoGitPermission
     # Define the ACL List
     $ACLList = [System.Collections.Generic.List[Hashtable]]::new()
 
-    # Perform a Lookup within the Cache for the Project
+    # Perform a Lookup within the Cache for the Project, with live fallback
     $projectCache = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
+    if (-not $projectCache)
+    {
+        Write-Verbose "[Get-AzDoGitPermission] Project '$ProjectName' not in cache — falling back to live API lookup."
+        $projectCache = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($projectCache) { Add-CacheItem -Key $ProjectName -Value $projectCache -Type 'LiveProjects' }
+    }
 
     # Test if the Project was found
     if (-not $projectCache)
@@ -127,7 +133,16 @@ Function Get-AzDoGitPermission
 
         #
         # Perform a Lookup within the Cache for the Repository
-        $repositoryCache = Get-CacheItem -Key $('{0}\{1}' -f $ProjectName, $RepositoryName) -Type 'LiveRepositories'
+        $repoCacheKey    = '{0}\{1}' -f $ProjectName, $RepositoryName
+        $repositoryCache = Get-CacheItem -Key $repoCacheKey -Type 'LiveRepositories'
+
+        if (-not $repositoryCache)
+        {
+            Write-Verbose "[Get-AzDoGitPermission] Repository '$RepositoryName' not in cache — falling back to live API lookup."
+            $allRepos        = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/$ProjectName/_apis/git/repositories?api-version=7.1-preview.1" -Method Get
+            $repositoryCache = $allRepos.value | Where-Object { $_.name -eq $RepositoryName } | Select-Object -First 1
+            if ($repositoryCache) { Add-CacheItem -Key $repoCacheKey -Value $repositoryCache -Type 'LiveRepositories' }
+        }
 
         # Test if the Repository was found, however only if the ProjectName was specified
         if (-not $repositoryCache)
@@ -148,9 +163,14 @@ Function Get-AzDoGitPermission
     # Add to the ACL Lookup Params
     $getGroupResult.namespace = $namespace
 
+    # Token-scope the ACL fetch to this repository's (or the project's) Git token instead of pulling
+    # every ACL in the namespace. Fall back to the full-namespace fetch if the scoped query returns
+    # nothing, so behaviour is never worse than the previous full scan.
+    $aclToken = if ($RepositoryName) { 'repoV2/{0}/{1}' -f $projectCache.id, $repositoryCache.id } else { 'repoV2/{0}' -f $projectCache.id }
     $ACLLookupParams = @{
         OrganizationName        = $OrganizationName
         SecurityDescriptorId    = $namespace.namespaceId
+        Token                   = $aclToken
     }
 
     # Get the ACL List and format the ACLS
@@ -158,6 +178,7 @@ Function Get-AzDoGitPermission
 
     # Get the ACLs for the Repository
     $DevOpsACLs = Get-DevOpsACL @ACLLookupParams
+    if ($null -eq $DevOpsACLs) { $DevOpsACLs = Get-DevOpsACL -OrganizationName $OrganizationName -SecurityDescriptorId $namespace.namespaceId }
 
     # Test if the ACLs were found
     if ($DevOpsACLs -eq $null)

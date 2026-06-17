@@ -3,7 +3,7 @@ $currentFile = $MyInvocation.MyCommand.Path
 # Import the module containing Set-AzDoProjectGroup if it's in a different file.
 # . .\path\to\your\module.psm1
 
-Describe 'Set-AzDoProjectGroup' {
+Describe 'Set-AzDoProjectGroup' -Tag "Unit", "ProjectGroup" {
 
     AfterAll {
         # Clean up
@@ -14,6 +14,8 @@ Describe 'Set-AzDoProjectGroup' {
 
         # Set the organization name
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        . (Get-FunctionItem 'Get-AzDoOrganizationName.ps1').FullName\n
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         # Load the functions to test
         if ($null -eq $currentFile) {
@@ -84,7 +86,7 @@ Describe 'Set-AzDoProjectGroup' {
             $result = Set-AzDoProjectGroup -GroupName 'TestGroup' -GroupDescription 'TestDescription' -ProjectName 'TestProject' -LookupResult $LookupResult
 
             Assert-MockCalled -CommandName Set-DevOpsGroup -Times 1 -Exactly -ParameterFilter {
-                ($ApiUri -eq "https://vssps.dev.azure.com/TestOrg") -and
+                ($ApiUri -eq "https://vssps.dev.azure.com/TestOrganization") -and
                 ($GroupName -eq 'TestGroup') -and
                 ($GroupDescription -eq 'TestDescription') -and
                 ($GroupDescriptor -eq 'liveDescriptor')

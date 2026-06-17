@@ -10,7 +10,7 @@ if ($null -eq $Global:ClassesLoaded)
     . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
 }
 
-Describe 'AzDoIterationNodes Tests' {
+Describe 'AzDoIterationNodes Tests' -Tag "Unit", "Resources" {
 
 
     BeforeAll {

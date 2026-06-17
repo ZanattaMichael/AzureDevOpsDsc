@@ -35,7 +35,7 @@ Remove-AzDoProject -ProjectName "MyProject" -Force
 This command removes the Azure DevOps project named "MyProject" without prompting for confirmation.
 
 .NOTES
-The function uses global variable $Global:DSCAZDO_OrganizationName to get the organization name.
+The function uses global variable (Get-AzDoOrganizationName) to get the organization name.
 #>
 function Remove-AzDoProject
 {
@@ -73,7 +73,7 @@ function Remove-AzDoProject
     )
 
     # Set the organization name
-    $OrganizationName = $Global:DSCAZDO_OrganizationName
+    $OrganizationName = (Get-AzDoOrganizationName)
     Write-Verbose "[Remove-AzDoProject] Using organization name: $OrganizationName"
 
     # Perform a lookup to see if the group exists in Azure DevOps
@@ -91,6 +91,30 @@ function Remove-AzDoProject
     # Remove the project
     Write-Verbose "[Remove-AzDoProject] Removing project $ProjectName from Azure DevOps"
     Remove-DevOpsProject -Organization $OrganizationName -ProjectId $project.id
+
+    # Project deletion is asynchronous. Wait until the project is no longer reported as active so a
+    # subsequent Test correctly observes the desired (Absent) state. Use the projects list (with
+    # stateFilter=all) to avoid per-poll 404 retry overhead; a project being deleted shows up with
+    # state 'deleting'/'deleted', or drops out of the list entirely once gone.
+    $deadline = (Get-Date).AddSeconds(90)
+    do
+    {
+        Start-Sleep -Seconds 3
+        $stillActive = $false
+        try
+        {
+            $allProjects = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects?stateFilter=all&api-version=7.1-preview.4" -Method Get
+            $found = $allProjects.value | Where-Object { $_.id -eq $project.id }
+            $stillActive = $found -and ($found.state -notin 'deleting', 'deleted')
+        }
+        catch
+        {
+            Write-Verbose "[Remove-AzDoProject] Project list poll failed (treating as deleted): $_"
+        }
+    }
+    while ($stillActive -and ((Get-Date) -lt $deadline))
+
+    Write-Verbose "[Remove-AzDoProject] Project $ProjectName deletion confirmed (or timed out after 90s)."
 
     # Remove the project from the cache and export the cache
     Write-Verbose "[Remove-AzDoProject] Removing project $ProjectName from local cache"

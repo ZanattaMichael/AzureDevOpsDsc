@@ -2,7 +2,7 @@ $currentFile = $MyInvocation.MyCommand.Path
 
 # ConvertTo-FormattedToken.Tests.ps1
 
-Describe "ConvertTo-FormattedToken" -Tags "Unit", "ACL", "Helper" {
+Describe "ConvertTo-FormattedToken" -Tag "Unit", "ACL", "Helper" {
 
     BeforeAll {
 

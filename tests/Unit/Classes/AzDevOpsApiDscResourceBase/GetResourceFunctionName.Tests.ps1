@@ -1,5 +1,5 @@
 
-Describe "[AzDevOpsApiDscResourceBase]::GetResourceFunctionName() Tests" -Tag 'Unit', 'AzDevOpsApiDscResourceBase' {
+Describe "[AzDevOpsApiDscResourceBase]::GetResourceFunctionName() Tests" -Tag "Unit", "AzDevOpsApiDscResourceBase" {
 
     $testCasesValidRequiredActionWithFunctions = @(
         @{

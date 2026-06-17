@@ -1,5 +1,5 @@
 $currentFile = $MyInvocation.MyCommand.Path
-Describe 'Get-AzDevOpsApiVersion Tests' {
+Describe 'Get-AzDevOpsApiVersion Tests' -Tag "Unit", "Helper" {
 
     BeforeAll {
 

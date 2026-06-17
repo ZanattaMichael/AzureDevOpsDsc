@@ -94,7 +94,7 @@ Function ConvertTo-ACL
     # Convert the Permission to an ACL Token and create the ACL hash table.
     $ACL = @{
         token     = New-ACLToken @ACLTokenParams
-        aces      = ConvertTo-ACEList @ACEParams
+        aces      = @(ConvertTo-ACEList @ACEParams)  # Ensure aces is always an array (never null).
         inherited = $isInherited
     }
 

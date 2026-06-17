@@ -68,7 +68,7 @@ class DscResourceBase
 
             $propertyInfo.GetCustomAttributes($true) | ForEach-Object {
 
-                if ($_.TypeId.Name -eq 'DscPropertyAttribute')
+                if ($_.TypeId.Name -eq 'DscPropertyAttribute' -and -not $_.NotConfigurable)
                 {
                     $thisDscPropertyNames += $PropertyName
                 }

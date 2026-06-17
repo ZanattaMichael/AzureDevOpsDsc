@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Find-AzDoIdentity" {
+Describe "Find-AzDoIdentity" -Tag "Unit", "Helper" {
 
     BeforeAll {
 

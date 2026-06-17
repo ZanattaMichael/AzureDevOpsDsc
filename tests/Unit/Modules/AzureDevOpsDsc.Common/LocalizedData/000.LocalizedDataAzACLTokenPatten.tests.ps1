@@ -1,7 +1,7 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
 # Define tests
-Describe "Testing LocalizedDataAzACLTokenPattern regex patterns" {
+Describe "Testing LocalizedDataAzACLTokenPattern regex patterns" -Tag "Unit", "LocalizedData" {
 
     BeforeAll {
         $source = Get-FunctionItem '000.LocalizedDataAzACLTokenPatten.ps1'

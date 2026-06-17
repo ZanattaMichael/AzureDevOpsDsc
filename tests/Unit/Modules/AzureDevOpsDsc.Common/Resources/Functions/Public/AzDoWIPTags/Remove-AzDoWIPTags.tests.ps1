@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Remove-AzDoWIPTags" {
+Describe "Remove-AzDoWIPTags" -Tag "Unit", "WIPTags" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global
@@ -9,6 +9,8 @@ Describe "Remove-AzDoWIPTags" {
     BeforeAll {
         # Set up any global variables or states needed for the tests
         $Global:DSCAZDO_OrganizationName = "TestOrg"
+        . (Get-FunctionItem 'Get-AzDoOrganizationName.ps1').FullName\n
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         # Load the functions to test
         if ($null -eq $currentFile)

@@ -34,27 +34,8 @@ Function Get-BitwiseOrResult
     Write-Verbose "[Get-BitwiseOrResult] Started."
     Write-Verbose "[Get-BitwiseOrResult] Integers: $integers"
 
+    # Parameter is typed [int[]], so values are already guaranteed to be integers.
     $result = 0
-
-    if ($integers.Count -eq 0)
-    {
-        return 0
-    }
-
-    foreach ($integer in $integers)
-    {
-        if (-not [int]::TryParse($integer.ToString(), [ref]$null))
-        {
-            Write-Error "Invalid integer value: $integer"
-            return 0
-        }
-        $result = $result -bor $integer
-    }
-
-    if ([String]::IsNullOrEmpty($result))
-    {
-        return 0
-    }
-
+    foreach ($integer in $integers) { $result = $result -bor $integer }
     return $result
 }

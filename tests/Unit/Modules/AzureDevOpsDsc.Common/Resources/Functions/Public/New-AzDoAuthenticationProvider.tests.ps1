@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "New-AzDoAuthenticationProvider" {
+Describe "New-AzDoAuthenticationProvider" -Tag "Unit", "Public" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global
@@ -10,6 +10,8 @@ Describe "New-AzDoAuthenticationProvider" {
 
         # Set the Organization Name
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        . (Get-FunctionItem 'Get-AzDoOrganizationName.ps1').FullName\n
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         # Load the functions to test
         if ($null -eq $currentFile) {

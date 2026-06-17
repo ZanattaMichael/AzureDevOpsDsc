@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Resolve-ACLToken' -Tags "Unit", "ACL", "Helper" {
+Describe 'Resolve-ACLToken' -Tag "Unit", "ACL", "Helper" {
 
     BeforeAll {
 

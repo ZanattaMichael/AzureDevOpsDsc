@@ -10,7 +10,7 @@ if ($null -eq $Global:ClassesLoaded)
     . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
 }
 
-Describe 'AzDoGitPermission' {
+Describe 'AzDoGitPermission' -Tag "Unit", "Resources" {
 
     BeforeAll {
 

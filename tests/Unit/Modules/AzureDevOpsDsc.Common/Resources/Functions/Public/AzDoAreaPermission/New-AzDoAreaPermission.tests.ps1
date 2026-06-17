@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'New-AzDoAreaPermission Tests' {
+Describe 'New-AzDoAreaPermission Tests' -Tag "Unit", "AreaPermission" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global
@@ -9,6 +9,8 @@ Describe 'New-AzDoAreaPermission Tests' {
     BeforeAll {
 
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        . (Get-FunctionItem 'Get-AzDoOrganizationName.ps1').FullName\n
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         # Load the functions to test
         if ($null -eq $currentFile) {
@@ -50,18 +52,22 @@ Describe 'New-AzDoAreaPermission Tests' {
 
         Mock -CommandName Write-Warning
         Mock -CommandName Set-AzDoPermission
+        Mock -CommandName Remove-CacheItem
 
     }
 
     Context "When Ensure is Present" {
 
-        It "Should not proceed when AreaPath is not specified" {
+        It "Should proceed and call Set-AzDoPermission when AreaPath is not specified (top-level project area)" {
             # Act
-            $result = New-AzDoAreaPermission -ProjectName "TestProject" -isInherited $true
+            New-AzDoAreaPermission -ProjectName "TestProject" -isInherited $true -LookupResult @{
+                identifiers       = @('guid-1')
+                propertiesChanged = @()
+            }
 
-            # Assert
-            $result | Should -BeNullOrEmpty
-            Assert-MockCalled -CommandName Get-CacheItem -Exactly 0
+            # Assert — function proceeds past the namespace/project lookup
+            Assert-MockCalled -CommandName Get-CacheItem -Times 3
+            Assert-MockCalled -CommandName Set-AzDoPermission -Times 1
         }
 
         It "Should return warning when Security Namespace or Project is not found" {
@@ -87,21 +93,15 @@ Describe 'New-AzDoAreaPermission Tests' {
                 return $null
             }
 
-            Mock -CommandName Export-CLixml {
-                param($InputObject, $Path)
-                # Simulate export behavior
-            }
-
             # Act
             $result = New-AzDoAreaPermission -ProjectName "TestProject" -AreaPath "ValidAreaPath" -isInherited $true -LookupResult @{
-                propertiesChanged = @{
-                    identifiers = @('12345', '67890')
-                }
+                identifiers       = @('12345', '67890')
+                propertiesChanged = @()
             }
 
             # Assert
             $result | Should -BeNullOrEmpty
-
+            Assert-MockCalled -CommandName Set-AzDoPermission -Times 1
         }
     }
 }

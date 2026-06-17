@@ -35,11 +35,11 @@ function List-DevOpsGroupMembers
         $GroupDescriptor,
         [Parameter()]
         [String]
-        $ApiVersion = $(Get-AzDevOpsApiVersion -Default)
+        $ApiVersion = '7.1-preview.1'
     )
 
     $params = @{
-        Uri = 'https://vssps.dev.azure.com/{0}/_apis/graph/Memberships/{1}?direction=down' -f $Organization, $GroupDescriptor
+        Uri = 'https://vssps.dev.azure.com/{0}/_apis/graph/Memberships/{1}?direction=down&api-version={2}' -f $Organization, $GroupDescriptor, $ApiVersion
         Method = 'Get'
     }
 

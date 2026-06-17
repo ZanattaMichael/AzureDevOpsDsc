@@ -1,7 +1,7 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
 # Unit Tests for Find-Identity function
-Describe 'Find-Identity Function Tests' {
+Describe 'Find-Identity Function Tests' -Tag "Unit", "Helper" {
 
     BeforeAll {
 
@@ -47,6 +47,10 @@ Describe 'Find-Identity Function Tests' {
 
             return [PSCustomObject]@{ ACLIdentity = [PSCustomObject]@{ descriptor = 'apiDescriptor'; id = 'apiId'; originId = 'apiOrigin'; principalName = 'apiPrincipal'; displayName = 'apiDisplay' } }
         }
+
+        # The descriptor index is exercised separately; here it always misses so the API path is tested.
+        Mock -CommandName Get-IdentityDescriptorIndexItem -MockWith { return $null }
+        Mock -CommandName Add-IdentityDescriptorIndexItem -MockWith { }
 
         Mock Write-Verbose
         Mock Write-Warning

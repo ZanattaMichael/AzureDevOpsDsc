@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Get-AzDoAreaPermission Tests' {
+Describe 'Get-AzDoAreaPermission Tests' -Tag "Unit", "AreaPermission" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global
@@ -9,6 +9,8 @@ Describe 'Get-AzDoAreaPermission Tests' {
     BeforeAll {
 
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        . (Get-FunctionItem 'Get-AzDoOrganizationName.ps1').FullName\n
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         # Load the functions to test
         if ($null -eq $currentFile) {
@@ -97,6 +99,8 @@ Describe 'Get-AzDoAreaPermission Tests' {
 
         Mock -CommandName Write-Warning
 
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
     }
 
     Context "When Ensure is Present" {

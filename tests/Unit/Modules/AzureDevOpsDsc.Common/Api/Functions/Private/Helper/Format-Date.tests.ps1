@@ -1,7 +1,7 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
 # Define a test suite for the Format-Date function
-Describe 'Format-Date Function Tests' {
+Describe 'Format-Date Function Tests' -Tag "Unit", "Helper" {
 
     BeforeAll {
 

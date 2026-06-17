@@ -1,7 +1,7 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
 # Test to ensure the function handles the provided parameters correctly and returns the expected hashtable
-Describe "ConvertTo-ACLHashtable" -Tags "Unit", "ACL", "Helper" {
+Describe "ConvertTo-ACLHashtable" -Tag "Unit", "ACL", "Helper" {
 
     BeforeAll {
 
