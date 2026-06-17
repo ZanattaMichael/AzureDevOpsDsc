@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Set-AzDoGitRepository' -Skip {
+Describe 'Set-AzDoGitRepository' -Tag "Unit", "GitRepository" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global

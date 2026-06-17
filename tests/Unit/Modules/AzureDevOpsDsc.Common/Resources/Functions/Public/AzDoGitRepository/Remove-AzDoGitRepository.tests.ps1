@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Remove-AzDoGitRepository' {
+Describe 'Remove-AzDoGitRepository' -Tag "Unit", "GitRepository" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global
@@ -9,6 +9,8 @@ Describe 'Remove-AzDoGitRepository' {
     BeforeAll {
 
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        . (Get-FunctionItem 'Get-AzDoOrganizationName.ps1').FullName\n
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         # Load the functions to test
         if ($null -eq $currentFile) {
@@ -51,6 +53,9 @@ Describe 'Remove-AzDoGitRepository' {
             Ensure          = "Present"
         }
 
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Resolve-AzDoProject -MockWith { Get-CacheItem -Key $ProjectName -Type 'LiveProjects' }
+        Mock -CommandName List-DevOpsGitRepository -MockWith { return $null }
     }
 
     It 'Calls Get-CacheItem with appropriate parameters for Project' {

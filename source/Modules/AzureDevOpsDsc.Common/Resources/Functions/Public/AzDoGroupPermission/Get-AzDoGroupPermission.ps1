@@ -68,7 +68,7 @@ Function Get-AzDoGroupPermission
 
     # Define the Descriptor Type and Organization Name
     $SecurityNamespace = 'Identity'
-    $OrganizationName = $Global:DSCAZDO_OrganizationName
+    $OrganizationName = (Get-AzDoOrganizationName)
     # Split the Group Name
     $split = $GroupName.Split('\').Split('/')
 
@@ -110,10 +110,39 @@ Function Get-AzDoGroupPermission
     $group = Get-CacheItem -Key $('[{0}]\{1}' -f $ProjectName, $GroupName) -Type 'LiveGroups'
     $project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
 
-    # Test if the Group was found
+    # If not in cache (e.g. group created after last cache init), fall back to a live REST lookup
+    if (-not $group)
+    {
+        Write-Verbose "[Get-AzDoGroupPermission] Group not found in cache — falling back to live API lookup."
+        $allGroups = List-DevOpsGroups -Organization $OrganizationName
+        $group = $allGroups | Where-Object { $_.principalName -eq $('[{0}]\{1}' -f $ProjectName, $GroupName) } | Select-Object -First 1
+        if ($group)
+        {
+            Add-CacheItem -Key $group.principalName -Value $group -Type 'LiveGroups'
+        }
+    }
+
     if (-not $group)
     {
         Throw "[Get-AzDoGroupPermission] Group not found: $('[{0}]\{1}' -f $ProjectName, $GroupName)"
+        return
+    }
+
+    # If project not in cache, fall back to a live API lookup
+    if (-not $project)
+    {
+        Write-Verbose "[Get-AzDoGroupPermission] Project not found in cache — falling back to live API lookup."
+        $projectResponse = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($projectResponse)
+        {
+            $project = $projectResponse
+            Add-CacheItem -Key $ProjectName -Value $project -Type 'LiveProjects'
+        }
+    }
+
+    if (-not $project)
+    {
+        Throw "[Get-AzDoGroupPermission] Project not found: $ProjectName"
         return
     }
 
@@ -126,9 +155,15 @@ Function Get-AzDoGroupPermission
     # Add to the ACL Lookup Params
     $getGroupResult.namespace = $namespace
 
+    # Build the token for this specific group so Get-DevOpsACL returns only the one ACL we care
+    # about rather than every ACL in the Identity namespace (which can be thousands and very slow).
+    # Azure DevOps Identity ACL tokens use a SINGLE backslash: {projectId}\{groupOriginId}.
+    $groupToken = '{0}\{1}' -f $project.id, $group.originId
+
     $ACLLookupParams = @{
         OrganizationName        = $OrganizationName
         SecurityDescriptorId    = $namespace.namespaceId
+        Token                   = $groupToken
     }
 
     # Get the ACL List and format the ACLS
@@ -161,17 +196,18 @@ Function Get-AzDoGroupPermission
         SecurityNamespace   = $SecurityNamespace
         isInherited         = $isInherited
         OrganizationName    = $OrganizationName
-        TokenName           = '{0}\\{1}' -f $project.id, $group.id
+        TokenName           = '{0}\{1}' -f $project.id, $group.originId
     }
 
     # Convert the Permissions to an ACL Token
     $ReferenceACLs = ConvertTo-ACL @params | Where-Object { $_.token.Type -ne 'GroupUnknown' }
 
-    # if the ACEs are empty, skip
+    # if the ACEs are empty, the desired permissions could not be resolved (unknown identities filtered out)
     if ($ReferenceACLs.aces.Count -eq 0)
     {
-        Write-Verbose "[Get-AzDoGroupPermission] No ACEs found for the group."
-        return
+        Write-Verbose "[Get-AzDoGroupPermission] No resolvable ACEs for the group — treating as NotFound."
+        $getGroupResult.status = [DSCGetSummaryState]::NotFound
+        return $getGroupResult
     }
 
     # Compare the Reference ACLs to the Difference ACLs

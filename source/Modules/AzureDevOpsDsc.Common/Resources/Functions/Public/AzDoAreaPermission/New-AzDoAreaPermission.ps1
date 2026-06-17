@@ -29,30 +29,35 @@ Function New-AzDoAreaPermission
     Write-Verbose "[New-AzDoAreaPermission] Started."
 
     #
-    # Test if the Repository is specified
-    if ([String]::IsNullOrEmpty($AreaPath))
-    {
-        Write-Warning "[New-AzDoAreaPermission] Area Path Name not specified. Defaulting to top-level Project permissions."
-        Write-Warning "[New-AzDoAreaPermission] STOPPING. It is not possible add permissions to a top-level Project."
-        return
-    }
-
-    #
     # Security Namespace ID
 
     $SecurityNamespace = Get-CacheItem -Key 'CSS' -Type 'SecurityNamespaces'
     $Project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
 
-    if (($null -eq $SecurityNamespace) -or ($null -eq $Project))
+    if ($null -eq $SecurityNamespace)
     {
-        Write-Warning "[New-AzDoAreaPermission] Security Namespace or Project not found."
+        Write-Warning "[New-AzDoAreaPermission] Security Namespace not found."
+        return
+    }
+
+    if ($null -eq $Project)
+    {
+        Write-Verbose "[New-AzDoAreaPermission] Project '$ProjectName' not in cache — falling back to live API lookup."
+        $OrganizationName = Get-AzDoOrganizationName
+        $Project = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($Project) { Add-CacheItem -Key $ProjectName -Value $Project -Type 'LiveProjects' }
+    }
+
+    if ($null -eq $Project)
+    {
+        Write-Warning "[New-AzDoAreaPermission] Project not found: $ProjectName"
         return
     }
 
     #
     # Serialize the ACLs
 
-    $token = $(($LookupResult.propertiesChanged.identifiers | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_ }) -join ':')
+    $token = $(($LookupResult.identifiers | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_ }) -join ':')
 
     $serializeACLParams = @{
         ReferenceACLs = $LookupResult.propertiesChanged
@@ -61,16 +66,16 @@ Function New-AzDoAreaPermission
     }
 
     $params = @{
-        OrganizationName = $Global:DSCAZDO_OrganizationName
+        OrganizationName = (Get-AzDoOrganizationName)
         SecurityNamespaceID = $SecurityNamespace.namespaceId
         SerializedACLs = ConvertTo-ACLHashtable @serializeACLParams
     }
 
-    #
-    # Set the Git Repository Permissions
-
     Write-Verbose "[New-AzDoAreaPermission] Setting Area Path Permissions for $ProjectName - $AreaPath"
 
     Set-AzDoPermission @params
+
+    # Invalidate the LiveACLList cache so the next Get re-fetches from the API.
+    Remove-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'
 
 }

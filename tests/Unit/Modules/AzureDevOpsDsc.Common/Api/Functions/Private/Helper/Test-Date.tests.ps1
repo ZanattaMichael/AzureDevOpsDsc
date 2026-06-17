@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Test-Date Function Tests" {
+Describe "Test-Date Function Tests" -Tag "Unit", "Helper" {
 
     BeforeAll {
         # Load the functions to test

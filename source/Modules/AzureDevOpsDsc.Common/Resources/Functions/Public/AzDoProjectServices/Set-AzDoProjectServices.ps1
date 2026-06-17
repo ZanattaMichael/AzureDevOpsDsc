@@ -90,22 +90,47 @@ Function Set-AzDoProjectServices
         $Force
     )
 
-    # Retrive the Repositories from the Live Cache.
+    $OrganizationName = Get-AzDoOrganizationName
+
+    # Retrieve the Project from the Live Cache, with live fallback.
     $Project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
+
+    if ($null -eq $Project)
+    {
+        Write-Verbose "[Set-AzDoProjectServices] Project '$ProjectName' not in cache — falling back to live API lookup."
+        $Project = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($Project) { Add-CacheItem -Key $ProjectName -Value $Project -Type 'LiveProjects' }
+    }
+
+    if (-not $Project)
+    {
+        Write-Error "[Set-AzDoProjectServices] Project '$ProjectName' not found. Cannot set services."
+        return
+    }
 
     # Construct a hashtable detailing the group
     ForEach ($PropertyChanged in $LookupResult.propertiesChanged)
     {
+        # Find the matching live service object by featureId
+        $serviceKey = $LookupResult.LiveServices.Keys | Where-Object {
+            $LookupResult.LiveServices[$_].featureId -eq $PropertyChanged.FeatureId
+        } | Select-Object -First 1
 
-        $params = @{
-            Organization = $Global:DSCAZDO_OrganizationName
-            ProjectId    = $Project.id
-            ServiceName  = $PropertyChanged.FeatureId
-            Body         = $LookupResult.LiveServices.Keys | Where-Object { $LookupResult.LiveServices[$_].featureId -eq $PropertyChanged.FeatureId } | ForEach-Object { $LookupResult.LiveServices[$_] }
+        if ($null -eq $serviceKey) {
+            Write-Warning "[Set-AzDoProjectServices] Could not find live service for FeatureId '$($PropertyChanged.FeatureId)'"
+            continue
         }
 
-        # Set the Project Service Status
-        $params.Body.state = ($PropertyChanged.Expected -eq 'Enabled') ? 1 : 0
+        $bodyObject = $LookupResult.LiveServices[$serviceKey]
+        # Set state as string — FeatureManagement API requires "enabled"/"disabled" strings
+        $bodyObject.state = ($PropertyChanged.Expected -eq 'Enabled') ? 'enabled' : 'disabled'
+
+        $params = @{
+            Organization = $OrganizationName
+            ProjectId    = $Project.id
+            ServiceName  = $PropertyChanged.FeatureId
+            Body         = $bodyObject
+        }
 
         Set-ProjectServiceStatus @params
 

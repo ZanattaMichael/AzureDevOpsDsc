@@ -17,21 +17,42 @@ This command retrieves the list of Azure DevOps cache object types.
 function Get-AzDoCacheObjects
 {
     return @(
+        # Legacy / non-prefixed types
         'Project',
         'Team',
         'Group',
         'SecurityDescriptor',
-        'LiveAreaNodes',
-        'LiveIterations',
-        'LiveGroups',
-        'LiveProjects',
-        'LiveUsers',
-        'LiveGroupMembers',
-        'LiveRepositories',
-        'LiveServicePrinciples',
-        'LiveACLList',
-        'LiveProcesses',
-        'SecurityNamespaces'
-    )
+        'SecurityNamespaces',
 
+        # Live cache types
+        'LiveACLList',
+        'LiveAgentPools',
+        'LiveAgentQueues',
+        'LiveAreaNodes',
+        'LiveArtifactFeeds',
+        'LiveAuditStreams',
+        'LiveBranchPolicies',
+        'LiveCheckConfigurations',
+        'LiveDeploymentGroups',
+        'LiveEnvironmentApprovals',
+        'LiveExtensions',
+        'LiveGroupMembers',
+        'LiveGroups',
+        'LiveIterations',
+        'LiveNotificationSubscriptions',
+        'LivePipelineEnvironments',
+        'LivePipelines',
+        'LivePolicyTypes',
+        'LiveProcesses',
+        'LiveProjects',
+        'LiveRepositories',
+        'LiveServiceConnections',
+        'LiveServicePrinciples',
+        'LiveTaskGroups',
+        'LiveTeamMembers',
+        'LiveTeams',
+        'LiveUsers',
+        'LiveVariableGroups',
+        'LiveWikis'
+    )
 }

@@ -10,10 +10,10 @@ class AzDoSecurityNamespacePermission : AzDevOpsDscResourceBase
     [DscProperty(Key, Mandatory)]
     [System.String]$SecurityNamespace
 
-    [DscProperty(Key, Mandatory)]
+    [DscProperty(Mandatory)]
     [System.String]$Token
 
-    [DscProperty(Key, Mandatory)]
+    [DscProperty(Mandatory)]
     [System.String]$GroupName
 
     [DscProperty()]

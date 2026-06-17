@@ -1,4 +1,4 @@
-Describe "AzDoProjectGroup Integration Tests - With Description" {
+Describe "AzDoProjectGroup Integration Tests - With Description" -Tag "Integration", "ProjectGroup" {
 
     BeforeAll {
 
@@ -14,10 +14,7 @@ Describe "AzDoProjectGroup Integration Tests - With Description" {
             ModuleName = 'AzureDevOpsDsc'
         }
 
-        #
-        # Create a new project
-
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
     }
 
     # This context is used to test if a project group exists.

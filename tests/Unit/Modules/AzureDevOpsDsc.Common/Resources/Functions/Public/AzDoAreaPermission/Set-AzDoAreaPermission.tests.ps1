@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Set-AzDoAreaPermission' {
+Describe 'Set-AzDoAreaPermission' -Tag "Unit", "AreaPermission" {
 
 
     AfterAll {
@@ -10,6 +10,8 @@ Describe 'Set-AzDoAreaPermission' {
     BeforeAll {
 
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        . (Get-FunctionItem 'Get-AzDoOrganizationName.ps1').FullName\n
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         # Load the functions to test
         if ($null -eq $currentFile) {
@@ -50,7 +52,10 @@ Describe 'Set-AzDoAreaPermission' {
         }
 
         Mock -CommandName Set-AzDoPermission
+        Mock -CommandName Remove-CacheItem
 
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
     }
 
     Context "When AreaPath is not specified" {

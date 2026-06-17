@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Get-AzDoIterationNodes Tests' {
+Describe 'Get-AzDoIterationNodes Tests' -Tag "Unit", "IterationNodes" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global
@@ -9,6 +9,8 @@ Describe 'Get-AzDoIterationNodes Tests' {
     BeforeAll {
 
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        . (Get-FunctionItem 'Get-AzDoOrganizationName.ps1').FullName\n
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         # Load the functions to test
         if ($null -eq $currentFile){
@@ -39,7 +41,7 @@ Describe 'Get-AzDoIterationNodes Tests' {
             return @{
                 Key = "\$ProjectName\Iteration1"
                 Value = @(
-                    @{ Path = "\$ProjectName\Iteration1"; StartDate = "2023-01-01"; EndDate = "2023-01-31" }
+                    @{ Path = "\$ProjectName\Iteration1"; attributes = @{ startDate = "2023-01-01"; finishDate = "2023-01-31" } }
                 )
             }
         }
@@ -50,6 +52,7 @@ Describe 'Get-AzDoIterationNodes Tests' {
 
         Mock -CommandName Format-Date -MockWith {
             param([Object]$object)
+            if ($null -eq $object) { return $null }
             return (Get-Date -Date $object)
         }
 
@@ -63,8 +66,8 @@ Describe 'Get-AzDoIterationNodes Tests' {
             $iterationAttributes = @(
                 @{
                     Path = "\$ProjectName\Iteration1"
-                    StartDate = "01-01-2023"
-                    EndDate = "31-01-2023"
+                    StartDate = "2023-01-01"
+                    EndDate = "2023-01-31"
                 }
             )
 

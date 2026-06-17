@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Get-AzManagedIdentityToken Tests" -Tags "Unit", "Authentication" {
+Describe "Get-AzManagedIdentityToken Tests" -Tag "Unit", "ManagedIdentity", "Authentication" {
 
     BeforeAll {
 
@@ -98,12 +98,18 @@ Describe "Get-AzManagedIdentityToken Tests" -Tags "Unit", "Authentication" {
             Mock -CommandName Test-isWindowsAdmin -MockWith {
                 return $false
             }
+            Mock -CommandName Test-Path -MockWith { return $false } -ParameterFilter { $LiteralPath -like '*ModuleSettings.clixml' }
         }
 
-        It "should throw error" {
-            {
-                Get-AzManagedIdentityToken -OrganizationName "Contoso"
-            } | Should -Throw "*Error: Authentication to Azure Arc requires Administrator privileges.*"
+        It "should warn about Administrator privileges but not throw" {
+            # Azure Arc auth no longer hard-fails when not elevated; it warns and proceeds, because
+            # the secret-file challenge (not process elevation) is what actually gates the request.
+            Mock -CommandName Write-Warning
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return @{ access_token = 'mock-token' } }
+
+            { Get-AzManagedIdentityToken -OrganizationName "Contoso" } | Should -Not -Throw
+
+            Assert-MockCalled -CommandName Write-Warning -ParameterFilter { $Message -like '*Administrator*' }
         }
     }
 
@@ -120,6 +126,7 @@ Describe "Get-AzManagedIdentityToken Tests" -Tags "Unit", "Authentication" {
             Mock -CommandName Test-isWindowsAdmin -MockWith {
                 return $true
             }
+            Mock -CommandName Test-Path -MockWith { return $false } -ParameterFilter { $LiteralPath -like '*ModuleSettings.clixml' }
 
         }
 
@@ -197,6 +204,7 @@ Describe "Get-AzManagedIdentityToken Tests" -Tags "Unit", "Authentication" {
             Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith {
                 Throw "MOCK ERROR"
             }
+            Mock -CommandName Test-Path -MockWith { return $false } -ParameterFilter { $LiteralPath -like '*ModuleSettings.clixml' }
         }
 
         It "should throw error" {

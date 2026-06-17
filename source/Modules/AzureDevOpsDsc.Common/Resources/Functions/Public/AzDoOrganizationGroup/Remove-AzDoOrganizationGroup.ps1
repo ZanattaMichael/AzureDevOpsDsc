@@ -28,7 +28,7 @@ Remove-AzDoOrganizationGroup -GroupName "Developers" -Force
 This example removes the "Developers" group from the Azure DevOps organization without confirmation.
 
 .NOTES
-This function relies on the global variables $Global:DSCAZDO_OrganizationName, $Global:AZDOLiveGroups,
+This function relies on the global variables (Get-AzDoOrganizationName), $Global:AZDOLiveGroups,
 and $Global:AzDoGroup to interact with the Azure DevOps API and manage cache objects.
 #>
 Function Remove-AzDoOrganizationGroup
@@ -65,7 +65,7 @@ Function Remove-AzDoOrganizationGroup
 
     $params = @{
         GroupDescriptor = $LookupResult.liveCache.Descriptor
-        ApiUri = 'https://vssps.dev.azure.com/{0}' -f $Global:DSCAZDO_OrganizationName
+        ApiUri = 'https://vssps.dev.azure.com/{0}' -f (Get-AzDoOrganizationName)
     }
 
     $cacheItem = @{

@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Format-AzDoIterationNodes Tests" {
+Describe "Format-AzDoIterationNodes Tests" -Tag "Unit", "Helper" {
 
     BeforeAll {
 

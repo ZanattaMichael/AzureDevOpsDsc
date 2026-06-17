@@ -201,8 +201,14 @@ function Invoke-AzDevOpsApiRestMethod
 
                 # If so, set the continuation token to True
                 $isContinuationToken = $true
-                # Update the URI to include the continuation token
-                $invokeRestMethodParameters.Uri = '{0}&continuationToken={1}&{2}' -f $ApiUri, $responseHeaders.'x-ms-continuationtoken', $ApiVersion
+                # Response headers are returned as string arrays; take the first value so the token
+                # is not stringified as 'System.String[]'.
+                $continuationToken = @($responseHeaders.'x-ms-continuationtoken')[0]
+                # Update the URI to include the continuation token. $ApiUri already carries the
+                # correct 'api-version' query parameter, so only the continuation token is appended.
+                # (Previously a bare '&7.1' was appended, producing a malformed query and, for the
+                # preview-only graph endpoints, a 'version 7.1 is under preview' 400 error.)
+                $invokeRestMethodParameters.Uri = '{0}&continuationToken={1}' -f $ApiUri, $continuationToken
                 # Reset the RetryAttempts counter
                 $CurrentNoOfRetryAttempts = -1
 
@@ -242,7 +248,20 @@ function Invoke-AzDevOpsApiRestMethod
 
                 # Increment the number of retries attempted and obtain any exception message
                 $CurrentNoOfRetryAttempts++
-                $restMethodExceptionMessage = $_.Exception.Message
+                $responseBody = $null
+                try { $responseBody = $_.ErrorDetails.Message } catch {}
+                if (-not $responseBody)
+                {
+                    try { $responseBody = $_.Exception.Response.Content.ReadAsStringAsync().Result } catch {}
+                }
+                if (-not $responseBody)
+                {
+                    try {
+                        $stream = $_.Exception.Response.GetResponseStream()
+                        $responseBody = [System.IO.StreamReader]::new($stream).ReadToEnd()
+                    } catch {}
+                }
+                $restMethodExceptionMessage = if ($responseBody) { "$($_.Exception.Message) | ResponseBody: $responseBody" } else { $_.Exception.Message }
 
                 # Wait before the next attempt/retry
                 Start-Sleep -Milliseconds $RetryIntervalMs
@@ -256,7 +275,12 @@ function Invoke-AzDevOpsApiRestMethod
     }
 
     # If all retry attempts have failed, throw an exception
-    $errorMessage = $script:localizedData.AzDevOpsApiRestMethodException -f $MyInvocation.MyCommand, $RetryAttempts, $restMethodExceptionMessage
-    throw (New-InvalidOperationException -Message $errorMessage)
+    $localizedMsg = $script:localizedData.AzDevOpsApiRestMethodException
+    if ([String]::IsNullOrEmpty($localizedMsg))
+    {
+        $localizedMsg = "The '{0}' function returned an error after {1} retry attempts: ""{2}"""
+    }
+    $errorMessage = $localizedMsg -f $MyInvocation.MyCommand, $RetryAttempts, $restMethodExceptionMessage
+    throw "[Invoke-AzDevOpsApiRestMethod] $errorMessage"
 
 }

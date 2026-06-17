@@ -44,7 +44,7 @@ function Set-ProjectServiceStatus
 
         [Parameter()]
         [String]
-        $ApiVersion = $(Get-AzDevOpsApiVersion -Default)
+        $ApiVersion = '7.1-preview.1'
     )
 
     # Get the project
@@ -57,13 +57,14 @@ function Set-ProjectServiceStatus
 
     try
     {
-        $response = Invoke-AzDevOpsApiRestMethod @params
+        $result = Invoke-AzDevOpsApiRestMethod @params
+        $response = $result | Select-Object -First 1
         # Output the state of the service
         return $response.state
     }
     catch
     {
-        Write-Error "Failed to set Security Descriptor: $_"
+        Write-Error "[Set-ProjectServiceStatus] Failed to set service status for '$ServiceName': $_"
     }
 
 }

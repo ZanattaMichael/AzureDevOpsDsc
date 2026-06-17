@@ -1,5 +1,5 @@
 
-Describe "[AzDevOpsApiDscResourceBase]::GetResourceKeyPropertyName() tests" -Tag 'Unit', 'AzDevOpsApiDscResourceBase'  {
+Describe "[AzDevOpsApiDscResourceBase]::GetResourceKeyPropertyName() tests" -Tag "Unit", "AzDevOpsApiDscResourceBase" {
 
 
     Context 'When called from instance of the class with the correct/expected, DSC Resource prefix' {

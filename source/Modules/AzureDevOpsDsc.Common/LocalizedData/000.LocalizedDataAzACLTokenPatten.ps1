@@ -34,5 +34,19 @@ data LocalizedDataAzACLTokenPatten
         # AreaPath and IterationPath ACL Token Patterns
         AreaPathPermission      = '(vstfs:\/{3}Classification\/Node\/)(?<identifiers>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})'
         IterationPathPermission = '(vstfs:\/{3}Classification\/Node\/)(?<identifiers>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})'
+        # Project-level ACL Token Patterns
+        ProjectPermission       = '^\$PROJECT:vstfs:\/{3}Classification\/TeamProject\/(?<ProjectId>[A-Za-z0-9-]+)$'
+        # Build (Pipeline) ACL Token Patterns  — ProjectId only, or ProjectId/PipelineId
+        BuildPermission         = '^(?<ProjectId>[A-Za-z0-9-]+)(\/(?<PipelineId>[0-9]+))?$'
+        # Library (VariableGroup) ACL Token Patterns
+        LibraryPermission       = '^Library\/Project\/(?<ProjectId>[A-Za-z0-9-]+)(\/VariableGroup\/(?<VariableGroupId>[0-9]+))?$'
+        # ServiceEndpoints ACL Token Patterns
+        ServiceEndpointPermission = '^endpoints\/Project\/(?<ProjectId>[A-Za-z0-9-]+)(\/endpoint\/(?<EndpointId>[A-Za-z0-9-]+))?$'
+        # DistributedTask — Agent Pool ACL Token Patterns
+        AgentPoolPermission     = '^(?<PoolId>[0-9]+)$'
+        # DistributedTask — Environment ACL Token Patterns
+        EnvironmentPermission   = '^Environments\/(?<ProjectId>[A-Za-z0-9-]+)(\/(?<EnvironmentId>[0-9]+))?$'
+        # Generic / passthrough — any token not matched above
+        GenericPermission       = '^(?<Token>.+)$'
     }
 }

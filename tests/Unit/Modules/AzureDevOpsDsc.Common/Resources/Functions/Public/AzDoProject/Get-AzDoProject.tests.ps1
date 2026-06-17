@@ -1,7 +1,7 @@
 $currentFile = $MyInvocation.MyCommand.Path
 # Pester tests for Get-AzDoProject
 
-Describe "Get-AzDoProject" {
+Describe "Get-AzDoProject" -Tag "Unit", "Project" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global
@@ -11,6 +11,8 @@ Describe "Get-AzDoProject" {
 
         # Set the organization name
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        . (Get-FunctionItem 'Get-AzDoOrganizationName.ps1').FullName\n
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         # Load the functions to test
         if ($null -eq $currentFile) {
@@ -46,6 +48,8 @@ Describe "Get-AzDoProject" {
         Mock -CommandName Test-AzDevOpsProjectName -MockWith { return $true }
         Mock -CommandName Write-Warning
 
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
     }
 
     Context "when the project exists" {

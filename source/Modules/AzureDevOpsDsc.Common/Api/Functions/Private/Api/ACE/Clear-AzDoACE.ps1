@@ -51,7 +51,18 @@ Function Clear-AzDoACE {
     $Token = $DifferenceACLs.token._token
     # Define a hashtable to store parameters for the Invoke-AzDevOpsApiRestMethod function.
 
-    $SubDescriptors = $DifferenceACLs.aces.Identity.value.ACLIdentity.descriptor
+    # The ACE Name from acesDictionary is already the descriptor string used by the API.
+    # Prefer it over the Identity.value.ACLIdentity.descriptor chain, which can be null when
+    # the identity was created after the LiveGroups/LiveUsers cache was populated.
+    $SubDescriptors = @(foreach ($formattedACL in $DifferenceACLs) {
+        foreach ($ace in $formattedACL.aces) {
+            if ($ace.Identity -and $ace.Identity.value.ACLIdentity.descriptor) {
+                $ace.Identity.value.ACLIdentity.descriptor
+            } else {
+                $ace.Name
+            }
+        }
+    }) | Where-Object { $_ }
 
     # If there are no subdescriptors, no work is required - skip!
     if (-not $SubDescriptors)
@@ -88,11 +99,11 @@ Function Clear-AzDoACE {
         #>
         Write-Verbose "[Clear-AzDoACE] Attempting to invoke REST method to clear ACEs from $Token Token."
         $null = Invoke-AzDevOpsApiRestMethod @params
-
     }
     catch
     {
         # If an exception occurs, write an error message to the console with details about the issue.
+        "DELETE EXCEPTION: $($_.Exception.Message)" | Out-File 'C:\Git\clear-ace-debug.log' -Append
         Write-Error "[Clear-AzDoACE] Failed to set ACLs: $($_.Exception.Message)"
     }
 

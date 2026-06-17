@@ -56,8 +56,8 @@ Function Find-Identity
 
     try
     {
-        $CachedGroups = Get-CacheObject -CacheType 'LiveGroups'
-        $CachedUsers = Get-CacheObject -CacheType 'LiveUsers'
+        $CachedGroups            = Get-CacheObject -CacheType 'LiveGroups'
+        $CachedUsers             = Get-CacheObject -CacheType 'LiveUsers'
         $CachedServicePrincipals = Get-CacheObject -CacheType 'LiveServicePrinciples'
     }
     catch
@@ -66,157 +66,209 @@ Function Find-Identity
         return $null
     }
 
-    #
-    # Define the lookup table based on the search type
-    switch ($SearchType)
-    {
-        'descriptor' {
-            $lookup = @{
-                groupIdentitySB             = { $_.value.ACLIdentity.descriptor -eq $Name }
-                userIdentitySB              = { $_.value.ACLIdentity.descriptor -eq $Name }
-                servicePrincipalIdentitySB  = { $_.value.ACLIdentity.descriptor -eq $Name }
-            }
-        }
-        'descriptorId' {
-            $lookup = @{
-                groupIdentitySB             = { $_.value.ACLIdentity.id -eq $Name }
-                userIdentitySB              = { $_.value.ACLIdentity.id -eq $Name }
-                servicePrincipalIdentitySB  = { $_.value.ACLIdentity.id -eq $Name }
-            }
-        }
-        'originId' {
-            $lookup = @{
-                groupIdentitySB             = { $_.value.originId -eq $Name }
-                userIdentitySB              = { $_.value.originId -eq $Name }
-                servicePrincipalIdentitySB  = { $_.value.originId -eq $Name }
-            }
-        }
-        'principalName' {
-            $lookup = @{
-                groupIdentitySB             = { $_.value.principalName.replace('[','').replace(']','') -eq $Name }
-                userIdentitySB              = { $_.value.principalName -eq $Name }
-                servicePrincipalIdentitySB  = { $_.value.principalName -eq $Name }
-            }
-        }
-        'displayName' {
-            $lookup = @{
-                groupIdentitySB             = { $_.value.displayName -eq $Name }
-                userIdentitySB              = { $_.value.displayName -eq $Name }
-                servicePrincipalIdentitySB  = { $_.value.displayName -eq $Name }
-            }
-        }
-        default {
-            Write-Error "Invalid SearchType: $SearchType"
+    # Helper: returns the single matching identity from three candidate sets, or $null when
+    # zero or more than one are found (with appropriate verbose/warning output).
+    $resolveUnique = {
+        param($group, $user, $sp, [string]$label)
+        # Wrap in @() so $found is always an array; Where-Object returns $null (not @()) when nothing matches.
+        $found = @(@($group, $user, $sp) | Where-Object { $null -ne $_ })
+        if ($found.Count -gt 1)
+        {
+            Write-Warning "[Find-Identity] Found multiple identities for '$label'. Returning null."
             return $null
         }
+        return $found[0]   # $null when Count -eq 0
     }
 
-    #
-    # Find the identity
-
-    $groupIdentity = $CachedGroups | Where-Object $lookup.groupIdentitySB
-    $userIdentity = $CachedUsers | Where-Object $lookup.userIdentitySB
-    $servicePrincipalIdentity = $CachedServicePrincipals | Where-Object $lookup.servicePrincipalIdentitySB
-
-    # Check if multiple identities were found.
-    if ($groupIdentity -or $userIdentity -or $servicePrincipalIdentity)
+    # Build the filter scriptblock for each cache type.
+    # Groups use a bracket-stripped principalName comparison; all others use the raw value.
+    $commonFilter = switch ($SearchType)
     {
-
-        if (
-                ($groupIdentity -and $userIdentity) -or
-                ($groupIdentity -and $servicePrincipalIdentity) -or
-                ($userIdentity -and $servicePrincipalIdentity)
-        )
+        'descriptor'    { { $_.value.ACLIdentity.descriptor -eq $Name }; break }
+        'descriptorId'  { { $_.value.ACLIdentity.id         -eq $Name }; break }
+        'originId'      { { $_.value.originId               -eq $Name }; break }
+        'principalName' { { $_.value.principalName          -eq $Name }; break }
+        'displayName'   { { $_.value.displayName            -eq $Name }; break }
+        default         { Write-Error "Invalid SearchType: $SearchType"; return $null }
+    }
+    $groupFilter = if ($SearchType -eq 'principalName')
+    {
+        # Organisation-level groups have a principalName like "[orgName]\GroupName".
+        # When the caller uses "[]\GroupName" (empty org prefix), after bracket-stripping
+        # $Name becomes "\GroupName". We match by suffix so "[orgName]\GroupName" resolves correctly.
         {
-            Write-Warning "[Find-Identity] Found multiple identities with the name '$Name'. Returning null."
-            return $null
+            $normalizedPrincipal = $_.value.principalName.replace('[','').replace(']','')
+            ($normalizedPrincipal -eq $Name) -or ($Name.StartsWith('\') -and $normalizedPrincipal.EndsWith($Name))
         }
-
-        if ($groupIdentity)
-        {
-            Write-Verbose "[Find-Identity] Found group identity for '$Name'."
-            Write-Verbose "[Find-Identity] $SearchType"
-            return $groupIdentity
-        }
-        elseif ($userIdentity)
-        {
-            Write-Verbose "[Find-Identity] Found user identity for '$Name'."
-            return $userIdentity
-        }
-        elseif ($servicePrincipalIdentity)
-        {
-            Write-Verbose "[Find-Identity] Found service principal identity for '$Name'."
-            return $servicePrincipalIdentity
-        }
-
     }
     else
     {
+        $commonFilter
+    }
 
-        Write-Warning "[Find-Identity] No identity found for '$Name'. Performing a lookup via the API."
+    # Search the caches.
+    $groupIdentity            = $CachedGroups            | Where-Object $groupFilter
+    $userIdentity             = $CachedUsers             | Where-Object $commonFilter
+    $servicePrincipalIdentity = $CachedServicePrincipals | Where-Object $commonFilter
 
-        # Perform a lookup via the API
-        $params = @{
-            OrganizationName = $OrganizationName
-            Descriptor = $Name
+    $resolved = & $resolveUnique $groupIdentity $userIdentity $servicePrincipalIdentity $Name
+    if ($null -ne $resolved)
+    {
+        Write-Verbose "[Find-Identity] Found identity for '$Name' ($SearchType)."
+        return $resolved
+    }
+
+    if ($groupIdentity -or $userIdentity -or $servicePrincipalIdentity)
+    {
+        # resolveUnique already warned about duplicates; nothing further to do.
+        return $null
+    }
+
+    # Descriptor index fast-path. The List caches frequently lose .value.ACLIdentity.descriptor across
+    # the clixml round-trip / init double-wrap, so a descriptor search that should hit the cache instead
+    # falls through to the expensive API pair below. The flat descriptor index keeps a clixml-safe
+    # descriptor -> identity mapping that survives runspace isolation; check it before paying for the API.
+    if ($SearchType -eq 'descriptor')
+    {
+        $indexHit = Get-IdentityDescriptorIndexItem -AclDescriptor $Name
+        if ($indexHit)
+        {
+            Write-Verbose "[Find-Identity] Resolved '$Name' from the descriptor index."
+            return $indexHit
         }
+    }
 
-        Write-Verbose "[Find-Identity] Performing a lookup via the API."
-        Write-Verbose "[Find-Identity] $SearchType"
-
+    # Nothing in cache. For name-based searches the identity may be a group created AFTER the
+    # cache was built at module init (e.g. a group created in the same DSC configuration just
+    # before a permission resource references it). A descriptor-based API lookup cannot resolve a
+    # name, so first perform a live groups query, match by principalName (handling the org-level
+    # "[]\Group" => "\Group" suffix form) or displayName, enrich it with its ACL identity, cache it,
+    # and return it in the CacheItem shape the cache uses (callers read
+    # .value.ACLIdentity.descriptor / .value.principalName).
+    if ($SearchType -in 'principalName', 'displayName')
+    {
+        Write-Verbose "[Find-Identity] '$Name' not in cache. Attempting a live groups lookup."
         try
         {
-            # Get the identity
-            $identity = Get-DevOpsDescriptorIdentity @params
+            $liveGroups = List-DevOpsGroups -Organization $OrganizationName
         }
         catch
         {
-            Write-Error "Failed to retrieve identity via API: $_"
-            return $null
+            Write-Error "[Find-Identity] Live groups lookup failed: $_"
+            $liveGroups = @()
         }
 
-        # Attempt to match the identity using the ID
-        $groupIdentity = $CachedGroups | Where-Object { $_.value.ACLIdentity.id -eq $identity.id }
-        $userIdentity = $CachedUsers | Where-Object { $_.value.ACLIdentity.id -eq $identity.id }
-        $servicePrincipalIdentity = $CachedServicePrincipals | Where-Object { $_.value.ACLIdentity.id -eq $identity.id }
+        $match = $liveGroups | Where-Object {
+            $normalizedPrincipal = $_.principalName.Replace('[', '').Replace(']', '')
+            if ($SearchType -eq 'principalName')
+            {
+                ($normalizedPrincipal -eq $Name) -or ($Name.StartsWith('\') -and $normalizedPrincipal.EndsWith($Name))
+            }
+            else
+            {
+                $_.displayName -eq $Name
+            }
+        } | Select-Object -First 1
 
-        # Test if the identity was found
-        if ($groupIdentity -or $userIdentity -or $servicePrincipalIdentity)
+        if ($match)
         {
-            # Check if multiple identities were found.
-            if (
-                    ($groupIdentity -and $userIdentity) -or
-                    ($groupIdentity -and $servicePrincipalIdentity) -or
-                    ($userIdentity -and $servicePrincipalIdentity)
-                )
+            try
             {
-                Write-Warning "[Find-Identity] Found multiple identities with the ID '$($identity.id)'. Returning null."
-                return $null
-            }
+                $aclIdentitySource = Get-DevOpsDescriptorIdentity -OrganizationName $OrganizationName -SubjectDescriptor $match.descriptor
+                $match | Add-Member -MemberType NoteProperty -Name 'ACLIdentity' -Force -Value ([PSCustomObject]@{
+                    id                  = $aclIdentitySource.id
+                    descriptor          = $aclIdentitySource.descriptor
+                    subjectDescriptor   = $aclIdentitySource.subjectDescriptor
+                    providerDisplayName = $aclIdentitySource.providerDisplayName
+                    isActive            = $aclIdentitySource.isActive
+                    isContainer         = $aclIdentitySource.isContainer
+                })
 
-            if ($groupIdentity)
-            {
-                Write-Verbose "[Find-Identity] Found group identity for '$Name'."
-                return $groupIdentity
+                # Cache for subsequent lookups within this run, mirroring the init-time shape.
+                Add-CacheItem -Key $match.principalName -Value $match -Type 'LiveGroups' -SuppressWarning
+
+                # Index by ACL descriptor so a later descriptor search for this group hits the index.
+                Add-IdentityDescriptorIndexItem -AclDescriptor $aclIdentitySource.descriptor -PrincipalName $match.principalName `
+                    -OriginId $match.originId -GraphDescriptor $match.descriptor -AclId $aclIdentitySource.id `
+                    -SubjectDescriptor $aclIdentitySource.subjectDescriptor -Persist
+
+                Write-Verbose "[Find-Identity] Resolved '$Name' via live groups lookup."
+                return [CacheItem]::New($match.principalName, $match)
             }
-            elseif ($userIdentity)
+            catch
             {
-                Write-Verbose "[Find-Identity] Found user identity for '$Name'."
-                return $userIdentity
-            }
-            elseif ($servicePrincipalIdentity)
-            {
-                Write-Verbose "[Find-Identity] Found service principal identity for '$Name'."
-                return $servicePrincipalIdentity
+                Write-Error "[Find-Identity] Failed to enrich live group '$($match.principalName)': $_"
             }
         }
-
-        # If no identity was found, write a warning and return null
-        Write-Warning "[Find-Identity] No identity found for '$Name'."
-        return $null
-
     }
 
-    # Return null if no identity was found
+    # Descriptor-based API fallback (used when $Name is an actual descriptor).
+    Write-Warning "[Find-Identity] No identity found for '$Name' in cache. Performing a descriptor lookup via the API."
+    try
+    {
+        $identity = Get-DevOpsDescriptorIdentity -OrganizationName $OrganizationName -Descriptor $Name
+    }
+    catch
+    {
+        Write-Error "Failed to retrieve identity via API: $_"
+        return $null
+    }
+
+    $groupIdentity            = $CachedGroups            | Where-Object { $_.value.ACLIdentity.id -eq $identity.id }
+    $userIdentity             = $CachedUsers             | Where-Object { $_.value.ACLIdentity.id -eq $identity.id }
+    $servicePrincipalIdentity = $CachedServicePrincipals | Where-Object { $_.value.ACLIdentity.id -eq $identity.id }
+
+    $resolved = & $resolveUnique $groupIdentity $userIdentity $servicePrincipalIdentity $identity.id
+    if ($null -ne $resolved)
+    {
+        Write-Verbose "[Find-Identity] Found identity for '$Name' via API."
+        return $resolved
+    }
+
+    # The descriptor resolved to an identity, but it is not in the init-time cache (e.g. a group
+    # created after init). This is the Difference/live-ACL side of a permission comparison: an ACE
+    # is keyed by its ACL descriptor and ConvertTo-FormattedACL resolves it here by descriptor.
+    # Match the identity to a live group via its subjectDescriptor (graph descriptor), enrich it with
+    # the resolved ACL identity, cache it, and return it so the ACE carries a real originId (without
+    # this, the live-side ACE Identity is null and the Set->Test comparison never converges).
+    if ($identity -and $identity.subjectDescriptor)
+    {
+        Write-Verbose "[Find-Identity] '$Name' resolved via API but absent from cache. Matching a live group by subjectDescriptor."
+        try
+        {
+            $liveGroups = List-DevOpsGroups -Organization $OrganizationName
+        }
+        catch
+        {
+            Write-Error "[Find-Identity] Live groups lookup failed: $_"
+            $liveGroups = @()
+        }
+
+        $match = $liveGroups | Where-Object { $_.descriptor -eq $identity.subjectDescriptor } | Select-Object -First 1
+        if ($match)
+        {
+            $match | Add-Member -MemberType NoteProperty -Name 'ACLIdentity' -Force -Value ([PSCustomObject]@{
+                id                  = $identity.id
+                descriptor          = $identity.descriptor
+                subjectDescriptor   = $identity.subjectDescriptor
+                providerDisplayName = $identity.providerDisplayName
+                isActive            = $identity.isActive
+                isContainer         = $identity.isContainer
+            })
+            Add-CacheItem -Key $match.principalName -Value $match -Type 'LiveGroups' -SuppressWarning
+
+            # Record the resolution in the descriptor index and persist it immediately so subsequent
+            # ACEs (and subsequent runspaces) resolve this descriptor from the index instead of repeating
+            # the Get-DevOpsDescriptorIdentity + List-DevOpsGroups API pair.
+            Add-IdentityDescriptorIndexItem -AclDescriptor $identity.descriptor -PrincipalName $match.principalName `
+                -OriginId $match.originId -GraphDescriptor $match.descriptor -AclId $identity.id `
+                -SubjectDescriptor $identity.subjectDescriptor -Persist
+
+            Write-Verbose "[Find-Identity] Resolved '$Name' to live group '$($match.principalName)' via subjectDescriptor."
+            return [CacheItem]::New($match.principalName, $match)
+        }
+    }
+
+    Write-Warning "[Find-Identity] No identity found for '$Name'."
     return $null
 }

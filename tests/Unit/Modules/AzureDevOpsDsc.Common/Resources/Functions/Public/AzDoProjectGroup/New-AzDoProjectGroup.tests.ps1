@@ -2,12 +2,14 @@
 
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'New-AzDoProjectGroup' {
+Describe 'New-AzDoProjectGroup' -Tag "Unit", "ProjectGroup" {
 
     BeforeAll {
 
         # Set the organization name
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        . (Get-FunctionItem 'Get-AzDoOrganizationName.ps1').FullName\n
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         # Load the functions to test
         if ($null -eq $currentFile) {
@@ -39,6 +41,8 @@ Describe 'New-AzDoProjectGroup' {
         Mock -CommandName Set-CacheObject
         Mock -CommandName Refresh-CacheIdentity
 
+        # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
     }
 
     BeforeEach {

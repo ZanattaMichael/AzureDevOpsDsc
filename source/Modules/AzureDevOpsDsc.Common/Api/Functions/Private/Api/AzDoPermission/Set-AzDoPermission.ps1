@@ -74,9 +74,9 @@ Function Set-AzDoPermission
             Construct the Uri using string formatting with the -f operator.
             It includes the API endpoint, group identity, member identity, and the API version.
         #>
-        Uri = 'https://dev.azure.com/{0}/_apis/accesscontrollists/{1}?api-version={2}' -f   $OrganizationName,
-                                                                                            $SecurityNamespaceID,
-                                                                                            $ApiVersion
+        Uri = 'https://dev.azure.com/{0}/_apis/accesscontrollists/{1}?api-version={2}&merge=false' -f $OrganizationName,
+                                                                                                      $SecurityNamespaceID,
+                                                                                                      $ApiVersion
         # Set the method to PUT.
         Method = 'POST'
         # Set the body of the request to the serialized ACLs.

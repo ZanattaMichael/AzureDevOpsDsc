@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Remove-AzDoAreaPermission Tests" {
+Describe "Remove-AzDoAreaPermission Tests" -Tag "Unit", "AreaPermission" {
 
 
     AfterAll {
@@ -10,6 +10,8 @@ Describe "Remove-AzDoAreaPermission Tests" {
     BeforeAll {
 
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        . (Get-FunctionItem 'Get-AzDoOrganizationName.ps1').FullName\n
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         # Load the functions to test
         if ($null -eq $currentFile) {

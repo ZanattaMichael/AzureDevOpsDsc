@@ -12,29 +12,13 @@ Function Format-AzDoIterationPath {
 
     Process {
 
-        $Path = $IterationPath.Clone()
-
-        # Replace all backslashes with forward slashes
-        $Path = $Path -replace '\/', '\'
-
-        # Check to see if the Iteration path contains a leading slash
-        if (-not $Path.StartsWith('\')) {
-            $Path = "\$Path"
+        # Normalise separators, strip leading/trailing backslashes, then prefix with \Project\Iteration if absent.
+        $Path = $IterationPath -replace '\/', '\' -replace '\\+', '\'
+        $Path = $Path.Trim('\')
+        if (-not $Path.StartsWith("$ProjectName\Iteration")) {
+            $Path = "$ProjectName\Iteration\$Path"
         }
-
-        # Check to see if the Iteration path contains a trailing slash. If so remove it.
-        if ($Path.EndsWith('\')) {
-            $Path = $Path.TrimEnd('\')
-        }
-
-        # Check to see if the Iteration path contains /ProjectName/Iteration at the beginning.
-        # If it doesn't add it.
-        if (-not $Path.StartsWith("\$ProjectName\Iteration")) {
-            $Path = "\$ProjectName\Iteration\$Path"
-        }
-
-        # Remove any additional slashes
-        $Path = $Path -replace '\\+', '\'
+        $Path = '\' + ($Path -replace '\\+', '\')
 
         $array += $Path
 

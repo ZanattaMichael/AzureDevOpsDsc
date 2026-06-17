@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'New-DevOpsProject' -Tags "Unit", "API" {
+Describe 'New-DevOpsProject' -Tag "Unit", "Project", "API" {
     BeforeAll {
 
         # Load the functions to test
@@ -21,6 +21,13 @@ Describe 'New-DevOpsProject' -Tags "Unit", "API" {
                 description = "This is a new project"
                 visibility = "private"
             }
+        }
+
+        # New-DevOpsProject polls List-DevOpsProjects until the project reaches 'wellFormed'.
+        # Mock it so the wait resolves immediately (otherwise the unit test would block on the
+        # provisioning poll).
+        Mock -CommandName List-DevOpsProjects -MockWith {
+            @( [pscustomobject]@{ id = "1234"; name = "MyProject"; state = "wellFormed" } )
         }
     }
 
@@ -54,13 +61,12 @@ Describe 'New-DevOpsProject' -Tags "Unit", "API" {
     Context 'Handles errors gracefully' {
         BeforeEach {
             Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { throw "API call failed" } -Verifiable
-            Mock -CommandName Write-Error
         }
 
-        It 'Should return an error message if API call fails' {
+        It 'Should throw a wrapped error if the API call fails' {
             {
                 New-DevOpsProject -Organization "myorg" -ProjectName "MyProject" -Description "This is a new project" -SourceControlType "Git" -ProcessTemplateId "6b724908-ef14-45cf-84f8-768b5384da45" -Visibility "private" -ApiVersion "6.0"
-            } | Should -Not -Throw
+            } | Should -Throw "*Failed to create project*"
 
         }
     }

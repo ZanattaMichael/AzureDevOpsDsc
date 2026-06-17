@@ -91,7 +91,7 @@ Function Remove-AzDoGitPermission
     if ($Filtered)
     {
         $params = @{
-            OrganizationName = $Global:DSCAZDO_OrganizationName
+            OrganizationName = (Get-AzDoOrganizationName)
             SecurityNamespaceID = $SecurityNamespace.namespaceId
             TokenName = $searchString
         }

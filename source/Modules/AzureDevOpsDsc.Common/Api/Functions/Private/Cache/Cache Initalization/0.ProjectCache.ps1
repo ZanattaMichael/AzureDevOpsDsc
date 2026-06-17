@@ -60,8 +60,10 @@ Function AzDoAPI_0_ProjectCache
         {
             # Add the Project
             $securityDescriptor = Get-DevOpsSecurityDescriptor -ProjectId $project.Id -Organization $OrganizationName
-            # Add the security descriptor to the project object
-            $projectsArr.Add(($project | Select-Object *, @{Name='ProjectDescriptor'; Expression={$securityDescriptor}}))
+            # Add the security descriptor to the project object.
+            # Suppress the ArrayList.Add() return value (the inserted index) so it does not leak
+            # to the output stream as bare numbers (0, 1, 2, …) on the console.
+            $null = $projectsArr.Add(($project | Select-Object *, @{Name='ProjectDescriptor'; Expression={$securityDescriptor}}))
         }
 
         # Log the total number of projects returned by the API call

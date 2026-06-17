@@ -58,6 +58,10 @@ function Import-CacheObject
         if (-not (Test-Path -Path $cacheFile))
         {
             Write-Warning "[Import-CacheObject] Cache file not found at path: $cacheFile"
+            # Return an empty in-memory cache so callers always receive a valid collection.
+            $emptyCache = [System.Collections.Generic.List[CacheItem]]::New()
+            Set-Variable -Name "AzDo$CacheType" -Value $emptyCache -Scope Global -Force
+            return $emptyCache
         }
 
         Write-Verbose "[Import-CacheObject] Importing content from cache file at path: $cacheFile"
@@ -88,6 +92,10 @@ function Import-CacheObject
         # Update the new cache object
         Set-Variable -Name "AzDo$CacheType" -Value $newCache -Scope Global -Force
         Write-Verbose "[Import-CacheObject] Cache object imported successfully for '$CacheType'."
+
+        # Return the imported cache so Get-CacheObject's import branch yields the collection rather than
+        # $null (the global is set above, but callers consume the return value on first import).
+        return $newCache
 
     }
     catch

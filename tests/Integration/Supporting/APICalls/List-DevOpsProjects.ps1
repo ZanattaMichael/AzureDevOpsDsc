@@ -7,12 +7,16 @@ function List-DevOpsProjects
         [string]$OrganizationName,
 
         [Parameter()]
+        [ValidateSet('wellFormed','createPending','deleting','new','deleted','all')]
+        [string]$StateFilter = 'wellFormed',
+
+        [Parameter()]
         [String]
         $ApiVersion = $(Get-AzDevOpsApiVersion -Default)
     )
 
     $params = @{
-        Uri = "https://dev.azure.com/$OrganizationName/_apis/projects"
+        Uri = "https://dev.azure.com/$OrganizationName/_apis/projects?stateFilter=$StateFilter"
         Method = 'Get'
     }
 

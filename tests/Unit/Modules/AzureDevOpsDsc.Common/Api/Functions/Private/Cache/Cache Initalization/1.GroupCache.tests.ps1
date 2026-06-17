@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'AzDoAPI_1_GroupCache' -Tags "Unit", "Cache" {
+Describe 'AzDoAPI_1_GroupCache' -Tag "Unit", "Cache Initalization", "Cache" {
 
     AfterAll {
         Remove-Variable -Name "AzDoProject" -Scope Global -ErrorAction SilentlyContinue

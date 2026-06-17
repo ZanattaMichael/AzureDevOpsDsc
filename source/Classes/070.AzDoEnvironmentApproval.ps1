@@ -10,7 +10,7 @@ class AzDoEnvironmentApproval : AzDevOpsDscResourceBase
     [DscProperty(Key, Mandatory)]
     [System.String]$ProjectName
 
-    [DscProperty(Key, Mandatory)]
+    [DscProperty(Mandatory)]
     [System.String]$EnvironmentName
 
     [DscProperty(Mandatory)]

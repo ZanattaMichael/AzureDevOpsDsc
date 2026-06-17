@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "ConvertTo-Base64String" {
+Describe "ConvertTo-Base64String" -Tag "Unit", "Helper" {
 
     BeforeAll {
 

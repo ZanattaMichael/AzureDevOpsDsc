@@ -99,7 +99,7 @@ Function Remove-AzDoGroupPermission
     {
 
         $params = @{
-            OrganizationName = $Global:DSCAZDO_OrganizationName
+            OrganizationName = (Get-AzDoOrganizationName)
             SecurityNamespaceID = $SecurityNamespace.namespaceId
             TokenName = $searchString
         }

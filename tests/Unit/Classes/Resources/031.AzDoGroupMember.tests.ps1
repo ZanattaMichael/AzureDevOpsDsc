@@ -10,7 +10,7 @@ if ($null -eq $Global:ClassesLoaded)
     . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
 }
 
-Describe 'AzDoGroupMember' {
+Describe 'AzDoGroupMember' -Tag "Unit", "Resources" {
 
     BeforeAll {
         $ENV:AZDODSC_CACHE_DIRECTORY = 'mocked_cache_directory'

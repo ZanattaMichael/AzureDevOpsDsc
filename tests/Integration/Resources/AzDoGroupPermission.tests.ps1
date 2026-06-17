@@ -1,4 +1,4 @@
-Describe "AzDoGroupPermission intergration tests" -skip {
+Describe "AzDoGroupPermission intergration tests" -Tag "Integration", "GroupPermission" {
 
     BeforeAll {
 
@@ -34,13 +34,13 @@ Describe "AzDoGroupPermission intergration tests" -skip {
         #
         # Create a new project
 
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
 
         #
         # Create a new group
 
-        New-Group $GroupName -ProjectName $PROJECTNAME
-        New-Group 'Group1' -ProjectName $PROJECTNAME
+        New-TestGroup -ProjectName $PROJECTNAME -GroupName $GroupName
+        New-TestGroup -ProjectName $PROJECTNAME -GroupName 'Group1'
 
     }
 

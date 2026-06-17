@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Set-AzDoGitPermission' {
+Describe 'Set-AzDoGitPermission' -Tag "Unit", "GitPermission" {
 
 
     AfterAll {
@@ -10,6 +10,8 @@ Describe 'Set-AzDoGitPermission' {
     BeforeAll {
 
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        . (Get-FunctionItem 'Get-AzDoOrganizationName.ps1').FullName\n
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         # Load the functions to test
         if ($null -eq $currentFile) {
@@ -84,7 +86,7 @@ Describe 'Set-AzDoGitPermission' {
     It 'Calls Set-AzDoPermission with the correct parameters' {
         Set-AzDoGitPermission @params
         Assert-MockCalled Set-AzDoPermission -Exactly 1 -ParameterFilter {
-            ($OrganizationName -eq 'TestOrg') -and
+            ($OrganizationName -eq 'TestOrganization') -and
             ($SecurityNamespaceID -eq 'SampleNamespaceId') -and
             ($SerializedACLs -eq 'SerializedACLs')
         }

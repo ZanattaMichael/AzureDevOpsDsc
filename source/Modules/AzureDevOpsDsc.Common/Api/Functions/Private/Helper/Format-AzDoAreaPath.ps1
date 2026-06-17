@@ -12,29 +12,13 @@ Function Format-AzDoAreaPath {
 
     Process {
 
-        $Path = $AreaPath.Clone()
-
-        # Replace all backslashes with forward slashes
-        $Path = $Path -replace '\/', '\'
-
-        # Check to see if the area path contains a leading slash
-        if (-not $Path.StartsWith('\')) {
-            $Path = "\$Path"
+        # Normalise separators, strip leading/trailing backslashes, then prefix with \Project\Area if absent.
+        $Path = $AreaPath -replace '\/', '\' -replace '\\+', '\'
+        $Path = $Path.Trim('\')
+        if (-not $Path.StartsWith("$ProjectName\Area")) {
+            $Path = "$ProjectName\Area\$Path"
         }
-
-        # Check to see if the area path contains a trailing slash. If so remove it.
-        if ($Path.EndsWith('\')) {
-            $Path = $Path.TrimEnd('\')
-        }
-
-        # Check to see if the area path contains /ProjectName/Area at the beginning.
-        # If it doesn't add it.
-        if (-not $Path.StartsWith("\$ProjectName\Area")) {
-            $Path = "\$ProjectName\Area\$Path"
-        }
-
-        # Remove any additional slashes
-        $Path = $Path -replace '\\+', '\'
+        $Path = '\' + ($Path -replace '\\+', '\')
 
         $array += $Path
 

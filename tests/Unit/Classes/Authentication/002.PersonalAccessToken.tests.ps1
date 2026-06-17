@@ -1,84 +1,62 @@
-# Requires -Module Pester -Version 5.0.0
+$currentFile = $MyInvocation.MyCommand.Path
 
-# Test if the class is defined
-if ($null -eq $Global:ClassesLoaded)
-{
-    # Attempt to find the root of the repository
-    $RepositoryRoot = (Get-Item -Path $PSScriptRoot).Parent.Parent.Parent.Parent.FullName
-    # Load the Dependencies
-    . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
-}
+Describe 'PersonalAccessToken' -Tag "Unit", "Authentication" {
 
-Describe 'PersonalAccessToken Class' {
-    Context 'Constructor with String Parameter' {
+    BeforeAll {
+        if ($null -eq $currentFile) {
+            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath '002.PersonalAccessToken.tests.ps1'
+        }
+
+        $helperModule = Join-Path $PSScriptRoot '..\..\Modules\TestHelpers\CommonTestFunctions.psm1'
+        if (Test-Path $helperModule) { Import-Module $helperModule -Force }
+
+        Get-FunctionItem @() | Out-Null
+        Import-Enums | ForEach-Object { . $_.FullName }
+        . (Get-FunctionItem 'ConvertTo-Base64String.ps1').FullName
+        . (Get-ClassFilePath '001.AuthenticationToken')
+        . (Get-ClassFilePath '002.PersonalAccessToken')
+    }
+
+    Context 'Class - Constructor with String Parameter' {
         It 'Should initialize with a string personal access token' {
-            # Arrange
-            $personalAccessToken = "TestToken"
-
-            # Act
-            $pat = [PersonalAccessToken]::new($personalAccessToken)
-
-            # Assert
+            $pat = [PersonalAccessToken]::new("TestToken")
             $pat.tokenType | Should -Be 'PersonalAccessToken'
             $pat.ConvertFromSecureString($pat.access_token) | Should -Be "OlRlc3RUb2tlbg=="
         }
     }
 
-    Context 'Constructor with SecureString Parameter' {
+    Context 'Class - Constructor with SecureString Parameter' {
         It 'Should initialize with a secure string personal access token' {
-            # Arrange
             $secureStringPAT = ConvertTo-SecureString "TestSecureToken" -AsPlainText -Force
-
-            # Act
             $pat = [PersonalAccessToken]::new($secureStringPAT)
-
-            # Assert
             $pat.tokenType | Should -Be 'PersonalAccessToken'
             $pat.access_token | Should -Be $secureStringPAT
         }
     }
 
-    Context 'isExpired Method' {
+    Context 'Class - isExpired Method' {
         It 'Should always return false' {
-            # Arrange
             $pat = [PersonalAccessToken]::new("TestToken")
-
-            # Act
-            $result = $pat.isExpired()
-
-            # Assert
-            $result | Should -Be $false
+            $pat.isExpired() | Should -Be $false
         }
     }
-}
 
-Describe 'New-PersonalAccessToken Function' {
-    It 'Should create a new PersonalAccessToken object with a string token' {
-        # Arrange
-        $personalAccessToken = "TestToken"
+    Context 'New-PersonalAccessToken Function' {
+        It 'Should create a new PersonalAccessToken object with a string token' {
+            $pat = New-PersonalAccessToken -PersonalAccessToken "TestToken"
+            $pat.tokenType | Should -Be 'PersonalAccessToken'
+            $pat.ConvertFromSecureString($pat.access_token) | Should -Be "OlRlc3RUb2tlbg=="
+        }
 
-        # Act
-        $pat = New-PersonalAccessToken -PersonalAccessToken $personalAccessToken
+        It 'Should create a new PersonalAccessToken object with a secure string token' {
+            $secureStringPAT = ConvertTo-SecureString "TestSecureToken" -AsPlainText -Force
+            $pat = New-PersonalAccessToken -SecureStringPersonalAccessToken $secureStringPAT
+            $pat.tokenType | Should -Be 'PersonalAccessToken'
+            $pat.access_token | Should -Be $secureStringPAT
+        }
 
-        # Assert
-        $pat | Should -BeOfType [PersonalAccessToken]
-        $pat.ConvertFromSecureString($pat.access_token) | Should -Be "OlRlc3RUb2tlbg=="
-    }
-
-    It 'Should create a new PersonalAccessToken object with a secure string token' {
-        # Arrange
-        $secureStringPAT = ConvertTo-SecureString "TestSecureToken" -AsPlainText -Force
-
-        # Act
-        $pat = New-PersonalAccessToken -SecureStringPersonalAccessToken $secureStringPAT
-
-        # Assert
-        $pat | Should -BeOfType [PersonalAccessToken]
-        $pat.access_token | Should -Be $secureStringPAT
-    }
-
-    It 'Should throw an error if no token is provided' {
-        # Act & Assert
-        { New-PersonalAccessToken } | Should -Throw "Error. A Personal Access Token or SecureString Personal Access Token must be provided."
+        It 'Should throw an error if no token is provided' {
+            { New-PersonalAccessToken } | Should -Throw "Error. A Personal Access Token or SecureString Personal Access Token must be provided."
+        }
     }
 }

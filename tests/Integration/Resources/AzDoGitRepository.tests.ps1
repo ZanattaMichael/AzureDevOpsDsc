@@ -1,4 +1,4 @@
-Describe "AzDoGitRepository Integration Tests" {
+Describe "AzDoGitRepository Integration Tests" -Tag "Integration", "GitRepository" {
 
     BeforeAll {
 
@@ -11,10 +11,7 @@ Describe "AzDoGitRepository Integration Tests" {
             ModuleName = 'AzureDevOpsDsc'
         }
 
-        #
-        # Create a new project
-
-        New-Project $PROJECTNAME
+        New-TestProject -ProjectName $PROJECTNAME
 
     }
 

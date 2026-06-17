@@ -23,7 +23,7 @@ Function Remove-AzDoWIPTags
         $Force
     )
 
-    $Organization =  $Global:DSCAZDO_OrganizationName
+    $Organization =  (Get-AzDoOrganizationName)
 
     # Create the WIT tags
     Remove-WITTags -Organization $Organization -ProjectName $ProjectName -WorkItemTrackingTagId $LookupResult.propertiesChanged.ToDelete.id

@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Invoke-AzDevOpsApiRestMethod' {
+Describe 'Invoke-AzDevOpsApiRestMethod' -Tag "Unit", "Helper" {
 
     BeforeAll {
 

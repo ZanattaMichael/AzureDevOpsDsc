@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Format-AzDoProjectName' {
+Describe 'Format-AzDoProjectName' -Tag "Unit", "Helper" {
 
     BeforeAll {
 

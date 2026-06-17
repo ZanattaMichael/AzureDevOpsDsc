@@ -81,7 +81,7 @@ Function New-AzDoGroupMember
 
     $params = @{
         GroupIdentity = $GroupIdentity
-        ApiUri = 'https://vssps.dev.azure.com/{0}/' -f $Global:DSCAZDO_OrganizationName
+        ApiUri = 'https://vssps.dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
     }
 
     Write-Verbose "[New-AzDoGroupMember] Starting group member addition process for group '$GroupName'."

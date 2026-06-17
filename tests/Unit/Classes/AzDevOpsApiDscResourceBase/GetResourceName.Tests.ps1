@@ -1,5 +1,5 @@
 
-Describe "[AzDevOpsApiDscResourceBase]::GetResourceName() Tests" -Tag 'Unit', 'AzDevOpsApiDscResourceBase' {
+Describe "[AzDevOpsApiDscResourceBase]::GetResourceName() Tests" -Tag "Unit", "AzDevOpsApiDscResourceBase" {
 
 
     $DscResourcePrefix = 'AzDevOps'

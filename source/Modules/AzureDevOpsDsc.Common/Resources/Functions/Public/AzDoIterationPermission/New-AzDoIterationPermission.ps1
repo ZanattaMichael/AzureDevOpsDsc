@@ -28,13 +28,9 @@ Function New-AzDoIterationPermission
 
     Write-Verbose "[New-AzDoIterationPermission] Started."
 
-    #
-    # Test if the Repository is specified
     if ([String]::IsNullOrEmpty($IterationPath))
     {
-        Write-Warning "[New-AzDoIterationPermission] Iteration Path Name not specified. Defaulting to top-level Project permissions."
-        Write-Warning "[New-AzDoIterationPermission] STOPPING. It is not possible add permissions to a top-level Project."
-        return
+        Write-Verbose "[New-AzDoIterationPermission] IterationPath not specified. Using top-level Project Iteration permissions."
     }
 
     #
@@ -61,7 +57,7 @@ Function New-AzDoIterationPermission
     }
 
     $params = @{
-        OrganizationName = $Global:DSCAZDO_OrganizationName
+        OrganizationName = (Get-AzDoOrganizationName)
         SecurityNamespaceID = $SecurityNamespace.namespaceId
         SerializedACLs = ConvertTo-ACLHashtable @serializeACLParams
     }

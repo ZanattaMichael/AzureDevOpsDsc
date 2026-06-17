@@ -54,10 +54,22 @@ function New-DevOpsProject
         [Parameter()]
         [System.String]$Visibility,
 
-        # Get the latest API version. 7.1 is not supported by the API endpoint.
+        # Use 6.0 — later versions return 405 for POST /projects
         [Parameter()]
         [String]
-        $ApiVersion = $(Get-AzDevOpsApiVersion | Select-Object -Last 1)
+        $ApiVersion = '6.0',
+
+        # Wait for the (asynchronous) project provisioning to complete before returning.
+        # POST /_apis/projects returns a 202 operation reference; the project is not usable
+        # (queryable / able to host child resources) until it reaches the 'wellFormed' state.
+        [Parameter()]
+        [Switch]
+        $NoWait,
+
+        # Maximum number of seconds to wait for the project to become 'wellFormed'.
+        [Parameter()]
+        [int]
+        $TimeoutSeconds = 180
     )
 
     # Validate the parameters
@@ -92,11 +104,45 @@ function New-DevOpsProject
             Throw "[New-DevOpsProject] Failed to create the Azure DevOps project: No response returned"
         }
 
+        # Project creation is asynchronous. Unless told otherwise, wait until the project
+        # reaches the 'wellFormed' state so that callers (and child-resource creation) do not
+        # race against provisioning and hit 'TF200016: project does not exist'.
+        if (-not $NoWait)
+        {
+            Write-Verbose "[New-DevOpsProject] Waiting up to $TimeoutSeconds s for project '$ProjectName' to reach 'wellFormed' state."
+            $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+            do
+            {
+                Start-Sleep -Seconds 3
+                $project = $null
+                try
+                {
+                    $project = List-DevOpsProjects -OrganizationName $Organization -StateFilter all |
+                        Where-Object { $_.name -eq $ProjectName } | Select-Object -First 1
+                }
+                catch
+                {
+                    Write-Verbose "[New-DevOpsProject] Polling project state failed (will retry): $_"
+                }
+
+                $state = $project.state
+                Write-Verbose "[New-DevOpsProject] Project '$ProjectName' state: $state"
+            }
+            while ($state -ne 'wellFormed' -and (Get-Date) -lt $deadline)
+
+            if ($state -ne 'wellFormed')
+            {
+                Throw "[New-DevOpsProject] Project '$ProjectName' did not reach 'wellFormed' state within $TimeoutSeconds seconds (last state: '$state')."
+            }
+
+            Write-Verbose "[New-DevOpsProject] Project '$ProjectName' is now 'wellFormed'."
+        }
+
         # Output the response which contains the created project details
         return $response
     }
     catch
     {
-        Write-Error "[New-DevOpsProject] Failed to create the Azure DevOps project: $_"
+        throw "[New-DevOpsProject] Failed to create project '$ProjectName' in '$Organization': $_"
     }
 }

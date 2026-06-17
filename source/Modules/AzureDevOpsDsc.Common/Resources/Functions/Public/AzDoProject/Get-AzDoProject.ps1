@@ -74,7 +74,7 @@ function Get-AzDoProject
     Write-Verbose "[Get-AzDoProject] Started."
 
     # Set the organization name
-    $OrganizationName = $Global:DSCAZDO_OrganizationName
+    $OrganizationName = (Get-AzDoOrganizationName)
     Write-Verbose "[Get-AzDoProject] Organization Name: $OrganizationName"
 
     # Construct a hashtable detailing the group
@@ -93,7 +93,31 @@ function Get-AzDoProject
 
     # Perform a lookup to see if the project exists in Azure DevOps
     $project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
-    # Set the project description to be a string if it is not already.
+
+    # If not in cache, fall back to a live API lookup
+    if ($null -eq $project)
+    {
+        Write-Verbose "[Get-AzDoProject] Project '$ProjectName' not in cache — falling back to live API lookup."
+        try
+        {
+            $project = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+            # Project deletion is asynchronous: a project being removed is still returned for a
+            # short window with state 'deleting'/'deleted'. Treat that as absent so a Test run
+            # immediately after a delete correctly reports the desired (Absent) state.
+            if ($project -and ($project.state -in 'deleting', 'deleted'))
+            {
+                Write-Verbose "[Get-AzDoProject] Project '$ProjectName' is in state '$($project.state)' — treating as absent."
+                $project = $null
+            }
+            if ($project) { Add-CacheItem -Key $ProjectName -Value $project -Type 'LiveProjects' }
+        }
+        catch
+        {
+            if ($_ -match '404') { $project = $null }
+            else { throw }
+        }
+    }
+
     Write-Verbose "[Get-AzDoProject] Project lookup result: $project"
 
     $processTemplateObj = Get-CacheItem -Key $ProcessTemplate -Type 'LiveProcesses'

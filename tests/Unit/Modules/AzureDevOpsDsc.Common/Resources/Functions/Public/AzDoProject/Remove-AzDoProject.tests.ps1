@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Remove-AzDoProject" {
+Describe "Remove-AzDoProject" -Tag "Unit", "Project" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global
@@ -10,6 +10,8 @@ Describe "Remove-AzDoProject" {
 
         # Set the organization name
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        . (Get-FunctionItem 'Get-AzDoOrganizationName.ps1').FullName\n
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         # Load the functions to test
         if ($null -eq $currentFile) {
@@ -55,7 +57,7 @@ Describe "Remove-AzDoProject" {
             }
 
             Assert-MockCalled -CommandName Remove-DevOpsProject -Exactly -Times 1 -ParameterFilter {
-                ($Organization -eq "TestOrg") -and
+                ($Organization -eq "TestOrganization") -and
                 ($ProjectId -eq '12345')
             }
 

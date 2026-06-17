@@ -1,5 +1,5 @@
 
-Describe 'AzDoGroupPermission Tests' {
+Describe 'AzDoGroupPermission Tests' -Tag "Unit", "Resources" {
 
     BeforeAll {
         $ENV:AZDODSC_CACHE_DIRECTORY = 'mocked_cache_directory'

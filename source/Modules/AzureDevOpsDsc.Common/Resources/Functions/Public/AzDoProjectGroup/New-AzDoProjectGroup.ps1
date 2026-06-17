@@ -38,7 +38,7 @@ Creates a new group named "Testers" with the description "QA Team" in the "MyPro
 forcing the creation even if the group already exists.
 
 .NOTES
-This function relies on the global variable $Global:DSCAZDO_OrganizationName to construct the API URI.
+This function relies on the global variable (Get-AzDoOrganizationName) to construct the API URI.
 It also interacts with cache functions like Get-CacheItem, Refresh-CacheIdentity, Add-CacheItem, and Set-CacheObject.
 #>
 Function New-AzDoProjectGroup
@@ -72,12 +72,31 @@ Function New-AzDoProjectGroup
         $Force
     )
 
+    $OrgName = Get-AzDoOrganizationName
+    $projectObj = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
+
+    # If project not in cache or missing ProjectDescriptor, do a live lookup
+    if ($null -eq $projectObj -or $null -eq $projectObj.ProjectDescriptor)
+    {
+        Write-Verbose "[New-AzDoProjectGroup] Project '$ProjectName' missing from cache or has no descriptor — falling back to live API lookup."
+        if ($null -eq $projectObj)
+        {
+            $projectObj = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrgName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        }
+        if ($projectObj)
+        {
+            $descriptor = Get-DevOpsSecurityDescriptor -ProjectId $projectObj.Id -Organization $OrgName
+            $projectObj = $projectObj | Select-Object *, @{ Name = 'ProjectDescriptor'; Expression = { $descriptor } }
+            Add-CacheItem -Key $ProjectName -Value $projectObj -Type 'LiveProjects'
+        }
+    }
+
     # Define parameters for creating a new DevOps group
     $params = @{
         GroupName = $GroupName
         GroupDescription = $GroupDescription
-        ApiUri = 'https://vssps.dev.azure.com/{0}' -f $Global:DSCAZDO_OrganizationName
-        ProjectScopeDescriptor = (Get-CacheItem -Key $ProjectName -Type 'LiveProjects').ProjectDescriptor
+        ApiUri = 'https://vssps.dev.azure.com/{0}' -f $OrgName
+        ProjectScopeDescriptor = $projectObj.ProjectDescriptor
     }
 
     # If the project scope descriptor is not found, write a warning message to the console and return.
@@ -92,6 +111,11 @@ Function New-AzDoProjectGroup
 
     # Create a new group
     $group = New-DevOpsGroup @params
+
+    if ($null -eq $group)
+    {
+        Throw "[New-AzDoProjectGroup] New-DevOpsGroup returned null for group '$GroupName' in project '$ProjectName'."
+    }
 
     # Write verbose log after group creation
     Write-Verbose "[New-AzDoProjectGroup] New DevOps group created: $($group | Out-String)"

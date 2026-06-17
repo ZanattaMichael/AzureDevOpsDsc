@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Set-AzPersonalAccessToken" -Tags "Unit", "Authentication" {
+Describe "Set-AzPersonalAccessToken" -Tag "Unit", "PersonalAccessToken", "Authentication" {
 
     BeforeAll {
 

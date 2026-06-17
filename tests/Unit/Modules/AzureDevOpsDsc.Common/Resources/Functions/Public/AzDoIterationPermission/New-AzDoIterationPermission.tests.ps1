@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'New-AzDoIterationPermission Tests' {
+Describe 'New-AzDoIterationPermission Tests' -Tag "Unit", "IterationPermission" {
 
     AfterAll {
         Remove-Variable -Name DSCAZDO_OrganizationName -Scope Global
@@ -9,6 +9,8 @@ Describe 'New-AzDoIterationPermission Tests' {
     BeforeAll {
 
         $Global:DSCAZDO_OrganizationName = 'TestOrganization'
+        . (Get-FunctionItem 'Get-AzDoOrganizationName.ps1').FullName\n
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         # Load the functions to test
         if ($null -eq $currentFile) {
@@ -34,7 +36,7 @@ Describe 'New-AzDoIterationPermission Tests' {
             param($Key, $Type)
             if ($Type -eq 'SecurityNamespaces') { return @{ namespaceId = 'MockNamespaceId' } }
             if ($Type -eq 'LiveProjects') { return @{ projectId = 'MockProjectId' } }
-            if ($Type -eq 'LiveACLList') { return @() }
+            if ($Type -eq 'LiveACLList') { return ,@(@{}) }
             return $null
         }
 
@@ -55,13 +57,12 @@ Describe 'New-AzDoIterationPermission Tests' {
 
     Context "When Ensure is Present" {
 
-        It "Should not proceed when AreaPath is not specified" {
+        It "Should proceed with top-level permissions when IterationPath is not specified" {
             # Act
             $result = New-AzDoIterationPermission -ProjectName "TestProject" -isInherited $true
 
             # Assert
             $result | Should -BeNullOrEmpty
-            Assert-MockCalled -CommandName Get-CacheItem -Exactly 0
         }
 
         It "Should return warning when Security Namespace or Project is not found" {

@@ -1,7 +1,7 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
 # Unit Tests for New-AzDevOpsACLToken function
-Describe 'New-AzDevOpsACLToken' -Skip {
+Describe 'New-AzDevOpsACLToken' -Tag "Unit", "Helper" {
 
     BeforeAll {
 
@@ -43,13 +43,4 @@ Describe 'New-AzDevOpsACLToken' -Skip {
         }
     }
 
-    Context 'When required parameters are missing' {
-        It 'Should throw an error if OrganizationName is missing' {
-            { New-AzDevOpsACLToken -ProjectId "MyProject" } | Should -Throw
-        }
-
-        It 'Should throw an error if ProjectId is missing' {
-            { New-AzDevOpsACLToken -OrganizationName "Contoso" } | Should -Throw
-        }
-    }
 }

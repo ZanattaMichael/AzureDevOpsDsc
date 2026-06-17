@@ -10,7 +10,7 @@ class AzDoArtifactFeedPermission : AzDevOpsDscResourceBase
     [DscProperty(Key, Mandatory)]
     [System.String]$ProjectName
 
-    [DscProperty(Key, Mandatory)]
+    [DscProperty(Mandatory)]
     [System.String]$FeedName
 
     [DscProperty()]

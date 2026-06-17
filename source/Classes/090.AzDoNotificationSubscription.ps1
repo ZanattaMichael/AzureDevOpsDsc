@@ -10,7 +10,7 @@ class AzDoNotificationSubscription : AzDevOpsDscResourceBase
     [DscProperty(Key, Mandatory)]
     [System.String]$SubscriptionName
 
-    [DscProperty(Key, Mandatory)]
+    [DscProperty(Mandatory)]
     [System.String]$EventType
 
     [DscProperty(Mandatory)]

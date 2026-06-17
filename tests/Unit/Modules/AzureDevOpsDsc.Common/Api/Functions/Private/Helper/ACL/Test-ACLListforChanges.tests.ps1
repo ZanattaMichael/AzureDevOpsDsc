@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Test-ACLListforChanges" -Tags "Unit", "ACL", "Helper" {
+Describe "Test-ACLListforChanges" -Tag "Unit", "ACL", "Helper" {
 
     BeforeAll {
         # Load the functions to test
@@ -94,9 +94,9 @@ Describe "Test-ACLListforChanges" -Tags "Unit", "ACL", "Helper" {
         $result.status | Should -Be "Changed"
     }
 
-    It "Returns Missing when Reference ACL is null" {
+    It "Returns Changed when Reference ACL is null but Difference has ACEs (desired=none, current=has ACEs)" {
         $result = Test-ACLListforChanges -ReferenceACLs $null -DifferenceACLs $DifferenceACLsSample
-        $result.status | Should -Be "Missing"
+        $result.status | Should -Be "Changed"
     }
 
     It "Returns NotFound when Difference ACL is null" {

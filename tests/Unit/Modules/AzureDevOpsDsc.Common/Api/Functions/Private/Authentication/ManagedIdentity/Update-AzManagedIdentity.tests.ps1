@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "Update-AzManagedIdentity" -Tags "Unit", "Authentication" {
+Describe "Update-AzManagedIdentity" -Tag "Unit", "ManagedIdentity", "Authentication" {
 
     BeforeAll {
 

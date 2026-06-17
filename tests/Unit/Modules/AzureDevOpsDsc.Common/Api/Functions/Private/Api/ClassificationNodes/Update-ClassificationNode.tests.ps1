@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'New-ClassificationNode' -Tags "Unit", "API" {
+Describe 'New-ClassificationNode' -Tag "Unit", "ClassificationNodes", "API" {
 
     BeforeAll {
 

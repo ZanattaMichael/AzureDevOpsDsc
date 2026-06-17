@@ -37,11 +37,13 @@ function List-UserCache
 
         [Parameter()]
         [String]
-        $ApiVersion = $(Get-AzDevOpsApiVersion -Default)
+        $ApiVersion
     )
 
+    if (-not $ApiVersion) { $ApiVersion = '7.1-preview.1' }
+
     $params = @{
-        Uri = "https://vssps.dev.azure.com/$OrganizationName/_apis/graph/users"
+        Uri = "https://vssps.dev.azure.com/$OrganizationName/_apis/graph/users?api-version=$ApiVersion"
         Method = 'Get'
     }
 

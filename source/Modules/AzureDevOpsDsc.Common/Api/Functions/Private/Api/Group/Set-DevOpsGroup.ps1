@@ -58,7 +58,7 @@ Function Set-DevOpsGroup
         [Parameter(ParameterSetName = 'ProjectScope')]
         [Parameter(ParameterSetName = 'Default')]
         [String]
-        $ApiVersion = $(Get-AzDevOpsApiVersion -Default), # The API version to use for the request.
+        $ApiVersion, # The API version to use for the request.
 
         # Group Descriptor for the project within which the group exists.
         [Parameter(Mandatory = $true, ParameterSetName = 'Default')]
@@ -71,9 +71,13 @@ Function Set-DevOpsGroup
         $ProjectScopeDescriptor # Scope descriptor for the project within which the group exists.
     )
 
+    # The graph (vssps) endpoints are preview-only; a bare '7.1' is rejected with
+    # VssInvalidPreviewVersionException. Default to the preview version, matching New-DevOpsGroup.
+    if (-not $ApiVersion) { $ApiVersion = '7.1-preview.1' }
+
     # A hashtable is created to hold parameters that will be used in the REST method invocation.
     $params = @{
-        Uri = '{0}/_apis/graph/groups/{1}?api-version={2}' -f $ApiUri, $GroupDescriptor, $ApiVersion # The API endpoint, formatted with the base URI and API version.
+        Uri = '{0}/_apis/graph/groups/{1}?api-version={2}' -f $ApiUri.TrimEnd('/'), $GroupDescriptor, $ApiVersion # The API endpoint, formatted with the base URI and API version.
         Method = 'Patch' # The HTTP method used for the request, indicating an update operation.
         ContentType = 'application/json-patch+json' # The content type of the request body.
         Body = @(
@@ -93,7 +97,7 @@ Function Set-DevOpsGroup
     # If ProjectScopeDescriptor is provided, modify the URI to include it in the query parameters.
     if ($ProjectScopeDescriptor)
     {
-        $params.Uri = '{0}/_apis/graph/groups?scopeDescriptor={1}&api-version={2}' -f $ApiUri, $ProjectScopeDescriptor, $ApiVersion
+        $params.Uri = '{0}/_apis/graph/groups?scopeDescriptor={1}&api-version={2}' -f $ApiUri.TrimEnd('/'), $ProjectScopeDescriptor, $ApiVersion
     }
 
     try
@@ -104,8 +108,7 @@ Function Set-DevOpsGroup
     }
     catch
     {
-        # Write an error message to the console if the REST method call fails.
-        Write-Error "Failed to create group: $_"
+        throw "Failed to update group '$GroupName': $_"
     }
 
 }

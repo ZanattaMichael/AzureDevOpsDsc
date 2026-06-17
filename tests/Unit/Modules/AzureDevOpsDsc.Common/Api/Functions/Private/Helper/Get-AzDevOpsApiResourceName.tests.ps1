@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Get-AzDevOpsApiResourceName' {
+Describe 'Get-AzDevOpsApiResourceName' -Tag "Unit", "Helper" {
 
     BeforeAll {
         # Load the functions to test

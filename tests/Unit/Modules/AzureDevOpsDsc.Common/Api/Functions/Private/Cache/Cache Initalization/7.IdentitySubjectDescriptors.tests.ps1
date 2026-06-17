@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe "AzDoAPI_7_IdentitySubjectDescriptors" -Tags "Unit", "Cache" {
+Describe "AzDoAPI_7_IdentitySubjectDescriptors" -Tag "Unit", "Cache Initalization", "Cache" {
 
     BeforeAll {
 
@@ -72,6 +72,11 @@ Describe "AzDoAPI_7_IdentitySubjectDescriptors" -Tags "Unit", "Cache" {
 
         Mock -CommandName Add-CacheItem
         Mock -CommandName Export-CacheObject
+
+        # Descriptor index helpers invoked during the rebuild; no-op them in unit scope.
+        Mock -CommandName Clear-IdentityDescriptorIndex
+        Mock -CommandName Add-IdentityDescriptorIndexItem
+        Mock -CommandName Save-IdentityDescriptorIndex
 
     }
 

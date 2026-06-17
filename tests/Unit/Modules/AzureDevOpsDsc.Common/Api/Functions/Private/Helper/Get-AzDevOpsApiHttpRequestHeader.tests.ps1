@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Get-AzDevOpsApiHttpRequestHeader' {
+Describe 'Get-AzDevOpsApiHttpRequestHeader' -Tag "Unit", "Helper" {
 
     BeforeAll {
 

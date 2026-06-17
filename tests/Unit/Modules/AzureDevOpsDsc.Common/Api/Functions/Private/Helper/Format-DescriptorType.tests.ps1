@@ -1,6 +1,6 @@
 $currentFile = $MyInvocation.MyCommand.Path
 
-Describe 'Format-DescriptorType' {
+Describe 'Format-DescriptorType' -Tag "Unit", "Helper" {
 
     BeforeAll {
 
