@@ -14,6 +14,10 @@ Describe "Test-AzDoOrganizationGroup" -Tag "Unit", "OrganizationGroup" {
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
 
+        # Get-CacheItem's -Type parameter validates against Get-AzDoCacheObjects; load it so the
+        # ValidateScript resolves during parameter binding (it runs even though Get-CacheItem is mocked).
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
+
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         if (-not (Get-Command 'Format-AzDoGroup' -ErrorAction SilentlyContinue)) {

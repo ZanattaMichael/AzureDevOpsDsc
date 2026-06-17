@@ -20,6 +20,10 @@ Describe 'Test-AzDoProjectGroup' -Tag "Unit", "ProjectGroup" {
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
 
+        # Get-CacheItem's -Type parameter validates against Get-AzDoCacheObjects; load it so the
+        # ValidateScript resolves during parameter binding (it runs even though Get-CacheItem is mocked).
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
+
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
 
         # Format-AzDoGroup has no source file; define a stub so Pester can mock it
