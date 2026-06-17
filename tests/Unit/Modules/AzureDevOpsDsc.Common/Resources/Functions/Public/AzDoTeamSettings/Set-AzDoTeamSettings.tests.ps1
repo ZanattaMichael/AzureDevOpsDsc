@@ -85,4 +85,32 @@ Describe "Set-AzDoTeamSettings" -Tag "Unit", "TeamSettings" {
             Assert-MockCalled -CommandName Set-DevOpsTeamSettings -Exactly -Times 0
         }
     }
+
+    Context "when the team is resolved via the live API (cache miss)" {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -ParameterFilter { $Type -eq 'LiveTeams' } -MockWith { return $null }
+            Mock -CommandName List-DevOpsTeams -MockWith { return @($mockTeam) }
+        }
+
+        It "falls back to List-DevOpsTeams and calls Set-DevOpsTeamSettings" {
+            Set-AzDoTeamSettings -ProjectName 'TestProject' -TeamName 'TestTeam' -BugsBehavior 'asTasks'
+            Assert-MockCalled -CommandName List-DevOpsTeams -Times 1
+            Assert-MockCalled -CommandName Set-DevOpsTeamSettings -Exactly -Times 1 -ParameterFilter { $TeamId -eq 'team-id-001' }
+        }
+    }
+
+    Context "when Set-DevOpsTeamSettings returns null" {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -ParameterFilter { $Type -eq 'LiveTeams' } -MockWith { return $mockTeam }
+            Mock -CommandName Set-DevOpsTeamSettings -MockWith { return $null }
+            Mock -CommandName Write-Error -Verifiable
+        }
+
+        It "writes an error" {
+            Set-AzDoTeamSettings -ProjectName 'TestProject' -TeamName 'TestTeam' -BugsBehavior 'asTasks'
+            Assert-VerifiableMock
+        }
+    }
 }

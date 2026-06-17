@@ -10,8 +10,8 @@
 class AzDoArtifactFeedView : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)][System.String]$ProjectName
-    [DscProperty(Key, Mandatory)][System.String]$FeedName
-    [DscProperty(Key, Mandatory)][System.String]$ViewName
+    [DscProperty(Mandatory)][System.String]$FeedName
+    [DscProperty(Mandatory)][System.String]$ViewName
     [DscProperty()][ValidateSet('release', 'implicit')][System.String]$ViewType = 'release'
     [DscProperty()][ValidateSet('private', 'collection', 'organization', 'aadTenant')][System.String]$ViewVisibility = 'collection'
 

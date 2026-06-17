@@ -48,4 +48,18 @@ Describe "Remove-AzDoArtifactFeedView" -Tag "Unit", "ArtifactFeedView" {
             Assert-MockCalled -CommandName Remove-DevOpsArtifactFeedView -Exactly -Times 0
         }
     }
+
+    Context "when the feed cannot be resolved" {
+
+        BeforeEach {
+            Mock -CommandName Resolve-DevOpsArtifactFeed -MockWith { return $null }
+            Mock -CommandName Write-Error -Verifiable
+        }
+
+        It "writes an error and does not remove anything" {
+            Remove-AzDoArtifactFeedView -ProjectName 'TestProject' -FeedName 'Missing' -ViewName 'Release'
+            Assert-VerifiableMock
+            Assert-MockCalled -CommandName Remove-DevOpsArtifactFeedView -Exactly -Times 0
+        }
+    }
 }

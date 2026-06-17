@@ -21,6 +21,7 @@ Describe "Get-AzDoArtifactFeedSettings" -Tag "Unit", "ArtifactFeedSettings" {
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
+        . (Get-FunctionItem 'Test-AzDoArrayDrift.ps1')
 
         $mockFeed = [PSCustomObject]@{
             id                         = 'feed-id-001'
@@ -34,6 +35,15 @@ Describe "Get-AzDoArtifactFeedSettings" -Tag "Unit", "ArtifactFeedSettings" {
         Mock -CommandName Resolve-DevOpsArtifactFeed -MockWith { return $mockFeed }
         Mock -CommandName Get-DevOpsArtifactFeedRetentionPolicy -MockWith {
             return [PSCustomObject]@{ countLimit = 100; daysToKeepRecentlyDownloadedPackages = 30 }
+        }
+    }
+
+    Context "when Ensure is Absent (no-op)" {
+
+        It "short-circuits to NotFound without resolving the feed" {
+            $result = Get-AzDoArtifactFeedSettings -ProjectName 'TestProject' -FeedName 'TestFeed' -Ensure 'Absent'
+            $result.status | Should -Be 'NotFound'
+            Assert-MockCalled -CommandName Resolve-DevOpsArtifactFeed -Exactly -Times 0
         }
     }
 
@@ -67,8 +77,14 @@ Describe "Get-AzDoArtifactFeedSettings" -Tag "Unit", "ArtifactFeedSettings" {
             $result.propertiesChanged | Should -Contain 'HideDeletedPackageVersions'
         }
 
-        It "detects drift on UpstreamSources" {
+        It "detects drift on UpstreamSources given as names" {
             $result = Get-AzDoArtifactFeedSettings -ProjectName 'TestProject' -FeedName 'TestFeed' -UpstreamSources @('NuGet Gallery')
+            $result.propertiesChanged | Should -Contain 'UpstreamSources'
+        }
+
+        It "detects drift on UpstreamSources given as objects" {
+            $result = Get-AzDoArtifactFeedSettings -ProjectName 'TestProject' -FeedName 'TestFeed' `
+                -UpstreamSources @([PSCustomObject]@{ name = 'NuGet Gallery' })
             $result.propertiesChanged | Should -Contain 'UpstreamSources'
         }
 

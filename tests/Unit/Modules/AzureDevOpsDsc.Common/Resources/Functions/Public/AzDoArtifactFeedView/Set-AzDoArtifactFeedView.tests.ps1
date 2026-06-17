@@ -52,4 +52,31 @@ Describe "Set-AzDoArtifactFeedView" -Tag "Unit", "ArtifactFeedView" {
             Assert-MockCalled -CommandName Set-DevOpsArtifactFeedView -Exactly -Times 0
         }
     }
+
+    Context "when the feed cannot be resolved" {
+
+        BeforeEach {
+            Mock -CommandName Resolve-DevOpsArtifactFeed -MockWith { return $null }
+            Mock -CommandName Write-Error -Verifiable
+        }
+
+        It "writes an error and does not list views" {
+            Set-AzDoArtifactFeedView -ProjectName 'TestProject' -FeedName 'Missing' -ViewName 'Release'
+            Assert-VerifiableMock
+            Assert-MockCalled -CommandName List-DevOpsArtifactFeedViews -Exactly -Times 0
+        }
+    }
+
+    Context "when the update returns null" {
+
+        BeforeEach {
+            Mock -CommandName Set-DevOpsArtifactFeedView -MockWith { return $null }
+            Mock -CommandName Write-Error -Verifiable
+        }
+
+        It "writes an error" {
+            Set-AzDoArtifactFeedView -ProjectName 'TestProject' -FeedName 'TestFeed' -ViewName 'Release'
+            Assert-VerifiableMock
+        }
+    }
 }
