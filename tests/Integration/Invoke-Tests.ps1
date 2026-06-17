@@ -34,6 +34,39 @@ Write-Host "[Invoke-Tests] Running pre-run teardown to ensure a clean environmen
 Write-Host "[Invoke-Tests] Pre-run teardown complete."
 
 #
+# Clear project-scoped module cache files so DSC Get() calls re-fetch live state after teardown.
+# The DSC resources (especially the cache-first *Permission resources) resolve resource IDs and ACL
+# descriptors from these caches; leaving them stale after teardown makes Set succeed but the following
+# Test() compare against dead object IDs and return $false. Org-wide caches (LiveProcesses, LiveUsers,
+# LiveServicePrinciples, SecurityNamespaces, LivePolicyTypes) are static and must NOT be cleared.
+
+$cacheDir = Join-Path $env:AZDODSC_CACHE_DIRECTORY 'Cache'
+if (Test-Path $cacheDir)
+{
+    Write-Host "[Invoke-Tests] Clearing project-scoped cache files after teardown..."
+    $cacheFilesToClear = @(
+        'LiveProjects', 'LiveGroups', 'LiveGroupMembers', 'LiveRepositories',
+        'LiveTeams', 'LiveTeamMembers', 'LiveArtifactFeeds', 'LiveAgentPools',
+        'LiveAgentQueues', 'LiveAreaNodes', 'LiveIterations', 'LiveACLList',
+        'Group', 'SecurityDescriptor', 'IdentityDescriptorIndex'
+    )
+    foreach ($cacheFile in $cacheFilesToClear)
+    {
+        $filePath = Join-Path $cacheDir "$cacheFile.clixml"
+        if (Test-Path $filePath)
+        {
+            Write-Host "[Invoke-Tests] Removing stale cache: $cacheFile"
+            Remove-Item -Path $filePath -Force
+        }
+    }
+}
+
+# Azure DevOps project deletions are asynchronous. Wait for them to settle before the tests try to
+# re-create the same projects; otherwise BeforeAll can hit 400 "project name in use" / TF200016.
+Write-Host "[Invoke-Tests] Waiting 90 seconds for Azure DevOps to complete async project deletions..."
+Start-Sleep -Seconds 90
+
+#
 # Trigger the Tests
 
 $pesterConfig = New-PesterConfiguration
