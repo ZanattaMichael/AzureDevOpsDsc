@@ -82,7 +82,10 @@
       'AzDoWiki',
       'AzDoNotificationSubscription',
       'AzDoRepositorySettings',
-      'AzDoCheckConfiguration'
+      'AzDoCheckConfiguration',
+      'AzDoTeamSettings',
+      'AzDoArtifactFeedSettings',
+      'AzDoArtifactFeedView'
     )
 
     RequiredAssemblies = @()
