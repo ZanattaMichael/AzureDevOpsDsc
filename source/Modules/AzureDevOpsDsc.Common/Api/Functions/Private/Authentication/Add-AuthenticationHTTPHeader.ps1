@@ -108,6 +108,42 @@ Function Add-AuthenticationHTTPHeader
             break
 
         }
+        {$_ -eq 'ServicePrincipal'} {
+            Write-Verbose "[Add-AuthenticationHTTPHeader] Adding Service Principal Token to the HTTP Headers."
+
+            if ($Global:DSCAZDO_AuthenticationToken.isExpired())
+            {
+                Write-Verbose "[Add-AuthenticationHTTPHeader] Service Principal Token has expired. Obtaining a new token."
+                $Global:DSCAZDO_AuthenticationToken = Update-AzServicePrincipal
+            }
+
+            $headerValue = 'Bearer {0}' -f $Global:DSCAZDO_AuthenticationToken.Get()
+            break
+        }
+        {$_ -eq 'Certificate'} {
+            Write-Verbose "[Add-AuthenticationHTTPHeader] Adding Certificate Token to the HTTP Headers."
+
+            if ($Global:DSCAZDO_AuthenticationToken.isExpired())
+            {
+                Write-Verbose "[Add-AuthenticationHTTPHeader] Certificate Token has expired. Obtaining a new token."
+                $Global:DSCAZDO_AuthenticationToken = Update-AzServicePrincipalCertificate
+            }
+
+            $headerValue = 'Bearer {0}' -f $Global:DSCAZDO_AuthenticationToken.Get()
+            break
+        }
+        {$_ -eq 'AzureCLI'} {
+            Write-Verbose "[Add-AuthenticationHTTPHeader] Adding Azure CLI Token to the HTTP Headers."
+
+            if ($Global:DSCAZDO_AuthenticationToken.isExpired())
+            {
+                Write-Verbose "[Add-AuthenticationHTTPHeader] Azure CLI Token has expired. Obtaining a new token."
+                $Global:DSCAZDO_AuthenticationToken = Update-AzCliToken
+            }
+
+            $headerValue = 'Bearer {0}' -f $Global:DSCAZDO_AuthenticationToken.Get()
+            break
+        }
         default {
             throw "[Add-AuthenticationHTTPHeader] Error. The authentication token type is not supported."
         }
