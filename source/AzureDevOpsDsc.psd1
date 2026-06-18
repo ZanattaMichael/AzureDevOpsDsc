@@ -82,7 +82,8 @@
       'AzDoWiki',
       'AzDoNotificationSubscription',
       'AzDoRepositorySettings',
-      'AzDoCheckConfiguration'
+      'AzDoCheckConfiguration',
+      'AzDoUserEntitlement'
     )
 
     RequiredAssemblies = @()
