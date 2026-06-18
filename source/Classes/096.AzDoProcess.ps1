@@ -38,7 +38,6 @@ class AzDoProcess : AzDevOpsDscResourceBase
     [System.String]$ParentProcessName
 
     [DscProperty()]
-    [Alias('Description')]
     [System.String]$Description
 
     AzDoProcess()

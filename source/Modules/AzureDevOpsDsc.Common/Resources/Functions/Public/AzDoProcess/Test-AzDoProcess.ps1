@@ -38,7 +38,6 @@ function Test-AzDoProcess
         [System.String]$ParentProcessName,
 
         [Parameter()]
-        [Alias('Description')]
         [System.String]$Description = '',
 
         [Parameter()]
