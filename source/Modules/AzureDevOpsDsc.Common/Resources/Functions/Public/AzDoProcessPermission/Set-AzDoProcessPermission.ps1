@@ -1,10 +1,10 @@
 <#
 .SYNOPSIS
-Applies Azure DevOps Process permissions (new ACL).
+Updates Azure DevOps Process permissions (existing ACL).
 
 .DESCRIPTION
 Serializes the desired Process namespace ACEs and applies them to the resolved process scope token via
-Set-AzDoPermission. Other identities' ACEs on the same token are preserved.
+Set-AzDoPermission, reconciling drift detected by Get-AzDoProcessPermission.
 
 .PARAMETER ProcessName
 The process name, or the sentinel 'AllProcesses' for the org-wide root scope.
@@ -24,7 +24,7 @@ Specifies the desired state.
 .PARAMETER Force
 Forces the operation.
 #>
-function New-AzDoProcessPermissions
+function Set-AzDoProcessPermission
 {
     [CmdletBinding()]
     param
@@ -48,30 +48,29 @@ function New-AzDoProcessPermissions
         [System.Management.Automation.SwitchParameter]$Force
     )
 
-    Write-Verbose "[New-AzDoProcessPermissions] Started."
+    Write-Verbose "[Set-AzDoProcessPermission] Started."
 
     $OrganizationName  = (Get-AzDoOrganizationName)
     $SecurityNamespace = Get-CacheItem -Key 'Process' -Type 'SecurityNamespaces'
 
     if (-not $SecurityNamespace)
     {
-        Write-Error "[New-AzDoProcessPermissions] Security namespace 'Process' not found."
+        Write-Error "[Set-AzDoProcessPermission] Security namespace 'Process' not found."
         return
     }
 
     $processToken = Get-DevOpsProcessAclToken -ProcessName $ProcessName -OrganizationName $OrganizationName
     if (-not $processToken)
     {
-        Write-Error "[New-AzDoProcessPermissions] Could not resolve a Process ACL token for '$ProcessName'."
+        Write-Error "[Set-AzDoProcessPermission] Could not resolve a Process ACL token for '$ProcessName'."
         return
     }
 
-    # Preserve every other token's ACL; replace only the one we manage (exact, escaped match).
     $descriptorMatchToken = '^{0}$' -f [regex]::Escape($processToken)
 
     $serializeACLParams = @{
         ReferenceACLs        = $LookupResult.propertiesChanged
-        DescriptorACLList    = Get-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'
+        DescriptorACLList    = @()
         DescriptorMatchToken = $descriptorMatchToken
     }
 

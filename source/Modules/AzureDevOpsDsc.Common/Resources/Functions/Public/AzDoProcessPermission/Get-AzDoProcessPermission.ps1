@@ -29,7 +29,7 @@ Forces the operation.
 .OUTPUTS
 System.Collections.Hashtable
 #>
-function Get-AzDoProcessPermissions
+function Get-AzDoProcessPermission
 {
     [CmdletBinding()]
     [OutputType([System.Collections.Hashtable])]
@@ -54,7 +54,7 @@ function Get-AzDoProcessPermissions
         [System.Management.Automation.SwitchParameter]$Force
     )
 
-    Write-Verbose "[Get-AzDoProcessPermissions] Started."
+    Write-Verbose "[Get-AzDoProcessPermission] Started."
 
     $SecurityNamespace = 'Process'
     $OrganizationName  = (Get-AzDoOrganizationName)
@@ -79,7 +79,7 @@ function Get-AzDoProcessPermissions
     $namespace = Get-CacheItem -Key $SecurityNamespace -Type 'SecurityNamespaces'
     if (-not $namespace)
     {
-        Write-Error "[Get-AzDoProcessPermissions] Security namespace '$SecurityNamespace' not found."
+        Write-Error "[Get-AzDoProcessPermission] Security namespace '$SecurityNamespace' not found."
         $getResult.status = [DSCGetSummaryState]::Error
         $getResult.reason = "Security namespace '$SecurityNamespace' not found."
         return $getResult

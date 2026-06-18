@@ -1,16 +1,16 @@
 <#
 .SYNOPSIS
-Removes Azure DevOps Process permissions from a process scope token.
+Applies Azure DevOps Process permissions (new ACL).
 
 .DESCRIPTION
-Removes the managed ACL for the resolved process scope token via Remove-AzDoPermission. Protected
-system ACEs cannot be removed by the API and remain.
+Serializes the desired Process namespace ACEs and applies them to the resolved process scope token via
+Set-AzDoPermission. Other identities' ACEs on the same token are preserved.
 
 .PARAMETER ProcessName
 The process name, or the sentinel 'AllProcesses' for the org-wide root scope.
 
 .PARAMETER Permissions
-An array of hashtables describing the ACEs (unused on removal; present for signature parity).
+An array of hashtables describing the desired ACEs.
 
 .PARAMETER isInherited
 Whether the ACL inherits permissions.
@@ -24,7 +24,7 @@ Specifies the desired state.
 .PARAMETER Force
 Forces the operation.
 #>
-function Remove-AzDoProcessPermissions
+function New-AzDoProcessPermission
 {
     [CmdletBinding()]
     param
@@ -48,29 +48,38 @@ function Remove-AzDoProcessPermissions
         [System.Management.Automation.SwitchParameter]$Force
     )
 
-    Write-Verbose "[Remove-AzDoProcessPermissions] Started."
+    Write-Verbose "[New-AzDoProcessPermission] Started."
 
     $OrganizationName  = (Get-AzDoOrganizationName)
     $SecurityNamespace = Get-CacheItem -Key 'Process' -Type 'SecurityNamespaces'
 
     if (-not $SecurityNamespace)
     {
-        Write-Error "[Remove-AzDoProcessPermissions] Security namespace 'Process' not found."
+        Write-Error "[New-AzDoProcessPermission] Security namespace 'Process' not found."
         return
     }
 
     $processToken = Get-DevOpsProcessAclToken -ProcessName $ProcessName -OrganizationName $OrganizationName
     if (-not $processToken)
     {
-        Write-Error "[Remove-AzDoProcessPermissions] Could not resolve a Process ACL token for '$ProcessName'."
+        Write-Error "[New-AzDoProcessPermission] Could not resolve a Process ACL token for '$ProcessName'."
         return
+    }
+
+    # Preserve every other token's ACL; replace only the one we manage (exact, escaped match).
+    $descriptorMatchToken = '^{0}$' -f [regex]::Escape($processToken)
+
+    $serializeACLParams = @{
+        ReferenceACLs        = $LookupResult.propertiesChanged
+        DescriptorACLList    = Get-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'
+        DescriptorMatchToken = $descriptorMatchToken
     }
 
     $params = @{
         OrganizationName    = $OrganizationName
         SecurityNamespaceID = $SecurityNamespace.namespaceId
-        TokenName           = $processToken
+        SerializedACLs      = ConvertTo-ACLHashtable @serializeACLParams
     }
 
-    Remove-AzDoPermission @params
+    Set-AzDoPermission @params
 }

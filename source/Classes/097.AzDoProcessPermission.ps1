@@ -3,7 +3,7 @@
     DSC resource for managing Azure DevOps Process namespace permissions.
 
 .DESCRIPTION
-    The AzDoProcessPermissions resource manages ACEs in the Process security namespace. Use the sentinel
+    The AzDoProcessPermission resource manages ACEs in the Process security namespace. Use the sentinel
     process name 'AllProcesses' to manage the org-wide root scope ('$PROCESS') — this governs who can
     create, edit, delete and administer processes, including creating inherited (child) processes from
     existing ones. A specific inherited process name scopes permissions to that single process
@@ -22,7 +22,7 @@
 
 .EXAMPLE
     # Allow the 'Process Authors' group to create inherited processes org-wide.
-    AzDoProcessPermissions AllowCreate
+    AzDoProcessPermission AllowCreate
     {
         ProcessName = 'AllProcesses'
         Permissions = @(
@@ -36,7 +36,7 @@
 
 [DscResource()]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSDSCStandardDSCFunctionsInResource', '', Justification='Test() and Set() method are inherited from base, "AzDevOpsDscResourceBase" class')]
-class AzDoProcessPermissions : AzDevOpsDscResourceBase
+class AzDoProcessPermission : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)]
     [System.String]$ProcessName
@@ -47,14 +47,14 @@ class AzDoProcessPermissions : AzDevOpsDscResourceBase
     [DscProperty()]
     [HashTable[]]$Permissions
 
-    AzDoProcessPermissions()
+    AzDoProcessPermission()
     {
         $this.Construct()
     }
 
-    [AzDoProcessPermissions] Get()
+    [AzDoProcessPermission] Get()
     {
-        return [AzDoProcessPermissions]$($this.GetDscCurrentStateProperties())
+        return [AzDoProcessPermission]$($this.GetDscCurrentStateProperties())
     }
 
     hidden [System.String[]]GetDscResourcePropertyNamesWithNoSetSupport()
