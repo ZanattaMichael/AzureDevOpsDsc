@@ -86,7 +86,8 @@
       'AzDoTeamSettings',
       'AzDoArtifactFeedSettings',
       'AzDoArtifactFeedView',
-      'AzDoProcess'
+      'AzDoProcess',
+      'AzDoProcessPermissions'
     )
 
     RequiredAssemblies = @()
