@@ -83,7 +83,8 @@
       'AzDoNotificationSubscription',
       'AzDoRepositorySettings',
       'AzDoCheckConfiguration',
-      'AzDoUserEntitlement'
+      'AzDoUserEntitlement',
+      'AzDoServiceHook'
     )
 
     RequiredAssemblies = @()
