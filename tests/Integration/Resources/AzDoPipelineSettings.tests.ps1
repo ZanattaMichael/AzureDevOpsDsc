@@ -9,10 +9,12 @@ Describe "AzDoPipelineSettings Integration Tests" -Tag "Integration", "PipelineS
         $parameters = @{
             Name       = 'AzDoPipelineSettings'
             ModuleName = 'AzureDevOpsDsc'
+            # PublishPipelineMetadata defaults off and is freely settable at the project level (it is not
+            # org-enforced, unlike e.g. EnforceJobAuthScope which an org policy may pin on), so it can be
+            # toggled both ways and reliably converge.
             property   = @{
-                ProjectName            = $PROJECTNAME
-                EnforceJobAuthScope    = 'true'
-                StatusBadgesArePrivate = 'true'
+                ProjectName             = $PROJECTNAME
+                PublishPipelineMetadata = 'true'
             }
         }
     }
@@ -37,7 +39,7 @@ Describe "AzDoPipelineSettings Integration Tests" -Tag "Integration", "PipelineS
 
         BeforeAll {
             $parameters.Method = 'Set'
-            $parameters.property.EnforceJobAuthScope = 'false'
+            $parameters.property.PublishPipelineMetadata = 'false'
         }
 
         It "Should not throw any exceptions" {
