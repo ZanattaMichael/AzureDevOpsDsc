@@ -115,6 +115,7 @@ Each resource links to its example/usage documentation.
 | [AzDoGroupMember](source/Examples/Resources/AzDoGroupMember.md) | Manages membership of users, groups and service principals in a group. |
 | [AzDoTeam](source/Examples/Resources/AzDoTeam.md) | Creates and manages teams within a project. |
 | [AzDoTeamMember](source/Examples/Resources/AzDoTeamMember.md) | Manages membership of a team. |
+| [AzDoTeamSettings](source/Examples/Resources/AzDoTeamSettings.md) | Configures a team's iteration/area paths, working days and bug behaviour. |
 
 ### Repositories and policies
 
@@ -139,6 +140,7 @@ Each resource links to its example/usage documentation.
 | [AzDoVariableGroupPermission](source/Examples/Resources/AzDoVariableGroupPermission.md) | Manages variable group (library) permissions. |
 | [AzDoArtifactFeedPermission](source/Examples/Resources/AzDoArtifactFeedPermission.md) | Manages artifact feed permissions. |
 | [AzDoSecurityNamespacePermission](source/Examples/Resources/AzDoSecurityNamespacePermission.md) | Manages permissions for an arbitrary security namespace and token. |
+| [AzDoProcessPermission](source/Examples/Resources/AzDoProcessPermission.md) | Manages Process security namespace permissions, e.g. who can create inherited (child) processes. |
 | [AzDoGroupPermission](source/Examples/Resources/AzDoGroupPermission.md) | *(Not currently supported)* Manages group-level identity permissions. |
 
 ### Pipelines, environments and agents
@@ -163,6 +165,7 @@ Each resource links to its example/usage documentation.
 | [AzDoAreaNodes](source/Examples/Resources/AzDoAreaNodes.md) | Manages area path classification nodes. |
 | [AzDoIterationNodes](source/Examples/Resources/AzDoIterationNodes.md) | Manages iteration path classification nodes. |
 | [AzDoWIPTags](source/Examples/Resources/AzDoWIPTags.md) | Manages work item tags. |
+| [AzDoProcess](source/Examples/Resources/AzDoProcess.md) | Creates and manages inherited processes (process templates). |
 | [AzDoNotificationSubscription](source/Examples/Resources/AzDoNotificationSubscription.md) | Manages notification subscriptions. |
 
 ### Artifacts, wiki, extensions and auditing
@@ -170,6 +173,8 @@ Each resource links to its example/usage documentation.
 | Resource | Description |
 |---|---|
 | [AzDoArtifactFeed](source/Examples/Resources/AzDoArtifactFeed.md) | Creates and manages artifact feeds. |
+| [AzDoArtifactFeedSettings](source/Examples/Resources/AzDoArtifactFeedSettings.md) | Configures feed upstream sources, deleted-version hiding and retention policy. |
+| [AzDoArtifactFeedView](source/Examples/Resources/AzDoArtifactFeedView.md) | Creates and manages feed views (e.g. `@Release`). |
 | [AzDoWiki](source/Examples/Resources/AzDoWiki.md) | Creates and manages project and code wikis. |
 | [AzDoExtension](source/Examples/Resources/AzDoExtension.md) | Installs and uninstalls organization extensions. |
 | [AzDoAuditStream](source/Examples/Resources/AzDoAuditStream.md) | Manages audit log streaming. |
