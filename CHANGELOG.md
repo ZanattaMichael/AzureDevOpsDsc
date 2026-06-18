@@ -40,6 +40,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - AzDoArtifactFeedView
   - AzDoProcess
   - AzDoProcessPermission
+  - AzDoAgentPool
+  - AzDoAgentPoolPermission
+  - AzDoAgentQueue
+  - AzDoAreaNodes
+  - AzDoAreaPermission
+  - AzDoArtifactFeed
+  - AzDoArtifactFeedPermission
+  - AzDoAuditStream
+  - AzDoBranchPolicy
+  - AzDoCheckConfiguration
+  - AzDoDeploymentGroup
+  - AzDoEnvironmentApproval
+  - AzDoEnvironmentPermission
+  - AzDoExtension
+  - AzDoIterationNodes
+  - AzDoIterationPermission
+  - AzDoNotificationSubscription
+  - AzDoOrganizationSettings
+  - AzDoPipeline
+  - AzDoPipelineEnvironment
+  - AzDoPipelinePermission
+  - AzDoProject
+  - AzDoProjectPermission
+  - AzDoProjectServices
+  - AzDoRepositorySettings
+  - AzDoSecurityNamespacePermission
+  - AzDoServiceConnection
+  - AzDoServiceConnectionPermission
+  - AzDoTaskGroup
+  - AzDoTeam
+  - AzDoTeamMember
+  - AzDoVariableGroup
+  - AzDoVariableGroupPermission
+  - AzDoWIPTags
+  - AzDoWiki
 - AzureDevOpsDsc.Common
   - Added New-AzDoAuthenticationProvider. This is invoked prior to the resource invocation.
   - Added 'wrapper' functionality around the [Azure DevOps REST API](https://docs.microsoft.com/en-us/rest/api/azure/devops/)
