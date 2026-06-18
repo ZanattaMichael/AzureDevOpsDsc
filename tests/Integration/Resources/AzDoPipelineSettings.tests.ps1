@@ -11,8 +11,8 @@ Describe "AzDoPipelineSettings Integration Tests" -Tag "Integration", "PipelineS
             ModuleName = 'AzureDevOpsDsc'
             property   = @{
                 ProjectName            = $PROJECTNAME
-                EnforceJobAuthScope    = $true
-                StatusBadgesArePrivate = $true
+                EnforceJobAuthScope    = 'true'
+                StatusBadgesArePrivate = 'true'
             }
         }
     }
@@ -37,7 +37,7 @@ Describe "AzDoPipelineSettings Integration Tests" -Tag "Integration", "PipelineS
 
         BeforeAll {
             $parameters.Method = 'Set'
-            $parameters.property.EnforceJobAuthScope = $false
+            $parameters.property.EnforceJobAuthScope = 'false'
         }
 
         It "Should not throw any exceptions" {

@@ -29,19 +29,19 @@ Describe 'Get-AzDoPipelineSettings' -Tag "Unit", "PipelineSettings" {
         }
     }
 
-    It 'returns Unchanged when a specified setting matches live state' {
-        $result = Get-AzDoPipelineSettings -ProjectName 'MyProject' -EnforceJobAuthScope $true
+    It 'returns Unchanged when a managed setting matches live state' {
+        $result = Get-AzDoPipelineSettings -ProjectName 'MyProject' -EnforceJobAuthScope 'true'
         $result.status | Should -Be 'Unchanged'
     }
 
-    It 'returns Changed when a specified setting differs from live state' {
-        $result = Get-AzDoPipelineSettings -ProjectName 'MyProject' -StatusBadgesArePrivate $true
+    It 'returns Changed when a managed setting differs from live state' {
+        $result = Get-AzDoPipelineSettings -ProjectName 'MyProject' -StatusBadgesArePrivate 'true'
         $result.status | Should -Be 'Changed'
         $result.propertiesChanged | Should -Contain 'StatusBadgesArePrivate'
     }
 
-    It 'ignores settings that were not specified' {
-        $result = Get-AzDoPipelineSettings -ProjectName 'MyProject' -EnforceJobAuthScope $true
+    It 'ignores unmanaged settings (empty string)' {
+        $result = Get-AzDoPipelineSettings -ProjectName 'MyProject' -EnforceJobAuthScope 'true' -StatusBadgesArePrivate ''
         $result.propertiesChanged | Should -Not -Contain 'StatusBadgesArePrivate'
     }
 
@@ -50,7 +50,7 @@ Describe 'Get-AzDoPipelineSettings' -Tag "Unit", "PipelineSettings" {
         BeforeEach { Mock -CommandName Get-DevOpsPipelineSettings -MockWith { return $null } }
 
         It 'returns status Error' {
-            $result = Get-AzDoPipelineSettings -ProjectName 'MyProject' -EnforceJobAuthScope $true
+            $result = Get-AzDoPipelineSettings -ProjectName 'MyProject' -EnforceJobAuthScope 'true'
             $result.status | Should -Be 'Error'
         }
     }

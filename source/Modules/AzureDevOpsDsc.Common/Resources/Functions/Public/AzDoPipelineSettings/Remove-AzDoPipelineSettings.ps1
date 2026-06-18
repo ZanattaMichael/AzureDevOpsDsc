@@ -48,14 +48,14 @@ function Remove-AzDoPipelineSettings
     param
     (
         [Parameter(Mandatory = $true)][System.String]$ProjectName,
-        [Parameter()][System.Boolean]$EnforceJobAuthScope,
-        [Parameter()][System.Boolean]$EnforceJobAuthScopeForReleases,
-        [Parameter()][System.Boolean]$EnforceReferencedRepoScopedToken,
-        [Parameter()][System.Boolean]$EnforceSettableVar,
-        [Parameter()][System.Boolean]$PublishPipelineMetadata,
-        [Parameter()][System.Boolean]$StatusBadgesArePrivate,
-        [Parameter()][System.Boolean]$DisableClassicPipelineCreation,
-        [Parameter()][System.Boolean]$DisableImpliedYAMLCiTrigger,
+        [Parameter()][System.String]$EnforceJobAuthScope,
+        [Parameter()][System.String]$EnforceJobAuthScopeForReleases,
+        [Parameter()][System.String]$EnforceReferencedRepoScopedToken,
+        [Parameter()][System.String]$EnforceSettableVar,
+        [Parameter()][System.String]$PublishPipelineMetadata,
+        [Parameter()][System.String]$StatusBadgesArePrivate,
+        [Parameter()][System.String]$DisableClassicPipelineCreation,
+        [Parameter()][System.String]$DisableImpliedYAMLCiTrigger,
         [Parameter()][HashTable]$LookupResult,
         [Parameter()][Ensure]$Ensure,
         [Parameter()][System.Management.Automation.SwitchParameter]$Force

@@ -27,16 +27,16 @@ Describe 'Set-AzDoPipelineSettings' -Tag "Unit", "PipelineSettings" {
         Mock -CommandName Set-DevOpsPipelineSettings
     }
 
-    It 'sends only the specified settings (mapped to API names)' {
-        Set-AzDoPipelineSettings -ProjectName 'MyProject' -EnforceJobAuthScope $true -StatusBadgesArePrivate $true
+    It 'sends only the managed settings (mapped to API names, as booleans)' {
+        Set-AzDoPipelineSettings -ProjectName 'MyProject' -EnforceJobAuthScope 'true' -StatusBadgesArePrivate 'false'
         Assert-MockCalled -CommandName Set-DevOpsPipelineSettings -Times 1 -ParameterFilter {
-            $Settings.ContainsKey('enforceJobAuthScope') -and
-            $Settings.ContainsKey('statusBadgesArePrivate') -and
+            ($Settings['enforceJobAuthScope'] -eq $true) -and
+            ($Settings['statusBadgesArePrivate'] -eq $false) -and
             (-not $Settings.ContainsKey('enforceSettableVar'))
         }
     }
 
-    It 'does not call the API when no settings are specified' {
+    It 'does not call the API when no settings are managed' {
         Set-AzDoPipelineSettings -ProjectName 'MyProject'
         Assert-MockCalled -CommandName Set-DevOpsPipelineSettings -Times 0
     }

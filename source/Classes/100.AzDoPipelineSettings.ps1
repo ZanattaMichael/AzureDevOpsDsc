@@ -53,29 +53,42 @@ class AzDoPipelineSettings : AzDevOpsDscResourceBase
     [DscProperty(Key, Mandatory)]
     [System.String]$ProjectName
 
-    [DscProperty()]
-    [System.Boolean]$EnforceJobAuthScope
+    # Each setting is a tri-state string: '' (default) means "not managed by this resource" — only
+    # settings set to 'true'/'false' are compared and applied. A plain [bool] cannot express
+    # "unmanaged" (it defaults to $false), which would make the resource drive every omitted setting
+    # to false (destructive, and never converging because the base class passes all properties).
 
     [DscProperty()]
-    [System.Boolean]$EnforceJobAuthScopeForReleases
+    [ValidateSet('', 'true', 'false')]
+    [System.String]$EnforceJobAuthScope
 
     [DscProperty()]
-    [System.Boolean]$EnforceReferencedRepoScopedToken
+    [ValidateSet('', 'true', 'false')]
+    [System.String]$EnforceJobAuthScopeForReleases
 
     [DscProperty()]
-    [System.Boolean]$EnforceSettableVar
+    [ValidateSet('', 'true', 'false')]
+    [System.String]$EnforceReferencedRepoScopedToken
 
     [DscProperty()]
-    [System.Boolean]$PublishPipelineMetadata
+    [ValidateSet('', 'true', 'false')]
+    [System.String]$EnforceSettableVar
 
     [DscProperty()]
-    [System.Boolean]$StatusBadgesArePrivate
+    [ValidateSet('', 'true', 'false')]
+    [System.String]$PublishPipelineMetadata
 
     [DscProperty()]
-    [System.Boolean]$DisableClassicPipelineCreation
+    [ValidateSet('', 'true', 'false')]
+    [System.String]$StatusBadgesArePrivate
 
     [DscProperty()]
-    [System.Boolean]$DisableImpliedYAMLCiTrigger
+    [ValidateSet('', 'true', 'false')]
+    [System.String]$DisableClassicPipelineCreation
+
+    [DscProperty()]
+    [ValidateSet('', 'true', 'false')]
+    [System.String]$DisableImpliedYAMLCiTrigger
 
     AzDoPipelineSettings()
     {

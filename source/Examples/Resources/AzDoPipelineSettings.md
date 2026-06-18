@@ -6,14 +6,14 @@
 AzDoPipelineSettings [string] #ResourceName
 {
     ProjectName                          = [String]$ProjectName
-    [ EnforceJobAuthScope               = [Boolean]$EnforceJobAuthScope ]
-    [ EnforceJobAuthScopeForReleases    = [Boolean]$EnforceJobAuthScopeForReleases ]
-    [ EnforceReferencedRepoScopedToken  = [Boolean]$EnforceReferencedRepoScopedToken ]
-    [ EnforceSettableVar                = [Boolean]$EnforceSettableVar ]
-    [ PublishPipelineMetadata           = [Boolean]$PublishPipelineMetadata ]
-    [ StatusBadgesArePrivate            = [Boolean]$StatusBadgesArePrivate ]
-    [ DisableClassicPipelineCreation    = [Boolean]$DisableClassicPipelineCreation ]
-    [ DisableImpliedYAMLCiTrigger       = [Boolean]$DisableImpliedYAMLCiTrigger ]
+    [ EnforceJobAuthScope               = [String] {'', 'true', 'false'} ]
+    [ EnforceJobAuthScopeForReleases    = [String] {'', 'true', 'false'} ]
+    [ EnforceReferencedRepoScopedToken  = [String] {'', 'true', 'false'} ]
+    [ EnforceSettableVar                = [String] {'', 'true', 'false'} ]
+    [ PublishPipelineMetadata           = [String] {'', 'true', 'false'} ]
+    [ StatusBadgesArePrivate            = [String] {'', 'true', 'false'} ]
+    [ DisableClassicPipelineCreation    = [String] {'', 'true', 'false'} ]
+    [ DisableImpliedYAMLCiTrigger       = [String] {'', 'true', 'false'} ]
     [ Ensure                           = [String] {'Present', 'Absent'} ]
 }
 ```
@@ -33,9 +33,11 @@ AzDoPipelineSettings [string] #ResourceName
 - **DisableImpliedYAMLCiTrigger**: Disable implied YAML CI triggers.
 - **Ensure**: Specifies the desired state. These settings are intrinsic to a project and cannot be removed, so `Absent` is a no-op.
 
+Each setting is a tri-state string: `'true'`, `'false'`, or `''` (the default). Only settings set to `'true'` or `'false'` are reconciled; a setting left as `''` is **not managed** by this resource and is left untouched.
+
 ## Additional Information
 
-This resource manages a project's pipeline general settings (Project Settings → Pipelines → Settings). Only the settings you explicitly specify are reconciled; any setting you omit is left untouched.
+This resource manages a project's pipeline general settings (Project Settings → Pipelines → Settings). Only the settings you set to `'true'`/`'false'` are compared and applied; omitted settings (`''`) are left untouched.
 
 ## Examples
 
@@ -49,9 +51,9 @@ Configuration ExampleConfig {
         AzDoPipelineSettings HardenPipelines {
             Ensure                           = 'Present'
             ProjectName                      = 'MyProject'
-            EnforceJobAuthScope              = $true
-            EnforceReferencedRepoScopedToken = $true
-            StatusBadgesArePrivate           = $true
+            EnforceJobAuthScope              = 'true'
+            EnforceReferencedRepoScopedToken = 'true'
+            StatusBadgesArePrivate           = 'true'
         }
     }
 }
@@ -65,7 +67,7 @@ Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 # Return the current configuration for AzDoPipelineSettings
 $properties = @{
     ProjectName         = 'MyProject'
-    EnforceJobAuthScope = $true
+    EnforceJobAuthScope = 'true'
 }
 
 Invoke-DscResource -Name 'AzDoPipelineSettings' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
@@ -87,9 +89,9 @@ resources:
     - AzureDevOpsDsc/AzDevOpsProject/MyProject
   properties:
     ProjectName: $ProjectName
-    EnforceJobAuthScope: true
-    EnforceReferencedRepoScopedToken: true
-    StatusBadgesArePrivate: true
+    EnforceJobAuthScope: 'true'
+    EnforceReferencedRepoScopedToken: 'true'
+    StatusBadgesArePrivate: 'true'
     Ensure: Present
 ```
 
