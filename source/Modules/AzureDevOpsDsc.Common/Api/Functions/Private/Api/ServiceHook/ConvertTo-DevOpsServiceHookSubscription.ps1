@@ -78,7 +78,7 @@ function ConvertTo-DevOpsServiceHookSubscription
         $project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
         if (-not $project)
         {
-            $project = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/$ProjectName?api-version=7.1-preview.4" -Method Get
+            $project = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
         }
         if ($project.id) { $pubInputs['projectId'] = $project.id }
     }

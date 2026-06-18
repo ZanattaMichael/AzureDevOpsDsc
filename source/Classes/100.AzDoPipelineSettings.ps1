@@ -89,7 +89,9 @@ class AzDoPipelineSettings : AzDevOpsDscResourceBase
 
     hidden [System.String[]]GetDscResourcePropertyNamesWithNoSetSupport()
     {
-        return @('ProjectName')
+        # ProjectName is the key and must be passed to Set (the base class removes any name returned
+        # here from the Set parameters), so this must be empty.
+        return @()
     }
 
     hidden [Hashtable]GetDscCurrentStateProperties([PSCustomObject]$CurrentResourceObject)
