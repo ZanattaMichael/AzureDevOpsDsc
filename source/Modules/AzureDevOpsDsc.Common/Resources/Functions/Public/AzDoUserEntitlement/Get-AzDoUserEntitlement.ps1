@@ -57,7 +57,7 @@ function Get-AzDoUserEntitlement
 
     if ($null -eq $entitlement)
     {
-        Write-Verbose "[Get-AzDoUserEntitlement] User '$UserPrincipalName' not found."
+        Write-Verbose "[Get-AzDoUserEntitlement] User not found."
         $result.status = [DSCGetSummaryState]::NotFound
         return $result
     }

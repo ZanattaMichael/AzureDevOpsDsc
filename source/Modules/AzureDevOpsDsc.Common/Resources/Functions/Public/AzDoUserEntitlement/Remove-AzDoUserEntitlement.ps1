@@ -53,7 +53,7 @@ function Remove-AzDoUserEntitlement
         $entitlement = Get-DevOpsUserEntitlement -Organization $OrganizationName -PrincipalName $UserPrincipalName
         if ($null -eq $entitlement)
         {
-            Write-Verbose "[Remove-AzDoUserEntitlement] User '$UserPrincipalName' not found; nothing to remove."
+            Write-Verbose "[Remove-AzDoUserEntitlement] User not found; nothing to remove."
             return
         }
         $userId = $entitlement.id

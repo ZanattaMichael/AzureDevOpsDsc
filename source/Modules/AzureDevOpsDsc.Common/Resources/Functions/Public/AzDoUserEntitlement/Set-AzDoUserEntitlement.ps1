@@ -54,7 +54,7 @@ function Set-AzDoUserEntitlement
         $entitlement = Get-DevOpsUserEntitlement -Organization $OrganizationName -PrincipalName $UserPrincipalName
         if ($null -eq $entitlement)
         {
-            throw "[Set-AzDoUserEntitlement] User '$UserPrincipalName' not found; cannot update."
+            throw "[Set-AzDoUserEntitlement] User not found; cannot update."
         }
         $userId = $entitlement.id
     }

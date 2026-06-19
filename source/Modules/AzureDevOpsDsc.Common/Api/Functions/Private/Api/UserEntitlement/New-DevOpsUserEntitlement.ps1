@@ -57,7 +57,8 @@ function New-DevOpsUserEntitlement
         Body   = $body | ConvertTo-Json -Depth 5
     }
 
-    if (-not $PSCmdlet.ShouldProcess($PrincipalName, 'Add user entitlement'))
+    # Use a non-identifying target so the principal name is never written to -WhatIf / verbose output.
+    if (-not $PSCmdlet.ShouldProcess('user entitlement', 'Add'))
     {
         return
     }
@@ -68,14 +69,14 @@ function New-DevOpsUserEntitlement
     }
     catch
     {
-        throw "[New-DevOpsUserEntitlement] Failed to add user '$PrincipalName' to '$Organization': $_"
+        throw "[New-DevOpsUserEntitlement] Failed to add user to '$Organization': $_"
     }
 
     # The Add API returns 200 with an operationResult that reports per-user success/failure.
     if ($null -ne $response.operationResult -and -not $response.operationResult.isSuccess)
     {
         $errText = ($response.operationResult.errors | ForEach-Object { $_.value }) -join '; '
-        throw "[New-DevOpsUserEntitlement] Failed to add user '$PrincipalName': $errText"
+        throw "[New-DevOpsUserEntitlement] Failed to add user: $errText"
     }
 
     return $response

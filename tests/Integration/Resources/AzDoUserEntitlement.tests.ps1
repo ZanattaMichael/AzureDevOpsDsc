@@ -1,9 +1,14 @@
 # Adding a user entitlement requires a REAL invitable AAD identity and consumes a license, so there is
-# no safe throwaway user to create/destroy in the shared test organization. These tests therefore only
-# run when the AZDODSC_TEST_USER_UPN environment variable is set to a principal name (email/UPN) that is
-# safe to add to and remove from the organization. When it is not set the tests are skipped.
+# no safe throwaway user to create/destroy in the shared test organization. The principal name is also
+# PII, and this is a public repository — so it is NEVER hard-coded here. It is supplied at run time via
+# the AZDODSC_TEST_USER_UPN environment variable (set it as a SECRET / masked pipeline variable in CI so
+# the value is redacted from logs). When it is not set the tests are skipped.
 #
-#   $env:AZDODSC_TEST_USER_UPN = 'testuser@yourtenant.onmicrosoft.com'
+#   # locally:
+#   $env:AZDODSC_TEST_USER_UPN = '<disposable-test-account-upn>'
+#
+# The resource code and these tests are written so the principal name is never written to output (no
+# Write-Host/verbose/exception includes it), so it cannot leak into the test transcript or results XML.
 
 $TEST_USER = $env:AZDODSC_TEST_USER_UPN
 $skipUserEntitlement = [string]::IsNullOrWhiteSpace($TEST_USER)

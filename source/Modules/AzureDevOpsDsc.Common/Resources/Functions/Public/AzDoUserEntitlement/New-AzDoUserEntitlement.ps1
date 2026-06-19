@@ -49,7 +49,7 @@ function New-AzDoUserEntitlement
 
     if ([string]::IsNullOrWhiteSpace($AccountLicenseType))
     {
-        throw "[New-AzDoUserEntitlement] AccountLicenseType is required to add user '$UserPrincipalName'."
+        throw "[New-AzDoUserEntitlement] AccountLicenseType is required to add the user."
     }
 
     $params = @{

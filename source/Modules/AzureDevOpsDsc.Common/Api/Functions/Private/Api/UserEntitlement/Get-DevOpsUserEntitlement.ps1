@@ -51,7 +51,8 @@ function Get-DevOpsUserEntitlement
     }
     catch
     {
-        Write-Verbose "[Get-DevOpsUserEntitlement] Lookup of '$PrincipalName' failed: $_"
+        # Deliberately do not log the principal name (it is PII / may be a real user).
+        Write-Verbose "[Get-DevOpsUserEntitlement] User lookup failed: $_"
         return $null
     }
 
