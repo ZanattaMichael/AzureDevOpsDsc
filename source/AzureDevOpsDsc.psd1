@@ -88,6 +88,9 @@
       'AzDoArtifactFeedView',
       'AzDoProcess',
       'AzDoProcessPermission'
+      'AzDoUserEntitlement',
+      'AzDoServiceHook',
+      'AzDoPipelineSettings'
     )
 
     RequiredAssemblies = @()
