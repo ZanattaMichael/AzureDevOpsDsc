@@ -83,6 +83,11 @@
       'AzDoNotificationSubscription',
       'AzDoRepositorySettings',
       'AzDoCheckConfiguration',
+      'AzDoTeamSettings',
+      'AzDoArtifactFeedSettings',
+      'AzDoArtifactFeedView',
+      'AzDoProcess',
+      'AzDoProcessPermission'
       'AzDoUserEntitlement',
       'AzDoServiceHook',
       'AzDoPipelineSettings'

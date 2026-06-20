@@ -152,7 +152,12 @@ Function ConvertTo-ACLHashtable
             Write-Verbose "[ConvertTo-ACLHashtable] ACEObject $($ACEObject | ConvertTo-Json)."
             Write-Verbose "[ConvertTo-ACLHashtable] Adding ACE to the ACEs Dictionary."
 
-            $ACLObject.acesDictionary.Add($ACE.Identity.value.ACLIdentity.descriptor, $ACEObject)
+            $descriptor = $ACE.Identity.value.ACLIdentity.descriptor
+            if ($null -eq $descriptor) {
+                Write-Warning "[ConvertTo-ACLHashtable] Skipping ACE with null descriptor."
+                continue
+            }
+            $ACLObject.acesDictionary.Add($descriptor, $ACEObject)
         }
 
         # Add the constructed ACL object (ACLObject) to the ACL List

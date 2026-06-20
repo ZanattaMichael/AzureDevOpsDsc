@@ -79,6 +79,15 @@ Function Parse-ACLToken
             }
         }
 
+        'Process' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.ProcessRootPermission { $result.type = 'ProcessRoot'; break }
+                $LocalizedDataAzACLTokenPatten.ProcessPermission     { $result.type = 'Process';     break }
+                default                                              { $result.type = 'ProcessUnknown'     }
+            }
+        }
+
         'Build' {
             switch -regex ($Token.Trim())
             {

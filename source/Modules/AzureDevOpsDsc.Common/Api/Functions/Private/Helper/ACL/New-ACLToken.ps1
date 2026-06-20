@@ -177,6 +177,26 @@ Function New-ACLToken
             break
         }
 
+        # Process permissions — root ($PROCESS) or a specific process ($PROCESS:{parentId}:{processId}).
+        'Process' {
+            if ($TokenName -match $LocalizedDataAzACLTokenPatten.ProcessRootPermission)
+            {
+                $result.type = 'ProcessRoot'
+            }
+            elseif ($TokenName -match $LocalizedDataAzACLTokenPatten.ProcessPermission)
+            {
+                $result.type            = 'Process'
+                $result.ParentProcessId = $matches.ParentProcessId
+                $result.ProcessId       = $matches.ProcessId
+            }
+            else
+            {
+                $result.type = 'ProcessUnknown'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known Process ACL Token Patterns."
+            }
+            break
+        }
+
         # Build / Pipeline permissions — resolve pipeline name to numeric ID for the API token.
         'Build' {
             if ($TokenName -match $LocalizedDataAzResourceTokenPatten.BuildPermission)
