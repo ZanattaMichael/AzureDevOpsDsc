@@ -115,6 +115,7 @@ Each resource links to its example/usage documentation.
 | [AzDoGroupMember](source/Examples/Resources/AzDoGroupMember.md) | Manages membership of users, groups and service principals in a group. |
 | [AzDoTeam](source/Examples/Resources/AzDoTeam.md) | Creates and manages teams within a project. |
 | [AzDoTeamMember](source/Examples/Resources/AzDoTeamMember.md) | Manages membership of a team. |
+| [AzDoUserEntitlement](source/Examples/Resources/AzDoUserEntitlement.md) | Adds/removes organization users and manages their access level (license). |
 
 ### Repositories and policies
 
@@ -155,6 +156,7 @@ Each resource links to its example/usage documentation.
 | [AzDoTaskGroup](source/Examples/Resources/AzDoTaskGroup.md) | Creates and manages task groups. |
 | [AzDoVariableGroup](source/Examples/Resources/AzDoVariableGroup.md) | Creates and manages variable groups (library). |
 | [AzDoServiceConnection](source/Examples/Resources/AzDoServiceConnection.md) | Creates and manages service connections (service endpoints). |
+| [AzDoPipelineSettings](source/Examples/Resources/AzDoPipelineSettings.md) | Manages a project's pipeline general settings (job auth scope, settable variables, etc.). |
 
 ### Boards and work items
 
@@ -173,6 +175,7 @@ Each resource links to its example/usage documentation.
 | [AzDoWiki](source/Examples/Resources/AzDoWiki.md) | Creates and manages project and code wikis. |
 | [AzDoExtension](source/Examples/Resources/AzDoExtension.md) | Installs and uninstalls organization extensions. |
 | [AzDoAuditStream](source/Examples/Resources/AzDoAuditStream.md) | Manages audit log streaming. |
+| [AzDoServiceHook](source/Examples/Resources/AzDoServiceHook.md) | Creates and manages service hook subscriptions (e.g. webhooks). |
 
 ## Documentation
 
