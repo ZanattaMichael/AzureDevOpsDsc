@@ -25,3 +25,4 @@ Temp/*
 TestProject.yml
 TestProject2.yml
 settings.json
+coverage.xml
