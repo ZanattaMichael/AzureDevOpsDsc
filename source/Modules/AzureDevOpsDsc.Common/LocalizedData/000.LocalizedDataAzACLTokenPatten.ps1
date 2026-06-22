@@ -36,6 +36,9 @@ data LocalizedDataAzACLTokenPatten
         IterationPathPermission = '(vstfs:\/{3}Classification\/Node\/)(?<identifiers>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})'
         # Project-level ACL Token Patterns
         ProjectPermission       = '^\$PROJECT:vstfs:\/{3}Classification\/TeamProject\/(?<ProjectId>[A-Za-z0-9-]+)$'
+        # Process ACL Token Patterns — org-wide root ($PROCESS), or $PROCESS:{parentProcessId}:{processId}
+        ProcessRootPermission   = '^\$PROCESS$'
+        ProcessPermission       = '^\$PROCESS:(?<ParentProcessId>[A-Za-z0-9-]+):(?<ProcessId>[A-Za-z0-9-]+)$'
         # Build (Pipeline) ACL Token Patterns  — ProjectId only, or ProjectId/PipelineId
         BuildPermission         = '^(?<ProjectId>[A-Za-z0-9-]+)(\/(?<PipelineId>[0-9]+))?$'
         # Library (VariableGroup) ACL Token Patterns

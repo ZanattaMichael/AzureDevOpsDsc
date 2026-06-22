@@ -12,6 +12,7 @@ LCM/Datum/*
 *.suo
 *.user
 *.coverage
+coverage.xml
 .vs
 .psproj
 .sln

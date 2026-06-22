@@ -68,6 +68,16 @@ Function ConvertTo-FormattedToken {
             $string = '$PROJECT:vstfs:///Classification/TeamProject/{0}' -f $Token.ProjectId
             break
         }
+        # Process permissions — org-wide root
+        {$_.type -eq 'ProcessRoot'} {
+            $string = '$PROCESS'
+            break
+        }
+        # Process permissions — specific process ($PROCESS:{parentId}:{processId})
+        {$_.type -eq 'Process'} {
+            $string = '$PROCESS:{0}:{1}' -f $Token.ParentProcessId, $Token.ProcessId
+            break
+        }
         # Build (Pipeline) permissions
         {$_.type -eq 'Build'} {
             $string = if ($Token.PipelineId) { '{0}/{1}' -f $Token.ProjectId, $Token.PipelineId }
