@@ -33,4 +33,21 @@ Describe 'New-DevOpsArtifactFeed' -Tag "Unit", "ArtifactFeed", "API" {
         { New-DevOpsArtifactFeed -ApiUri 'https://feeds.dev.azure.com/myorg' -FeedName 'TestFeed' } | Should -Throw
     }
 
+    It 'Targets the ORGANIZATION-scoped endpoint when no ProjectName is supplied' {
+        New-DevOpsArtifactFeed -ApiUri 'https://feeds.dev.azure.com/myorg' -FeedName 'OrgFeed'
+        Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -Exactly -ParameterFilter {
+            $Method -eq 'POST' -and
+            $ApiUri -like 'https://feeds.dev.azure.com/myorg/_apis/packaging/feeds*' -and
+            $ApiUri -notlike '*MyProject*'
+        }
+    }
+
+    It 'Targets the PROJECT-scoped endpoint when ProjectName is supplied' {
+        New-DevOpsArtifactFeed -ApiUri 'https://feeds.dev.azure.com/myorg' -ProjectName 'MyProject' -FeedName 'ProjFeed'
+        Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -Exactly -ParameterFilter {
+            $Method -eq 'POST' -and
+            $ApiUri -like 'https://feeds.dev.azure.com/myorg/MyProject/_apis/packaging/feeds*'
+        }
+    }
+
 }

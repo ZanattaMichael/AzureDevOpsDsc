@@ -8,10 +8,11 @@
 class AzDoArtifactFeed : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)]
-    [System.String]$ProjectName
-
-    [DscProperty(Mandatory)]
     [System.String]$FeedName
+
+    # Optional: when supplied the feed is project-scoped; when omitted the feed is organization-scoped.
+    [DscProperty()]
+    [System.String]$ProjectName
 
     [DscProperty()]
     [System.String]$Description
