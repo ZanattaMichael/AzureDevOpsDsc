@@ -101,4 +101,26 @@ Describe "New-AzDoArtifactFeed" -Tag "Unit", "ArtifactFeed" {
             }
         }
     }
+
+    Context "when creating an organization-scoped feed (no ProjectName)" {
+
+        It "creates the feed without requiring ProjectName" {
+            { New-AzDoArtifactFeed -FeedName 'OrgFeed' } | Should -Not -Throw
+            Assert-MockCalled -CommandName New-DevOpsArtifactFeed -Exactly -Times 1
+        }
+
+        It "does not pass a ProjectName through to New-DevOpsArtifactFeed" {
+            New-AzDoArtifactFeed -FeedName 'OrgFeed'
+            Assert-MockCalled -CommandName New-DevOpsArtifactFeed -Exactly -Times 1 -ParameterFilter {
+                [string]::IsNullOrEmpty($ProjectName) -and $FeedName -eq 'OrgFeed'
+            }
+        }
+
+        It "caches the org feed under a project-less key" {
+            New-AzDoArtifactFeed -FeedName 'OrgFeed'
+            Assert-MockCalled -CommandName Add-CacheItem -Exactly -Times 1 -ParameterFilter {
+                $Key -eq '\OrgFeed' -and $Type -eq 'LiveArtifactFeeds'
+            }
+        }
+    }
 }

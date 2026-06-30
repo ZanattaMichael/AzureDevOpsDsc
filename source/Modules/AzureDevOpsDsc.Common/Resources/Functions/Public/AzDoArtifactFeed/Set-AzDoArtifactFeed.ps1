@@ -2,7 +2,7 @@ Function Set-AzDoArtifactFeed
 {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)][string]$ProjectName,
+        [Parameter()][string]$ProjectName,
         [Parameter(Mandatory = $true)][string]$FeedName,
         [Parameter()][string]$Description,
         [Parameter()][bool]$BadgesEnabled = $false,

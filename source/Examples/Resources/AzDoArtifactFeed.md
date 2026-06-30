@@ -5,8 +5,8 @@
 ```PowerShell
 AzDoArtifactFeed [string] #ResourceName
 {
-    ProjectName       = [String]$ProjectName
     FeedName          = [String]$FeedName
+    [ ProjectName     = [String]$ProjectName ]
     [ Description     = [String]$Description ]
     [ BadgesEnabled   = [Boolean]$BadgesEnabled ]
     [ UpstreamEnabled = [Boolean]$UpstreamEnabled ]
@@ -18,8 +18,8 @@ AzDoArtifactFeed [string] #ResourceName
 
 ### Common Properties
 
-- **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
-- **FeedName**: The name of the artifact feed. This is a key property.
+- **FeedName**: The name of the artifact feed. This property is mandatory and is the key property for the resource.
+- **ProjectName**: The name of the Azure DevOps project. **Optional** — when supplied, the feed is **project-scoped**; when omitted, the feed is **organization-scoped**.
 - **Description**: An optional description for the feed.
 - **BadgesEnabled**: Whether to enable badges for the feed. Defaults to `$false`.
 - **UpstreamEnabled**: Whether to enable upstream sources. Defaults to `$true`.
@@ -27,7 +27,7 @@ AzDoArtifactFeed [string] #ResourceName
 
 ## Additional Information
 
-This resource manages Azure Artifacts feeds within a project. Artifact feeds allow teams to share packages (NuGet, npm, Maven, Python, Universal Packages) across the organization.
+This resource manages Azure Artifacts feeds. A feed can be **project-scoped** (set `ProjectName`) or **organization-scoped** (omit `ProjectName`). Artifact feeds allow teams to share packages (NuGet, npm, Maven, Python, Universal Packages).
 
 ## Examples
 
@@ -45,6 +45,25 @@ Configuration ExampleConfig {
             Description     = 'My package feed'
             BadgesEnabled   = $false
             UpstreamEnabled = $true
+        }
+    }
+}
+
+Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
+```
+
+## Example 1b: Organization-scoped feed (omit ProjectName)
+
+``` PowerShell
+Configuration ExampleConfig {
+    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+
+    Node localhost {
+        AzDoArtifactFeed AddOrgFeed {
+            Ensure      = 'Present'
+            FeedName    = 'SharedOrgFeed'
+            Description = 'Organization-wide package feed'
+            # No ProjectName -> the feed is created at the organization scope.
         }
     }
 }
