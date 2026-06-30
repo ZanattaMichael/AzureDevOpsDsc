@@ -97,3 +97,74 @@ Describe "AzDoArtifactFeed Integration Tests" -Tag "Integration", "ArtifactFeed"
         }
     }
 }
+
+Describe "AzDoArtifactFeed Integration Tests - Organization scoped" -Tag "Integration", "ArtifactFeed" {
+
+    BeforeAll {
+
+        # Organization-scoped feed: no ProjectName is supplied. Unique name per run to avoid the
+        # post-deletion name-reservation cooldown.
+        $ORGFEEDNAME = "testorgfeed$(Get-Random -Maximum 99999)"
+
+        $parameters = @{
+            Name       = 'AzDoArtifactFeed'
+            ModuleName = 'AzureDevOpsDsc'
+            property   = @{
+                FeedName        = $ORGFEEDNAME
+                Description     = 'Org-scoped test artifact feed'
+                UpstreamEnabled = $false
+            }
+        }
+    }
+
+    Context "Testing if the organization feed exists" {
+
+        BeforeAll { $parameters.Method = 'Test' }
+
+        It "Should not throw any exceptions (ProjectName not required)" {
+            { Invoke-DscResource @parameters } | Should -Not -Throw
+        }
+
+        It "Should return False (feed does not exist yet)" {
+            $result = Invoke-DscResource @parameters
+            $result.InDesiredState | Should -BeFalse
+        }
+    }
+
+    Context "Creating the organization feed" {
+
+        BeforeAll { $parameters.Method = 'Set' }
+
+        It "Should not throw any exceptions" {
+            { Invoke-DscResource @parameters } | Should -Not -Throw
+        }
+
+        It "Should return True after creation" {
+            Start-Sleep -Seconds 5
+            $parameters.Method = 'Test'
+            $result = Invoke-DscResource @parameters
+            $result.InDesiredState | Should -BeTrue
+        }
+    }
+
+    Context "Removing the organization feed" {
+
+        BeforeAll {
+            $parameters.Method = 'Set'
+            $parameters.property = @{
+                FeedName = $ORGFEEDNAME
+                Ensure   = 'Absent'
+            }
+        }
+
+        It "Should not throw any exceptions" {
+            { Invoke-DscResource @parameters } | Should -Not -Throw
+        }
+
+        It "Should return True (Absent is desired state)" {
+            $parameters.Method = 'Test'
+            $result = Invoke-DscResource @parameters
+            $result.InDesiredState | Should -BeTrue
+        }
+    }
+}
