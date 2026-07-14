@@ -31,9 +31,15 @@ Function Set-DevOpsTeamSettings
     {
         param([string]$Structure, [string]$Path)
         if ([string]::IsNullOrWhiteSpace($Path)) { return $null }
-        # Strip a leading '<Project>\' prefix so the path is relative to the node root.
-        $relative = ($Path -replace '^[^\\/]+[\\/]', '') -replace '\\', '/'
-        $uri = '{0}/{1}/_apis/wit/classificationnodes/{2}/{3}?api-version={4}' -f $org, $ProjectId, $Structure, $relative, $ApiVersion
+        # Strip a leading '<Project>\' prefix so the path is relative to the node root. A path with
+        # no separator IS the project/root name alone - resolve it to the root node (no trailing
+        # segment), not a non-existent child node named after the project.
+        $relative = if ($Path -match '[\\/]') { ($Path -replace '^[^\\/]+[\\/]', '') -replace '\\', '/' } else { '' }
+        $uri = if ($relative) {
+            '{0}/{1}/_apis/wit/classificationnodes/{2}/{3}?api-version={4}' -f $org, $ProjectId, $Structure, $relative, $ApiVersion
+        } else {
+            '{0}/{1}/_apis/wit/classificationnodes/{2}?api-version={3}' -f $org, $ProjectId, $Structure, $ApiVersion
+        }
         try   { return Invoke-AzDevOpsApiRestMethod -Uri $uri -Method Get }
         catch { Throw "[Set-DevOpsTeamSettings] Failed to resolve $Structure path '$Path': $_" }
     }
@@ -64,21 +70,10 @@ Function Set-DevOpsTeamSettings
                 -ContentType 'application/json' -Body ($settingsBody | ConvertTo-Json -Depth 5) | Out-Null
         }
 
-        # Assign the team's iteration backlog (the iterations the team participates in).
-        if ($PSBoundParameters.ContainsKey('IterationPaths') -and $IterationPaths)
-        {
-            foreach ($iterationPath in $IterationPaths)
-            {
-                $node = Resolve-ClassificationNode -Structure 'iterations' -Path $iterationPath
-                if ($node -and $PSCmdlet.ShouldProcess($iterationPath, 'Assign iteration to team'))
-                {
-                    Invoke-AzDevOpsApiRestMethod -Uri ('{0}/iterations?api-version={1}' -f $base, $ApiVersion) -Method Post `
-                        -ContentType 'application/json' -Body (@{ id = $node.identifier } | ConvertTo-Json) | Out-Null
-                }
-            }
-        }
-
         # --- Area paths (team field values) --------------------------------------------
+        # Must run before iteration assignment below - Azure DevOps rejects adding an
+        # iteration to a team's backlog ("TF400499: You have not set your team field")
+        # until the team has an area path (team field) configured.
         if ($PSBoundParameters.ContainsKey('DefaultAreaPath') -or $PSBoundParameters.ContainsKey('AreaPaths'))
         {
             $values = @()
@@ -96,6 +91,20 @@ Function Set-DevOpsTeamSettings
             {
                 Invoke-AzDevOpsApiRestMethod -Uri ('{0}/teamfieldvalues?api-version={1}' -f $base, $ApiVersion) -Method Patch `
                     -ContentType 'application/json' -Body ($fieldBody | ConvertTo-Json -Depth 5) | Out-Null
+            }
+        }
+
+        # Assign the team's iteration backlog (the iterations the team participates in).
+        if ($PSBoundParameters.ContainsKey('IterationPaths') -and $IterationPaths)
+        {
+            foreach ($iterationPath in $IterationPaths)
+            {
+                $node = Resolve-ClassificationNode -Structure 'iterations' -Path $iterationPath
+                if ($node -and $PSCmdlet.ShouldProcess($iterationPath, 'Assign iteration to team'))
+                {
+                    Invoke-AzDevOpsApiRestMethod -Uri ('{0}/iterations?api-version={1}' -f $base, $ApiVersion) -Method Post `
+                        -ContentType 'application/json' -Body (@{ id = $node.identifier } | ConvertTo-Json) | Out-Null
+                }
             }
         }
     }
