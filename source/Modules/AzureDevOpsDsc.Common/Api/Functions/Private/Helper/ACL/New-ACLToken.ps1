@@ -65,13 +65,13 @@ Function New-ACLToken
             {
                 # Derive the Token Type GitProject
                 $result.type = 'GitProject'
-                $result.projectId = (Get-CacheItem -Key $matches.ProjectName.Trim() -Type 'LiveProjects').id
+                $result.projectId = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
             }
             elseif ($TokenName -match $LocalizedDataAzResourceTokenPatten.GitRepository)
             {
                 # Derive the Token Type GitRepository
                 $result.type = 'GitRepository'
-                $result.projectId = (Get-CacheItem -Key $matches.ProjectName.Trim() -Type 'LiveProjects').id
+                $result.projectId = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
                 $result.RepoId = (Get-CacheItem -Key $TokenName -Type 'LiveRepositories').id
             }
             else
@@ -202,7 +202,7 @@ Function New-ACLToken
             if ($TokenName -match $LocalizedDataAzResourceTokenPatten.BuildPermission)
             {
                 $result.type      = 'Build'
-                $result.ProjectId = (Get-CacheItem -Key $matches.ProjectName.Trim() -Type 'LiveProjects').id
+                $result.ProjectId = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
                 if ($matches.PipelineName) {
                     $pipelineCacheKey  = '{0}\{1}' -f $matches.ProjectName.Trim(), $matches.PipelineName.Trim()
                     $pipelineEntry     = Get-CacheItem -Key $pipelineCacheKey -Type 'LivePipelines'
@@ -222,7 +222,7 @@ Function New-ACLToken
             if ($TokenName -match $LocalizedDataAzResourceTokenPatten.LibraryPermission)
             {
                 $result.type      = 'Library'
-                $result.ProjectId = (Get-CacheItem -Key $matches.ProjectName.Trim() -Type 'LiveProjects').id
+                $result.ProjectId = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
                 if ($matches.VariableGroupName) {
                     $vgCacheKey             = '{0}\{1}' -f $matches.ProjectName.Trim(), $matches.VariableGroupName.Trim()
                     $vgEntry                = Get-CacheItem -Key $vgCacheKey -Type 'LiveVariableGroups'
@@ -242,7 +242,7 @@ Function New-ACLToken
             if ($TokenName -match $LocalizedDataAzResourceTokenPatten.ServiceEndpointPermission)
             {
                 $result.type      = 'ServiceEndpoints'
-                $result.ProjectId = (Get-CacheItem -Key $matches.ProjectName.Trim() -Type 'LiveProjects').id
+                $result.ProjectId = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
                 if ($matches.EndpointName) {
                     $scCacheKey        = '{0}\{1}' -f $matches.ProjectName.Trim(), $matches.EndpointName.Trim()
                     $scEntry           = Get-CacheItem -Key $scCacheKey -Type 'LiveServiceConnections'
@@ -278,7 +278,7 @@ Function New-ACLToken
             if ($TokenName -match $LocalizedDataAzResourceTokenPatten.EnvironmentPermission)
             {
                 $result.type      = 'Environment'
-                $result.ProjectId = (Get-CacheItem -Key $matches.ProjectName.Trim() -Type 'LiveProjects').id
+                $result.ProjectId = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
                 if ($matches.EnvironmentName) {
                     # Resolve the environment numeric ID from cache so the token matches
                     # what Parse-ACLToken extracts from the API's Environments/{ProjectId}/{EnvironmentId} format.
