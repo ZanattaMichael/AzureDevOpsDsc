@@ -12,7 +12,7 @@ class AzDoArtifactFeedSettings : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)][System.String]$ProjectName
     [DscProperty(Mandatory)][System.String]$FeedName
-    [DscProperty()][System.String[]]$UpstreamSources
+    [DscProperty()][HashTable[]]$UpstreamSources
     [DscProperty()][System.Boolean]$HideDeletedPackageVersions = $true
 
     # Artifact lifecycle / retention policy. A 'RetentionCountLimit' of 0 means retention is not managed.

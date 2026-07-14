@@ -3,7 +3,7 @@ Function Get-AzDoArtifactFeedSettings
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
     param (
-        [Parameter(Mandatory = $true)][string]$ProjectName,
+        [Parameter()][string]$ProjectName,
         [Parameter(Mandatory = $true)][string]$FeedName,
         [Parameter()][object[]]$UpstreamSources,
         [Parameter()][bool]$HideDeletedPackageVersions = $true,
