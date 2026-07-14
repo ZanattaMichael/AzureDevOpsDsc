@@ -3,7 +3,7 @@ Function Get-AzDoArtifactFeedView
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
     param (
-        [Parameter(Mandatory = $true)][string]$ProjectName,
+        [Parameter()][string]$ProjectName,
         [Parameter(Mandatory = $true)][string]$FeedName,
         [Parameter(Mandatory = $true)][string]$ViewName,
         [Parameter()][string]$ViewType,

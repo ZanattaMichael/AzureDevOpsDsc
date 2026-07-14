@@ -2,7 +2,7 @@ Function New-AzDoArtifactFeedPermission
 {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)][string]$ProjectName,
+        [Parameter()][string]$ProjectName,
         [Parameter(Mandatory = $true)][string]$FeedName,
         [Parameter()][HashTable[]]$Permissions,
         [Parameter()][HashTable]$LookupResult,
