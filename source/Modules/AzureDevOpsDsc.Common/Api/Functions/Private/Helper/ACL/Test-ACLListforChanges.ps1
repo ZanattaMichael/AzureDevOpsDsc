@@ -72,11 +72,13 @@ Function Test-ACLListforChanges
         return $result
     }
 
-    # If the Difference ACL is null, set the status to changed.
+    # If the Difference ACL is null, the desired ACE(s) don't exist live yet - that's drift to
+    # reconcile (Changed), not an absent resource (NotFound would tell the base class Ensure is
+    # Absent, so Set never actually applies the permission and Test keeps reporting the same gap).
     if ($null -eq $DifferenceACLs)
     {
         Write-Verbose "[Test-ACLListforChanges] Difference ACL is null."
-        $result.status = "NotFound"
+        $result.status = "Changed"
         $result.propertiesChanged = $ReferenceACLs
         $result.reason += @{
             Value = $ReferenceACLs
