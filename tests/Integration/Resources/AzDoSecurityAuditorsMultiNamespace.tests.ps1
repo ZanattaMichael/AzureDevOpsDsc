@@ -25,6 +25,44 @@ Describe "Security Auditors multi-namespace chain (reproduction)" -Tag "Integrat
 
     BeforeAll {
 
+        # Defined here (not at file scope) because Pester v5's Run phase executes It/BeforeAll blocks
+        # in a scope chain that top-level Discovery-phase function definitions do not carry into -
+        # a function declared outside Describe/BeforeAll is invisible from inside It blocks.
+        function Write-AceDiagnostic
+        {
+            param(
+                [Parameter(Mandatory)][string]$Label,
+                [Parameter(Mandatory)][hashtable]$LookupResult
+            )
+
+            Write-Host "===== ACE diagnostic: $Label ====="
+            Write-Host ("Status: {0}" -f $LookupResult.status)
+            try { Write-Host ("Reason: {0}" -f ($LookupResult.reason | ConvertTo-Json -Depth 6 -Compress)) } catch { Write-Host "Reason: <could not serialize>" }
+
+            foreach ($side in 'ReferenceACLs', 'DifferenceACLs')
+            {
+                Write-Host "--- $side ---"
+                $acls = @($LookupResult.$side)
+                if ($acls.Count -eq 0) { Write-Host "  (none)"; continue }
+                foreach ($acl in $acls)
+                {
+                    if (-not $acl) { continue }
+                    Write-Host ("  Token: {0}" -f ($acl.token | ConvertTo-Json -Depth 4 -Compress))
+                    Write-Host ("  Inherited: {0}" -f $acl.inherited)
+                    foreach ($ace in @($acl.aces))
+                    {
+                        if (-not $ace) { continue }
+                        $allow = @($ace.Permissions.Allow | ForEach-Object { $_.displayName })
+                        $deny  = @($ace.Permissions.Deny  | ForEach-Object { $_.displayName })
+                        Write-Host ("    Identity='{0}' originId={1} descriptor={2} Allow=[{3}] Deny=[{4}]" -f `
+                            $ace.Identity.Value.principalName, $ace.Identity.Value.originId, `
+                            $ace.Identity.Value.ACLIdentity.descriptor, ($allow -join ','), ($deny -join ','))
+                    }
+                }
+            }
+            Write-Host "===== end diagnostic: $Label ====="
+        }
+
         $PROJECTNAME = "TEST_SECAUD_CHAIN"
         $AUDITORS    = "ChainSecurityAuditors"
         $SECONDARY   = "ChainSecondaryGroup"
@@ -167,6 +205,13 @@ Describe "Security Auditors multi-namespace chain (reproduction)" -Tag "Integrat
             $buildPermParams.Method = 'Test'
             (Invoke-DscResource @buildPermParams).InDesiredState | Should -BeTrue
         }
+
+        It "DIAGNOSTIC: dump the actual vs desired ACE lists (always runs, never fails the suite)" {
+            $buildPermParams.Method = 'Get'
+            $get = Invoke-DscResource @buildPermParams
+            Write-AceDiagnostic -Label 'Step 2 - AzDoSecurityNamespacePermission (Build)' -LookupResult $get.LookupResult
+            $true | Should -BeTrue
+        }
     }
 
     Context "Step 3: AzDoProcessPermission grants the SAME identity a third ACE (own inherited process)" {
@@ -197,6 +242,13 @@ Describe "Security Auditors multi-namespace chain (reproduction)" -Tag "Integrat
             Start-Sleep -Seconds 5
             $processPermParams.Method = 'Test'
             (Invoke-DscResource @processPermParams).InDesiredState | Should -BeTrue
+        }
+
+        It "DIAGNOSTIC: dump the actual vs desired ACE lists (always runs, never fails the suite)" {
+            $processPermParams.Method = 'Get'
+            $get = Invoke-DscResource @processPermParams
+            Write-AceDiagnostic -Label 'Step 3 - AzDoProcessPermission' -LookupResult $get.LookupResult
+            $true | Should -BeTrue
         }
     }
 
