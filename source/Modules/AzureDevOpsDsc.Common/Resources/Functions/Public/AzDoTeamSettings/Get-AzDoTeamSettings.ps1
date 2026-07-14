@@ -65,14 +65,26 @@ Function Get-AzDoTeamSettings
     $live = Get-DevOpsTeamSettings -ApiUri $ApiUri -ProjectId $project.id -TeamId $team.id
     $result.liveCache = $live
 
+    # Azure DevOps returns iteration paths relative to the node root (e.g. '\Sprint 1', or ''
+    # for the project root), while desired values are project-qualified (e.g. 'Aurora\Sprint 1',
+    # or 'Aurora' for the root). Normalize both to the same relative form before comparing.
+    function ConvertTo-ComparableIterationPath([string]$Path)
+    {
+        if ([string]::IsNullOrWhiteSpace($Path)) { return '' }
+        $p = $Path.Trim('\') -replace '/', '\'
+        if ($p -eq $ProjectName) { return '' }
+        if ($p.StartsWith("$ProjectName\")) { return $p.Substring("$ProjectName\".Length) }
+        return $p
+    }
+
     # Compare desired properties against the live configuration to detect drift.
     $propertiesChanged = @()
 
     if ($PSBoundParameters.ContainsKey('BacklogIterationPath') -and $BacklogIterationPath -and
-        $live.BacklogIterationPath -ne $BacklogIterationPath) { $propertiesChanged += 'BacklogIterationPath' }
+        (ConvertTo-ComparableIterationPath $live.BacklogIterationPath) -ne (ConvertTo-ComparableIterationPath $BacklogIterationPath)) { $propertiesChanged += 'BacklogIterationPath' }
 
     if ($PSBoundParameters.ContainsKey('DefaultIterationPath') -and $DefaultIterationPath -and
-        $live.DefaultIterationPath -ne $DefaultIterationPath) { $propertiesChanged += 'DefaultIterationPath' }
+        (ConvertTo-ComparableIterationPath $live.DefaultIterationPath) -ne (ConvertTo-ComparableIterationPath $DefaultIterationPath)) { $propertiesChanged += 'DefaultIterationPath' }
 
     if ($PSBoundParameters.ContainsKey('DefaultAreaPath') -and $DefaultAreaPath -and
         $live.DefaultAreaPath -ne $DefaultAreaPath) { $propertiesChanged += 'DefaultAreaPath' }
