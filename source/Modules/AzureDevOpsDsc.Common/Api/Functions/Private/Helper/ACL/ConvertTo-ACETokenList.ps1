@@ -26,6 +26,19 @@ Function ConvertTo-ACETokenList
         return
     }
 
+    # Some namespaces expose actions that are documented in the namespace's action list but which the
+    # API refuses to let a caller explicitly Allow/Deny - it rejects the ENTIRE batched ACL update with
+    # a 500 "VS403284: ... reserved by the system" error (confirmed live; matches reports against the
+    # official Terraform azuredevops provider for the same bit). Since Set-AzDoPermission's caller never
+    # sees that failure (non-terminating Write-Error), a config that requests one of these bits silently
+    # drops every ACE in the same batch, not just its own. Strip them here rather than let the whole
+    # write fail - they are implicitly available regardless (that is exactly why the platform reserves
+    # them), so omitting an explicit grant does not change effective access.
+    $reservedActionsByNamespace = @{
+        'Process' = @('ReadProcessPermissions')
+    }
+    $reservedActions = $reservedActionsByNamespace[$SecurityNamespace]
+
     # Iterate through each of the ACEs and construct the ACE Object
     Write-Verbose "[ConvertTo-ACETokenList] Iterating through each of the ACE Permissions."
 
@@ -45,6 +58,19 @@ Function ConvertTo-ACETokenList
 
         $AllowPermissions = $ACEPermission.Keys | Where-Object { $ACEPermission."$_" -eq 'Allow' }
         $DenyPermissions  = $ACEPermission.Keys | Where-Object { $ACEPermission."$_" -eq 'Deny'  }
+
+        if ($reservedActions)
+        {
+            foreach ($reserved in $reservedActions)
+            {
+                if ($reserved -in $AllowPermissions -or $reserved -in $DenyPermissions)
+                {
+                    Write-Warning "[ConvertTo-ACETokenList] '$reserved' is reserved by the '$SecurityNamespace' namespace and cannot be explicitly Allow/Deny'd via the API - omitting it (it is implicitly available regardless)."
+                }
+            }
+            $AllowPermissions = @($AllowPermissions | Where-Object { $_ -notin $reservedActions })
+            $DenyPermissions  = @($DenyPermissions  | Where-Object { $_ -notin $reservedActions })
+        }
 
         Write-Verbose "[ConvertTo-ACETokenList] Iterating through the Allow and Deny Permissions and computing actions."
         $AllowBits = $SecurityDescriptor.actions | Where-Object { ($_.displayName -in $AllowPermissions) -or ($_.name -in $AllowPermissions) }
