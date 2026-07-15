@@ -103,7 +103,6 @@ Function Clear-AzDoACE {
     catch
     {
         # If an exception occurs, write an error message to the console with details about the issue.
-        "DELETE EXCEPTION: $($_.Exception.Message)" | Out-File 'C:\Git\clear-ace-debug.log' -Append
         Write-Error "[Clear-AzDoACE] Failed to set ACLs: $($_.Exception.Message)"
     }
 

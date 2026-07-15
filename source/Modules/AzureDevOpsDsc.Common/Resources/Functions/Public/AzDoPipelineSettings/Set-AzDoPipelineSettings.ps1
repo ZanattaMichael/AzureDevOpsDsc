@@ -83,7 +83,20 @@ function Set-AzDoPipelineSettings
         $desired = [string]$PSBoundParameters[$dscName]
         if ($desired -ne '')
         {
-            $settings[$settingMap[$dscName]] = ($desired -eq 'true')
+            $boolValue = ($desired -eq 'true')
+            if ($dscName -eq 'DisableClassicPipelineCreation')
+            {
+                # The API's own 'disableClassicPipelineCreation' field is a read-only aggregate: PATCHing
+                # it returns 200 OK but the live value never changes (a known platform bug - see
+                # https://github.com/microsoft/azure-devops-go-api/issues/133). The two fields it
+                # aggregates ARE independently settable, so drive those instead.
+                $settings['disableClassicBuildPipelineCreation']   = $boolValue
+                $settings['disableClassicReleasePipelineCreation'] = $boolValue
+            }
+            else
+            {
+                $settings[$settingMap[$dscName]] = $boolValue
+            }
         }
     }
 

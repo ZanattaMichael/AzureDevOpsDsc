@@ -14,7 +14,16 @@ Function Get-AzDoExtension
     )
     Write-Verbose "[Get-AzDoExtension] Started."
     $result = @{ Ensure = [Ensure]::Absent; propertiesChanged = @(); status = $null }
-    $ext = Get-CacheItem -Key ('{0}\{1}' -f $PublisherId, $ExtensionId) -Type 'LiveExtensions'
+    $cacheKey = '{0}\{1}' -f $PublisherId, $ExtensionId
+    $ext = Get-CacheItem -Key $cacheKey -Type 'LiveExtensions'
+    if (-not $ext)
+    {
+        Write-Verbose "[Get-AzDoExtension] Extension '$cacheKey' not in cache — falling back to live API lookup."
+        $OrgName    = Get-AzDoOrganizationName
+        $allExtensions = List-DevOpsExtensions -ApiUri "https://extmgmt.dev.azure.com/$OrgName" -IncludeDisabled $true
+        $ext = $allExtensions | Where-Object { $_.publisherId -eq $PublisherId -and $_.extensionId -eq $ExtensionId } | Select-Object -First 1
+        if ($ext) { Add-CacheItem -Key $cacheKey -Value $ext -Type 'LiveExtensions' }
+    }
     if ($ext) { $result.liveCache = $ext; $result.status = [DSCGetSummaryState]::Unchanged }
     else       { $result.status = [DSCGetSummaryState]::NotFound }
     return $result

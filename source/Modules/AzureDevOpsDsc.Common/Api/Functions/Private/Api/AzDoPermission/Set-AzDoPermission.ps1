@@ -60,7 +60,13 @@ Function Set-AzDoPermission
     Write-Verbose "[Set-AzDoPermission] Started."
 
     # Check if the ClearACEs switch is set to true. If so clear the ACEs prior to setting the new ACLs.
-    if ($ClearACEs.IsPresent)
+    # Skip the call entirely when $DifferenceACLs is $null (no live ACL yet - e.g. the very first Set
+    # for a brand-new resource): Clear-AzDoACE's own -DifferenceACLs parameter is Mandatory with no
+    # null allowance, so passing $null through threw here before Clear-AzDoACE's own "nothing to
+    # clear" early-return ever got a chance to run - confirmed live, this crashed every first-time Set
+    # for any resource whose Get function returns a genuine $null (rather than an empty array) when no
+    # ACL exists yet, e.g. AzDoAgentPoolPermission.
+    if ($ClearACEs.IsPresent -and $null -ne $DifferenceACLs)
     {
         Write-Verbose "[Set-AzDoPermission] Clearing ACEs."
         Clear-AzDoACE -OrganizationName $OrganizationName -SecurityNamespaceID $SecurityNamespaceID -DifferenceACLs $DifferenceACLs

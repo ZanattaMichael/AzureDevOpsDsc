@@ -41,8 +41,20 @@ Function Get-AzDoBranchPolicy
         }
         if ($repositoryCache)
         {
+            # Live policies carry Azure DevOps' display name (e.g. 'Comment requirements'), not the
+            # short code used in config (e.g. 'CommentRequirements') - translate before matching.
+            $policyDisplayNameAliases = @{
+                'MinimumReviewerCount' = 'Minimum number of reviewers'
+                'BuildValidation'      = 'Build'
+                'CommentRequirements'  = 'Comment requirements'
+                'WorkItemLinking'      = 'Work item linking'
+                'MergeStrategy'        = 'Require a merge strategy'
+                'StatusCheck'          = 'Status'
+            }
+            $lookupDisplayName = if ($policyDisplayNameAliases.ContainsKey($PolicyType)) { $policyDisplayNameAliases[$PolicyType] } else { $PolicyType }
+
             $allPolicies = List-DevOpsBranchPolicies -ApiUri "https://dev.azure.com/$OrgName" -ProjectName $ProjectName -RepositoryId $repositoryCache.id -RefName ('refs/heads/{0}' -f $BranchName.TrimStart('refs/heads/'))
-            $policy = $allPolicies | Where-Object { $_.type.displayName -eq $PolicyType } | Select-Object -First 1
+            $policy = $allPolicies | Where-Object { $_.type.displayName -eq $lookupDisplayName } | Select-Object -First 1
             if ($policy) { Add-CacheItem -Key $cacheKey -Value $policy -Type 'LiveBranchPolicies' }
         }
     }

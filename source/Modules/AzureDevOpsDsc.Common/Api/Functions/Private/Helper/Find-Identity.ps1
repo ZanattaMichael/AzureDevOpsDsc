@@ -114,6 +114,33 @@ Function Find-Identity
     $resolved = & $resolveUnique $groupIdentity $userIdentity $servicePrincipalIdentity $Name
     if ($null -ne $resolved)
     {
+        # Groups populated by the init-time cache warm-up (AzDoAPI_1_GroupCache) are never enriched
+        # with ACLIdentity - only groups created/refreshed during this run get that, via
+        # Refresh-CacheIdentity. Returning this as-is builds an ACE with a $null descriptor for any
+        # pre-existing group, which the API then silently drops. Lazily backfill it here on first use.
+        if ($resolved.Value -and (-not $resolved.Value.ACLIdentity) -and $resolved.Value.descriptor)
+        {
+            try
+            {
+                $descriptorIdentity = Get-DevOpsDescriptorIdentity -OrganizationName $OrganizationName -SubjectDescriptor $resolved.Value.descriptor
+                if ($descriptorIdentity)
+                {
+                    $resolved.Value | Add-Member -MemberType NoteProperty -Name 'ACLIdentity' -Force -Value ([PSCustomObject]@{
+                        id                  = $descriptorIdentity.id
+                        descriptor          = $descriptorIdentity.descriptor
+                        subjectDescriptor   = $descriptorIdentity.subjectDescriptor
+                        providerDisplayName = $descriptorIdentity.providerDisplayName
+                        isActive            = $descriptorIdentity.isActive
+                        isContainer         = $descriptorIdentity.isContainer
+                    })
+                    Add-CacheItem -Key $resolved.Key -Value $resolved.Value -Type 'LiveGroups' -SuppressWarning
+                }
+            }
+            catch
+            {
+                Write-Verbose "[Find-Identity] Failed to lazily enrich ACLIdentity for '$Name': $_"
+            }
+        }
         Write-Verbose "[Find-Identity] Found identity for '$Name' ($SearchType)."
         return $resolved
     }
@@ -233,18 +260,21 @@ Function Find-Identity
     # this, the live-side ACE Identity is null and the Set->Test comparison never converges).
     if ($identity -and $identity.subjectDescriptor)
     {
-        Write-Verbose "[Find-Identity] '$Name' resolved via API but absent from cache. Matching a live group by subjectDescriptor."
+        # A full List-DevOpsGroups scan can lag behind a group created moments earlier in this same
+        # run (the org-wide groups list endpoint is eventually consistent), which was silently
+        # dropping the ACE for just-created groups. A targeted get-by-descriptor call reads that one
+        # group directly instead of waiting on the list to catch up.
+        Write-Verbose "[Find-Identity] '$Name' resolved via API but absent from cache. Fetching the group directly by its graph descriptor."
         try
         {
-            $liveGroups = List-DevOpsGroups -Organization $OrganizationName
+            $match = Get-DevOpsGroup -Organization $OrganizationName -Descriptor $identity.subjectDescriptor
         }
         catch
         {
-            Write-Error "[Find-Identity] Live groups lookup failed: $_"
-            $liveGroups = @()
+            Write-Error "[Find-Identity] Group lookup by descriptor failed: $_"
+            $match = $null
         }
 
-        $match = $liveGroups | Where-Object { $_.descriptor -eq $identity.subjectDescriptor } | Select-Object -First 1
         if ($match)
         {
             $match | Add-Member -MemberType NoteProperty -Name 'ACLIdentity' -Force -Value ([PSCustomObject]@{

@@ -98,7 +98,16 @@ function Get-AzDoPipelineSettings
     foreach ($dscName in $settingMap.Keys)
     {
         $apiName    = $settingMap[$dscName]
-        $liveString = if ([bool]$live.$apiName) { 'true' } else { 'false' }
+        $liveString = if ($dscName -eq 'DisableClassicPipelineCreation')
+        {
+            # 'disableClassicPipelineCreation' can't actually be set (see Set-AzDoPipelineSettings), so
+            # compare against the two fields that really drive it - true only when both are true.
+            if ([bool]$live.disableClassicBuildPipelineCreation -and [bool]$live.disableClassicReleasePipelineCreation) { 'true' } else { 'false' }
+        }
+        else
+        {
+            if ([bool]$live.$apiName) { 'true' } else { 'false' }
+        }
         $result[$dscName] = $liveString
 
         # Only compare settings the caller is managing (set to 'true'/'false'); '' means unmanaged.
