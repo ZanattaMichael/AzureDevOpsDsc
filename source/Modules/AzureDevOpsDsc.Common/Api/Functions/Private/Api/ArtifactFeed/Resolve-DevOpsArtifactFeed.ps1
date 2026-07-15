@@ -10,7 +10,7 @@ Function Resolve-DevOpsArtifactFeed
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)][string]$ProjectName,
+        [Parameter()][string]$ProjectName,
         [Parameter(Mandatory)][string]$FeedName
     )
 

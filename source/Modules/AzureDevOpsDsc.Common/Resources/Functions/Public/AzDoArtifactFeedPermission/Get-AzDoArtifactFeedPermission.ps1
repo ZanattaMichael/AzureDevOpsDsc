@@ -3,7 +3,7 @@ Function Get-AzDoArtifactFeedPermission
     [CmdletBinding()]
     [OutputType([System.Management.Automation.PSObject[]])]
     param (
-        [Parameter(Mandatory = $true)][string]$ProjectName,
+        [Parameter()][string]$ProjectName,
         [Parameter(Mandatory = $true)][string]$FeedName,
         [Parameter()][HashTable[]]$Permissions,
         [Parameter()][HashTable]$LookupResult,
@@ -81,21 +81,25 @@ Function Get-AzDoArtifactFeedPermission
     $getResult.desiredPermissions = $desiredPerms
     $getResult.propertiesChanged  = $desiredPerms
 
-    # Compare desired vs actual (match by identityDescriptor + role).
+    # Compare desired vs actual. A desired identity can already be satisfied by a default/inherited
+    # entry - e.g. Azure DevOps grants 'Project Collection Valid Users: Reader' on every new feed as
+    # an inherited role - and PATCHing that identity to the SAME role it already has by inheritance is
+    # a platform no-op (the API never promotes it to an explicit entry), which made this permanently
+    # report drift. So match desired roles against the FULL live list (inherited + explicit); only
+    # extra EXPLICIT permissions not in the desired set count as something to remove.
     $changed = $false
-    if ($desiredPerms.Count -ne $explicitPerms.Count)
+    foreach ($desired in $desiredPerms)
     {
-        $changed = $true
-    }
-    else
-    {
-        foreach ($desired in $desiredPerms)
-        {
-            $match = $explicitPerms | Where-Object {
-                $_.identityDescriptor -eq $desired.identityDescriptor -and $_.role -eq $desired.role
-            }
-            if (-not $match) { $changed = $true; break }
+        $match = $livePerms | Where-Object {
+            $_.identityDescriptor -eq $desired.identityDescriptor -and $_.role -eq $desired.role
         }
+        if (-not $match) { $changed = $true; break }
+    }
+    if (-not $changed)
+    {
+        $desiredDescriptors = @($desiredPerms | ForEach-Object { $_.identityDescriptor })
+        $extraExplicit = @($explicitPerms | Where-Object { $_.identityDescriptor -notin $desiredDescriptors })
+        if ($extraExplicit.Count -gt 0) { $changed = $true }
     }
 
     if ($changed)
