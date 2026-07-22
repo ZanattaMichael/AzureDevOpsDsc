@@ -27,9 +27,12 @@ Function Set-AzDoVariableGroupPermission
 
     if ((-not $SecurityNamespace) -or (-not $Project)) { Write-Error "[Set-AzDoVariableGroupPermission] Cache miss."; return }
 
+    # DescriptorACLList intentionally empty: 'merge=false' on the Set-AzDoPermission POST replaces the
+    # ACL per-token, so there is no need to re-submit every other token's (variable group's) ACL - same
+    # bug/fix as Set-AzDoSecurityNamespacePermission.ps1.
     $serializeACLParams = @{
         ReferenceACLs        = $LookupResult.propertiesChanged
-        DescriptorACLList    = Get-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'
+        DescriptorACLList    = @()
         DescriptorMatchToken = ($LocalizedDataAzSerializationPatten.LibraryPermission -f $Project.id)
     }
 
