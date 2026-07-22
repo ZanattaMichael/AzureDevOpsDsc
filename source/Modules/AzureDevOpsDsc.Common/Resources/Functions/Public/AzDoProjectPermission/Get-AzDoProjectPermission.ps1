@@ -115,6 +115,20 @@ Function Get-AzDoProjectPermission
         }
     }
 
+    # The Project namespace's START_BUILD (bit 32) Deny is platform-managed for at least one identity
+    # here, not something our Set ever requests either way: confirmed across three independent live
+    # Set runs that a byte-correct payload (wire-captured), even preceded by an explicit DELETE of the
+    # whole ACE, always results in a live Deny that includes this extra bit a few seconds later -
+    # despite our payload never mentioning it. Identities that explicitly want it (e.g. Release
+    # Managers requests START_BUILD: Allow) are unaffected since Allow/Deny are compared separately.
+    # Strip it from the live side only, so we stop fighting a bit we don't manage - same rationale as
+    # ConvertTo-ACETokenList's reserved-bit stripping for Process/ReadProcessPermissions.
+    foreach ($ace in $DifferenceACLs[0].aces) {
+        if ($ace.Permissions.Deny) {
+            $ace.Permissions.Deny = @($ace.Permissions.Deny | Where-Object { $_.bit -ne 32 })
+        }
+    }
+
     $compareResult = Test-ACLListforChanges -ReferenceACLs $ReferenceACLs -DifferenceACLs $DifferenceACLs
 
     $getResult.propertiesChanged = $compareResult.propertiesChanged

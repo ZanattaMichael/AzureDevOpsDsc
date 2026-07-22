@@ -51,10 +51,16 @@ Function Set-AzDoIterationPermission
 
     $token = $(($LookupResult.identifiers | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_ }) -join ':')
 
-    # More work is needed here.
+    # DescriptorACLList intentionally empty: 'merge=false' on the Set-AzDoPermission POST replaces the
+    # ACL per-token (only tokens present in the request body are touched), so there is no need to
+    # re-submit every other token's ACL. Merging in the whole namespace-wide 'LiveACLList' cache (as
+    # this used to) meant the request body grew with every OTHER iteration node's cached ACL across
+    # every project - confirmed via a live wire-level capture showing sibling sprint-node tokens
+    # bundled into a single Sprint-1-only Set. Same bug/fix as
+    # Set-AzDoSecurityNamespacePermission.ps1.
     $serializeACLParams = @{
         ReferenceACLs = $LookupResult.propertiesChanged
-        DescriptorACLList = Get-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'
+        DescriptorACLList = @()
         DescriptorMatchToken = $token
     }
 

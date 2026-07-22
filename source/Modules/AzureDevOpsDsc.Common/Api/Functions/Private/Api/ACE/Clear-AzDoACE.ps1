@@ -80,9 +80,13 @@ Function Clear-AzDoACE {
             It includes the API endpoint, group identity, member identity, and the API version.
         #>
 
+        # The token must be URL-encoded - it contains '$', ':' and '/' (e.g. Project tokens are
+        # '$PROJECT:vstfs:///Classification/TeamProject/{guid}'). Without encoding, the query string
+        # is malformed and the DELETE matches nothing - it still returns a clean 200 (nothing to
+        # delete is not an error), so the call silently no-ops instead of clearing the ACE.
         Uri = 'https://dev.azure.com/{0}/_apis/accesscontrolentries/{1}?token={2}&descriptors={3}&api-version={4}' -f $OrganizationName,
                                                                                             $SecurityNamespaceID,
-                                                                                            $Token,
+                                                                                            [uri]::EscapeDataString($Token),
                                                                                             $SubDescriptors,
                                                                                             $ApiVersion
         # Set the method to PUT.

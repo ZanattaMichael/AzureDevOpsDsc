@@ -160,34 +160,26 @@ Function Get-AzDoIterationPermission
     # Get the ACL List and format the ACLS
     Write-Verbose "[Get-AzDoIterationPermission] ACL Lookup Params: $($ACLLookupParams | Out-String)"
 
-    # Get the ACLs for the IterationPath
+    # Get the ACLs for the IterationPath. A $null result for a token-scoped query is a valid
+    # "no ACL for this token yet" answer, not a signal to fall back to a full-namespace scan -
+    # falling back reintroduces exactly the wrong-scope bug this token-scoping was added to fix.
     $DevOpsACLs = Get-DevOpsACL @ACLLookupParams
-    if (($null -eq $DevOpsACLs) -and $aclToken) { $DevOpsACLs = Get-DevOpsACL -OrganizationName $OrganizationName -SecurityDescriptorId $namespace.namespaceId }
 
-    # Test if the ACLs were found
-    if ($DevOpsACLs -eq $null)
-    {
-        Write-Error "[Get-AzDoIterationPermission] No ACLs were found within the Security Namespace."
-        $results.status = [DSCGetSummaryState]::Error
-        $results.reason = "No ACLs were found within the Security Namespace."
-        return $results
-    }
-
-    # Convert the ACLs to a formatted ACL
-    $DifferenceACLs = $DevOpsACLs | ConvertTo-FormattedACL -SecurityNamespace $SecurityNamespace -OrganizationName $OrganizationName
+    # Convert the ACLs to a formatted ACL. Wrap in @() so $DifferenceACLs is always an array;
+    # ConvertTo-FormattedACL returns a generic List that PowerShell unrolls to a bare hashtable
+    # when there is only one entry, making [0] indexing in Test-ACLListforChanges return $null.
+    $DifferenceACLs = @($DevOpsACLs | ConvertTo-FormattedACL -SecurityNamespace $SecurityNamespace -OrganizationName $OrganizationName)
 
     # Filter the ACLs for the IterationPath token (always apply to avoid matching unrelated ACLs).
-    if ($DifferenceACLs) {
-        $DifferenceACLs = $DifferenceACLs | Where-Object { $_.Token.Type -eq 'IterationPathPermission' } | Where-Object {
-            if ($_.token.Identifiers.Count -ne $identifierArr.Count) { return $false }
-            foreach ($item in $identifierArr) {
-                if ($_.token.Identifiers.identifier -notcontains $item) {
-                    return $false
-                }
+    $DifferenceACLs = @($DifferenceACLs | Where-Object { $_.Token.Type -eq 'IterationPathPermission' } | Where-Object {
+        if ($_.token.Identifiers.Count -ne $identifierArr.Count) { return $false }
+        foreach ($item in $identifierArr) {
+            if ($_.token.Identifiers.identifier -notcontains $item) {
+                return $false
             }
-            return $true
         }
-    }
+        return $true
+    })
 
     Write-Verbose "[Get-AzDoIterationPermission] ACL List retrieved and formatted."
     Write-Verbose "[Get-AzDoIterationPermission] Difference ACLs Count: $($DifferenceACLs.Count)"
@@ -203,8 +195,8 @@ Function Get-AzDoIterationPermission
         TokenName           = $(($identifierArr | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_ }) -join ':')
     }
 
-    # Convert the Permissions to an ACL Token
-    $ReferenceACLs = ConvertTo-ACL @params
+    # Convert the Permissions to an ACL Token. Wrap in @() for the same single-item-unwrap reason as above.
+    $ReferenceACLs = @(ConvertTo-ACL @params)
 
     # Compare the Reference ACLs to the Difference ACLs
     $compareResult = Test-ACLListforChanges -ReferenceACLs $ReferenceACLs -DifferenceACLs $DifferenceACLs
