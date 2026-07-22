@@ -53,6 +53,18 @@ Describe 'Format-AzDoIterationPath' -Tag "Unit", "Helper" {
             $expected = @('\MyProject\Iteration','\MyProject\Iteration\EndingSlash')
             $result | Should -BeExactly $expected
         }
+
+        It 'should insert the \Iteration\ segment instead of duplicating an existing \ProjectName\ prefix' {
+            $result = Format-AzDoIterationPath -IterationPath '\MyProject\SamplePath' -ProjectName 'MyProject'
+            $expected = @('\MyProject\Iteration','\MyProject\Iteration\SamplePath')
+            $result | Should -BeExactly $expected
+        }
+
+        It 'should resolve a bare project-name path to the top-level Iteration node' {
+            $result = Format-AzDoIterationPath -IterationPath 'MyProject' -ProjectName 'MyProject'
+            $expected = @('\MyProject\Iteration')
+            $result | Should -BeExactly $expected
+        }
     }
 
     Context "in a multi-item array" {
