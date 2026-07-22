@@ -48,10 +48,12 @@ Function Set-AzDoGitPermission
     #
     # Serialize the ACLs
 
-    # More work is needed here.
+    # DescriptorACLList intentionally empty: 'merge=false' on the Set-AzDoPermission POST replaces the
+    # ACL per-token, so there is no need to re-submit every other token's (repo's) ACL - same bug/fix
+    # as Set-AzDoSecurityNamespacePermission.ps1.
     $serializeACLParams = @{
         ReferenceACLs = $LookupResult.propertiesChanged
-        DescriptorACLList = Get-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'
+        DescriptorACLList = @()
         DescriptorMatchToken = ($LocalizedDataAzSerializationPatten.GitRepository -f $Project.id)
     }
 
