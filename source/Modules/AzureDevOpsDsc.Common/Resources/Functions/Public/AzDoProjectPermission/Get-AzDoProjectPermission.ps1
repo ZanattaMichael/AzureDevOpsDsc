@@ -123,8 +123,10 @@ Function Get-AzDoProjectPermission
     # Managers requests START_BUILD: Allow) are unaffected since Allow/Deny are compared separately.
     # Strip it from the live side only, so we stop fighting a bit we don't manage - same rationale as
     # ConvertTo-ACETokenList's reserved-bit stripping for Process/ReadProcessPermissions.
-    foreach ($ace in $DifferenceACLs[0].aces) {
-        if ($ace.Permissions.Deny) {
+    foreach ($ace in $DifferenceACLs[0].aces)
+    {
+        if ($ace.Permissions.Deny)
+        {
             $ace.Permissions.Deny = @($ace.Permissions.Deny | Where-Object { $_.bit -ne 32 })
         }
     }

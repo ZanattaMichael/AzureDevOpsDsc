@@ -48,7 +48,14 @@ Function Set-AzDoProjectPermission
     $targetDescriptors = @($LookupResult.propertiesChanged.aces | ForEach-Object { $_.Identity.value.ACLIdentity.descriptor } | Where-Object { $_ })
     if ($targetDescriptors)
     {
-        $clearInput = @(@{ token = @{ _token = $projectToken }; aces = $LookupResult.propertiesChanged.aces })
+        $clearInput = @(
+            @{
+                token = @{
+                    _token = $projectToken
+                }
+                aces  = $LookupResult.propertiesChanged.aces
+            }
+        )
         Clear-AzDoACE -OrganizationName $OrganizationName -SecurityNamespaceID $SecurityNamespace.namespaceId -DifferenceACLs $clearInput
     }
 
