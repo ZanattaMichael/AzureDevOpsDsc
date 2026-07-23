@@ -22,6 +22,17 @@ Describe 'ServicePrincipalToken Class' {
             token_type   = "Bearer"
         }
 
+        # $validResponse's expires_on is a fixed epoch offset (used for constructor/round-trip
+        # assertions below) - not a real "1 hour from now" expiry, so it always reads as expired.
+        # isExpired() tests need a genuinely future timestamp instead.
+        $notExpiredResponse = [PSCustomObject]@{
+            access_token = "TestAccessToken"
+            expires_on   = ((Get-Date).ToUniversalTime().AddHours(1) - [datetime]::UnixEpoch).TotalSeconds
+            expires_in   = 3600
+            resource     = "499b84ac-1321-427f-aa17-267ca6975798"
+            token_type   = "Bearer"
+        }
+
         $secureSecret = ConvertTo-SecureString "MyClientSecret" -AsPlainText -Force
     }
 
@@ -75,7 +86,7 @@ Describe 'ServicePrincipalToken Class' {
         }
 
         It 'Should return false when the token is not expired' {
-            $token = [ServicePrincipalToken]::new($validResponse, 't', 'c', $secureSecret)
+            $token = [ServicePrincipalToken]::new($notExpiredResponse, 't', 'c', $secureSecret)
             $token.isExpired() | Should -Be $false
         }
     }

@@ -5,7 +5,8 @@ Creates a new Azure DevOps authentication provider.
 .DESCRIPTION
 The New-AzDoAuthenticationProvider function configures authentication for Azure DevOps DSC.
 It supports multiple authentication methods: Personal Access Token, Managed Identity,
-Service Principal with Client Secret, Service Principal with Certificate, and Azure CLI.
+Service Principal with Client Secret, Service Principal with Certificate, Azure CLI, and
+Workload Identity Federation (file-based, GitHub Actions OIDC, or a manually-supplied token).
 
 .PARAMETER OrganizationName
 Specifies the name of the Azure DevOps organization.
@@ -24,6 +25,15 @@ New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "..." -Clie
 
 .EXAMPLE
 New-AzDoAuthenticationProvider -OrganizationName "Contoso" -useAzureCLI
+
+.EXAMPLE
+New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "..." -ClientId "..." -FederatedTokenFile "/var/run/secrets/azure/tokens/azure-identity-token"
+
+.EXAMPLE
+New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "..." -ClientId "..." -useGitHubActionsOIDC
+
+.EXAMPLE
+New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "..." -ClientId "..." -FederatedToken $secureJwt
 #>
 Function New-AzDoAuthenticationProvider
 {
@@ -38,6 +48,9 @@ Function New-AzDoAuthenticationProvider
         [Parameter(Mandatory = $true, ParameterSetName = 'Certificate')]
         [Parameter(Mandatory = $true, ParameterSetName = 'CertificateFile')]
         [Parameter(Mandatory = $true, ParameterSetName = 'AzureCLI')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'WorkloadIdentityFederationFile')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'WorkloadIdentityFederationGitHubActions')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'WorkloadIdentityFederationToken')]
         [Alias('OrgName')]
         [String]
         $OrganizationName,
@@ -64,6 +77,9 @@ Function New-AzDoAuthenticationProvider
         [Parameter(Mandatory = $true, ParameterSetName = 'SecureStringServicePrincipal')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Certificate')]
         [Parameter(Mandatory = $true, ParameterSetName = 'CertificateFile')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'WorkloadIdentityFederationFile')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'WorkloadIdentityFederationGitHubActions')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'WorkloadIdentityFederationToken')]
         [String]
         $TenantId,
 
@@ -71,6 +87,9 @@ Function New-AzDoAuthenticationProvider
         [Parameter(Mandatory = $true, ParameterSetName = 'SecureStringServicePrincipal')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Certificate')]
         [Parameter(Mandatory = $true, ParameterSetName = 'CertificateFile')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'WorkloadIdentityFederationFile')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'WorkloadIdentityFederationGitHubActions')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'WorkloadIdentityFederationToken')]
         [String]
         $ClientId,
 
@@ -101,6 +120,25 @@ Function New-AzDoAuthenticationProvider
         [Switch]
         $useAzureCLI,
 
+        # Workload Identity Federation - file-based federated token (e.g. AKS/Kubernetes workload identity)
+        [Parameter(Mandatory = $true, ParameterSetName = 'WorkloadIdentityFederationFile')]
+        [String]
+        $FederatedTokenFile,
+
+        # Workload Identity Federation - acquire the federated token from GitHub Actions' OIDC endpoint
+        [Parameter(Mandatory = $true, ParameterSetName = 'WorkloadIdentityFederationGitHubActions')]
+        [Switch]
+        $useGitHubActionsOIDC,
+
+        [Parameter(ParameterSetName = 'WorkloadIdentityFederationGitHubActions')]
+        [String]
+        $GitHubActionsAudience = 'api://AzureADTokenExchange',
+
+        # Workload Identity Federation - a federated token already obtained by the caller
+        [Parameter(Mandatory = $true, ParameterSetName = 'WorkloadIdentityFederationToken')]
+        [SecureString]
+        $FederatedToken,
+
         # Don't verify the Token
         [Parameter(ParameterSetName = 'ManagedIdentity')]
         [Parameter(ParameterSetName = 'PersonalAccessToken')]
@@ -109,6 +147,9 @@ Function New-AzDoAuthenticationProvider
         [Parameter(ParameterSetName = 'Certificate')]
         [Parameter(ParameterSetName = 'CertificateFile')]
         [Parameter(ParameterSetName = 'AzureCLI')]
+        [Parameter(ParameterSetName = 'WorkloadIdentityFederationFile')]
+        [Parameter(ParameterSetName = 'WorkloadIdentityFederationGitHubActions')]
+        [Parameter(ParameterSetName = 'WorkloadIdentityFederationToken')]
         [Switch]
         $NoVerify,
 
@@ -121,6 +162,9 @@ Function New-AzDoAuthenticationProvider
         [Parameter(ParameterSetName = 'Certificate')]
         [Parameter(ParameterSetName = 'CertificateFile')]
         [Parameter(ParameterSetName = 'AzureCLI')]
+        [Parameter(ParameterSetName = 'WorkloadIdentityFederationFile')]
+        [Parameter(ParameterSetName = 'WorkloadIdentityFederationGitHubActions')]
+        [Parameter(ParameterSetName = 'WorkloadIdentityFederationToken')]
         [Switch]
         $isResource
 
@@ -244,6 +288,56 @@ Function New-AzDoAuthenticationProvider
         else
         {
             $Global:DSCAZDO_AuthenticationToken = Get-AzCliToken -OrganizationName $OrganizationName -Verify
+        }
+    }
+    # If the parameterset is WorkloadIdentityFederationFile
+    elseif ($PSCmdlet.ParameterSetName -eq 'WorkloadIdentityFederationFile')
+    {
+        Write-Verbose "[New-AzDoAuthenticationProvider] Creating a Workload Identity Federation token (file) with OrganizationName $OrganizationName."
+
+        if ($NoVerify)
+        {
+            $Global:DSCAZDO_AuthenticationToken = Get-AzWorkloadIdentityFederationToken -OrganizationName $OrganizationName -TenantId $TenantId -ClientId $ClientId -FederatedTokenFile $FederatedTokenFile
+        }
+        else
+        {
+            $Global:DSCAZDO_AuthenticationToken = Get-AzWorkloadIdentityFederationToken -OrganizationName $OrganizationName -TenantId $TenantId -ClientId $ClientId -FederatedTokenFile $FederatedTokenFile -Verify
+        }
+    }
+    # If the parameterset is WorkloadIdentityFederationGitHubActions
+    elseif ($PSCmdlet.ParameterSetName -eq 'WorkloadIdentityFederationGitHubActions')
+    {
+        Write-Verbose "[New-AzDoAuthenticationProvider] Creating a Workload Identity Federation token (GitHub Actions OIDC) with OrganizationName $OrganizationName."
+
+        if ($NoVerify)
+        {
+            $Global:DSCAZDO_AuthenticationToken = Get-AzWorkloadIdentityFederationToken -OrganizationName $OrganizationName -TenantId $TenantId -ClientId $ClientId -GitHubActions -GitHubActionsAudience $GitHubActionsAudience
+        }
+        else
+        {
+            $Global:DSCAZDO_AuthenticationToken = Get-AzWorkloadIdentityFederationToken -OrganizationName $OrganizationName -TenantId $TenantId -ClientId $ClientId -GitHubActions -GitHubActionsAudience $GitHubActionsAudience -Verify
+        }
+    }
+    # If the parameterset is WorkloadIdentityFederationToken
+    elseif ($PSCmdlet.ParameterSetName -eq 'WorkloadIdentityFederationToken')
+    {
+        Write-Verbose "[New-AzDoAuthenticationProvider] Creating a Workload Identity Federation token (manually-supplied) with OrganizationName $OrganizationName."
+
+        $BSTR                = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($FederatedToken)
+        $plainFederatedToken = if ($isLinux) {
+            [System.Runtime.InteropServices.Marshal]::PtrToStringUni($BSTR)
+        } else {
+            [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+        }
+        [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($BSTR)
+
+        if ($NoVerify)
+        {
+            $Global:DSCAZDO_AuthenticationToken = Get-AzWorkloadIdentityFederationToken -OrganizationName $OrganizationName -TenantId $TenantId -ClientId $ClientId -FederatedToken $plainFederatedToken
+        }
+        else
+        {
+            $Global:DSCAZDO_AuthenticationToken = Get-AzWorkloadIdentityFederationToken -OrganizationName $OrganizationName -TenantId $TenantId -ClientId $ClientId -FederatedToken $plainFederatedToken -Verify
         }
     }
 

@@ -26,7 +26,8 @@ enum TokenType
 {
     ManagedIdentity
     PersonalAccessToken
-    Certificate       # Service Principal with Certificate
-    ServicePrincipal  # Service Principal with Client Secret
-    AzureCLI          # Azure CLI delegated credentials
+    Certificate                  # Service Principal with Certificate
+    ServicePrincipal             # Service Principal with Client Secret
+    AzureCLI                     # Azure CLI delegated credentials
+    WorkloadIdentityFederation   # Service Principal with a federated OIDC token (no secret/cert)
 }

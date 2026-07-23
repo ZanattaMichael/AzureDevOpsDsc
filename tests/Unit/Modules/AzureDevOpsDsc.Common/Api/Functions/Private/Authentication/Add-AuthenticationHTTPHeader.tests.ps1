@@ -19,6 +19,7 @@ Describe "Add-AuthenticationHTTPHeader" -Tag "Unit", "Authentication" {
         Mock -CommandName Update-AzServicePrincipal
         Mock -CommandName Update-AzServicePrincipalCertificate
         Mock -CommandName Update-AzCliToken
+        Mock -CommandName Update-AzWorkloadIdentityFederation
 
     }
 
@@ -150,6 +151,31 @@ Describe "Add-AuthenticationHTTPHeader" -Tag "Unit", "Authentication" {
 
         $result = Add-AuthenticationHTTPHeader
         $result | Should -Be "Bearer newCliToken"
+    }
+
+    It "Returns header for WorkloadIdentityFederation when token is not expired" {
+        $Global:DSCAZDO_AuthenticationToken = [PSCustomObject]@{ tokenType = 'WorkloadIdentityFederation' }
+        $Global:DSCAZDO_AuthenticationToken | Add-Member -MemberType ScriptMethod -Name Get -Value { return "wifToken" }
+        $Global:DSCAZDO_AuthenticationToken | Add-Member -MemberType ScriptMethod -Name isExpired -Value { return $false }
+
+        $result = Add-AuthenticationHTTPHeader
+        $result | Should -Be "Bearer wifToken"
+    }
+
+    It "Updates and returns header for WorkloadIdentityFederation when token is expired" {
+        $Global:DSCAZDO_AuthenticationToken = [PSCustomObject]@{ tokenType = 'WorkloadIdentityFederation' }
+        $Global:DSCAZDO_AuthenticationToken | Add-Member -MemberType ScriptMethod -Name Get -Value { return "wifToken" }
+        $Global:DSCAZDO_AuthenticationToken | Add-Member -MemberType ScriptMethod -Name isExpired -Value { return $true }
+
+        Mock -CommandName Update-AzWorkloadIdentityFederation -MockWith {
+            $obj = [PSCustomObject]@{ tokenType = 'WorkloadIdentityFederation' }
+            $obj | Add-Member -MemberType ScriptMethod -Name Get -Value { return "newWifToken" }
+            $obj | Add-Member -MemberType ScriptMethod -Name isExpired -Value { return $false }
+            return $obj
+        }
+
+        $result = Add-AuthenticationHTTPHeader
+        $result | Should -Be "Bearer newWifToken"
     }
 
     It "Throws an error for unsupported token type" {

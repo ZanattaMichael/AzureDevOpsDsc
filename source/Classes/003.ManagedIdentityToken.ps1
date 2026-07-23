@@ -89,8 +89,11 @@ class ManagedIdentityToken : AuthenticationToken
 
     [Bool]isExpired()
     {
-        # Remove 10 seconds from the expires_on time to account for clock skew.
-        if ($this.expires_on.AddSeconds(-10) -lt (Get-Date))
+        # Remove 10 seconds from the expires_on time to account for clock skew. expires_on is
+        # stored as a UTC DateTime, so it must be compared against UTC "now" too - comparing
+        # against local (Get-Date) compares raw ticks without adjusting for timezone offset,
+        # which made every token look expired up to (UTC offset) early on non-UTC machines.
+        if ($this.expires_on.AddSeconds(-10) -lt [DateTime]::UtcNow)
         {
             return $true
         }

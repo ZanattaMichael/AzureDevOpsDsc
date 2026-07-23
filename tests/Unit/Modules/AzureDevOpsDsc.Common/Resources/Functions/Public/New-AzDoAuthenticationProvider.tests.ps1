@@ -31,6 +31,7 @@ Describe "New-AzDoAuthenticationProvider" -Tag "Unit", "Public" {
         Mock -CommandName Get-AzServicePrincipalToken -MockWith { return "mockedSPToken" }
         Mock -CommandName Get-AzServicePrincipalCertificateToken -MockWith { return "mockedCertToken" }
         Mock -CommandName Get-AzCliToken -MockWith { return "mockedCLIToken" }
+        Mock -CommandName Get-AzWorkloadIdentityFederationToken -MockWith { return "mockedWIFToken" }
         Mock -CommandName Get-AzDoCacheObjects -MockWith { return @() }
         Mock -CommandName Get-Command
         Mock -CommandName Initialize-CacheObject
@@ -182,6 +183,50 @@ Describe "New-AzDoAuthenticationProvider" -Tag "Unit", "Public" {
 
             $Global:DSCAZDO_AuthenticationToken | Should -Be "mockedCLIToken"
             Assert-MockCalled -CommandName Get-AzCliToken -Exactly 1 -ParameterFilter { $Verify }
+        }
+    }
+
+    Context "Using WorkloadIdentityFederationFile parameter set" {
+
+        It "Should set the global authentication token without verification" {
+            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "tenant" -ClientId "client" -FederatedTokenFile "/token" -NoVerify
+
+            $Global:DSCAZDO_AuthenticationToken | Should -Be "mockedWIFToken"
+            Assert-MockCalled -CommandName Get-AzWorkloadIdentityFederationToken -Exactly 1 -ParameterFilter { $FederatedTokenFile -eq "/token" }
+        }
+
+        It "Should set the global authentication token with verification" {
+            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "tenant" -ClientId "client" -FederatedTokenFile "/token"
+
+            $Global:DSCAZDO_AuthenticationToken | Should -Be "mockedWIFToken"
+            Assert-MockCalled -CommandName Get-AzWorkloadIdentityFederationToken -Exactly 1 -ParameterFilter { $Verify }
+        }
+    }
+
+    Context "Using WorkloadIdentityFederationGitHubActions parameter set" {
+
+        It "Should set the global authentication token without verification" {
+            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "tenant" -ClientId "client" -useGitHubActionsOIDC -NoVerify
+
+            $Global:DSCAZDO_AuthenticationToken | Should -Be "mockedWIFToken"
+            Assert-MockCalled -CommandName Get-AzWorkloadIdentityFederationToken -Exactly 1 -ParameterFilter { $GitHubActions.IsPresent }
+        }
+
+        It "Should pass a custom GitHubActionsAudience through" {
+            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "tenant" -ClientId "client" -useGitHubActionsOIDC -GitHubActionsAudience "api://Custom" -NoVerify
+
+            Assert-MockCalled -CommandName Get-AzWorkloadIdentityFederationToken -Exactly 1 -ParameterFilter { $GitHubActionsAudience -eq "api://Custom" }
+        }
+    }
+
+    Context "Using WorkloadIdentityFederationToken parameter set" {
+
+        It "Should set the global authentication token, decrypting the SecureString token" {
+            $secureToken = ConvertTo-SecureString "caller-supplied-jwt" -AsPlainText -Force
+            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "tenant" -ClientId "client" -FederatedToken $secureToken -NoVerify
+
+            $Global:DSCAZDO_AuthenticationToken | Should -Be "mockedWIFToken"
+            Assert-MockCalled -CommandName Get-AzWorkloadIdentityFederationToken -Exactly 1 -ParameterFilter { $FederatedToken -eq "caller-supplied-jwt" }
         }
     }
 

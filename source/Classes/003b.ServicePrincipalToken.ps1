@@ -58,8 +58,11 @@ class ServicePrincipalToken : AuthenticationToken
 
     [Bool] isExpired()
     {
-        # 10-second clock skew buffer, same as ManagedIdentityToken
-        return ($this.expires_on.AddSeconds(-10) -lt (Get-Date))
+        # 10-second clock skew buffer, same as ManagedIdentityToken. expires_on is UTC, so it
+        # must be compared against UTC "now" - comparing against local (Get-Date) compares raw
+        # ticks without adjusting for timezone offset, making tokens look expired early on
+        # non-UTC machines.
+        return ($this.expires_on.AddSeconds(-10) -lt [DateTime]::UtcNow)
     }
 
     # Only callable from Update-AzServicePrincipal — enforced by call stack check

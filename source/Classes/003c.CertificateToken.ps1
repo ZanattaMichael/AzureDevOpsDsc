@@ -87,7 +87,10 @@ class CertificateToken : AuthenticationToken
 
     [Bool] isExpired()
     {
-        return ($this.expires_on.AddSeconds(-10) -lt (Get-Date))
+        # expires_on is UTC, so it must be compared against UTC "now" - comparing against local
+        # (Get-Date) compares raw ticks without adjusting for timezone offset, making tokens
+        # look expired early on non-UTC machines.
+        return ($this.expires_on.AddSeconds(-10) -lt [DateTime]::UtcNow)
     }
 
     [String] Get()

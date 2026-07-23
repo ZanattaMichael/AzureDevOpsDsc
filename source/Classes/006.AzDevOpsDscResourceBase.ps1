@@ -111,6 +111,65 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
                 Write-Verbose "[AzDevOpsDscResourceBase] Token type is Azure CLI."
                 New-AzDoAuthenticationProvider -OrganizationName $organizationName -useAzureCLI -isResource -NoVerify
             }
+            # If the Token is a Workload Identity Federation Token
+            { $_ -eq 'WorkloadIdentityFederation' } {
+                Write-Verbose "[AzDevOpsDscResourceBase] Token type is Workload Identity Federation (source: $($tokenObject.federatedTokenSource))."
+
+                switch ($tokenObject.federatedTokenSource)
+                {
+                    'File' {
+                        New-AzDoAuthenticationProvider `
+                            -OrganizationName $organizationName `
+                            -TenantId $tokenObject.tenantId `
+                            -ClientId $tokenObject.clientId `
+                            -FederatedTokenFile $tokenObject.federatedTokenFile `
+                            -isResource -NoVerify
+                    }
+                    'GitHubActions' {
+                        New-AzDoAuthenticationProvider `
+                            -OrganizationName $organizationName `
+                            -TenantId $tokenObject.tenantId `
+                            -ClientId $tokenObject.clientId `
+                            -useGitHubActionsOIDC `
+                            -isResource -NoVerify
+                    }
+                    default {
+                        # 'Manual' (or unknown) sources cannot be re-acquired without caller
+                        # involvement - reconstruct the previously-acquired token as-is instead of
+                        # re-authenticating. If it has since expired, Add-AuthenticationHTTPHeader's
+                        # later refresh attempt will throw a clear, actionable error.
+                        Write-Verbose "[AzDevOpsDscResourceBase] Federated token source '$($tokenObject.federatedTokenSource)' cannot be refreshed automatically; restoring the existing token as-is."
+
+                        $access_token = $tokenObject.access_token
+                        if ($null -eq $access_token)
+                        {
+                            Throw "[AzDevOpsDscResourceBase] The Token information does not exist in the Cache Directory. Please ensure that the Token information exists."
+                        }
+
+                        $epochStart    = [datetime]::new(1970, 1, 1, 0, 0, 0, [DateTimeKind]::Utc)
+                        $expiresOnUnix = [long]($tokenObject.expires_on.ToUniversalTime() - $epochStart).TotalSeconds
+                        $bstr          = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($access_token)
+                        $plainToken    = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+                        [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+
+                        $tokenData = [PSCustomObject]@{
+                            access_token = $plainToken
+                            expires_on   = $expiresOnUnix
+                            expires_in   = [int]$tokenObject.expires_in
+                            resource     = [string]$tokenObject.resource
+                            token_type   = [string]$tokenObject.token_type
+                        }
+
+                        $Global:DSCAZDO_AuthenticationToken = New-WorkloadIdentityFederationToken `
+                            -TokenObj $tokenData `
+                            -TenantId $tokenObject.tenantId `
+                            -ClientId $tokenObject.clientId `
+                            -FederatedTokenSource $tokenObject.federatedTokenSource `
+                            -FederatedTokenFile $tokenObject.federatedTokenFile
+                        $Global:DSCAZDO_OrganizationName = $organizationName
+                    }
+                }
+            }
             # Default
             default {
                 Write-Verbose "[AzDevOpsDscResourceBase] Unknown token type."

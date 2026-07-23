@@ -144,6 +144,18 @@ Function Add-AuthenticationHTTPHeader
             $headerValue = 'Bearer {0}' -f $Global:DSCAZDO_AuthenticationToken.Get()
             break
         }
+        {$_ -eq 'WorkloadIdentityFederation'} {
+            Write-Verbose "[Add-AuthenticationHTTPHeader] Adding Workload Identity Federation Token to the HTTP Headers."
+
+            if ($Global:DSCAZDO_AuthenticationToken.isExpired())
+            {
+                Write-Verbose "[Add-AuthenticationHTTPHeader] Workload Identity Federation Token has expired. Obtaining a new token."
+                $Global:DSCAZDO_AuthenticationToken = Update-AzWorkloadIdentityFederation
+            }
+
+            $headerValue = 'Bearer {0}' -f $Global:DSCAZDO_AuthenticationToken.Get()
+            break
+        }
         default {
             throw "[Add-AuthenticationHTTPHeader] Error. The authentication token type is not supported."
         }
