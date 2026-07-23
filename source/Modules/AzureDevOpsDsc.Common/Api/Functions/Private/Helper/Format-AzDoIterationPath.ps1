@@ -20,9 +20,12 @@ Function Format-AzDoIterationPath {
             # without the \Iteration\ segment. Strip that prefix first so it isn't duplicated -
             # blindly prepending "$ProjectName\Iteration\" here previously produced malformed
             # paths like "Project\Iteration\Project\Sprint 1".
-            if ($Path -eq $ProjectName) {
+            if ($Path -eq $ProjectName)
+            {
                 $Path = ''
-            } elseif ($Path.StartsWith("$ProjectName\")) {
+            }
+            elseif ($Path.StartsWith("$ProjectName\"))
+            {
                 $Path = $Path.Substring("$ProjectName\".Length)
             }
             $Path = if ($Path) { "$ProjectName\Iteration\$Path" } else { "$ProjectName\Iteration" }
