@@ -1,0 +1,66 @@
+name: Unit Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  unit-tests:
+    name: Run Unit Tests
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Pester
+        shell: pwsh
+        run: |
+          Install-Module -Name Pester -RequiredVersion 5.7.1 -Force -SkipPublisherCheck -Scope CurrentUser
+
+      - name: Run Classes unit tests
+        shell: pwsh
+        run: |
+          Import-Module -Name Pester -RequiredVersion 5.7.1 -Force
+          ./azuredevopsdsc.tests.ps1 2>&1 | Tee-Object -FilePath classes-tests.log
+          $summary = Select-String -Path classes-tests.log -Pattern 'Tests Passed: (\d+),.*?Failed: (\d+),.*?Skipped: (\d+)' | Select-Object -Last 1
+          if (-not $summary) {
+              Write-Error "Could not find a test result summary in the output."
+              exit 1
+          }
+          $failed = [int]$summary.Matches[0].Groups[2].Value
+          Write-Host "Classes suite -> Passed: $($summary.Matches[0].Groups[1].Value), Failed: $failed, Skipped: $($summary.Matches[0].Groups[3].Value)"
+          if ($failed -gt 0) {
+              Write-Error "$failed unit test(s) failed in the Classes suite."
+              exit 1
+          }
+
+      - name: Run Common module unit tests
+        shell: pwsh
+        run: |
+          Import-Module -Name Pester -RequiredVersion 5.7.1 -Force
+          ./azuredevopsdsc.common.tests.ps1 2>&1 | Tee-Object -FilePath common-tests.log
+          $summary = Select-String -Path common-tests.log -Pattern 'Tests Passed: (\d+),.*?Failed: (\d+),.*?Skipped: (\d+)' | Select-Object -Last 1
+          if (-not $summary) {
+              Write-Error "Could not find a test result summary in the output."
+              exit 1
+          }
+          $failed = [int]$summary.Matches[0].Groups[2].Value
+          Write-Host "Common suite -> Passed: $($summary.Matches[0].Groups[1].Value), Failed: $failed, Skipped: $($summary.Matches[0].Groups[3].Value)"
+          if ($failed -gt 0) {
+              Write-Error "$failed unit test(s) failed in the Common suite."
+              exit 1
+          }
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-logs
+          path: |
+            classes-tests.log
+            common-tests.log
+          if-no-files-found: ignore

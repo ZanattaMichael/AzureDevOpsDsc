@@ -28,4 +28,6 @@ Function Update-AzManagedIdentity
 
     # Refresh the Token.
     $Global:DSCAZDO_AuthenticationToken = Get-AzManagedIdentityToken -OrganizationName $Global:DSCAZDO_OrganizationName
+
+    return $Global:DSCAZDO_AuthenticationToken
 }
