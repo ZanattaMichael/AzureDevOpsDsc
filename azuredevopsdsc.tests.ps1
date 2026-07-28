@@ -10,8 +10,6 @@ Remove-Variable -Name RepositoryRoot -Scope Global -ErrorAction SilentlyContinue
 
 # Set the $Global:RepositoryRoot and $Global:TestPaths variables
 $Global:RepositoryRoot = $PSScriptRoot
-$ClassesDirectory = "$Global:RepositoryRoot\source\Classes"
-$EnumsDirectory = "$Global:RepositoryRoot\source\Enum"
 $PublicDirectory = "$Global:RepositoryRoot\source\Modules\AzureDevOpsDsc.Common\Resources\Functions\Public"
 $Global:ClassesLoaded = $true
 
@@ -21,29 +19,9 @@ Import-Module -Name (Join-Path -Path $Global:RepositoryRoot -ChildPath 'tests\Un
 
 
 #
-# Load all the Enums
+# Load all the Enums and Classes
 
-Get-ChildItem -LiteralPath $EnumsDirectory -File | ForEach-Object {
-    Write-Verbose "Dot Sourcing $($_.FullName)"
-    . $_.FullName
-}
-
-#
-# Load all the Classes
-
-Get-ChildItem -LiteralPath $ClassesDirectory -File | ForEach-Object {
-
-    Write-Verbose "Dot Sourcing $($_.FullName)"
-    # Read the file and remove [DscResource()] attribute
-    $file = Get-Command $_.FullName
-    # Remove [DscResource()] attribute
-    $content = $file.ScriptContents -replace '\[DscResource\(\)\]', ''
-    # Convert the string array into ScriptBlock
-    $scriptBlock = [ScriptBlock]::Create($content)
-    # Dot source the script block
-    . $scriptBlock
-
-}
+. "$Global:RepositoryRoot\tests\Unit\Modules\TestHelpers\Import-ClassesAndEnums.ps1" -RepositoryRoot $Global:RepositoryRoot
 
 # Load all the Helper Functions from the AzureDevOpsDsc.Common Module into Memory
 Get-ChildItem -LiteralPath "$($Global:RepositoryRoot)\source\Modules\AzureDevOpsDsc.Common\Api\Functions\Private\Helper" -File -Recurse -Filter *.ps1 | ForEach-Object {
