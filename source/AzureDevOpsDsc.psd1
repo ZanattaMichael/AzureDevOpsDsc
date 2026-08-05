@@ -32,7 +32,7 @@
     #CmdletsToExport      = @()
 
     # Variables to export from this module
-    VariablesToExport  = @()
+    VariablesToExport    = @()
 
     # Aliases to export from this module
     AliasesToExport      = @()
