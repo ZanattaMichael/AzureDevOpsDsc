@@ -17,9 +17,9 @@ Describe 'AzDoOrganizationGroup' -Tag "Unit", "Resources" {
     BeforeAll {
         $ENV:AZDODSC_CACHE_DIRECTORY = 'mocked_cache_directory'
 
-        Mock -CommandName Import-Module
-        Mock -CommandName Test-Path -MockWith { $true }
-        Mock -CommandName Import-Clixml -MockWith {
+        Mock -CommandName Import-Module -ModuleName AzureDevOpsDsc
+        Mock -CommandName Test-Path -ModuleName AzureDevOpsDsc -MockWith { $true }
+        Mock -CommandName Import-Clixml -ModuleName AzureDevOpsDsc -MockWith {
             return @{
                 OrganizationName = 'mock-org'
                 Token = @{
@@ -29,11 +29,11 @@ Describe 'AzDoOrganizationGroup' -Tag "Unit", "Resources" {
 
             }
         }
-        Mock -CommandName New-AzDoAuthenticationProvider
-        Mock -CommandName Get-AzDoCacheObjects -MockWith {
+        Mock -CommandName New-AzDoAuthenticationProvider -ModuleName AzureDevOpsDsc
+        Mock -CommandName Get-AzDoCacheObjects -ModuleName AzureDevOpsDsc -MockWith {
             return @('mock-cache-type')
         }
-        Mock -CommandName Initialize-CacheObject
+        Mock -CommandName Initialize-CacheObject -ModuleName AzureDevOpsDsc
 
     }
     AfterAll {

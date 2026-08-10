@@ -106,7 +106,7 @@ class CertificateToken : AuthenticationToken
 .SYNOPSIS
     Creates a new CertificateToken using a Windows certificate store thumbprint.
 #>
-Function global:New-CertificateToken (
+Function New-CertificateToken (
     [PSCustomObject]$TokenObj,
     [String]$TenantId,
     [String]$ClientId,
@@ -121,7 +121,7 @@ Function global:New-CertificateToken (
 .SYNOPSIS
     Creates a new CertificateToken using a PFX certificate file.
 #>
-Function global:New-CertificateTokenFromFile (
+Function New-CertificateTokenFromFile (
     [PSCustomObject]$TokenObj,
     [String]$TenantId,
     [String]$ClientId,

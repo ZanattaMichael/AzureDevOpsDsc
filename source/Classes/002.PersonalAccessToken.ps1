@@ -75,7 +75,7 @@ Creates a new PersonalAccessToken object using a secure string token.
 If neither a plain text personal access token nor a secure string personal access token is provided, an error is thrown.
 #>
 
-Function global:New-PersonalAccessToken ([String]$PersonalAccessToken, [SecureString]$SecureStringPersonalAccessToken)
+Function New-PersonalAccessToken ([String]$PersonalAccessToken, [SecureString]$SecureStringPersonalAccessToken)
 {
 
     # Verbose output

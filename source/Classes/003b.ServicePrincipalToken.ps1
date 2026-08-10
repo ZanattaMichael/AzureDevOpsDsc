@@ -100,7 +100,7 @@ class ServicePrincipalToken : AuthenticationToken
 .PARAMETER ClientSecret
     Client secret as a SecureString, stored for token refresh.
 #>
-Function global:New-ServicePrincipalToken (
+Function New-ServicePrincipalToken (
     [PSCustomObject]$TokenObj,
     [String]$TenantId,
     [String]$ClientId,
