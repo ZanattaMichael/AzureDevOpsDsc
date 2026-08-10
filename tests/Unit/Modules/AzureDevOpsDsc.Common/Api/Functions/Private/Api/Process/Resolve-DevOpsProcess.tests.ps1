@@ -11,6 +11,8 @@ Describe 'Resolve-DevOpsProcess' -Tag "Unit", "Process", "API" {
         $files = Get-FunctionItem (Find-MockedFunctions -TestFilePath $currentFile)
         ForEach ($file in $files) { . $file.FullName }
 
+        . (Get-ClassFilePath '000.CacheItem')
+
         Mock -CommandName Add-CacheItem
     }
 

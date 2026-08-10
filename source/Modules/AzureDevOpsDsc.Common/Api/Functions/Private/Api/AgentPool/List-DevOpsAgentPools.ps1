@@ -13,7 +13,7 @@ Function List-DevOpsAgentPools
     {
         $defaultPools    = (Invoke-AzDevOpsApiRestMethod -Uri ('{0}?api-version={1}' -f $baseUri, $ApiVersion) -Method 'GET').value
         $deploymentPools = (Invoke-AzDevOpsApiRestMethod -Uri ('{0}?poolType=deployment&api-version={1}' -f $baseUri, $ApiVersion) -Method 'GET').value
-        return @($defaultPools) + @($deploymentPools)
+        return @($defaultPools) + @($deploymentPools) | Where-Object { $null -ne $_ }
     }
     catch { Throw "[List-DevOpsAgentPools] Failed to list agent pools: $_" }
 }

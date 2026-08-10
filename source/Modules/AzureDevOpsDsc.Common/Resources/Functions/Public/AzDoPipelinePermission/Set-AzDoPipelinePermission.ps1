@@ -19,7 +19,7 @@ Function Set-AzDoPipelinePermission
 
     if ((-not $SecurityNamespace) -or (-not $Project))
     {
-        Write-Error "[Set-AzDoPipelinePermission] Security namespace or project not found."
+        Write-Error "[Set-AzDoPipelinePermission] Security namespace or project not found." -ErrorAction Continue
         return
     }
 

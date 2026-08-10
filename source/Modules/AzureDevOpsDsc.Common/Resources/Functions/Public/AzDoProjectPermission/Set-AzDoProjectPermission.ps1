@@ -26,7 +26,7 @@ Function Set-AzDoProjectPermission
 
     if ((-not $SecurityNamespace) -or (-not $Project))
     {
-        Write-Error "[Set-AzDoProjectPermission] Security namespace or project not found."
+        Write-Error "[Set-AzDoProjectPermission] Security namespace or project not found." -ErrorAction Continue
         return
     }
 

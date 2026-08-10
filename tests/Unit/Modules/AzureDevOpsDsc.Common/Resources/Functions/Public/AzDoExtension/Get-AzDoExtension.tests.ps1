@@ -47,6 +47,7 @@ Describe "Get-AzDoExtension" -Tag "Unit", "Extension" {
     Context "when extension does not exist in cache" {
         BeforeEach {
             Mock -CommandName Get-CacheItem -MockWith { return $null }
+            Mock -CommandName List-DevOpsExtensions -MockWith { return @() }
         }
 
         It "returns status NotFound" {

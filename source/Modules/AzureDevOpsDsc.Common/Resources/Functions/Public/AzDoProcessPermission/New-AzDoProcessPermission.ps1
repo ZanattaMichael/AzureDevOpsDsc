@@ -55,14 +55,14 @@ function New-AzDoProcessPermission
 
     if (-not $SecurityNamespace)
     {
-        Write-Error "[New-AzDoProcessPermission] Security namespace 'Process' not found."
+        Write-Error "[New-AzDoProcessPermission] Security namespace 'Process' not found." -ErrorAction Continue
         return
     }
 
     $processToken = Get-DevOpsProcessAclToken -ProcessName $ProcessName -OrganizationName $OrganizationName
     if (-not $processToken)
     {
-        Write-Error "[New-AzDoProcessPermission] Could not resolve a Process ACL token for '$ProcessName'."
+        Write-Error "[New-AzDoProcessPermission] Could not resolve a Process ACL token for '$ProcessName'." -ErrorAction Continue
         return
     }
 

@@ -52,6 +52,7 @@ Describe "Get-AzDoAgentQueue" -Tag "Unit", "AgentQueue" {
     Context "when agent queue does not exist in cache" {
         BeforeEach {
             Mock -CommandName Get-CacheItem -MockWith { return $null }
+            Mock -CommandName List-DevOpsAgentQueues -MockWith { return @() }
         }
 
         It "returns status NotFound" {

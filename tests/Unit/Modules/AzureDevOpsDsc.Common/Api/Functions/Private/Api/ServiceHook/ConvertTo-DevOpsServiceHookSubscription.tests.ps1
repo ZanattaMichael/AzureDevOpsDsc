@@ -11,6 +11,9 @@ Describe 'ConvertTo-DevOpsServiceHookSubscription' -Tag "Unit", "ServiceHook", "
 
         # Get-CacheItem's signature references the [CacheItem] class; load it so the mock can bind.
         . (Get-ClassFilePath '000.CacheItem')
+        # Get-CacheItem's -Type parameter has a [ValidateScript] referencing Get-AzDoCacheObjects;
+        # load it too so Mock can copy that parameter block without failing to resolve the command.
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
     }
 
     It 'builds a subscription body from the supplied inputs' {
