@@ -40,7 +40,14 @@ jobs:
           # across Pester's per-block session-state boundaries intermittently produced
           # "Could not find type [X]" on cold runners. `using module` resolves at parse time,
           # before any script code runs, so PSModulePath must already be correct here.
-          $env:PSModulePath = "$PWD\output\RequiredModules;$PWD\output\builtModule;$env:PSModulePath"
+          #
+          # Some DSC resource classes' Construct() also explicitly re-imports the
+          # AzureDevOpsDsc.Common nested module by bare name (Import-Module AzureDevOpsDsc.Common),
+          # which only resolves via PSModulePath - it isn't found via output\builtModule itself,
+          # since it lives one level down at <builtModule>\AzureDevOpsDsc\<version>\Modules. That
+          # subfolder path is resolved dynamically here to avoid hardcoding the module version.
+          $builtModulesDir = (Get-ChildItem -Path "$PWD\output\builtModule\AzureDevOpsDsc\*\Modules" -Directory -ErrorAction Stop | Select-Object -First 1).FullName
+          $env:PSModulePath = "$PWD\output\RequiredModules;$PWD\output\builtModule;$builtModulesDir;$env:PSModulePath"
           Import-Module -Name Pester -RequiredVersion 5.7.1 -Force
           # *>&1 (not 2>&1) is required: Pester's colored summary/pass-fail lines go through
           # Write-Host, which writes to the Information stream (6), not Error (2) - 2>&1 alone

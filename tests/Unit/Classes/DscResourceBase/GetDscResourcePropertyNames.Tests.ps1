@@ -1,3 +1,5 @@
+using module AzureDevOpsDsc
+
 Describe "[DscResourceBase]::GetDscResourcePropertyNames() Tests" -Tag "Unit", "DscResourceBase" {
 
 
