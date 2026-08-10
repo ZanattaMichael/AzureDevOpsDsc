@@ -97,7 +97,7 @@ Describe 'AzDoAreaPermission Class' -Tag "Unit", "Resources" {
             $resource.isInherited = $false
 
             $result = $resource.Get()
-            $result | Should -BeOfType 'AzDoAreaPermission'
+            ($result -is [AzDoAreaPermission]) | Should -BeTrue
         }
 
         It 'Should return ProjectName from Get-AzDoAreaPermission' {

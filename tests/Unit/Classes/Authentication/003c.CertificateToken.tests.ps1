@@ -122,7 +122,7 @@ Describe 'New-CertificateToken Function' {
 
     It 'Should create a CertificateToken with thumbprint' {
         $result = New-CertificateToken -TokenObj $validResponse -TenantId 't' -ClientId 'c' -Thumbprint 'THUMB123'
-        $result | Should -BeOfType [CertificateToken]
+        ($result -is [CertificateToken]) | Should -BeTrue
         $result.certificateThumbprint | Should -Be 'THUMB123'
     }
 }
@@ -143,7 +143,7 @@ Describe 'New-CertificateTokenFromFile Function' {
 
     It 'Should create a CertificateToken from file path' {
         $result = New-CertificateTokenFromFile -TokenObj $validResponse -TenantId 't' -ClientId 'c' -CertPath '/cert.pfx' -CertPassword $securePwd
-        $result | Should -BeOfType [CertificateToken]
+        ($result -is [CertificateToken]) | Should -BeTrue
         $result.certificatePath | Should -Be '/cert.pfx'
     }
 }

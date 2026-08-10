@@ -99,7 +99,7 @@ Describe 'AzDoProjectServices Class' -Tag "Unit", "Resources" {
             $resource.ProjectName = 'MyProject'
             $result = $resource.Get()
 
-            $result | Should -BeOfType 'AzDoProjectServices'
+            ($result -is [AzDoProjectServices]) | Should -BeTrue
         }
 
         It 'Should return ProjectName from Get-AzDoProjectServices' {

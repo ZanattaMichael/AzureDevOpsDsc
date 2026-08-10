@@ -110,7 +110,7 @@ Describe 'New-AzureCliToken Function' {
 
     It 'Should create and return an AzureCliToken instance' {
         $result = New-AzureCliToken -CLITokenResponse $validCLIResponse
-        $result | Should -BeOfType [AzureCliToken]
+        ($result -is [AzureCliToken]) | Should -BeTrue
         $result.tokenType | Should -Be 'AzureCLI'
     }
 

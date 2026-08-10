@@ -122,7 +122,7 @@ Describe 'New-ManagedIdentityToken Function' -Tag "Unit", "Authentication" {
         $mit = New-ManagedIdentityToken -ManagedIdentityTokenObj $managedIdentityTokenObj
 
         # Assert
-        $mit | Should -BeOfType [ManagedIdentityToken]
+        ($mit -is [ManagedIdentityToken]) | Should -BeTrue
         $mit.ConvertFromSecureString($mit.access_token) | Should -Be "TestAccessToken"
         $mit.expires_on | Should -Be $epochStart.AddMinutes(10)
         $mit.expires_in | Should -Be 600

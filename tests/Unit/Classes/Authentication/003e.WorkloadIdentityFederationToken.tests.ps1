@@ -117,7 +117,7 @@ Describe 'New-WorkloadIdentityFederationToken Function' {
 
     It 'Should create a WorkloadIdentityFederationToken with the given source and file' {
         $result = New-WorkloadIdentityFederationToken -TokenObj $validResponse -TenantId 't' -ClientId 'c' -FederatedTokenSource 'File' -FederatedTokenFile '/token'
-        $result | Should -BeOfType [WorkloadIdentityFederationToken]
+        ($result -is [WorkloadIdentityFederationToken]) | Should -BeTrue
         $result.federatedTokenSource | Should -Be 'File'
         $result.federatedTokenFile   | Should -Be '/token'
     }
