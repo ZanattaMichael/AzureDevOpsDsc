@@ -143,7 +143,7 @@ Describe 'New-ServicePrincipalToken Function' {
 
     It 'Should create and return a ServicePrincipalToken instance' {
         $result = New-ServicePrincipalToken -TokenObj $validResponse -TenantId 'tenant' -ClientId 'client' -ClientSecret $secureSecret
-        $result | Should -BeOfType [ServicePrincipalToken]
+        ($result -is [ServicePrincipalToken]) | Should -BeTrue
         $result.tenantId | Should -Be 'tenant'
         $result.clientId | Should -Be 'client'
     }

@@ -116,7 +116,7 @@ Describe "AzDoProject Class" -Tag "Unit", "Resources" {
             $project.ProjectName = 'MyProject'
             $result = $project.Get()
 
-            $result | Should -BeOfType 'AzDoProject'
+            ($result -is [AzDoProject]) | Should -BeTrue
         }
     }
 }

@@ -98,7 +98,7 @@ Describe 'AzDoIterationPermission Class' -Tag "Unit", "Resources" {
             $resource.isInherited   = $false
 
             $result = $resource.Get()
-            $result | Should -BeOfType 'AzDoIterationPermission'
+            ($result -is [AzDoIterationPermission]) | Should -BeTrue
         }
 
         It 'Should return ProjectName from Get-AzDoIterationPermission' {

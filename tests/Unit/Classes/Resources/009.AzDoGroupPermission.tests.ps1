@@ -36,7 +36,7 @@ Describe 'AzDoGroupPermission Tests' -Tag "Unit", "Resources" {
         It 'Should create an instance of the AzDoGroupPermission class' {
             $groupPermission = [AzDoGroupPermission]::new()
             $groupPermission | Should -Not -BeNullOrEmpty
-            $groupPermission | Should -BeOfType 'AzDoGroupPermission'
+            ($groupPermission -is [AzDoGroupPermission]) | Should -BeTrue
         }
     }
 

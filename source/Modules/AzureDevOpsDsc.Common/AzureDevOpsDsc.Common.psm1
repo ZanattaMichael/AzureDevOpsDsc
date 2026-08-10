@@ -78,6 +78,8 @@ Export-ModuleMember -Function 'Get-AzDoAPIProjectCache'
 Export-ModuleMember -Function 'Initialize-CacheObject'
 Export-ModuleMember -Function 'Get-AzDoCacheObjects'
 Export-ModuleMember -Function '*-AzDoProjectGroup'
+Export-ModuleMember -Function 'Test-AzDevOpsProjectName'
+Export-ModuleMember -Function 'ConvertTo-Base64String'
 
 # Stop processing
 if ($isClass)
