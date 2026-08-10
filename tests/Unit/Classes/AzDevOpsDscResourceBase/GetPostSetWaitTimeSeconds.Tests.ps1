@@ -1,3 +1,5 @@
+using module AzureDevOpsDsc
+
 
 Describe "[AzDevOpsDscResourceBase]::GetPostSetWaitTimeSeconds() Tests" -Tag "Unit", "AzDevOpsDscResourceBase" {
 

@@ -1,3 +1,5 @@
+using module AzureDevOpsDsc
+
 
 Describe "[AzDevOpsApiDscResourceBase]::GetResourceFunctionName() Tests" -Tag "Unit", "AzDevOpsApiDscResourceBase" {
 

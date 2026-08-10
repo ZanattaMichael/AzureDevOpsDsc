@@ -1,3 +1,5 @@
+using module AzureDevOpsDsc
+
 
 Describe "[AzDevOpsDscResourceBase]::GetDscCurrentStateResourceObject() Tests" -Tag "Unit", "AzDevOpsDscResourceBase" {
 

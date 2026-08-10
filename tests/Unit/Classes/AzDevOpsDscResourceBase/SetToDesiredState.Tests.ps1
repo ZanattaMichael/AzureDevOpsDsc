@@ -1,3 +1,5 @@
+using module AzureDevOpsDsc
+
 
 
 Describe "[AzDevOpsDscResourceBase]::SetToDesiredState() Tests" -Tag "Unit", "AzDevOpsDscResourceBase" {

@@ -1,3 +1,5 @@
+using module AzureDevOpsDsc
+
 Describe "[AzDevOpsDscResourceBase]::GetDscCurrentStateObject() Tests" -Tag "Unit", "AzDevOpsDscResourceBase" {
 
     Context 'When no "DscCurrentStateResourceObject" object returned' {

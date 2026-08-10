@@ -1,3 +1,5 @@
+using module AzureDevOpsDsc
+
 
 Describe 'AzDoGroupPermission Tests' -Tag "Unit", "Resources" {
 
