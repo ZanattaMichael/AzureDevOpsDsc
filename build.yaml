@@ -73,6 +73,7 @@ BuildWorkflow:
   dscv3:
     - Create_DscAdaptedResourceManifests
     - Create_DscResourceManifestsList
+    - Fix_DscAdaptedResourceManifestTypes
 
   pack:
     - build
