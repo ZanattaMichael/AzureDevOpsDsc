@@ -1,4 +1,4 @@
-using module '..\..\output\builtModule\AzureDevOpsDsc\0.0.2\AzureDevOpsDsc.psd1'
+using module AzureDevOpsDsc
 
 <#
     Temporary diagnostic test - NOT part of the real suite. Checks whether `using module`
