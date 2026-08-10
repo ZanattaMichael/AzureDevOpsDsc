@@ -1,14 +1,30 @@
-Describe "AzDoNotificationSubscription Integration Tests (work item changed, Email channel)" -Tag "Integration", "NotificationSubscription" {
+# Creating an email-channel subscription with a custom delivery address requires that address to
+# belong to a REAL user in the organization's Microsoft Entra ID tenant (Azure DevOps rejects any
+# other address with "cannot be used for notification delivery because it does not belong to a
+# user in this organization's Microsoft Entra ID tenant"). There is no safe placeholder address for
+# this, and the principal name is PII - this is a public repository, so it is NEVER hard-coded here.
+# It is supplied at run time via the AZDODSC_TEST_USER_UPN environment variable (the same one used
+# by AzDoUserEntitlement.tests.ps1; set it as a SECRET / masked pipeline variable in CI so the value
+# is redacted from logs). When it is not set the tests are skipped.
+#
+#   # locally:
+#   $env:AZDODSC_TEST_USER_UPN = '<disposable-test-account-upn>'
+
+$TEST_USER = $env:AZDODSC_TEST_USER_UPN
+$skipNotificationSubscription = [string]::IsNullOrWhiteSpace($TEST_USER)
+
+Describe "AzDoNotificationSubscription Integration Tests (work item changed, Email channel)" -Tag "Integration", "NotificationSubscription" -Skip:$skipNotificationSubscription {
 
     BeforeAll {
 
         $PROJECTNAME = 'TEST_NOTIFICATION'
+        $TEST_USER = $env:AZDODSC_TEST_USER_UPN
 
-        # Use a project-scoped work-item changed event with a group email channel.
-        # The subscriber identity must be a valid group/user descriptor in the org.
-        # Using the built-in "[ProjectName]\Build Service (OrgName)" identity would
-        # require knowing the org name at test time, so we use the project Contributors
-        # group which is always present.
+        # Use a project-scoped work-item changed event with an email channel. Subscriber is the
+        # literal channel destination address (see Get-AzDoNotificationSubscription/New-AzDoNotificationSubscription
+        # unit tests and Examples/Resources/AzDoNotificationSubscription) - it is passed straight
+        # through to the API's channel.address with useCustomAddress set, so it must be a real user
+        # in the organization's tenant.
         $parameters = @{
             Name       = 'AzDoNotificationSubscription'
             ModuleName = 'AzureDevOpsDsc'
@@ -16,7 +32,7 @@ Describe "AzDoNotificationSubscription Integration Tests (work item changed, Ema
                 SubscriptionName = 'TEST_WI_CHANGED'
                 EventType        = 'ms.vss-work.workitem-changed-event'
                 ChannelType      = 'EmailHtml'
-                Subscriber       = "[$PROJECTNAME]\Contributors"
+                Subscriber       = $TEST_USER
                 ProjectName      = $PROJECTNAME
                 Enabled          = $true
             }
@@ -84,7 +100,7 @@ Describe "AzDoNotificationSubscription Integration Tests (work item changed, Ema
                 SubscriptionName = 'TEST_WI_CHANGED'
                 EventType        = 'ms.vss-work.workitem-changed-event'
                 ChannelType      = 'EmailHtml'
-                Subscriber       = "[$PROJECTNAME]\Contributors"
+                Subscriber       = $TEST_USER
                 Ensure           = 'Absent'
             }
         }

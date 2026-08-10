@@ -14,7 +14,11 @@ Function New-AzDoNotificationSubscription
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
     )
     Write-Verbose "[New-AzDoNotificationSubscription] Creating subscription '$SubscriptionName'."
-    $channel = @{ type = $ChannelType; address = $Subscriber }
+    # useCustomAddress must be set or Azure DevOps ignores 'address' entirely and falls back to
+    # the (unspecified, defaulting to the calling identity's) subscriber's own notification
+    # preferences - which fails with "requires a valid e-mail address" for any identity without a
+    # configured mailbox (e.g. a Managed Identity/service principal).
+    $channel = @{ type = $ChannelType; address = $Subscriber; useCustomAddress = $true }
 
     # Provide a minimal default filter if none was specified
     $effectiveFilter = if ($Filter) { $Filter } else {
