@@ -4,7 +4,6 @@
 #>
 
 [DscResource()]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSDSCStandardDSCFunctionsInResource', '', Justification='Test() and Set() method are inherited from base, "AzDevOpsDscResourceBase" class')]
 class AzDoSecurityNamespacePermission : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)]
@@ -27,6 +26,8 @@ class AzDoSecurityNamespacePermission : AzDevOpsDscResourceBase
         $this.Construct()
     }
 
+    [void] Set() { ([AzDevOpsDscResourceBase]$this).Set() }
+    [System.Boolean] Test() { return ([AzDevOpsDscResourceBase]$this).Test() }
     [AzDoSecurityNamespacePermission] Get()
     {
         return [AzDoSecurityNamespacePermission]$($this.GetDscCurrentStateProperties())

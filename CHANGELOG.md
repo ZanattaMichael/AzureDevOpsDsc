@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - AzureDevOpsDsc
+  - Added DSC v3 support: all 49 class-based DSC resources now declare `Set()`
+    and `Test()` directly (delegating to `AzDevOpsDscResourceBase`) instead of
+    relying on pure inheritance, so both the `Microsoft.Adapter/PowerShell`
+    runtime adapter and `DscResource.Authoring`'s manifest generator correctly
+    detect `get`/`set`/`test` capabilities instead of only `get`.
+  - Added a `dscv3` build workflow (`Create_DscAdaptedResourceManifests`,
+    `Create_DscResourceManifestsList` from `DscResource.Authoring`) that
+    generates DSC v3 adapted resource manifests for every resource into the
+    built module output, and wired it into `pack`.
   - Updated pipeline files to support change of default branch to main.
   - Added GitHub issue templates and pull request template
   ([issue #1](https://github.com/dsccommunity/AzureDevOpsDsc/issues/1))

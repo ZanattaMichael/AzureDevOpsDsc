@@ -42,7 +42,6 @@
 #>
 
 [DscResource()]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSDSCStandardDSCFunctionsInResource', '', Justification='Test() and Set() method are inherited from base, "AzDevOpsDscResourceBase" class')]
 class AzDoGitPermission : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)]
@@ -65,6 +64,8 @@ class AzDoGitPermission : AzDevOpsDscResourceBase
         $this.Construct()
     }
 
+    [void] Set() { ([AzDevOpsDscResourceBase]$this).Set() }
+    [System.Boolean] Test() { return ([AzDevOpsDscResourceBase]$this).Test() }
     [AzDoGitPermission] Get()
     {
         return [AzDoGitPermission]$($this.GetDscCurrentStateProperties())
