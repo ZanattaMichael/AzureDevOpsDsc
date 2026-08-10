@@ -47,15 +47,6 @@ if ($LoadModulesOnly.IsPresent)
     return
 }
 
-# Empirically, invoking this script as a child process on a "cold" host (a fresh GitHub Actions
-# runner, or a nested pwsh child process locally, both reliably reproduce it; a "warm" top-level
-# local invocation does not) intermittently produces "Could not find type [X]" for classes that
-# were just dot-sourced above, inside Pester's own It/BeforeAll blocks. A short pause here before
-# Invoke-Pester starts has reliably avoided it in repeated cold-host reproductions - some part of
-# dynamically compiling/registering the PowerShell class types above appears to still be settling
-# asynchronously immediately after the dot-sourcing loop returns.
-Start-Sleep -Seconds 2
-
 $config = New-PesterConfiguration
 
 $config.Run.Path                        = ".\tests\Unit\Classes"
