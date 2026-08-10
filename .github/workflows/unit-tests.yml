@@ -25,14 +25,24 @@ jobs:
         shell: pwsh
         run: |
           Import-Module -Name Pester -RequiredVersion 5.7.1 -Force
-          ./azuredevopsdsc.tests.ps1 2>&1 | Tee-Object -FilePath classes-tests.log
-          $summary = Select-String -Path classes-tests.log -Pattern 'Tests Passed: (\d+),.*?Failed: (\d+),.*?Skipped: (\d+)' | Select-Object -Last 1
-          if (-not $summary) {
+          # *>&1 (not 2>&1) is required: Pester's colored summary/pass-fail lines go through
+          # Write-Host, which writes to the Information stream (6), not Error (2) - 2>&1 alone
+          # silently drops them, leaving $output with no parseable summary and an empty log file.
+          ./azuredevopsdsc.tests.ps1 *>&1 | Tee-Object -Variable output
+          $output | Out-File -FilePath classes-tests.log -Encoding utf8
+          # Match each summary value independently rather than one pattern spanning all three -
+          # Write-Host segments can land in separate array elements, so "Tests Passed:", "Failed:"
+          # and "Skipped:" aren't reliably on what $output treats as a single "line".
+          $joined = $output | Out-String
+          $passedMatch = [regex]::Matches($joined, 'Tests Passed:\s*(\d+)') | Select-Object -Last 1
+          $failedMatch = [regex]::Matches($joined, 'Failed:\s*(\d+)') | Select-Object -Last 1
+          $skippedMatch = [regex]::Matches($joined, 'Skipped:\s*(\d+)') | Select-Object -Last 1
+          if (-not $passedMatch -or -not $failedMatch) {
               Write-Error "Could not find a test result summary in the output."
               exit 1
           }
-          $failed = [int]$summary.Matches[0].Groups[2].Value
-          Write-Host "Classes suite -> Passed: $($summary.Matches[0].Groups[1].Value), Failed: $failed, Skipped: $($summary.Matches[0].Groups[3].Value)"
+          $failed = [int]$failedMatch.Groups[1].Value
+          Write-Host "Classes suite -> Passed: $($passedMatch.Groups[1].Value), Failed: $failed, Skipped: $($skippedMatch.Groups[1].Value)"
           if ($failed -gt 0) {
               Write-Error "$failed unit test(s) failed in the Classes suite."
               exit 1
@@ -42,14 +52,21 @@ jobs:
         shell: pwsh
         run: |
           Import-Module -Name Pester -RequiredVersion 5.7.1 -Force
-          ./azuredevopsdsc.common.tests.ps1 2>&1 | Tee-Object -FilePath common-tests.log
-          $summary = Select-String -Path common-tests.log -Pattern 'Tests Passed: (\d+),.*?Failed: (\d+),.*?Skipped: (\d+)' | Select-Object -Last 1
-          if (-not $summary) {
+          # *>&1 (not 2>&1) is required: Pester's colored summary/pass-fail lines go through
+          # Write-Host, which writes to the Information stream (6), not Error (2) - 2>&1 alone
+          # silently drops them, leaving $output with no parseable summary and an empty log file.
+          ./azuredevopsdsc.common.tests.ps1 *>&1 | Tee-Object -Variable output
+          $output | Out-File -FilePath common-tests.log -Encoding utf8
+          $joined = $output | Out-String
+          $passedMatch = [regex]::Matches($joined, 'Tests Passed:\s*(\d+)') | Select-Object -Last 1
+          $failedMatch = [regex]::Matches($joined, 'Failed:\s*(\d+)') | Select-Object -Last 1
+          $skippedMatch = [regex]::Matches($joined, 'Skipped:\s*(\d+)') | Select-Object -Last 1
+          if (-not $passedMatch -or -not $failedMatch) {
               Write-Error "Could not find a test result summary in the output."
               exit 1
           }
-          $failed = [int]$summary.Matches[0].Groups[2].Value
-          Write-Host "Common suite -> Passed: $($summary.Matches[0].Groups[1].Value), Failed: $failed, Skipped: $($summary.Matches[0].Groups[3].Value)"
+          $failed = [int]$failedMatch.Groups[1].Value
+          Write-Host "Common suite -> Passed: $($passedMatch.Groups[1].Value), Failed: $failed, Skipped: $($skippedMatch.Groups[1].Value)"
           if ($failed -gt 0) {
               Write-Error "$failed unit test(s) failed in the Common suite."
               exit 1
