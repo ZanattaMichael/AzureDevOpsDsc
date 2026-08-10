@@ -31,12 +31,16 @@ Function Get-AzCliToken
         throw "[Get-AzCliToken] The Azure CLI ('az') is not installed or not found on PATH. Install it from https://docs.microsoft.com/cli/azure/install-azure-cli and run 'az login'."
     }
 
-    # Invoke az and capture output
-    $azOutput = Invoke-AzCLICommand -Arguments @('account', 'get-access-token', '--resource', '499b84ac-1321-427f-aa17-267ca6975798')
+    # Invoke az and capture output. $LASTEXITCODE is read inside Invoke-AzCLICommand itself (right
+    # after the native call) and returned explicitly, rather than read here after the call returns -
+    # it's a global, ambient variable that isn't reliably preserved across a mocked function
+    # boundary in unit tests.
+    $azResult = Invoke-AzCLICommand -Arguments @('account', 'get-access-token', '--resource', '499b84ac-1321-427f-aa17-267ca6975798')
+    $azOutput = $azResult.Output
 
-    if ($LASTEXITCODE -ne 0)
+    if ($azResult.ExitCode -ne 0)
     {
-        throw "[Get-AzCliToken] The Azure CLI returned a non-zero exit code ($LASTEXITCODE). Ensure you are logged in with 'az login'. Output: $azOutput"
+        throw "[Get-AzCliToken] The Azure CLI returned a non-zero exit code ($($azResult.ExitCode)). Ensure you are logged in with 'az login'. Output: $azOutput"
     }
 
     try
@@ -85,5 +89,9 @@ Function Invoke-AzCLICommand
         [String[]]$Arguments
     )
 
-    return (& az @Arguments 2>&1)
+    $output = (& az @Arguments 2>&1)
+    return [PSCustomObject]@{
+        Output   = $output
+        ExitCode = $LASTEXITCODE
+    }
 }

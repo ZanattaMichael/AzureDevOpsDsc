@@ -20,6 +20,8 @@ Describe "Get-AzDoSecurityNamespacePermission" -Tag "Unit", "SecurityNamespacePe
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
+        . (Get-FunctionItem 'New-ACLToken.ps1')
+        . (Get-FunctionItem 'ConvertTo-FormattedToken.ps1')
 
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
         Mock -CommandName Get-DevOpsACL -MockWith { return @(@{ Token = 'mock' }) }

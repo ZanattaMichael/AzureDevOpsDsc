@@ -19,6 +19,7 @@ Describe 'New-ACLToken Function Tests' -Tag "Unit", "ACL", "Helper" {
         . (Get-ClassFilePath '001.LocalizedDataAzResourceTokenPatten')
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
+        . (Get-FunctionItem 'Resolve-AzDoProjectIdForToken.ps1')
 
         Mock -CommandName Get-CacheItem -MockWith {
             return [PSCustomObject]@{id = "1234"}

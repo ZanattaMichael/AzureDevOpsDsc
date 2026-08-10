@@ -29,7 +29,7 @@ Function Get-AzDoAgentPoolPermission
     }
 
     $namespace = Get-CacheItem -Key $SecurityNamespace -Type 'SecurityNamespaces'
-    if (-not $namespace) { Write-Error "[Get-AzDoAgentPoolPermission] Security namespace not found."; $getResult.status = [DSCGetSummaryState]::Error; return $getResult }
+    if (-not $namespace) { Write-Error "[Get-AzDoAgentPoolPermission] Security namespace not found." -ErrorAction Continue; $getResult.status = [DSCGetSummaryState]::Error; return $getResult }
 
     $getResult.namespace = $namespace
 

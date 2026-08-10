@@ -69,8 +69,11 @@ Function Build-JWTAssertion
     $signingInput = "$headerB64.$payloadB64"
     $signingBytes = [System.Text.Encoding]::UTF8.GetBytes($signingInput)
 
-    # Sign with RSA SHA-256 using the certificate private key
-    $rsa = $Certificate.GetRSAPrivateKey()
+    # Sign with RSA SHA-256 using the certificate private key.
+    # GetRSAPrivateKey() is an extension method (RSACertificateExtensions) - PowerShell's member-
+    # access syntax can fail to resolve it depending on assembly load order in the session, so call
+    # it via its fully-qualified static form instead of $Certificate.GetRSAPrivateKey().
+    $rsa = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($Certificate)
     if ($null -eq $rsa)
     {
         throw "[Build-JWTAssertion] Certificate does not have an accessible RSA private key."

@@ -18,7 +18,7 @@ Function Remove-AzDoProjectPermission
 
     if ((-not $SecurityNamespace) -or (-not $Project))
     {
-        Write-Error "[Remove-AzDoProjectPermission] Security namespace or project not found."
+        Write-Error "[Remove-AzDoProjectPermission] Security namespace or project not found." -ErrorAction Continue
         return
     }
 

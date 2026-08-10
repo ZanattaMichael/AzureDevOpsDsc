@@ -59,6 +59,7 @@ Describe 'Get-AzDoPipelineEnvironment Tests' -Tag "Unit", "PipelineEnvironment" 
 
         BeforeEach {
             Mock -CommandName Get-CacheItem -MockWith { return $null }
+            Mock -CommandName List-DevOpsPipelineEnvironments -MockWith { return @() }
         }
 
         It 'Should return status NotFound' {
