@@ -40,7 +40,7 @@ jobs:
       - name: DIAGNOSTIC - class resolution via using module of the built module
         shell: pwsh
         run: |
-          $env:PSModulePath = "$PWD\output\RequiredModules;$env:PSModulePath"
+          $env:PSModulePath = "$PWD\output\RequiredModules;$PWD\output\builtModule;$env:PSModulePath"
           Import-Module -Name Pester -RequiredVersion 5.7.1 -Force
           Invoke-Pester -Path .\tests\Unit\Diagnostic-UsingModule.tests.ps1 -Output Detailed
 
