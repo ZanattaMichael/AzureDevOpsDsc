@@ -38,7 +38,7 @@ Describe "AzDoProject Class" -Tag "Unit", "Resources" {
             return @('mock-cache-type')
         }
         Mock -CommandName Initialize-CacheObject -ModuleName AzureDevOpsDsc
-        Mock -CommandName Test-AzDevOpsProjectName -ModuleName AzureDevOpsDsc -MockWith { return $true }
+        Mock -CommandName Test-AzDevOpsProjectName -ModuleName AzureDevOpsDsc.Common -MockWith { return $true }
 
     }
 
@@ -98,7 +98,7 @@ Describe "AzDoProject Class" -Tag "Unit", "Resources" {
     Context "Get Method" {
         It "Should return an instance of AzDoProject" {
 
-            Mock -CommandName Test-AzDevOpsProjectName -ModuleName AzureDevOpsDsc -MockWith { return $true }
+            Mock -CommandName Test-AzDevOpsProjectName -ModuleName AzureDevOpsDsc.Common -MockWith { return $true }
             Mock -CommandName Get-AzDoProject -ModuleName AzureDevOpsDsc -MockWith {
                 return @{
                     Ensure             = [Ensure]::Absent
