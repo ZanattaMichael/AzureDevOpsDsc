@@ -6,9 +6,9 @@ Describe 'AzDoGroupPermission Tests' -Tag "Unit", "Resources" {
     BeforeAll {
         $ENV:AZDODSC_CACHE_DIRECTORY = 'mocked_cache_directory'
 
-        Mock -CommandName Import-Module
-        Mock -CommandName Test-Path -MockWith { $true }
-        Mock -CommandName Import-Clixml -MockWith {
+        Mock -CommandName Import-Module -ModuleName AzureDevOpsDsc
+        Mock -CommandName Test-Path -ModuleName AzureDevOpsDsc -MockWith { $true }
+        Mock -CommandName Import-Clixml -ModuleName AzureDevOpsDsc -MockWith {
             return @{
                 OrganizationName = 'mock-org'
                 Token = @{
@@ -18,11 +18,11 @@ Describe 'AzDoGroupPermission Tests' -Tag "Unit", "Resources" {
 
             }
         }
-        Mock -CommandName New-AzDoAuthenticationProvider
-        Mock -CommandName Get-AzDoCacheObjects -MockWith {
+        Mock -CommandName New-AzDoAuthenticationProvider -ModuleName AzureDevOpsDsc
+        Mock -CommandName Get-AzDoCacheObjects -ModuleName AzureDevOpsDsc -MockWith {
             return @('mock-cache-type')
         }
-        Mock -CommandName Initialize-CacheObject
+        Mock -CommandName Initialize-CacheObject -ModuleName AzureDevOpsDsc
 
     }
     AfterAll {
@@ -71,7 +71,7 @@ Describe 'AzDoGroupPermission Tests' -Tag "Unit", "Resources" {
     Context 'Get Method' {
 
         BeforeAll {
-            Mock -CommandName Get-AzDoGroupPermission {
+            Mock -CommandName Get-AzDoGroupPermission -ModuleName AzureDevOpsDsc {
 
                 $properties = @{
                     Ensure = [Ensure]::Absent
@@ -109,7 +109,7 @@ Describe 'AzDoGroupPermission Tests' -Tag "Unit", "Resources" {
             $currentState.isInherited | Should -Be $false
             $currentState.Permissions | Should -Not -BeNullOrEmpty
 
-            Assert-MockCalled Get-AzDoGroupPermission -Exactly 1
+            Assert-MockCalled Get-AzDoGroupPermission -Exactly 1 -ModuleName AzureDevOpsDsc
 
         }
     }
@@ -122,7 +122,7 @@ Describe 'AzDoGroupPermission Tests' -Tag "Unit", "Resources" {
 
         It 'Should return $true when calling the test method - when the current state is unchanged' {
 
-            Mock -CommandName Get-AzDoGroupPermission {
+            Mock -CommandName Get-AzDoGroupPermission -ModuleName AzureDevOpsDsc {
 
                 $properties = @{
                     Ensure = [Ensure]::Present
@@ -156,7 +156,7 @@ Describe 'AzDoGroupPermission Tests' -Tag "Unit", "Resources" {
 
         It 'Should return $false when calling the test method - when the current state is changed' {
 
-            Mock -CommandName Get-AzDoGroupPermission {
+            Mock -CommandName Get-AzDoGroupPermission -ModuleName AzureDevOpsDsc {
 
                 $properties = @{
                     Ensure = [Ensure]::Absent
@@ -189,7 +189,7 @@ Describe 'AzDoGroupPermission Tests' -Tag "Unit", "Resources" {
 
         It 'Should return $false when calling the test method - when the status is null' {
 
-            Mock -CommandName Get-AzDoGroupPermission {
+            Mock -CommandName Get-AzDoGroupPermission -ModuleName AzureDevOpsDsc {
 
                 $properties = @{
                     Ensure = [Ensure]::Absent
@@ -210,7 +210,7 @@ Describe 'AzDoGroupPermission Tests' -Tag "Unit", "Resources" {
 
             }
 
-            Mock -CommandName New-InvalidOperationException {
+            Mock -CommandName New-InvalidOperationException -ModuleName AzureDevOpsDsc {
                 throw 'Invalid Operation Exception'
             } -ParameterFilter {
                 $Message -like "*Could not obtain a valid 'LookupResult.Status' value within*"
@@ -224,7 +224,7 @@ Describe 'AzDoGroupPermission Tests' -Tag "Unit", "Resources" {
 
             { $groupPermission.Test() } | Should -Not -Throw
             $groupPermission.Test() | Should -Be $false
-            Assert-MockCalled New-InvalidOperationException -Times 1
+            Assert-MockCalled New-InvalidOperationException -Times 1 -ModuleName AzureDevOpsDsc
 
         }
 

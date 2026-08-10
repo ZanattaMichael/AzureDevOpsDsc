@@ -21,9 +21,9 @@ Describe "AzDoProject Class" -Tag "Unit", "Resources" {
         $TestProjectNameFunctionpath = Get-FunctionItem 'Test-AzDevOpsProjectName.ps1'
         . $TestProjectNameFunctionpath
 
-        Mock -CommandName Import-Module
-        Mock -CommandName Test-Path -MockWith { $true }
-        Mock -CommandName Import-Clixml -MockWith {
+        Mock -CommandName Import-Module -ModuleName AzureDevOpsDsc
+        Mock -CommandName Test-Path -ModuleName AzureDevOpsDsc -MockWith { $true }
+        Mock -CommandName Import-Clixml -ModuleName AzureDevOpsDsc -MockWith {
             return @{
                 OrganizationName = 'mock-org'
                 Token = @{
@@ -33,12 +33,12 @@ Describe "AzDoProject Class" -Tag "Unit", "Resources" {
 
             }
         }
-        Mock -CommandName New-AzDoAuthenticationProvider
-        Mock -CommandName Get-AzDoCacheObjects -MockWith {
+        Mock -CommandName New-AzDoAuthenticationProvider -ModuleName AzureDevOpsDsc
+        Mock -CommandName Get-AzDoCacheObjects -ModuleName AzureDevOpsDsc -MockWith {
             return @('mock-cache-type')
         }
-        Mock -CommandName Initialize-CacheObject
-        Mock -CommandName Test-AzDevOpsProjectName -MockWith { return $true }
+        Mock -CommandName Initialize-CacheObject -ModuleName AzureDevOpsDsc
+        Mock -CommandName Test-AzDevOpsProjectName -ModuleName AzureDevOpsDsc -MockWith { return $true }
 
     }
 
@@ -98,8 +98,8 @@ Describe "AzDoProject Class" -Tag "Unit", "Resources" {
     Context "Get Method" {
         It "Should return an instance of AzDoProject" {
 
-            Mock -CommandName Test-AzDevOpsProjectName -MockWith { return $true }
-            Mock -CommandName Get-AzDoProject -MockWith {
+            Mock -CommandName Test-AzDevOpsProjectName -ModuleName AzureDevOpsDsc -MockWith { return $true }
+            Mock -CommandName Get-AzDoProject -ModuleName AzureDevOpsDsc -MockWith {
                 return @{
                     Ensure             = [Ensure]::Absent
                     ProjectName        = 'MyProject'

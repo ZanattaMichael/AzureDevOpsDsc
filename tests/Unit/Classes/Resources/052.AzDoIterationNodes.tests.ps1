@@ -22,9 +22,9 @@ Describe 'AzDoIterationNodes Tests' -Tag "Unit", "Resources" {
         $TestProjectNameFunctionpath = Get-FunctionItem 'Test-AzDevOpsProjectName.ps1'
         . $TestProjectNameFunctionpath
 
-        Mock -CommandName Import-Module
-        Mock -CommandName Test-Path -MockWith { $true }
-        Mock -CommandName Import-Clixml -MockWith {
+        Mock -CommandName Import-Module -ModuleName AzureDevOpsDsc
+        Mock -CommandName Test-Path -ModuleName AzureDevOpsDsc -MockWith { $true }
+        Mock -CommandName Import-Clixml -ModuleName AzureDevOpsDsc -MockWith {
             return @{
                 OrganizationName = 'mock-org'
                 Token = @{
@@ -34,13 +34,13 @@ Describe 'AzDoIterationNodes Tests' -Tag "Unit", "Resources" {
 
             }
         }
-        Mock -CommandName New-AzDoAuthenticationProvider
-        Mock -CommandName Get-AzDoCacheObjects -MockWith {
+        Mock -CommandName New-AzDoAuthenticationProvider -ModuleName AzureDevOpsDsc
+        Mock -CommandName Get-AzDoCacheObjects -ModuleName AzureDevOpsDsc -MockWith {
             return @('mock-cache-type')
         }
 
-        Mock -CommandName Initialize-CacheObject
-        Mock -CommandName Test-AzDevOpsProjectName -MockWith { return $true }
+        Mock -CommandName Initialize-CacheObject -ModuleName AzureDevOpsDsc
+        Mock -CommandName Test-AzDevOpsProjectName -ModuleName AzureDevOpsDsc -MockWith { return $true }
 
     }
 
@@ -62,7 +62,7 @@ Describe 'AzDoIterationNodes Tests' -Tag "Unit", "Resources" {
         [System.String[]]$AreaPaths
 
         BeforeAll {
-            Mock -CommandName Get-AzDoIterationNodes -MockWith {
+            Mock -CommandName Get-AzDoIterationNodes -ModuleName AzureDevOpsDsc -MockWith {
                 return @{
                     Ensure = [Ensure]::Absent
                     propertiesChanged = @()
