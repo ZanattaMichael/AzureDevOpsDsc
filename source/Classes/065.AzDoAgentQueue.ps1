@@ -3,7 +3,6 @@
     DSC resource for managing Azure DevOps agent queues.
 #>
 [DscResource()]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSDSCStandardDSCFunctionsInResource', '', Justification='Test() and Set() method are inherited from base, "AzDevOpsDscResourceBase" class')]
 class AzDoAgentQueue : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)][System.String]$ProjectName
@@ -12,6 +11,8 @@ class AzDoAgentQueue : AzDevOpsDscResourceBase
     [DscProperty()][System.Boolean]$AuthorizeAllPipelines = $false
 
     AzDoAgentQueue() { $this.Construct() }
+    [void] Set() { ([AzDevOpsDscResourceBase]$this).Set() }
+    [System.Boolean] Test() { return ([AzDevOpsDscResourceBase]$this).Test() }
     [AzDoAgentQueue] Get() { return [AzDoAgentQueue]$($this.GetDscCurrentStateProperties()) }
     hidden [System.String[]]GetDscResourcePropertyNamesWithNoSetSupport() { return @() }
     hidden [Hashtable]GetDscCurrentStateProperties([PSCustomObject]$CurrentResourceObject) {

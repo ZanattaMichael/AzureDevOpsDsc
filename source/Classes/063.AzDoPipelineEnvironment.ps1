@@ -3,7 +3,6 @@
     DSC resource for managing Azure DevOps deployment environments.
 #>
 [DscResource()]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSDSCStandardDSCFunctionsInResource', '', Justification='Test() and Set() method are inherited from base, "AzDevOpsDscResourceBase" class')]
 class AzDoPipelineEnvironment : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)][System.String]$ProjectName
@@ -12,6 +11,8 @@ class AzDoPipelineEnvironment : AzDevOpsDscResourceBase
 
     AzDoPipelineEnvironment() { $this.Construct() }
 
+    [void] Set() { ([AzDevOpsDscResourceBase]$this).Set() }
+    [System.Boolean] Test() { return ([AzDevOpsDscResourceBase]$this).Test() }
     [AzDoPipelineEnvironment] Get() { return [AzDoPipelineEnvironment]$($this.GetDscCurrentStateProperties()) }
 
     hidden [System.String[]]GetDscResourcePropertyNamesWithNoSetSupport() { return @() }

@@ -6,7 +6,6 @@
     (e.g. 'private', 'collection', 'organization', 'aadTenant').
 #>
 [DscResource()]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSDSCStandardDSCFunctionsInResource', '', Justification='Test() and Set() method are inherited from base, "AzDevOpsDscResourceBase" class')]
 class AzDoArtifactFeedView : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)][System.String]$ProjectName
@@ -16,6 +15,8 @@ class AzDoArtifactFeedView : AzDevOpsDscResourceBase
     [DscProperty()][ValidateSet('private', 'collection', 'organization', 'aadTenant')][System.String]$ViewVisibility = 'collection'
 
     AzDoArtifactFeedView() { $this.Construct() }
+    [void] Set() { ([AzDevOpsDscResourceBase]$this).Set() }
+    [System.Boolean] Test() { return ([AzDevOpsDscResourceBase]$this).Test() }
     [AzDoArtifactFeedView] Get() { return [AzDoArtifactFeedView]$($this.GetDscCurrentStateProperties()) }
     hidden [System.String[]]GetDscResourcePropertyNamesWithNoSetSupport() { return @() }
     hidden [Hashtable]GetDscCurrentStateProperties([PSCustomObject]$CurrentResourceObject) {

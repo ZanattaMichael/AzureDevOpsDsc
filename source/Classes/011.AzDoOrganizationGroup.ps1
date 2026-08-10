@@ -38,7 +38,6 @@
 #>
 
 [DscResource()]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSDSCStandardDSCFunctionsInResource', '', Justification='Test() and Set() method are inherited from base, "AzDevOpsDscResourceBase" class')]
 class AzDoOrganizationGroup : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)]
@@ -54,6 +53,8 @@ class AzDoOrganizationGroup : AzDevOpsDscResourceBase
         $this.Construct()
     }
 
+    [void] Set() { ([AzDevOpsDscResourceBase]$this).Set() }
+    [System.Boolean] Test() { return ([AzDevOpsDscResourceBase]$this).Test() }
     [AzDoOrganizationGroup] Get()
     {
         return [AzDoOrganizationGroup]$($this.GetDscCurrentStateProperties())

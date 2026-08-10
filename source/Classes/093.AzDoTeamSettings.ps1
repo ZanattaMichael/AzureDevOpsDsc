@@ -7,7 +7,6 @@
     part of how a team is configured.
 #>
 [DscResource()]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSDSCStandardDSCFunctionsInResource', '', Justification='Test() and Set() method are inherited from base, "AzDevOpsDscResourceBase" class')]
 class AzDoTeamSettings : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)][System.String]$ProjectName
@@ -21,6 +20,8 @@ class AzDoTeamSettings : AzDevOpsDscResourceBase
     [DscProperty()][ValidateSet('', 'asRequirements', 'asTasks', 'off')][System.String]$BugsBehavior
 
     AzDoTeamSettings() { $this.Construct() }
+    [void] Set() { ([AzDevOpsDscResourceBase]$this).Set() }
+    [System.Boolean] Test() { return ([AzDevOpsDscResourceBase]$this).Test() }
     [AzDoTeamSettings] Get() { return [AzDoTeamSettings]$($this.GetDscCurrentStateProperties()) }
     hidden [System.String[]]GetDscResourcePropertyNamesWithNoSetSupport() { return @() }
     hidden [Hashtable]GetDscCurrentStateProperties([PSCustomObject]$CurrentResourceObject) {
