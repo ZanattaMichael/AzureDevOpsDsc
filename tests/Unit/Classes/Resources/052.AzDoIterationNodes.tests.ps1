@@ -40,7 +40,7 @@ Describe 'AzDoIterationNodes Tests' -Tag "Unit", "Resources" {
         }
 
         Mock -CommandName Initialize-CacheObject -ModuleName AzureDevOpsDsc
-        Mock -CommandName Test-AzDevOpsProjectName -ModuleName AzureDevOpsDsc -MockWith { return $true }
+        Mock -CommandName Test-AzDevOpsProjectName -ModuleName AzureDevOpsDsc.Common -MockWith { return $true }
 
     }
 
