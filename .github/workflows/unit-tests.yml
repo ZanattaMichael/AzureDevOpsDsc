@@ -16,6 +16,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Cache required build modules
+        uses: actions/cache@v4
+        with:
+          path: output/RequiredModules
+          key: ${{ runner.os }}-requiredmodules-${{ hashFiles('RequiredModules.psd1') }}
+
+      - name: Build module
+        shell: pwsh
+        run: |
+          ./build.ps1 -ResolveDependency -Tasks build
+
       - name: Install Pester
         shell: pwsh
         run: |
@@ -24,6 +35,12 @@ jobs:
       - name: Run Classes unit tests
         shell: pwsh
         run: |
+          # Classes-suite test files resolve their classes via `using module AzureDevOpsDsc`
+          # against the built module, rather than dot-sourcing raw source - dot-sourcing classes
+          # across Pester's per-block session-state boundaries intermittently produced
+          # "Could not find type [X]" on cold runners. `using module` resolves at parse time,
+          # before any script code runs, so PSModulePath must already be correct here.
+          $env:PSModulePath = "$PWD\output\RequiredModules;$PWD\output\builtModule;$env:PSModulePath"
           Import-Module -Name Pester -RequiredVersion 5.7.1 -Force
           # *>&1 (not 2>&1) is required: Pester's colored summary/pass-fail lines go through
           # Write-Host, which writes to the Information stream (6), not Error (2) - 2>&1 alone

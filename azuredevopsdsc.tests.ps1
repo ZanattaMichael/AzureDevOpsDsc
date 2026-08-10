@@ -19,10 +19,6 @@ Import-Module -Name (Join-Path -Path $Global:RepositoryRoot -ChildPath 'tests\Un
 
 
 #
-# Load all the Enums and Classes
-
-. "$Global:RepositoryRoot\tests\Unit\Modules\TestHelpers\Import-ClassesAndEnums.ps1" -RepositoryRoot $Global:RepositoryRoot
-
 # Load all the Helper Functions from the AzureDevOpsDsc.Common Module into Memory
 Get-ChildItem -LiteralPath "$($Global:RepositoryRoot)\source\Modules\AzureDevOpsDsc.Common\Api\Functions\Private\Helper" -File -Recurse -Filter *.ps1 | ForEach-Object {
     Write-Verbose "Dot Sourcing $($_.FullName)"

@@ -1,3 +1,5 @@
+using module AzureDevOpsDsc
+
 # Requires -Module Pester -Version 5.0.0
 # Requires -Module DscResource.Common
 
@@ -9,12 +11,6 @@ if ($null -eq $Global:ClassesLoaded)
     # Load the Dependencies
     . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
 }
-
-# Always reload Enums+Classes into this file's own scope. Pester rebinds each test/block's
-# session state for isolation, which can leave classes loaded elsewhere (e.g. by the
-# orchestrator above) unresolvable - causing intermittent "Could not find type [X]" failures.
-$RepositoryRoot = (Get-Item -Path $PSScriptRoot).Parent.Parent.Parent.Parent.FullName
-. "$RepositoryRoot\tests\Unit\Modules\TestHelpers\Import-ClassesAndEnums.ps1" -RepositoryRoot $RepositoryRoot
 
 Describe 'AzDoProjectGroup' -Tag "Unit", "Resources" {
 
