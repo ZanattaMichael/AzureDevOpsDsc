@@ -1,0 +1,25 @@
+TOPIC
+    about_AzureDevOpsDscNative
+
+SHORT DESCRIPTION
+    DSC Resources for deployment and configuration of Azure DevOps Services and Azure DevOps Server, with native DSC v3 support.
+
+LONG DESCRIPTION
+    This module contains DSC Resources for deployment and configuration of Azure DevOps Services and Azure DevOps Server. It is a fork of the DSC Community AzureDevOpsDsc module, adding native DSC v3 support - every resource is discoverable and invokable by dsc.exe via the Microsoft.Adapter/PowerShell adapter, using generated adapted resource manifests.
+
+EXAMPLES
+    PS C:\> Get-DscResource -Module AzureDevOpsDscNative
+
+NOTE:
+    Thank you to all those who contributed to this module, by writing code, sharing opinions, and provided feedback.
+
+TROUBLESHOOTING NOTE:
+    Go to the Github repository for read about issues, submit a new issue, and read
+    about new releases. https://github.com/ZanattaMichael/AzureDevOpsDsc
+
+SEE ALSO
+  - https://github.com/ZanattaMichael/AzureDevOpsDsc
+
+KEYWORDS
+      DSC, DscResource, AzureDevOps, VSTS, TFS
+

@@ -1,18 +1,12 @@
-# AzureDevOpsDsc
+# AzureDevOpsDscNative
 
-> Note - This repo is mostly unmaintained and as such you may be better looking at [this new DSCv3 version by @mimachniak](https://github.com/mimachniak/AzureDevOpsDscv3)
-> As such @kilasuit who is looking for a replacement maintainer in https://github.com/dsccommunity/AzureDevOpsDsc/issues/44 is recommending this repo be archived unless another maintainer steps up.
+> This is a fork of [dsccommunity/AzureDevOpsDsc](https://github.com/dsccommunity/AzureDevOpsDsc), published separately as **AzureDevOpsDscNative** to add native DSC v3 support: every resource is discoverable and invokable by `dsc.exe` via the `Microsoft.Adapter/PowerShell` adapter, using generated adapted resource manifests - no wrapper resource required. See also [@mimachniak's AzureDevOpsDscv3](https://github.com/mimachniak/AzureDevOpsDscv3), which takes a different approach (a `Microsoft.Windows/WindowsPowerShell` wrapper) to the same goal.
 
-
-The **AzureDevOpsDsc** module contains DSC Resources for deployment and
+The **AzureDevOpsDscNative** module contains DSC Resources for deployment and
 configuration of Azure DevOps and Azure DevOps Server.
 
-[![Build Status](https://dev.azure.com/dsccommunity/AzureDevOpsDsc/_apis/build/status/dsccommunity.AzureDevOpsDsc?branchName=main)](https://dev.azure.com/dsccommunity/AzureDevOpsDsc/_build/latest?definitionId=41&branchName=main)
-![Azure DevOps coverage (branch)](https://img.shields.io/azure-devops/coverage/dsccommunity/AzureDevOpsDsc/41/main)
-[![Azure DevOps tests](https://img.shields.io/azure-devops/tests/dsccommunity/AzureDevOpsDsc/41/main)](https://dsccommunity.visualstudio.com/AzureDevOpsDsc/_test/analytics?definitionId=41&contextType=build)
-[![codecov](https://codecov.io/gh/dsccommunity/AzureDevOpsDsc/branch/main/graph/badge.svg)](https://codecov.io/gh/dsccommunity/AzureDevOpsDsc)
-[![PowerShell Gallery (with prereleases)](https://img.shields.io/powershellgallery/vpre/AzureDevOpsDsc?label=AzureDevOpsDsc%20Preview)](https://www.powershellgallery.com/packages/AzureDevOpsDsc/)
-[![PowerShell Gallery](https://img.shields.io/powershellgallery/v/AzureDevOpsDsc?label=AzureDevOpsDsc)](https://www.powershellgallery.com/packages/AzureDevOpsDsc/)
+[![PowerShell Gallery (with prereleases)](https://img.shields.io/powershellgallery/vpre/AzureDevOpsDscNative?label=AzureDevOpsDscNative%20Preview)](https://www.powershellgallery.com/packages/AzureDevOpsDscNative/)
+[![PowerShell Gallery](https://img.shields.io/powershellgallery/v/AzureDevOpsDscNative?label=AzureDevOpsDscNative)](https://www.powershellgallery.com/packages/AzureDevOpsDscNative/)
 
 ## Code of Conduct
 

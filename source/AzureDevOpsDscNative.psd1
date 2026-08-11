@@ -1,23 +1,23 @@
 @{
-    RootModule           = 'AzureDevOpsDsc.psm1'
+    RootModule           = 'AzureDevOpsDscNative.psm1'
 
     # Version number of this module.
     moduleVersion      = '0.0.2'
 
     # ID used to uniquely identify this module
-    GUID                 = '3f8bbada-0fa9-4d80-b3d8-f019c3c60230'
+    GUID                 = 'e7eb078e-5e97-42be-ae8f-decb140fc38e'
 
     # Author of this module
-    Author               = 'DSC Community'
+    Author               = 'ZanattaMichael'
 
     # Company or vendor of this module
-    CompanyName          = 'DSC Community'
+    CompanyName          = 'ZanattaMichael'
 
     # Copyright statement for this module
-    Copyright            = 'Copyright the DSC Community contributors. All rights reserved.'
+    Copyright            = 'Copyright the DSC Community contributors and ZanattaMichael. All rights reserved.'
 
     # Description of the functionality provided by this module
-    Description          = 'Module with DSC Resources for deployment and configuration of Azure DevOps Server/Services.'
+    Description          = 'A fork of the DSC Community AzureDevOpsDsc module with native DSC v3 support: every resource is discoverable and invokable by dsc.exe via the Microsoft.Adapter/PowerShell adapter, using generated adapted resource manifests, without requiring a wrapper resource.'
 
     # Minimum version of the Windows PowerShell engine required by this module
     PowerShellVersion  = '7.0'
@@ -103,13 +103,13 @@
             Prerelease   = ''
 
             # Tags applied to this module. These help with module discovery in online galleries.
-            Tags         = @('DesiredStateConfiguration', 'DSC', 'DSCResourceKit', 'DSCResource')
+            Tags         = @('DesiredStateConfiguration', 'DSC', 'DSCResourceKit', 'DSCResource', 'DSCv3', 'AzureDevOps')
 
             # A URL to the license for this module.
-            LicenseUri   = 'https://github.com/dsccommunity/AzureDevOpsDsc/blob/main/LICENSE'
+            LicenseUri   = 'https://github.com/ZanattaMichael/AzureDevOpsDsc/blob/main/LICENSE'
 
             # A URL to the main website for this project.
-            ProjectUri   = 'https://github.com/dsccommunity/AzureDevOpsDsc'
+            ProjectUri   = 'https://github.com/ZanattaMichael/AzureDevOpsDsc'
 
             # A URL to an icon representing this module.
             IconUri      = 'https://dsccommunity.org/images/DSC_Logo_300p.png'

@@ -1,4 +1,4 @@
-using module AzureDevOpsDsc
+using module AzureDevOpsDscNative
 
 # Requires -Module Pester -Version 5.0.0
 
