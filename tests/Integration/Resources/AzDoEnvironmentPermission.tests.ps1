@@ -12,7 +12,7 @@ Describe "AzDoEnvironmentPermission Integration Tests" -Tag "Integration", "Envi
 
         $parameters = @{
             Name       = 'AzDoEnvironmentPermission'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName     = $PROJECTNAME
                 EnvironmentName = $ENVNAME

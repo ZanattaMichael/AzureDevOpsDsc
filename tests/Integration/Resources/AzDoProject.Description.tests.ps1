@@ -7,7 +7,7 @@ Describe "AzDoProject Integration Tests - With Description" -Tag "Integration", 
         # Define common parameters
         $parameters = @{
             Name = 'AzDoProject'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
         }
 
         $PROJECTNAME = 'TESTPROJECT_DESCRIBED'

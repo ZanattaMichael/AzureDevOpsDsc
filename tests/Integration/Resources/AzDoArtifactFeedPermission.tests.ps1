@@ -12,7 +12,7 @@ Describe "AzDoArtifactFeedPermission Integration Tests" -Tag "Integration", "Art
 
         $parameters = @{
             Name       = 'AzDoArtifactFeedPermission'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName = $PROJECTNAME
                 FeedName    = $FEEDNAME

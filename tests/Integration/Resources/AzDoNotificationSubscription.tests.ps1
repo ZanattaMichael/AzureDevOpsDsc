@@ -27,7 +27,7 @@ Describe "AzDoNotificationSubscription Integration Tests (work item changed, Ema
         # in the organization's tenant.
         $parameters = @{
             Name       = 'AzDoNotificationSubscription'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 SubscriptionName = 'TEST_WI_CHANGED'
                 EventType        = 'ms.vss-work.workitem-changed-event'

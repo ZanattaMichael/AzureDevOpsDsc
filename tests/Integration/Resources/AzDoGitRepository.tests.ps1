@@ -8,7 +8,7 @@ Describe "AzDoGitRepository Integration Tests" -Tag "Integration", "GitRepositor
         # Define common parameters
         $parameters = @{
             Name = 'AzDoGitRepository'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
         }
 
         New-TestProject -ProjectName $PROJECTNAME

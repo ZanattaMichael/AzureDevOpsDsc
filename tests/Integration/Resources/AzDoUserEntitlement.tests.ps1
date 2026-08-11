@@ -20,7 +20,7 @@ Describe "AzDoUserEntitlement Integration Tests" -Tag "Integration", "UserEntitl
 
         $parameters = @{
             Name       = 'AzDoUserEntitlement'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 UserPrincipalName  = $TEST_USER
                 AccountLicenseType = 'stakeholder'

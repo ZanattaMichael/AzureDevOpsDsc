@@ -20,7 +20,7 @@ Describe "AzDoServiceHook Integration Tests" -Tag "Integration", "ServiceHook" {
 
         $parameters = @{
             Name       = 'AzDoServiceHook'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 Name             = 'it-push-hook'
                 ProjectName      = $PROJECTNAME

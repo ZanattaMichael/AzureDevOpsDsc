@@ -21,7 +21,7 @@ Describe "AzDoCheckConfiguration Integration Tests (Approval check on an environ
 
         $parameters = @{
             Name       = 'AzDoCheckConfiguration'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName        = $PROJECTNAME
                 TargetResourceName = $ENVNAME

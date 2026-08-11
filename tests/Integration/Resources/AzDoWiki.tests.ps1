@@ -30,7 +30,7 @@ Describe "AzDoWiki Integration Tests (code wiki)" -Tag "Integration", "Wiki" {
 
         $parameters = @{
             Name       = 'AzDoWiki'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName    = $PROJECTNAME
                 WikiName       = 'TEST_CODEWIKI'

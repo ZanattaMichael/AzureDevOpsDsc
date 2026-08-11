@@ -6,13 +6,13 @@ Describe "AzDoIterationNodes Integration Tests" -Tag "Integration", "IterationNo
 
         $parameters = @{
             Name       = 'AzDoIterationNodes'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
         }
 
         New-TestProject -ProjectName $PROJECTNAME
 
         # Clear any pre-existing iterations so tests start from a known state
-        $null = Invoke-DscResource -Name 'AzDoIterationNodes' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
+        $null = Invoke-DscResource -Name 'AzDoIterationNodes' -ModuleName 'AzureDevOpsDscNative' -Method 'Set' -Property @{
             ProjectName         = $PROJECTNAME
             IterationAttributes = @()
         }

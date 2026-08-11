@@ -8,7 +8,7 @@ Describe "AzDoGroupMember Integration Tests" -Tag "Integration", "GroupMember" {
         # Define common parameters
         $parameters = @{
             Name = 'AzDoGroupMember'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
         }
 
         New-TestProject -ProjectName $PROJECTNAME

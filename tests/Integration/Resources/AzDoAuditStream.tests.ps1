@@ -11,7 +11,7 @@ Describe "AzDoAuditStream Integration Tests" -Tag "Integration", "AuditStream" {
 
         $parameters = @{
             Name       = 'AzDoAuditStream'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 StreamName     = $STREAMNAME
                 ConsumerType   = 'AzureEventHub'

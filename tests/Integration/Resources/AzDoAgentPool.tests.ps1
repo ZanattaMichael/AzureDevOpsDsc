@@ -6,7 +6,7 @@ Describe "AzDoAgentPool Integration Tests" -Tag "Integration", "AgentPool" {
 
         $parameters = @{
             Name       = 'AzDoAgentPool'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 PoolName      = $POOLNAME
                 PoolType      = 'automation'

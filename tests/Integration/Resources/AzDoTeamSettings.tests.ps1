@@ -8,7 +8,7 @@ Describe "AzDoTeamSettings Integration Tests" -Tag "Integration", "TeamSettings"
         New-TestProject -ProjectName $PROJECTNAME
 
         # Team settings require an existing team — create one via the AzDoTeam resource first.
-        Invoke-DscResource -Name 'AzDoTeam' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
+        Invoke-DscResource -Name 'AzDoTeam' -ModuleName 'AzureDevOpsDscNative' -Method 'Set' -Property @{
             ProjectName = $PROJECTNAME
             TeamName    = $TEAMNAME
             Description = 'Team used for team-settings integration tests'
@@ -16,7 +16,7 @@ Describe "AzDoTeamSettings Integration Tests" -Tag "Integration", "TeamSettings"
 
         $parameters = @{
             Name       = 'AzDoTeamSettings'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName  = $PROJECTNAME
                 TeamName     = $TEAMNAME

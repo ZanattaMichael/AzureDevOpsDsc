@@ -31,7 +31,7 @@ Describe "AzDoProcessPermission Integration Tests" -Tag "Integration", "ProcessP
         # organisation-level group descriptor ("[]\GroupName").
         $parameters = @{
             Name       = 'AzDoProcessPermission'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProcessName = 'AllProcesses'
                 isInherited = $false
@@ -195,7 +195,7 @@ Describe "AzDoProcessPermission Integration Tests" -Tag "Integration", "ProcessP
         BeforeAll {
             $PROCESSNAME = "ITProcessPerm$(Get-Random -Maximum 99999)"
 
-            $null = Invoke-DscResource -Name 'AzDoProcess' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
+            $null = Invoke-DscResource -Name 'AzDoProcess' -ModuleName 'AzureDevOpsDscNative' -Method 'Set' -Property @{
                 ProcessName       = $PROCESSNAME
                 ParentProcessName = 'Agile'
                 Description       = 'Inherited process for process-permission scope testing'
@@ -204,7 +204,7 @@ Describe "AzDoProcessPermission Integration Tests" -Tag "Integration", "ProcessP
 
             $processParameters = @{
                 Name       = 'AzDoProcessPermission'
-                ModuleName = 'AzureDevOpsDsc'
+                ModuleName = 'AzureDevOpsDscNative'
                 property   = @{
                     ProcessName = $PROCESSNAME
                     isInherited = $false
@@ -229,7 +229,7 @@ Describe "AzDoProcessPermission Integration Tests" -Tag "Integration", "ProcessP
         }
 
         AfterAll {
-            $null = Invoke-DscResource -Name 'AzDoProcess' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
+            $null = Invoke-DscResource -Name 'AzDoProcess' -ModuleName 'AzureDevOpsDscNative' -Method 'Set' -Property @{
                 ProcessName       = $PROCESSNAME
                 ParentProcessName = 'Agile'
                 Ensure            = 'Absent'

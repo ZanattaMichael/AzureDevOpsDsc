@@ -6,7 +6,7 @@ Describe "AzDoTeam Integration Tests" -Tag "Integration", "Team" {
 
         $parameters = @{
             Name       = 'AzDoTeam'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName = $PROJECTNAME
                 TeamName    = 'TESTTEAM'

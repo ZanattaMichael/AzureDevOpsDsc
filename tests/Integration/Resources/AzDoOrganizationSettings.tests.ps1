@@ -9,7 +9,7 @@ Describe "AzDoOrganizationSettings Integration Tests" -Tag "Integration", "Organ
 
         $parameters = @{
             Name       = 'AzDoOrganizationSettings'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
         }
     }
 

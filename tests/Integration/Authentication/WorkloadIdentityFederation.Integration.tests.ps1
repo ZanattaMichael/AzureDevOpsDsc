@@ -56,7 +56,7 @@ Describe "Workload Identity Federation Authentication - Integration Tests" -Tags
 
         if (-not $script:skip)
         {
-            Import-Module AzureDevOpsDsc -Force
+            Import-Module AzureDevOpsDscNative -Force
         }
     }
 

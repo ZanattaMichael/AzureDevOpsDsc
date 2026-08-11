@@ -6,7 +6,7 @@ Describe "AzDoPipelineEnvironment Integration Tests" -Tag "Integration", "Pipeli
 
         $parameters = @{
             Name       = 'AzDoPipelineEnvironment'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName     = $PROJECTNAME
                 EnvironmentName = 'TEST_ENV'

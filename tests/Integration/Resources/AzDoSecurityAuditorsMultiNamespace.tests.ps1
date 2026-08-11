@@ -76,7 +76,7 @@ Describe "Security Auditors multi-namespace chain (reproduction)" -Tag "Integrat
         # Mirrors 'Project Permissions - Security Auditors' exactly (single identity, mixed Allow/Deny).
         $projectPermParams = @{
             Name       = 'AzDoProjectPermission'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName = $PROJECTNAME
                 GroupName   = $auditorsIdentity
@@ -99,7 +99,7 @@ Describe "Security Auditors multi-namespace chain (reproduction)" -Tag "Integrat
         # Mirrors 'Build Namespace - Security Auditors' exactly (single identity, mixed Allow/Deny).
         $buildPermParams = @{
             Name       = 'AzDoSecurityNamespacePermission'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 SecurityNamespace = 'Build'
                 Token             = $PROJECTNAME
@@ -123,7 +123,7 @@ Describe "Security Auditors multi-namespace chain (reproduction)" -Tag "Integrat
         $PROCESSNAME = "ITChainProcess$(Get-Random -Maximum 99999)"
         $processPermParams = @{
             Name       = 'AzDoProcessPermission'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProcessName = $PROCESSNAME
                 isInherited = $false
@@ -152,7 +152,7 @@ Describe "Security Auditors multi-namespace chain (reproduction)" -Tag "Integrat
         # project's default iteration.
         $iterationPermParams = @{
             Name       = 'AzDoIterationPermission'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName   = $PROJECTNAME
                 IterationPath = $null
@@ -217,7 +217,7 @@ Describe "Security Auditors multi-namespace chain (reproduction)" -Tag "Integrat
     Context "Step 3: AzDoProcessPermission grants the SAME identity a third ACE (own inherited process)" {
 
         BeforeAll {
-            $null = Invoke-DscResource -Name 'AzDoProcess' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
+            $null = Invoke-DscResource -Name 'AzDoProcess' -ModuleName 'AzureDevOpsDscNative' -Method 'Set' -Property @{
                 ProcessName       = $PROCESSNAME
                 ParentProcessName = 'Agile'
                 Description       = 'Inherited process for the security-auditors chain reproduction'
@@ -226,7 +226,7 @@ Describe "Security Auditors multi-namespace chain (reproduction)" -Tag "Integrat
         }
 
         AfterAll {
-            $null = Invoke-DscResource -Name 'AzDoProcess' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
+            $null = Invoke-DscResource -Name 'AzDoProcess' -ModuleName 'AzureDevOpsDscNative' -Method 'Set' -Property @{
                 ProcessName       = $PROCESSNAME
                 ParentProcessName = 'Agile'
                 Ensure            = 'Absent'

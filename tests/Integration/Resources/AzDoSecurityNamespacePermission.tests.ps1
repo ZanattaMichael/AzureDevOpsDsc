@@ -9,7 +9,7 @@ Describe "AzDoSecurityNamespacePermission Integration Tests" -Tag "Integration",
         # predictable target that does not affect core project functionality.
         $parameters = @{
             Name       = 'AzDoSecurityNamespacePermission'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 SecurityNamespace = 'Analytics'
                 Token             = "$/[$PROJECTNAME]"
@@ -30,7 +30,7 @@ Describe "AzDoSecurityNamespacePermission Integration Tests" -Tag "Integration",
         New-TestGroup -ProjectName $PROJECTNAME -GroupName $GROUPNAME
 
         # Ensure the ACL is in inherited/empty state before tests begin so we start clean
-        $null = Invoke-DscResource -Name 'AzDoSecurityNamespacePermission' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
+        $null = Invoke-DscResource -Name 'AzDoSecurityNamespacePermission' -ModuleName 'AzureDevOpsDscNative' -Method 'Set' -Property @{
             SecurityNamespace = 'Analytics'
             Token             = "$/[$PROJECTNAME]"
             GroupName         = "[$PROJECTNAME]\$GROUPNAME"

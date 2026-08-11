@@ -31,7 +31,7 @@ Describe "Service Principal Authentication - Integration Tests" -Tags "Integrati
 
         if (-not $script:skip)
         {
-            Import-Module AzureDevOpsDsc -Force
+            Import-Module AzureDevOpsDscNative -Force
         }
     }
 

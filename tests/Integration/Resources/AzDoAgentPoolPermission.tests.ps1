@@ -20,7 +20,7 @@ Describe "AzDoAgentPoolPermission Integration Tests" -Tag "Integration", "AgentP
         # The GroupName must reference an organisation-level group descriptor.
         $parameters = @{
             Name       = 'AzDoAgentPoolPermission'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 PoolName    = $POOLNAME
                 GroupName   = "[]\$GROUPNAME"

@@ -6,7 +6,7 @@ Describe "AzDoIterationPermission Integration Tests" -Tag "Integration", "Iterat
 
         $parameters = @{
             Name       = 'AzDoIterationPermission'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName   = $PROJECTNAME
                 IterationPath = $null
