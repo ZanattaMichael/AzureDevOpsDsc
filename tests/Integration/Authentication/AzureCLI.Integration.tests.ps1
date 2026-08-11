@@ -37,7 +37,7 @@ Describe "Azure CLI Authentication - Integration Tests" -Tags "Integration", "Au
 
         if (-not $script:skip)
         {
-            Import-Module AzureDevOpsDsc -Force
+            Import-Module AzureDevOpsDscNative -Force
         }
     }
 

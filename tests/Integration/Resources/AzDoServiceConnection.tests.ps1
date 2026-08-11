@@ -9,7 +9,7 @@ Describe "AzDoServiceConnection Integration Tests (Generic UsernamePassword conn
         # available without external service dependency.
         $parameters = @{
             Name       = 'AzDoServiceConnection'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName    = $PROJECTNAME
                 ConnectionName = 'TEST_SC'

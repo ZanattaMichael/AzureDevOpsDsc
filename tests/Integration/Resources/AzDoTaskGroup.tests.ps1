@@ -7,7 +7,7 @@ Describe "AzDoTaskGroup Integration Tests" -Tag "Integration", "TaskGroup" {
         # A minimal task group with a single PowerShell step.
         $parameters = @{
             Name       = 'AzDoTaskGroup'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName   = $PROJECTNAME
                 TaskGroupName = 'TEST_TG'

@@ -1,13 +1,13 @@
 <#
 .SYNOPSIS
-    Installs the freshly built AzureDevOpsDsc module into the current user's
+    Installs the freshly built AzureDevOpsDscNative module into the current user's
     PowerShell Modules directory so the integration tests (which import the
     module by name from PSModulePath) exercise the latest source.
 
 .DESCRIPTION
     Sampler's `build.ps1 -Tasks build` produces the module under
-    output\builtModule\AzureDevOpsDsc\<version>. The integration test runner
-    (tests\Integration\Invoke-Tests.ps1) imports AzureDevOpsDsc by name, which
+    output\builtModule\AzureDevOpsDscNative\<version>. The integration test runner
+    (tests\Integration\Invoke-Tests.ps1) imports AzureDevOpsDscNative by name, which
     resolves from $HOME\Documents\PowerShell\Modules. This script copies the
     built versioned module over that deployed copy.
 
@@ -23,7 +23,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $repoRoot  = Split-Path -Parent $PSScriptRoot
-$builtRoot = Join-Path $repoRoot 'output\builtModule\AzureDevOpsDsc'
+$builtRoot = Join-Path $repoRoot 'output\builtModule\AzureDevOpsDscNative'
 
 if (-not (Test-Path $builtRoot))
 {
@@ -41,7 +41,7 @@ if (-not $Version)
 }
 
 $source = Join-Path $builtRoot $Version
-$destModuleRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'PowerShell\Modules\AzureDevOpsDsc'
+$destModuleRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'PowerShell\Modules\AzureDevOpsDscNative'
 $dest = Join-Path $destModuleRoot $Version
 
 Write-Host "[redeploy] Source: $source"
@@ -62,7 +62,7 @@ if (Test-Path $dest)
 $null = New-Item -ItemType Directory -Path $dest -Force
 Copy-Item -Path (Join-Path $source '*') -Destination $dest -Recurse -Force
 
-Write-Host "[redeploy] Deployed AzureDevOpsDsc $Version."
+Write-Host "[redeploy] Deployed AzureDevOpsDscNative $Version."
 
 # Sanity verification
 $projFile = Join-Path $dest 'Modules\AzureDevOpsDsc.Common\Resources\Functions\Public\AzDoProject\Get-AzDoProject.ps1'

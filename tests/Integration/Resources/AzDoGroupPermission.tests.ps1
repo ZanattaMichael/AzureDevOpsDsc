@@ -8,7 +8,7 @@ Describe "AzDoGroupPermission intergration tests" -Tag "Integration", "GroupPerm
 
         $parameters = @{
             Name = 'AzDoGroupPermission'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property = @{
                 GroupName = "[$PROJECTNAME]\$GroupName"
                 isInherited = $false

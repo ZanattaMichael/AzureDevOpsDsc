@@ -6,7 +6,7 @@ Describe "AzDoVariableGroup Integration Tests" -Tag "Integration", "VariableGrou
 
         $parameters = @{
             Name       = 'AzDoVariableGroup'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName       = $PROJECTNAME
                 VariableGroupName = 'TEST_VG'

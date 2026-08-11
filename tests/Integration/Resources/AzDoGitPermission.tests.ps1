@@ -6,7 +6,7 @@ Describe "AzDoGitPermission Integration Tests" -Tag "Integration", "GitPermissio
 
         $parameters = @{
             Name = 'AzDoGitPermission'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property = @{
                 ProjectName = $PROJECTNAME
                 RepositoryName = 'TESTREPOSITORY'

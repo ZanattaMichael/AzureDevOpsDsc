@@ -31,7 +31,7 @@ Describe "Token Auto-Refresh - Integration Tests" -Tags "Integration", "Authenti
 
         if ($script:hasSP -or $script:hasCLI)
         {
-            Import-Module AzureDevOpsDsc -Force
+            Import-Module AzureDevOpsDscNative -Force
         }
     }
 

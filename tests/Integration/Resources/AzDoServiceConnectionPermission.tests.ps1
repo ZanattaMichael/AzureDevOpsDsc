@@ -7,7 +7,7 @@ Describe "AzDoServiceConnectionPermission Integration Tests" -Tag "Integration",
         $GROUPNAME   = 'SCPermGroup'
 
         function New-ServiceConnection { param([string]$ProjectName, [string]$ConnectionName)
-            $null = Invoke-DscResource -Name 'AzDoServiceConnection' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
+            $null = Invoke-DscResource -Name 'AzDoServiceConnection' -ModuleName 'AzureDevOpsDscNative' -Method 'Set' -Property @{
                 ProjectName    = $ProjectName
                 ConnectionName = $ConnectionName
                 ConnectionType = 'Generic'
@@ -22,7 +22,7 @@ Describe "AzDoServiceConnectionPermission Integration Tests" -Tag "Integration",
 
         $parameters = @{
             Name       = 'AzDoServiceConnectionPermission'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName    = $PROJECTNAME
                 ConnectionName = $SCNAME
