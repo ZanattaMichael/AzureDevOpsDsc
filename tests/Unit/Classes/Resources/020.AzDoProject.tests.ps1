@@ -1,4 +1,4 @@
-using module AzureDevOpsDsc
+using module AzureDevOpsDscNative
 
 # Requires -Module Pester -Version 5.0.0
 # Requires -Module DscResource.Common
@@ -21,9 +21,9 @@ Describe "AzDoProject Class" -Tag "Unit", "Resources" {
         $TestProjectNameFunctionpath = Get-FunctionItem 'Test-AzDevOpsProjectName.ps1'
         . $TestProjectNameFunctionpath
 
-        Mock -CommandName Import-Module -ModuleName AzureDevOpsDsc
-        Mock -CommandName Test-Path -ModuleName AzureDevOpsDsc -MockWith { $true }
-        Mock -CommandName Import-Clixml -ModuleName AzureDevOpsDsc -MockWith {
+        Mock -CommandName Import-Module -ModuleName AzureDevOpsDscNative
+        Mock -CommandName Test-Path -ModuleName AzureDevOpsDscNative -MockWith { $true }
+        Mock -CommandName Import-Clixml -ModuleName AzureDevOpsDscNative -MockWith {
             return @{
                 OrganizationName = 'mock-org'
                 Token = @{
@@ -33,11 +33,11 @@ Describe "AzDoProject Class" -Tag "Unit", "Resources" {
 
             }
         }
-        Mock -CommandName New-AzDoAuthenticationProvider -ModuleName AzureDevOpsDsc
-        Mock -CommandName Get-AzDoCacheObjects -ModuleName AzureDevOpsDsc -MockWith {
+        Mock -CommandName New-AzDoAuthenticationProvider -ModuleName AzureDevOpsDscNative
+        Mock -CommandName Get-AzDoCacheObjects -ModuleName AzureDevOpsDscNative -MockWith {
             return @('mock-cache-type')
         }
-        Mock -CommandName Initialize-CacheObject -ModuleName AzureDevOpsDsc
+        Mock -CommandName Initialize-CacheObject -ModuleName AzureDevOpsDscNative
         Mock -CommandName Test-AzDevOpsProjectName -ModuleName AzureDevOpsDsc.Common -MockWith { return $true }
 
     }
@@ -99,7 +99,7 @@ Describe "AzDoProject Class" -Tag "Unit", "Resources" {
         It "Should return an instance of AzDoProject" {
 
             Mock -CommandName Test-AzDevOpsProjectName -ModuleName AzureDevOpsDsc.Common -MockWith { return $true }
-            Mock -CommandName Get-AzDoProject -ModuleName AzureDevOpsDsc -MockWith {
+            Mock -CommandName Get-AzDoProject -ModuleName AzureDevOpsDscNative -MockWith {
                 return @{
                     Ensure             = [Ensure]::Absent
                     ProjectName        = 'MyProject'

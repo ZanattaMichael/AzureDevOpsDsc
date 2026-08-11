@@ -1,4 +1,4 @@
-using module AzureDevOpsDsc
+using module AzureDevOpsDscNative
 
 $currentFile = $MyInvocation.MyCommand.Path
 

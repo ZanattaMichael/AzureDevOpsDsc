@@ -1,4 +1,4 @@
-using module AzureDevOpsDsc
+using module AzureDevOpsDscNative
 
 # Requires -Module Pester -Version 5.0.0
 # Requires -Module DscResource.Common
@@ -17,9 +17,9 @@ Describe 'AzDoGitRepository' -Tag "Unit", "Resources" {
     BeforeAll {
         $ENV:AZDODSC_CACHE_DIRECTORY = 'mocked_cache_directory'
 
-        Mock -CommandName Import-Module -ModuleName AzureDevOpsDsc
-        Mock -CommandName Test-Path -ModuleName AzureDevOpsDsc -MockWith { $true }
-        Mock -CommandName Import-Clixml -ModuleName AzureDevOpsDsc -MockWith {
+        Mock -CommandName Import-Module -ModuleName AzureDevOpsDscNative
+        Mock -CommandName Test-Path -ModuleName AzureDevOpsDscNative -MockWith { $true }
+        Mock -CommandName Import-Clixml -ModuleName AzureDevOpsDscNative -MockWith {
             return @{
                 OrganizationName = 'mock-org'
                 Token = @{
@@ -29,11 +29,11 @@ Describe 'AzDoGitRepository' -Tag "Unit", "Resources" {
 
             }
         }
-        Mock -CommandName New-AzDoAuthenticationProvider -ModuleName AzureDevOpsDsc
-        Mock -CommandName Get-AzDoCacheObjects -ModuleName AzureDevOpsDsc -MockWith {
+        Mock -CommandName New-AzDoAuthenticationProvider -ModuleName AzureDevOpsDscNative
+        Mock -CommandName Get-AzDoCacheObjects -ModuleName AzureDevOpsDscNative -MockWith {
             return @('mock-cache-type')
         }
-        Mock -CommandName Initialize-CacheObject -ModuleName AzureDevOpsDsc
+        Mock -CommandName Initialize-CacheObject -ModuleName AzureDevOpsDscNative
 
     }
     AfterAll {
@@ -46,7 +46,7 @@ Describe 'AzDoGitRepository' -Tag "Unit", "Resources" {
     Context 'When getting the current state of a Git repository' {
 
         BeforeAll {
-            Mock -CommandName Get-AzDoGitRepository -ModuleName AzureDevOpsDsc -MockWith {
+            Mock -CommandName Get-AzDoGitRepository -ModuleName AzureDevOpsDscNative -MockWith {
                 return @{
                     Ensure = [Ensure]::Absent
                     propertiesChanged = @()

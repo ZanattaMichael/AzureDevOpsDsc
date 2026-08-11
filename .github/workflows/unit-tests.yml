@@ -35,7 +35,7 @@ jobs:
       - name: Run Classes unit tests
         shell: pwsh
         run: |
-          # Classes-suite test files resolve their classes via `using module AzureDevOpsDsc`
+          # Classes-suite test files resolve their classes via `using module AzureDevOpsDscNative`
           # against the built module, rather than dot-sourcing raw source - dot-sourcing classes
           # across Pester's per-block session-state boundaries intermittently produced
           # "Could not find type [X]" on cold runners. `using module` resolves at parse time,
@@ -44,9 +44,9 @@ jobs:
           # Some DSC resource classes' Construct() also explicitly re-imports the
           # AzureDevOpsDsc.Common nested module by bare name (Import-Module AzureDevOpsDsc.Common),
           # which only resolves via PSModulePath - it isn't found via output\builtModule itself,
-          # since it lives one level down at <builtModule>\AzureDevOpsDsc\<version>\Modules. That
-          # subfolder path is resolved dynamically here to avoid hardcoding the module version.
-          $builtModulesDir = (Get-ChildItem -Path "$PWD\output\builtModule\AzureDevOpsDsc\*\Modules" -Directory -ErrorAction Stop | Select-Object -First 1).FullName
+          # since it lives one level down at <builtModule>\AzureDevOpsDscNative\<version>\Modules.
+          # That subfolder path is resolved dynamically here to avoid hardcoding the module version.
+          $builtModulesDir = (Get-ChildItem -Path "$PWD\output\builtModule\AzureDevOpsDscNative\*\Modules" -Directory -ErrorAction Stop | Select-Object -First 1).FullName
           $env:PSModulePath = "$PWD\output\RequiredModules;$PWD\output\builtModule;$builtModulesDir;$env:PSModulePath"
           Import-Module -Name Pester -RequiredVersion 5.7.1 -Force
           # *>&1 (not 2>&1) is required: Pester's colored summary/pass-fail lines go through
