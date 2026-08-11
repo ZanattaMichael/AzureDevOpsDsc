@@ -4,7 +4,6 @@
 #>
 
 [DscResource()]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSDSCStandardDSCFunctionsInResource', '', Justification='Test() and Set() method are inherited from base, "AzDevOpsDscResourceBase" class')]
 class AzDoArtifactFeedPermission : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)]
@@ -21,6 +20,8 @@ class AzDoArtifactFeedPermission : AzDevOpsDscResourceBase
         $this.Construct()
     }
 
+    [void] Set() { ([AzDevOpsDscResourceBase]$this).Set() }
+    [System.Boolean] Test() { return ([AzDevOpsDscResourceBase]$this).Test() }
     [AzDoArtifactFeedPermission] Get()
     {
         return [AzDoArtifactFeedPermission]$($this.GetDscCurrentStateProperties())

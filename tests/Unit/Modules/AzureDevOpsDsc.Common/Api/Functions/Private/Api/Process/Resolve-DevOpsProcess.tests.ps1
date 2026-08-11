@@ -11,6 +11,11 @@ Describe 'Resolve-DevOpsProcess' -Tag "Unit", "Process", "API" {
         $files = Get-FunctionItem (Find-MockedFunctions -TestFilePath $currentFile)
         ForEach ($file in $files) { . $file.FullName }
 
+        . (Get-ClassFilePath '000.CacheItem')
+        # Get-CacheItem's -Type parameter has a [ValidateScript] referencing Get-AzDoCacheObjects;
+        # load it too so Mock can copy that parameter block without failing to resolve the command.
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
+
         Mock -CommandName Add-CacheItem
     }
 

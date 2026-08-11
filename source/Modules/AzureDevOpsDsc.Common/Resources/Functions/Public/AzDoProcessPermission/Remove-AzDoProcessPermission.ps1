@@ -55,14 +55,14 @@ function Remove-AzDoProcessPermission
 
     if (-not $SecurityNamespace)
     {
-        Write-Error "[Remove-AzDoProcessPermission] Security namespace 'Process' not found."
+        Write-Error "[Remove-AzDoProcessPermission] Security namespace 'Process' not found." -ErrorAction Continue
         return
     }
 
     $processToken = Get-DevOpsProcessAclToken -ProcessName $ProcessName -OrganizationName $OrganizationName
     if (-not $processToken)
     {
-        Write-Error "[Remove-AzDoProcessPermission] Could not resolve a Process ACL token for '$ProcessName'."
+        Write-Error "[Remove-AzDoProcessPermission] Could not resolve a Process ACL token for '$ProcessName'." -ErrorAction Continue
         return
     }
 

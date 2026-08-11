@@ -79,7 +79,7 @@ function Get-AzDoProcessPermission
     $namespace = Get-CacheItem -Key $SecurityNamespace -Type 'SecurityNamespaces'
     if (-not $namespace)
     {
-        Write-Error "[Get-AzDoProcessPermission] Security namespace '$SecurityNamespace' not found."
+        Write-Error "[Get-AzDoProcessPermission] Security namespace '$SecurityNamespace' not found." -ErrorAction Continue
         $getResult.status = [DSCGetSummaryState]::Error
         $getResult.reason = "Security namespace '$SecurityNamespace' not found."
         return $getResult

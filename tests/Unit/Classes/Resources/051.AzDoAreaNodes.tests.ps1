@@ -1,3 +1,5 @@
+using module AzureDevOpsDscNative
+
 # Requires -Module Pester -Version 5.0.0
 # Requires -Module DscResource.Common
 
@@ -10,12 +12,6 @@ if ($null -eq $Global:ClassesLoaded)
     . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
 }
 
-# Always reload Enums+Classes into this file's own scope. Pester rebinds each test/block's
-# session state for isolation, which can leave classes loaded elsewhere (e.g. by the
-# orchestrator above) unresolvable - causing intermittent "Could not find type [X]" failures.
-$RepositoryRoot = (Get-Item -Path $PSScriptRoot).Parent.Parent.Parent.Parent.FullName
-. "$RepositoryRoot\tests\Unit\Modules\TestHelpers\Import-ClassesAndEnums.ps1" -RepositoryRoot $RepositoryRoot
-
 Describe 'AzDoAreaNodes Tests' -Tag "Unit", "Resources" {
 
     BeforeAll {
@@ -25,9 +21,9 @@ Describe 'AzDoAreaNodes Tests' -Tag "Unit", "Resources" {
         $TestProjectNameFunctionpath = Get-FunctionItem 'Test-AzDevOpsProjectName.ps1'
         . $TestProjectNameFunctionpath
 
-        Mock -CommandName Import-Module
-        Mock -CommandName Test-Path -MockWith { $true }
-        Mock -CommandName Import-Clixml -MockWith {
+        Mock -CommandName Import-Module -ModuleName AzureDevOpsDscNative
+        Mock -CommandName Test-Path -ModuleName AzureDevOpsDscNative -MockWith { $true }
+        Mock -CommandName Import-Clixml -ModuleName AzureDevOpsDscNative -MockWith {
             return @{
                 OrganizationName = 'mock-org'
                 Token = @{
@@ -37,13 +33,13 @@ Describe 'AzDoAreaNodes Tests' -Tag "Unit", "Resources" {
 
             }
         }
-        Mock -CommandName New-AzDoAuthenticationProvider
-        Mock -CommandName Get-AzDoCacheObjects -MockWith {
+        Mock -CommandName New-AzDoAuthenticationProvider -ModuleName AzureDevOpsDscNative
+        Mock -CommandName Get-AzDoCacheObjects -ModuleName AzureDevOpsDscNative -MockWith {
             return @('mock-cache-type')
         }
 
-        Mock -CommandName Initialize-CacheObject
-        Mock -CommandName Test-AzDevOpsProjectName -MockWith { return $true }
+        Mock -CommandName Initialize-CacheObject -ModuleName AzureDevOpsDscNative
+        Mock -CommandName Test-AzDevOpsProjectName -ModuleName AzureDevOpsDsc.Common -MockWith { return $true }
 
     }
 
@@ -65,7 +61,7 @@ Describe 'AzDoAreaNodes Tests' -Tag "Unit", "Resources" {
         [System.String[]]$AreaPaths
 
         BeforeAll {
-            Mock -CommandName Get-AzDoAreaNodes -MockWith {
+            Mock -CommandName Get-AzDoAreaNodes -ModuleName AzureDevOpsDscNative -MockWith {
                 return @{
                     Ensure = [Ensure]::Absent
                     propertiesChanged = @()
