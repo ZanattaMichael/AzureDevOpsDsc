@@ -74,9 +74,9 @@ param (
 Set-StrictMode -Off
 $ErrorActionPreference = 'Stop'
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 # 1.  Pre-flight
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 
 if ($PSVersionTable.PSVersion.Major -lt 7)
 {
@@ -91,9 +91,9 @@ Write-Host "  PowerShell $($PSVersionTable.PSVersion)  |  $([System.Runtime.Inte
 Write-Host '=======================================' -ForegroundColor Cyan
 Write-Host ''
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 # 2.  Resolve key paths
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 
 $RepoRoot      = $PSScriptRoot
 $SourceRoot    = Join-Path $RepoRoot 'source'
@@ -103,9 +103,9 @@ $TestHelperDir = Join-Path $RepoRoot 'tests' 'Unit' 'Modules' 'TestHelpers'
 Write-Host "Repo   : $RepoRoot" -ForegroundColor DarkGray
 Write-Host "Source : $SourceRoot" -ForegroundColor DarkGray
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 # 3.  Environment variables required by the module
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 
 if ($CacheDirectory)
 {
@@ -124,9 +124,9 @@ if (-not (Test-Path -Path $ENV:AZDODSC_CACHE_DIRECTORY))
 Write-Host "Cache  : $ENV:AZDODSC_CACHE_DIRECTORY" -ForegroundColor DarkGray
 Write-Host ''
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 # 4.  Global state expected by test helpers and base classes
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 
 Remove-Variable -Name RepositoryRoot -Scope Global -ErrorAction SilentlyContinue
 Remove-Variable -Name TestPaths      -Scope Global -ErrorAction SilentlyContinue
@@ -147,18 +147,18 @@ $Global:TestPaths = Get-ChildItem -LiteralPath $RepoRoot -Recurse -File -Include
 Write-Host "  $($Global:TestPaths.Count) source files indexed" -ForegroundColor DarkGray
 Write-Host ''
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 # 5.  Test helper functions  (Get-FunctionItem, Find-MockedFunctions, etc.)
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 
 Write-Host 'Loading test helpers...' -ForegroundColor Yellow
 Import-Module -Name (Join-Path $TestHelperDir 'CommonTestFunctions.psm1') -Force
 Write-Host '  OK: CommonTestFunctions.psm1' -ForegroundColor DarkGray
 Write-Host ''
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 # 6.  Enums
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 
 Write-Host 'Loading enums...' -ForegroundColor Yellow
 $enumFiles = Get-ChildItem -LiteralPath (Join-Path $SourceRoot 'Enum') -File -Filter '*.ps1' |
@@ -171,12 +171,12 @@ foreach ($f in $enumFiles)
 Write-Host "  $($enumFiles.Count) enum file(s)" -ForegroundColor DarkGray
 Write-Host ''
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 # 7.  Classes
 #     [DscResource()] is stripped so classes load without a DSC configuration
 #     block.  Files are sorted by name so parent classes (lower numbers) load
 #     before children.
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 
 Write-Host 'Loading classes...' -ForegroundColor Yellow
 $classFiles = Get-ChildItem -LiteralPath (Join-Path $SourceRoot 'Classes') -File -Filter '*.ps1' |
@@ -191,15 +191,15 @@ foreach ($f in $classFiles)
 Write-Host "  $($classFiles.Count) class file(s)" -ForegroundColor DarkGray
 Write-Host ''
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 # 8.  AzureDevOpsDsc.Common functions
 #     Load order mirrors the dependency chain in AzureDevOpsDsc.Common.psm1.
 #
 #     IMPORTANT: dot-sourcing MUST happen at script scope (not inside a helper
 #     function) so that defined functions persist after each block completes.
 #     A foreach loop at script level runs in the current scope; a function body
-#     does not — definitions would be lost on return.
-# ─────────────────────────────────────────────────────────────────────────────
+#     does not -- definitions would be lost on return.
+# ────────────────────────────────────────────────────────────────────────────────
 
 Write-Host 'Loading AzureDevOpsDsc.Common functions...' -ForegroundColor Yellow
 
@@ -243,9 +243,9 @@ Write-Host ''
 Write-Host "  $totalFunctions function file(s) loaded" -ForegroundColor DarkGray
 Write-Host ''
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 # 9.  Smoke checks
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 
 Write-Host 'Verifying load...' -ForegroundColor Yellow
 
@@ -254,16 +254,21 @@ $checks = [ordered]@{
     'TokenType::ServicePrincipal'             = { [TokenType]::ServicePrincipal    -ne $null }
     'TokenType::Certificate'                  = { [TokenType]::Certificate         -ne $null }
     'TokenType::AzureCLI'                     = { [TokenType]::AzureCLI            -ne $null }
+    'TokenType::WorkloadIdentityFederation'   = { [TokenType]::WorkloadIdentityFederation -ne $null }
     'AuthenticationToken class'               = { [AuthenticationToken]      -ne $null }
     'PersonalAccessToken class'               = { [PersonalAccessToken]      -ne $null }
     'ManagedIdentityToken class'              = { [ManagedIdentityToken]     -ne $null }
     'ServicePrincipalToken class'             = { [ServicePrincipalToken]    -ne $null }
     'CertificateToken class'                  = { [CertificateToken]         -ne $null }
     'AzureCliToken class'                     = { [AzureCliToken]            -ne $null }
+    'WorkloadIdentityFederationToken class'   = { [WorkloadIdentityFederationToken] -ne $null }
     'New-AzDoAuthenticationProvider'          = { $null -ne (Get-Command New-AzDoAuthenticationProvider          -EA SilentlyContinue) }
     'Get-AzServicePrincipalToken'             = { $null -ne (Get-Command Get-AzServicePrincipalToken             -EA SilentlyContinue) }
     'Get-AzServicePrincipalCertificateToken'  = { $null -ne (Get-Command Get-AzServicePrincipalCertificateToken  -EA SilentlyContinue) }
     'Get-AzCliToken'                          = { $null -ne (Get-Command Get-AzCliToken                          -EA SilentlyContinue) }
+    'Get-AzWorkloadIdentityFederationToken'   = { $null -ne (Get-Command Get-AzWorkloadIdentityFederationToken   -EA SilentlyContinue) }
+    'Get-AzFederatedAssertion'                = { $null -ne (Get-Command Get-AzFederatedAssertion                -EA SilentlyContinue) }
+    'Update-AzWorkloadIdentityFederation'     = { $null -ne (Get-Command Update-AzWorkloadIdentityFederation     -EA SilentlyContinue) }
     'Build-JWTAssertion'                      = { $null -ne (Get-Command Build-JWTAssertion                      -EA SilentlyContinue) }
     'Add-AuthenticationHTTPHeader'            = { $null -ne (Get-Command Add-AuthenticationHTTPHeader            -EA SilentlyContinue) }
     'Test-AzToken'                            = { $null -ne (Get-Command Test-AzToken                            -EA SilentlyContinue) }
@@ -304,9 +309,9 @@ else
     Write-Warning "$fail of $($pass + $fail) checks failed."
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 # 10. Usage reference
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 
 Write-Host ''
 Write-Host '─────────────────────────────────────────────────────' -ForegroundColor DarkGray
@@ -320,16 +325,16 @@ Write-Host '──────────────────────�
   # Managed Identity  (Azure VM / Arc-enabled machine)
   New-AzDoAuthenticationProvider -OrganizationName "<org>" -useManagedIdentity
 
-  # Service Principal — Client Secret
+  # Service Principal -- Client Secret
   New-AzDoAuthenticationProvider -OrganizationName "<org>" `
       -TenantId "<tenant-id>" -ClientId "<client-id>" -ClientSecret "<secret>"
 
-  # Service Principal — Certificate (Windows cert store)
+  # Service Principal -- Certificate (Windows cert store)
   New-AzDoAuthenticationProvider -OrganizationName "<org>" `
       -TenantId "<tenant-id>" -ClientId "<client-id>" `
       -CertificateThumbprint "<thumbprint>"
 
-  # Service Principal — Certificate (PFX file, cross-platform)
+  # Service Principal -- Certificate (PFX file, cross-platform)
   $pwd = Read-Host "PFX password" -AsSecureString
   New-AzDoAuthenticationProvider -OrganizationName "<org>" `
       -TenantId "<tenant-id>" -ClientId "<client-id>" `
@@ -363,9 +368,9 @@ Write-Host '──────────────────────�
 
 '@ | Write-Host -ForegroundColor White
 
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 # 11. Optionally run unit tests
-# ─────────────────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────────
 
 if (-not ($RunClassTests -or $RunCommonTests -or $RunAllTests))
 {
@@ -375,7 +380,7 @@ if (-not ($RunClassTests -or $RunCommonTests -or $RunAllTests))
 $pester = Get-Module -ListAvailable -Name Pester | Where-Object { $_.Version -ge [version]'5.0' }
 if (-not $pester)
 {
-    Write-Host 'Pester 5.x not found — installing to CurrentUser scope...' -ForegroundColor Yellow
+    Write-Host 'Pester 5.x not found -- installing to CurrentUser scope...' -ForegroundColor Yellow
     Install-Module -Name Pester -MinimumVersion '5.0' -Force -Scope CurrentUser -SkipPublisherCheck
 }
 Import-Module Pester -MinimumVersion '5.0' -Force

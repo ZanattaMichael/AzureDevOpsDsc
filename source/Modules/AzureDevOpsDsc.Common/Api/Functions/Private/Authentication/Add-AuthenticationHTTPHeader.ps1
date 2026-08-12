@@ -36,7 +36,9 @@ Function Add-AuthenticationHTTPHeader
             {
                 $objectSettings = Import-Clixml -LiteralPath $settingsPath
                 $organizationName = $objectSettings.OrganizationName
-                # tokenType is serialized as an integer enum value (0=ManagedIdentity, 1=PersonalAccessToken)
+                # tokenType is serialized as an integer or string enum value:
+                #   0=ManagedIdentity, 1=PersonalAccessToken, 2=Certificate,
+                #   3=ServicePrincipal, 4=AzureCLI, 5=WorkloadIdentityFederation
                 $tokenType = $objectSettings.Token.tokenType
                 try
                 {
@@ -63,6 +65,37 @@ Function Add-AuthenticationHTTPHeader
                     elseif ($tokenType -eq 'PersonalAccessToken' -or $tokenType -eq 1)
                     {
                         New-AzDoAuthenticationProvider -OrganizationName $organizationName -SecureStringPersonalAccessToken $objectSettings.Token.access_token -isResource -NoVerify
+                    }
+                    elseif ($tokenType -eq 'Certificate' -or $tokenType -eq 2)
+                    {
+                        $ct = $objectSettings.Token
+                        if (-not [String]::IsNullOrEmpty($ct.certificateThumbprint))
+                        {
+                            New-AzDoAuthenticationProvider -OrganizationName $organizationName -TenantId $ct.tenantId -ClientId $ct.clientId -CertificateThumbprint $ct.certificateThumbprint -isResource -NoVerify
+                        }
+                        else
+                        {
+                            New-AzDoAuthenticationProvider -OrganizationName $organizationName -TenantId $ct.tenantId -ClientId $ct.clientId -CertificatePath $ct.certificatePath -CertificatePassword $ct.certificatePassword -isResource -NoVerify
+                        }
+                    }
+                    elseif ($tokenType -eq 'ServicePrincipal' -or $tokenType -eq 3)
+                    {
+                        $ct = $objectSettings.Token
+                        New-AzDoAuthenticationProvider -OrganizationName $organizationName -TenantId $ct.tenantId -ClientId $ct.clientId -SecureStringClientSecret $ct.clientSecret -isResource -NoVerify
+                    }
+                    elseif ($tokenType -eq 'AzureCLI' -or $tokenType -eq 4)
+                    {
+                        New-AzDoAuthenticationProvider -OrganizationName $organizationName -useAzureCLI -isResource -NoVerify
+                    }
+                    elseif ($tokenType -eq 'WorkloadIdentityFederation' -or $tokenType -eq 5)
+                    {
+                        $ct = $objectSettings.Token
+                        switch ($ct.federatedTokenSource)
+                        {
+                            'File'         { New-AzDoAuthenticationProvider -OrganizationName $organizationName -TenantId $ct.tenantId -ClientId $ct.clientId -FederatedTokenFile $ct.federatedTokenFile -isResource -NoVerify }
+                            'GitHubActions' { New-AzDoAuthenticationProvider -OrganizationName $organizationName -TenantId $ct.tenantId -ClientId $ct.clientId -useGitHubActionsOIDC -isResource -NoVerify }
+                            default        { Write-Warning "[Add-AuthenticationHTTPHeader] WorkloadIdentityFederation source '$($ct.federatedTokenSource)' cannot be restored from cache. Call New-AzDoAuthenticationProvider again to re-authenticate." }
+                        }
                     }
                 }
                 catch
