@@ -16,6 +16,9 @@ name: Integration Tests
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   integration-tests:
     name: Run Integration Tests
