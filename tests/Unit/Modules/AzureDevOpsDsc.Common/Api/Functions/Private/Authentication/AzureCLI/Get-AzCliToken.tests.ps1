@@ -32,10 +32,6 @@ Describe "Get-AzCliToken Tests" -Tags "Unit", "Authentication" {
         $Global:DSCAZDO_OrganizationName = "TestOrg"
     }
 
-    BeforeEach {
-        $script:LastExitCode = 0
-    }
-
     Context "When az CLI is not installed" {
 
         BeforeAll {
@@ -53,8 +49,7 @@ Describe "Get-AzCliToken Tests" -Tags "Unit", "Authentication" {
         BeforeAll {
             Mock -CommandName Get-Command -MockWith { return [PSCustomObject]@{ Name = 'az' } } -ParameterFilter { $Name -eq 'az' }
             Mock -CommandName Invoke-AzCLICommand -MockWith {
-                $global:LASTEXITCODE = 0
-                return $validCLIJson
+                return [PSCustomObject]@{ Output = $validCLIJson; ExitCode = 0 }
             }
         }
 
@@ -71,8 +66,7 @@ Describe "Get-AzCliToken Tests" -Tags "Unit", "Authentication" {
         BeforeAll {
             Mock -CommandName Get-Command -MockWith { return [PSCustomObject]@{ Name = 'az' } } -ParameterFilter { $Name -eq 'az' }
             Mock -CommandName Invoke-AzCLICommand -MockWith {
-                $global:LASTEXITCODE = 1
-                return "ERROR: Please run 'az login'"
+                return [PSCustomObject]@{ Output = "ERROR: Please run 'az login'"; ExitCode = 1 }
             }
         }
 
@@ -87,8 +81,8 @@ Describe "Get-AzCliToken Tests" -Tags "Unit", "Authentication" {
         BeforeAll {
             Mock -CommandName Get-Command -MockWith { return [PSCustomObject]@{ Name = 'az' } } -ParameterFilter { $Name -eq 'az' }
             Mock -CommandName Invoke-AzCLICommand -MockWith {
-                $global:LASTEXITCODE = 0
-                return (@{ accessToken = $null; expiresOn = "2025-01-01 12:00:00.000000"; tokenType = "Bearer" } | ConvertTo-Json)
+                $json = (@{ accessToken = $null; expiresOn = "2025-01-01 12:00:00.000000"; tokenType = "Bearer" } | ConvertTo-Json)
+                return [PSCustomObject]@{ Output = $json; ExitCode = 0 }
             }
         }
 
@@ -103,8 +97,7 @@ Describe "Get-AzCliToken Tests" -Tags "Unit", "Authentication" {
         BeforeAll {
             Mock -CommandName Get-Command -MockWith { return [PSCustomObject]@{ Name = 'az' } } -ParameterFilter { $Name -eq 'az' }
             Mock -CommandName Invoke-AzCLICommand -MockWith {
-                $global:LASTEXITCODE = 0
-                return $validCLIJson
+                return [PSCustomObject]@{ Output = $validCLIJson; ExitCode = 0 }
             }
         }
 

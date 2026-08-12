@@ -34,8 +34,23 @@ Describe "Get-AzServicePrincipalCertificateToken Tests" -Tags "Unit", "Authentic
         Mock -CommandName New-CertificateTokenFromFile -MockWith { return [PSCustomObject]@{ tokenType = 'Certificate'; certificatePath = '/cert.pfx' } }
         Mock -CommandName Test-AzToken -MockWith { return $true }
 
-        # Mock cert store lookup
-        $mockCert = [PSCustomObject]@{ Thumbprint = 'ABCDEF' }
+        # Mock cert store lookup. Build-JWTAssertion's -Certificate parameter is typed
+        # [X509Certificate2], and Mock preserves the real function's parameter declaration - so
+        # even though Build-JWTAssertion itself is mocked below, PowerShell still tries to coerce
+        # whatever this returns into that type before the call. A fake PSCustomObject with just a
+        # Thumbprint property fails that coercion ("Thumbprint is a ReadOnly property"); use a real
+        # (trivial, self-signed) certificate instead - its actual key/thumbprint content is
+        # irrelevant since Build-JWTAssertion's real body never runs.
+        $certRequest = [System.Security.Cryptography.X509Certificates.CertificateRequest]::new(
+            "CN=TestCert",
+            [System.Security.Cryptography.RSA]::Create(2048),
+            [System.Security.Cryptography.HashAlgorithmName]::SHA256,
+            [System.Security.Cryptography.RSASignaturePadding]::Pkcs1
+        )
+        $mockCert = $certRequest.CreateSelfSigned(
+            [DateTimeOffset]::UtcNow.AddDays(-1),
+            [DateTimeOffset]::UtcNow.AddYears(1)
+        )
         Mock -CommandName Get-Item -MockWith { return $mockCert } -ParameterFilter { $Path -like 'Cert:\*' }
         Mock -CommandName Test-Path -MockWith { return $true } -ParameterFilter { $Path -like '*.pfx' }
 
@@ -100,7 +115,7 @@ Describe "Get-AzServicePrincipalCertificateToken Tests" -Tags "Unit", "Authentic
 
         BeforeAll {
             Mock -CommandName Invoke-RestMethod -MockWith { return $validTokenResponse }
-            Mock -CommandName Get-Item -MockWith { return [PSCustomObject]@{ Thumbprint = 'ABCDEF' } } -ParameterFilter { $Path -like 'Cert:\*' }
+            Mock -CommandName Get-Item -MockWith { return $mockCert } -ParameterFilter { $Path -like 'Cert:\*' }
         }
 
         It "Should call Test-AzToken when -Verify is set" {

@@ -8,7 +8,7 @@ Describe "AzDoDeploymentGroup Integration Tests" -Tag "Integration", "Deployment
 
         $parameters = @{
             Name       = 'AzDoDeploymentGroup'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName         = $PROJECTNAME
                 DeploymentGroupName = 'TEST_DG'

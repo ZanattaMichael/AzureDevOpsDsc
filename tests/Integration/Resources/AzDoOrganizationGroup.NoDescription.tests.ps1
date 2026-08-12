@@ -7,7 +7,7 @@ Describe "AzDoOrganizationGroup Integration Tests - No Description" -Tag "Integr
         # Define common parameters
         $parameters = @{
             Name = 'AzDoOrganizationGroup'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
         }
 
         $PROJECTNAME = 'TESTORGGROUP_NODESC'

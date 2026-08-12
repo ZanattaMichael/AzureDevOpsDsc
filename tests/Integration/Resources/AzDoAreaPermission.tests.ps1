@@ -6,7 +6,7 @@ Describe "AzDoAreaPermission Integration Tests" -Tag "Integration", "AreaPermiss
 
         $parameters = @{
             Name       = 'AzDoAreaPermission'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName = $PROJECTNAME
                 AreaPath    = $null

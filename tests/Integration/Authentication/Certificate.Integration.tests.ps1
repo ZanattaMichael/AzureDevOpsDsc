@@ -52,7 +52,7 @@ Describe "Certificate Authentication - Integration Tests" -Tags "Integration", "
 
         if (-not $script:skip)
         {
-            Import-Module AzureDevOpsDsc -Force
+            Import-Module AzureDevOpsDscNative -Force
         }
     }
 

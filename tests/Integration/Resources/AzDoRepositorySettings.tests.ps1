@@ -7,7 +7,7 @@ Describe "AzDoRepositorySettings Integration Tests" -Tag "Integration", "Reposit
 
         $parameters = @{
             Name       = 'AzDoRepositorySettings'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName        = $PROJECTNAME
                 RepositoryName     = $REPONAME

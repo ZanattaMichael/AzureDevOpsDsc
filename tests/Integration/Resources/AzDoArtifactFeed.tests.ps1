@@ -11,7 +11,7 @@ Describe "AzDoArtifactFeed Integration Tests" -Tag "Integration", "ArtifactFeed"
 
         $parameters = @{
             Name       = 'AzDoArtifactFeed'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName                = $PROJECTNAME
                 FeedName                   = $FEEDNAME
@@ -108,7 +108,7 @@ Describe "AzDoArtifactFeed Integration Tests - Organization scoped" -Tag "Integr
 
         $parameters = @{
             Name       = 'AzDoArtifactFeed'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 FeedName        = $ORGFEEDNAME
                 Description     = 'Org-scoped test artifact feed'

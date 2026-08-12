@@ -120,7 +120,7 @@ class ManagedIdentityToken : AuthenticationToken
 }
 
 # Function to create a new ManagedIdentityToken object
-Function global:New-ManagedIdentityToken ([PSCustomObject]$ManagedIdentityTokenObj)
+Function New-ManagedIdentityToken ([PSCustomObject]$ManagedIdentityTokenObj)
 {
 
     # Verbose output

@@ -13,13 +13,13 @@ Describe "AzDoProjectServices Integration Tests" -Tag "Integration", "ProjectSer
         # Define common parameters
         $parameters = @{
             Name = 'AzDoProjectServices'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
         }
 
         New-TestProject -ProjectName $PROJECTNAME
 
         # Reset services to all-enabled to ensure clean state before testing
-        $null = Invoke-DscResource -Name 'AzDoProjectServices' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
+        $null = Invoke-DscResource -Name 'AzDoProjectServices' -ModuleName 'AzureDevOpsDscNative' -Method 'Set' -Property @{
             ProjectName     = $PROJECTNAME
             GitRepositories = 'Enabled'
             WorkBoards      = 'Enabled'

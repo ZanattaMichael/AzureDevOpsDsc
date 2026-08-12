@@ -53,6 +53,7 @@ Describe "Get-AzDoAgentPool" -Tag "Unit", "AgentPool" {
     Context "when agent pool does not exist in cache" {
         BeforeEach {
             Mock -CommandName Get-CacheItem -MockWith { return $null }
+            Mock -CommandName List-DevOpsAgentPools -MockWith { return @() }
         }
 
         It "returns status NotFound" {

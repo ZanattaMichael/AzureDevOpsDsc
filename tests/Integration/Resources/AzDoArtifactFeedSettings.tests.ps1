@@ -9,7 +9,7 @@ Describe "AzDoArtifactFeedSettings Integration Tests" -Tag "Integration", "Artif
         New-TestProject -ProjectName $PROJECTNAME
 
         # Settings require an existing feed — create one via the AzDoArtifactFeed resource first.
-        Invoke-DscResource -Name 'AzDoArtifactFeed' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
+        Invoke-DscResource -Name 'AzDoArtifactFeed' -ModuleName 'AzureDevOpsDscNative' -Method 'Set' -Property @{
             ProjectName = $PROJECTNAME
             FeedName    = $FEEDNAME
             Description = 'Feed used for feed-settings integration tests'
@@ -17,7 +17,7 @@ Describe "AzDoArtifactFeedSettings Integration Tests" -Tag "Integration", "Artif
 
         $parameters = @{
             Name       = 'AzDoArtifactFeedSettings'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName                          = $PROJECTNAME
                 FeedName                             = $FEEDNAME

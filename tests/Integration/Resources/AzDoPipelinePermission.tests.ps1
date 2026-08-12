@@ -6,7 +6,7 @@ Describe "AzDoPipelinePermission Integration Tests" -Tag "Integration", "Pipelin
         $REPONAME    = 'TESTREPOSITORY_PP'
 
         function New-Pipeline { param([string]$ProjectName, [string]$PipelineName, [string]$RepositoryName)
-            $null = Invoke-DscResource -Name 'AzDoPipeline' -ModuleName 'AzureDevOpsDsc' -Method 'Set' -Property @{
+            $null = Invoke-DscResource -Name 'AzDoPipeline' -ModuleName 'AzureDevOpsDscNative' -Method 'Set' -Property @{
                 ProjectName    = $ProjectName
                 PipelineName   = $PipelineName
                 RepositoryName = $RepositoryName
@@ -16,7 +16,7 @@ Describe "AzDoPipelinePermission Integration Tests" -Tag "Integration", "Pipelin
 
         $parameters = @{
             Name       = 'AzDoPipelinePermission'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName  = $PROJECTNAME
                 PipelineName = 'TEST_PIPELINE_PP'

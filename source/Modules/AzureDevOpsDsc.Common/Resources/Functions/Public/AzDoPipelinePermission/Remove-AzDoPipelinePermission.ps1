@@ -20,7 +20,7 @@ Function Remove-AzDoPipelinePermission
 
     if ((-not $SecurityNamespace) -or (-not $Project))
     {
-        Write-Error "[Remove-AzDoPipelinePermission] Security namespace or project not found."
+        Write-Error "[Remove-AzDoPipelinePermission] Security namespace or project not found." -ErrorAction Continue
         return
     }
 

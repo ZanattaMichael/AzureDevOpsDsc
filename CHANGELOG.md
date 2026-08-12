@@ -1,4 +1,4 @@
-# Change log for AzureDevOpsDsc
+# Change log for AzureDevOpsDscNative
 
 The format is based on and uses the types of changes according to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - AzureDevOpsDsc
+  - Added DSC v3 support: all 49 class-based DSC resources now declare `Set()`
+    and `Test()` directly (delegating to `AzDevOpsDscResourceBase`) instead of
+    relying on pure inheritance, so both the `Microsoft.Adapter/PowerShell`
+    runtime adapter and `DscResource.Authoring`'s manifest generator correctly
+    detect `get`/`set`/`test` capabilities instead of only `get`.
+  - Added a `dscv3` build workflow (`Create_DscAdaptedResourceManifests`,
+    `Create_DscResourceManifestsList` from `DscResource.Authoring`) that
+    generates DSC v3 adapted resource manifests for every resource into the
+    built module output, and wired it into `pack`.
+  - Renamed the module from `AzureDevOpsDsc` to `AzureDevOpsDscNative` for
+    publishing under this fork, since PowerShell Gallery names are globally
+    unique and this repo doesn't own the existing `AzureDevOpsDsc` listing.
+  - Added GitHub Actions workflows: `build.yml` (build + generate DSC v3
+    manifests as CI artifacts on every push/PR), `unit-tests.yml` (runs the
+    Classes and Common unit test suites), and `publish.yml` (tag-triggered
+    release: builds, re-runs both test suites as a release gate, packages the
+    module, and publishes a GitHub Release plus - once a Gallery API key is
+    configured - PowerShell Gallery).
   - Updated pipeline files to support change of default branch to main.
   - Added GitHub issue templates and pull request template
   ([issue #1](https://github.com/dsccommunity/AzureDevOpsDsc/issues/1))
@@ -127,6 +145,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - azure-pipelines
 
 ### Fixed
+
+- AzureDevOpsDscNative
+  - Fixed an intermittent Pester class-loading race in the Classes unit test
+    suite (`Could not find type [X]`) by switching from dot-sourcing raw
+    source classes to `using module` against the built module - the Classes
+    suite now passes 211/211 deterministically, verified on a cold GitHub
+    Actions runner (not just locally).
+  - Fixed 29 pre-existing failures in the Common unit test suite that had
+    never been visible in CI (the suite was always blocked by the Classes
+    suite failing first): a `Write-Error` pattern that becomes terminating
+    under this runner's `$ErrorActionPreference` across 17 permission
+    functions, a null-array aggregation bug in `List-DevOpsAgentPools`, an
+    extension-method resolution issue in `Build-JWTAssertion`, unreliable
+    `$LASTEXITCODE` propagation across a Pester mock boundary in
+    `Get-AzCliToken`, culture-dependent date parsing in `Test-Date`, a stale
+    test assertion in `Test-ACLListforChanges`, several tests missing an
+    explicit dependency dot-source, and a mock incompatible with a typed
+    parameter in `Get-AzServicePrincipalCertificateToken`. The Common suite
+    now passes 1703/1703 (10 intentionally skipped), also verified on CI.
 
 - AzDevOpsProject
   - Added description to the comment-based help.

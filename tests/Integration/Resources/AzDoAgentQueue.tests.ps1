@@ -10,7 +10,7 @@ Describe "AzDoAgentQueue Integration Tests" -Tag "Integration", "AgentQueue" {
 
         $parameters = @{
             Name       = 'AzDoAgentQueue'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName           = $PROJECTNAME
                 QueueName             = 'TEST_QUEUE'

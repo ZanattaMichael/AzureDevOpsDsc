@@ -5,7 +5,7 @@ param(
 
 Import-Module DscResource.Common.psd1
 Import-Module AzureDevOpsDsc.Common.psd1
-Import-Module AzureDevOpsDsc.psd1
+Import-Module AzureDevOpsDscNative.psd1
 
 #
 # Test Framework Configuration

@@ -8,7 +8,7 @@ Describe "AzDoPipeline Integration Tests (YAML pipeline)" -Tag "Integration", "P
 
         $parameters = @{
             Name       = 'AzDoPipeline'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName    = $PROJECTNAME
                 PipelineName   = 'TEST_PIPELINE_DEF'

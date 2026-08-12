@@ -21,5 +21,25 @@
 Function Test-Date {
     param ([String]$DateTime)
 
-    return $null -ne ($DateTime -as [DateTime])
+    # `-as [DateTime]` parses against the CURRENT THREAD'S CULTURE, so an unambiguous dd/MM/yyyy
+    # date (e.g. '24/02/2025') fails to parse on any MM/dd/yyyy-default culture (e.g. en-US, which
+    # GitHub's hosted runners default to) even though callers accept both slash conventions.
+    # Try each accepted format explicitly, culture-invariant, instead of relying on ambient culture.
+    $formats = @(
+        'yyyy-MM-ddTHH:mm:ssZ'
+        'yyyy-MM-dd'
+        'MM/dd/yyyy'
+        'dd/MM/yyyy'
+    )
+
+    foreach ($format in $formats)
+    {
+        $parsed = [DateTime]::MinValue
+        if ([DateTime]::TryParseExact($DateTime, $format, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::None, [ref]$parsed))
+        {
+            return $true
+        }
+    }
+
+    return $false
 }

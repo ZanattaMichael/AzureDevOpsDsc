@@ -7,7 +7,7 @@ Describe "AzDoOrganizationGroup Integration Tests - With Description" -Tag "Inte
         # Define common parameters
         $parameters = @{
             Name = 'AzDoOrganizationGroup'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
         }
 
         $GROUPNAME = 'TESTORGANIZATIONGROUP'

@@ -99,9 +99,13 @@ Describe "Test-ACLListforChanges" -Tag "Unit", "ACL", "Helper" {
         $result.status | Should -Be "Changed"
     }
 
-    It "Returns NotFound when Difference ACL is null" {
+    It "Returns Changed when Difference ACL is null" {
+        # Difference ACL null means the desired ACE(s) don't exist live yet - that's drift to
+        # reconcile (Changed), not an absent resource. Returning NotFound here would tell the base
+        # class Ensure is Absent, so Set would never apply the permission and Test would keep
+        # reporting the same gap forever.
         $result = Test-ACLListforChanges -ReferenceACLs $ReferenceACLsSample -DifferenceACLs $null
-        $result.status | Should -Be "NotFound"
+        $result.status | Should -Be "Changed"
     }
 
     It "Returns Changed when ACLs count is not equal" {

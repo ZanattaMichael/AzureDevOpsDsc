@@ -1,3 +1,5 @@
+using module AzureDevOpsDscNative
+
 $currentFile = $MyInvocation.MyCommand.Path
 
 Describe 'PersonalAccessToken' -Tag "Unit", "Authentication" {

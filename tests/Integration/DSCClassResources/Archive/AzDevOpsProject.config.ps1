@@ -57,7 +57,7 @@ if ($null -in @($env:AZUREDEVOPSINTEGRATIONAPIURI, $env:AZUREDEVOPSINTEGRATIONPA
 #>
 Configuration AzDevOpsProject_EnsureGitProjectAbsent1_Config
 {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc' -Name 'AzDevOpsProject'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative' -Name 'AzDevOpsProject'
 
     node $AllNodes.NodeName
     {
@@ -88,7 +88,7 @@ Configuration AzDevOpsProject_EnsureGitProjectAbsent1_Config
 #>
 Configuration AzDevOpsProject_EnsureGitProjectPresent_Config
 {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc' -Name 'AzDevOpsProject'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative' -Name 'AzDevOpsProject'
 
     node $AllNodes.NodeName
     {
@@ -121,7 +121,7 @@ Configuration AzDevOpsProject_EnsureGitProjectPresent_Config
 #>
 Configuration AzDevOpsProject_UpdateGitProjectToTfvc_Config
 {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc' -Name 'AzDevOpsProject'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative' -Name 'AzDevOpsProject'
 
     node $AllNodes.NodeName
     {
@@ -151,7 +151,7 @@ Configuration AzDevOpsProject_UpdateGitProjectToTfvc_Config
 #>
 Configuration AzDevOpsProject_EnsureGitProjectAbsent2_Config
 {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc' -Name 'AzDevOpsProject'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative' -Name 'AzDevOpsProject'
 
     node $AllNodes.NodeName
     {
@@ -182,7 +182,7 @@ Configuration AzDevOpsProject_EnsureGitProjectAbsent2_Config
 #>
 Configuration AzDevOpsProject_EnsureTfvcProjectAbsent1_Config
 {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc' -Name 'AzDevOpsProject'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative' -Name 'AzDevOpsProject'
 
     node $AllNodes.NodeName
     {
@@ -213,7 +213,7 @@ Configuration AzDevOpsProject_EnsureTfvcProjectAbsent1_Config
 #>
 Configuration AzDevOpsProject_EnsureTfvcProjectPresent_Config
 {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc' -Name 'AzDevOpsProject'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative' -Name 'AzDevOpsProject'
 
     node $AllNodes.NodeName
     {
@@ -245,7 +245,7 @@ Configuration AzDevOpsProject_EnsureTfvcProjectPresent_Config
 #>
 Configuration AzDevOpsProject_UpdateTfvcProjectToGit_Config
 {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc' -Name 'AzDevOpsProject'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative' -Name 'AzDevOpsProject'
 
     node $AllNodes.NodeName
     {
@@ -276,7 +276,7 @@ Configuration AzDevOpsProject_UpdateTfvcProjectToGit_Config
 #>
 Configuration AzDevOpsProject_EnsureTfvcProjectAbsent2_Config
 {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc' -Name 'AzDevOpsProject'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative' -Name 'AzDevOpsProject'
 
     node $AllNodes.NodeName
     {
@@ -307,7 +307,7 @@ Configuration AzDevOpsProject_EnsureTfvcProjectAbsent2_Config
 #>
 Configuration AzDevOpsProject_EnsureProjectPresent_Config
 {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc' -Name 'AzDevOpsProject'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative' -Name 'AzDevOpsProject'
 
     node $AllNodes.NodeName
     {
@@ -338,7 +338,7 @@ Configuration AzDevOpsProject_EnsureProjectPresent_Config
 #>
 Configuration AzDevOpsProject_EnsureProjectIdentical_Config
 {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc' -Name 'AzDevOpsProject'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative' -Name 'AzDevOpsProject'
 
     node $AllNodes.NodeName
     {
@@ -368,7 +368,7 @@ Configuration AzDevOpsProject_EnsureProjectIdentical_Config
 #>
 Configuration AzDevOpsProject_EnsureProjectUpdated_Config
 {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc' -Name 'AzDevOpsProject'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative' -Name 'AzDevOpsProject'
 
     node $AllNodes.NodeName
     {
@@ -398,7 +398,7 @@ Configuration AzDevOpsProject_EnsureProjectUpdated_Config
 #>
 Configuration AzDevOpsProject_EnsureProjectRemoved_Config
 {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc' -Name 'AzDevOpsProject'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative' -Name 'AzDevOpsProject'
 
     node $AllNodes.NodeName
     {

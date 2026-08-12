@@ -7,7 +7,7 @@ Describe "AzDoProjectPermission Integration Tests" -Tag "Integration", "ProjectP
 
         $parameters = @{
             Name       = 'AzDoProjectPermission'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName = $PROJECTNAME
                 GroupName   = "[$PROJECTNAME]\$GROUPNAME"

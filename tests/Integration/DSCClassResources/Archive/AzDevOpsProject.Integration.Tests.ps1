@@ -5,7 +5,7 @@ if (-not (Test-BuildCategory -Type 'Integration'))
     return
 }
 
-$script:dscModuleName = 'AzureDevOpsDsc'
+$script:dscModuleName = 'AzureDevOpsDscNative'
 $script:dscResourceFriendlyName = 'AzDevOpsProject'
 $script:dscResourceName = $script:dscResourceFriendlyName
 

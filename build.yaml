@@ -22,6 +22,8 @@ ModuleBuildTasks:
     - 'Task.*'
   DscResource.Test:
     - 'Task.*'
+  DscResource.Authoring:
+    - 'Task.*'
 
 TaskHeader: |
   param($Path)
@@ -68,9 +70,15 @@ BuildWorkflow:
     - Clean_Markdown_Metadata
     - Package_Wiki_Content
 
+  dscv3:
+    - Create_DscAdaptedResourceManifests
+    - Create_DscResourceManifestsList
+    - Fix_DscAdaptedResourceManifestTypes
+
   pack:
     - build
     - docs
+    - dscv3
     - package_module_nupkg
 
   hqrmtest:

@@ -8,7 +8,7 @@ Describe "AzDoProcess Integration Tests" -Tag "Integration", "Process" {
 
         $parameters = @{
             Name       = 'AzDoProcess'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProcessName       = $PROCESSNAME
                 ParentProcessName = 'Agile'

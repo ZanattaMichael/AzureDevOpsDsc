@@ -7,7 +7,6 @@
     managed when 'RetentionCountLimit' is greater than zero.
 #>
 [DscResource()]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSDSCStandardDSCFunctionsInResource', '', Justification='Test() and Set() method are inherited from base, "AzDevOpsDscResourceBase" class')]
 class AzDoArtifactFeedSettings : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)][System.String]$ProjectName
@@ -20,6 +19,8 @@ class AzDoArtifactFeedSettings : AzDevOpsDscResourceBase
     [DscProperty()][System.Int32]$DaysToKeepRecentlyDownloadedPackages = 0
 
     AzDoArtifactFeedSettings() { $this.Construct() }
+    [void] Set() { ([AzDevOpsDscResourceBase]$this).Set() }
+    [System.Boolean] Test() { return ([AzDevOpsDscResourceBase]$this).Test() }
     [AzDoArtifactFeedSettings] Get() { return [AzDoArtifactFeedSettings]$($this.GetDscCurrentStateProperties()) }
     hidden [System.String[]]GetDscResourcePropertyNamesWithNoSetSupport() { return @() }
     hidden [Hashtable]GetDscCurrentStateProperties([PSCustomObject]$CurrentResourceObject) {

@@ -1,0 +1,54 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Module and Generate DSC v3 Manifests
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache required build modules
+        uses: actions/cache@v4
+        with:
+          path: output/RequiredModules
+          key: ${{ runner.os }}-requiredmodules-${{ hashFiles('RequiredModules.psd1') }}
+
+      - name: Build module
+        shell: pwsh
+        run: |
+          ./build.ps1 -ResolveDependency -Tasks build
+
+      - name: Generate DSC v3 adapted resource manifests
+        shell: pwsh
+        run: |
+          ./build.ps1 -Tasks dscv3
+
+      - name: Upload built module
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-module
+          path: output/builtModule
+          if-no-files-found: error
+
+      - name: Upload DSC v3 manifests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsc-v3-manifests
+          path: |
+            output/builtModule/**/*.dsc.adaptedResource.json
+            output/builtModule/**/*.dsc.manifests.json
+          if-no-files-found: error

@@ -27,3 +27,21 @@ TestProject.yml
 TestProject2.yml
 settings.json
 coverage.xml
+
+# Secrets and credential material - never commit these
+*.pfx
+*.key
+*.pem
+*.p12
+*.cer
+.env
+.env.*
+*.envrc
+**/secrets.json
+**/*.secrets.*
+
+# OS cruft
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini

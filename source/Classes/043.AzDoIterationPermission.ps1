@@ -57,7 +57,6 @@ AzDoIterationPermission {
 
 #>
 [DscResource()]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSDSCStandardDSCFunctionsInResource', '', Justification='Test() and Set() method are inherited from base, "AzDevOpsDscResourceBase" class')]
 class AzDoIterationPermission : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)]
@@ -80,6 +79,8 @@ class AzDoIterationPermission : AzDevOpsDscResourceBase
         $this.Construct()
     }
 
+    [void] Set() { ([AzDevOpsDscResourceBase]$this).Set() }
+    [System.Boolean] Test() { return ([AzDevOpsDscResourceBase]$this).Test() }
     [AzDoIterationPermission] Get()
     {
         return [AzDoIterationPermission]$($this.GetDscCurrentStateProperties())

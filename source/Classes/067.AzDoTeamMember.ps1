@@ -3,7 +3,6 @@
     DSC resource for managing Azure DevOps team membership.
 #>
 [DscResource()]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSDSCStandardDSCFunctionsInResource', '', Justification='Test() and Set() method are inherited from base, "AzDevOpsDscResourceBase" class')]
 class AzDoTeamMember : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)][System.String]$ProjectName
@@ -11,6 +10,8 @@ class AzDoTeamMember : AzDevOpsDscResourceBase
     [DscProperty(Mandatory)][System.String]$MemberName
 
     AzDoTeamMember() { $this.Construct() }
+    [void] Set() { ([AzDevOpsDscResourceBase]$this).Set() }
+    [System.Boolean] Test() { return ([AzDevOpsDscResourceBase]$this).Test() }
     [AzDoTeamMember] Get() { return [AzDoTeamMember]$($this.GetDscCurrentStateProperties()) }
     hidden [System.String[]]GetDscResourcePropertyNamesWithNoSetSupport() { return @() }
     hidden [Hashtable]GetDscCurrentStateProperties([PSCustomObject]$CurrentResourceObject) {

@@ -12,7 +12,7 @@ Describe "AzDoEnvironmentApproval Integration Tests" -Tag "Integration", "Enviro
 
         $parameters = @{
             Name       = 'AzDoEnvironmentApproval'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName           = $PROJECTNAME
                 EnvironmentName       = $ENVNAME

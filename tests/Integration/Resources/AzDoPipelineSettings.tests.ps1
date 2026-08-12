@@ -8,7 +8,7 @@ Describe "AzDoPipelineSettings Integration Tests" -Tag "Integration", "PipelineS
 
         $parameters = @{
             Name       = 'AzDoPipelineSettings'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             # PublishPipelineMetadata defaults off and is freely settable at the project level (it is not
             # org-enforced, unlike e.g. EnforceJobAuthScope which an org policy may pin on), so it can be
             # toggled both ways and reliably converge.

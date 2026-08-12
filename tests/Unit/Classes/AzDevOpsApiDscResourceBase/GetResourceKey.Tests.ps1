@@ -1,3 +1,5 @@
+using module AzureDevOpsDscNative
+
 
 Describe "[AzDevOpsApiDscResourceBase]::GetResourceKey() Tests" -Tag "Unit", "AzDevOpsApiDscResourceBase" {
 

@@ -9,7 +9,7 @@ Describe "AzDoExtension Integration Tests (ms-devlabs.team-calendar)" -Tag "Inte
 
         $parameters = @{
             Name       = 'AzDoExtension'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 PublisherId = $PUBLISHERID
                 ExtensionId = $EXTENSIONID

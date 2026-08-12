@@ -6,7 +6,7 @@ Describe "AzDoAreaNodes Integration Tests" -Tag "Integration", "AreaNodes" {
 
         $parameters = @{
             Name       = 'AzDoAreaNodes'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
         }
 
         New-TestProject -ProjectName $PROJECTNAME

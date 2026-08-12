@@ -1,3 +1,5 @@
+using module AzureDevOpsDscNative
+
 Describe "[DscResourceBase]::GetDscResourceKey() Tests" -Tag "Unit", "DscResourceBase" {
 
 

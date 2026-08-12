@@ -10,7 +10,7 @@ Describe "AzDoBranchPolicy Integration Tests (Minimum Reviewer Count policy)" -T
 
         $parameters = @{
             Name       = 'AzDoBranchPolicy'
-            ModuleName = 'AzureDevOpsDsc'
+            ModuleName = 'AzureDevOpsDscNative'
             property   = @{
                 ProjectName    = $PROJECTNAME
                 RepositoryName = $REPONAME

@@ -1,3 +1,5 @@
+using module AzureDevOpsDscNative
+
 # Requires -Module Pester -Version 5.0.0
 
 # Test if the class is defined
@@ -6,13 +8,6 @@ if ($null -eq $Global:ClassesLoaded)
     $RepositoryRoot = (Get-Item -Path $PSScriptRoot).Parent.Parent.Parent.Parent.FullName
     . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
 }
-
-
-# Always reload Enums+Classes into this file's own scope. Pester rebinds each test/block's
-# session state for isolation, which can leave classes loaded elsewhere (e.g. by the
-# orchestrator above) unresolvable - causing intermittent "Could not find type [X]" failures.
-$RepositoryRoot = (Get-Item -Path $PSScriptRoot).Parent.Parent.Parent.Parent.FullName
-. "$RepositoryRoot\tests\Unit\Modules\TestHelpers\Import-ClassesAndEnums.ps1" -RepositoryRoot $RepositoryRoot
 
 Describe 'CertificateToken Class' {
 
@@ -127,7 +122,7 @@ Describe 'New-CertificateToken Function' {
 
     It 'Should create a CertificateToken with thumbprint' {
         $result = New-CertificateToken -TokenObj $validResponse -TenantId 't' -ClientId 'c' -Thumbprint 'THUMB123'
-        $result | Should -BeOfType [CertificateToken]
+        ($result -is [CertificateToken]) | Should -BeTrue
         $result.certificateThumbprint | Should -Be 'THUMB123'
     }
 }
@@ -148,7 +143,7 @@ Describe 'New-CertificateTokenFromFile Function' {
 
     It 'Should create a CertificateToken from file path' {
         $result = New-CertificateTokenFromFile -TokenObj $validResponse -TenantId 't' -ClientId 'c' -CertPath '/cert.pfx' -CertPassword $securePwd
-        $result | Should -BeOfType [CertificateToken]
+        ($result -is [CertificateToken]) | Should -BeTrue
         $result.certificatePath | Should -Be '/cert.pfx'
     }
 }

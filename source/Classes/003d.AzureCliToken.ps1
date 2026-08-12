@@ -81,7 +81,7 @@ class AzureCliToken : AuthenticationToken
 .PARAMETER CLITokenResponse
     PSCustomObject from `az account get-access-token | ConvertFrom-Json`.
 #>
-Function global:New-AzureCliToken ([PSCustomObject]$CLITokenResponse)
+Function New-AzureCliToken ([PSCustomObject]$CLITokenResponse)
 {
     Write-Verbose "[AzureCliToken] Creating a new AzureCliToken object."
     return [AzureCliToken]::New($CLITokenResponse)

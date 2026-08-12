@@ -3,7 +3,6 @@
     DSC resource for managing Azure DevOps agent pools.
 #>
 [DscResource()]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSDSCStandardDSCFunctionsInResource', '', Justification='Test() and Set() method are inherited from base, "AzDevOpsDscResourceBase" class')]
 class AzDoAgentPool : AzDevOpsDscResourceBase
 {
     [DscProperty(Key, Mandatory)][System.String]$PoolName
@@ -13,6 +12,8 @@ class AzDoAgentPool : AzDevOpsDscResourceBase
     [DscProperty()][System.Boolean]$IsHosted = $false
 
     AzDoAgentPool() { $this.Construct() }
+    [void] Set() { ([AzDevOpsDscResourceBase]$this).Set() }
+    [System.Boolean] Test() { return ([AzDevOpsDscResourceBase]$this).Test() }
     [AzDoAgentPool] Get() { return [AzDoAgentPool]$($this.GetDscCurrentStateProperties()) }
     hidden [System.String[]]GetDscResourcePropertyNamesWithNoSetSupport() { return @() }
     hidden [Hashtable]GetDscCurrentStateProperties([PSCustomObject]$CurrentResourceObject) {

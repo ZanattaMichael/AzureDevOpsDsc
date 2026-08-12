@@ -103,7 +103,7 @@ class WorkloadIdentityFederationToken : AuthenticationToken
 .PARAMETER FederatedTokenFile
     Path to the federated token file, only set (and only meaningful) when FederatedTokenSource is 'File'.
 #>
-Function global:New-WorkloadIdentityFederationToken (
+Function New-WorkloadIdentityFederationToken (
     [PSCustomObject]$TokenObj,
     [String]$TenantId,
     [String]$ClientId,

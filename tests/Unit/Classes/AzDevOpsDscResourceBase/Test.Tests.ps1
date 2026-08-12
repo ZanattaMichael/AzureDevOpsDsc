@@ -1,3 +1,5 @@
+using module AzureDevOpsDscNative
+
 
 Describe "[AzDevOpsDscResourceBase]::Test() Tests" -Tag "Unit", "AzDevOpsDscResourceBase" {
 

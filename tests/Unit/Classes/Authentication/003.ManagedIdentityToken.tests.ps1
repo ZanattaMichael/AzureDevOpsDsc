@@ -1,3 +1,5 @@
+using module AzureDevOpsDscNative
+
 # Requires -Module Pester -Version 5.0.0
 
 # Test if the class is defined
@@ -8,12 +10,6 @@ if ($null -eq $Global:ClassesLoaded)
     # Load the Dependencies
     . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
 }
-
-# Always reload Enums+Classes into this file's own scope. Pester rebinds each test/block's
-# session state for isolation, which can leave classes loaded elsewhere (e.g. by the
-# orchestrator above) unresolvable - causing intermittent "Could not find type [X]" failures.
-$RepositoryRoot = (Get-Item -Path $PSScriptRoot).Parent.Parent.Parent.Parent.FullName
-. "$RepositoryRoot\tests\Unit\Modules\TestHelpers\Import-ClassesAndEnums.ps1" -RepositoryRoot $RepositoryRoot
 
 
 Describe 'ManagedIdentityToken Class' -Tag "Unit", "Authentication" {
@@ -126,7 +122,7 @@ Describe 'New-ManagedIdentityToken Function' -Tag "Unit", "Authentication" {
         $mit = New-ManagedIdentityToken -ManagedIdentityTokenObj $managedIdentityTokenObj
 
         # Assert
-        $mit | Should -BeOfType [ManagedIdentityToken]
+        ($mit -is [ManagedIdentityToken]) | Should -BeTrue
         $mit.ConvertFromSecureString($mit.access_token) | Should -Be "TestAccessToken"
         $mit.expires_on | Should -Be $epochStart.AddMinutes(10)
         $mit.expires_in | Should -Be 600
