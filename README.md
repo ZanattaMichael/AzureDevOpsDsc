@@ -182,7 +182,7 @@ Each resource links to its example/usage documentation.
 
 ## Documentation
 
-The documentation can be found in the [AzureDevOpsDsc Wiki](https://github.com/dsccommunity/AzureDevOpsDsc/wiki).
+The documentation can be found in the [AzureDevOpsDsc Wiki](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki).
 The DSC Resource`s schema files are used to automatically update the
 documentation on each PR merge.
 
