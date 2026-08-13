@@ -1,12 +1,13 @@
-# AzureDevOpsDscNative
+# AzureDevOpsDsc
 
-> This is a fork of [dsccommunity/AzureDevOpsDsc](https://github.com/dsccommunity/AzureDevOpsDsc), published separately as **AzureDevOpsDscNative** to add native DSC v3 support: every resource is discoverable and invokable by `dsc.exe` via the `Microsoft.Adapter/PowerShell` adapter, using generated adapted resource manifests - no wrapper resource required. See also [@mimachniak's AzureDevOpsDscv3](https://github.com/mimachniak/AzureDevOpsDscv3), which takes a different approach (a `Microsoft.Windows/WindowsPowerShell` wrapper) to the same goal.
-
-The **AzureDevOpsDscNative** module contains DSC Resources for deployment and
+The **AzureDevOpsDsc** module contains DSC Resources for deployment and
 configuration of Azure DevOps and Azure DevOps Server.
 
-[![PowerShell Gallery (with prereleases)](https://img.shields.io/powershellgallery/vpre/AzureDevOpsDscNative?label=AzureDevOpsDscNative%20Preview)](https://www.powershellgallery.com/packages/AzureDevOpsDscNative/)
-[![PowerShell Gallery](https://img.shields.io/powershellgallery/v/AzureDevOpsDscNative?label=AzureDevOpsDscNative)](https://www.powershellgallery.com/packages/AzureDevOpsDscNative/)
+[![Unit Tests](https://github.com/ZanattaMichael/AzureDevOpsDsc/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/ZanattaMichael/AzureDevOpsDsc/actions/workflows/unit-tests.yml)
+[![Build & Publish](https://github.com/ZanattaMichael/AzureDevOpsDsc/actions/workflows/build-publish.yml/badge.svg)](https://github.com/ZanattaMichael/AzureDevOpsDsc/actions/workflows/build-publish.yml)
+[![Integration Tests](https://github.com/ZanattaMichael/AzureDevOpsDsc/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/ZanattaMichael/AzureDevOpsDsc/actions/workflows/integration-tests.yml)
+[![PowerShell Gallery (with prereleases)](https://img.shields.io/powershellgallery/vpre/AzureDevOpsDsc?label=AzureDevOpsDsc%20Preview)](https://www.powershellgallery.com/packages/AzureDevOpsDsc/)
+[![PowerShell Gallery](https://img.shields.io/powershellgallery/v/AzureDevOpsDsc?label=AzureDevOpsDsc)](https://www.powershellgallery.com/packages/AzureDevOpsDsc/)
 
 ## Code of Conduct
 
@@ -97,6 +98,25 @@ See [`tests/README.md`](tests/README.md) for the full tag taxonomy and more deta
 
 A full list of changes in each version can be found in the [change log](CHANGELOG.md).
 
+## Documentation
+
+The full documentation lives in the [AzureDevOpsDsc Wiki](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki).
+Wiki source files are maintained under [`source/WikiSource/`](source/WikiSource).
+
+Key pages:
+
+| Page | Description |
+|---|---|
+| [Quick Start](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Quick-Start) | Install, authenticate, first DSC configuration |
+| [Authentication](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Authentication) | All six auth methods — PAT, Managed Identity, Service Principal, Certificate, Azure CLI, Workload Identity Federation |
+| [Development](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Development) | Load from source, run unit/integration tests, contribute |
+| [CI/CD](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/CI-CD) | GitHub Actions workflows, required secrets and variables |
+
+### Examples
+
+In-tree examples are in the [`source/Examples/Resources/`](source/Examples/Resources) directory,
+one file per DSC resource.
+
 ## Resources
 
 Each resource links to its example/usage documentation.
@@ -179,16 +199,3 @@ Each resource links to its example/usage documentation.
 | [AzDoExtension](source/Examples/Resources/AzDoExtension.md) | Installs and uninstalls organization extensions. |
 | [AzDoAuditStream](source/Examples/Resources/AzDoAuditStream.md) | Manages audit log streaming. |
 | [AzDoServiceHook](source/Examples/Resources/AzDoServiceHook.md) | Creates and manages service hook subscriptions (e.g. webhooks). |
-
-## Documentation
-
-The documentation can be found in the [AzureDevOpsDsc Wiki](https://github.com/dsccommunity/AzureDevOpsDsc/wiki).
-The DSC Resource`s schema files are used to automatically update the
-documentation on each PR merge.
-
-### Examples
-
-You can review the [Examples](/source/Examples) directory in the AzureDevOpsDsc module
-for some general use scenarios for all of the resources that are in the module.
-
-The resource examples are also available in the [AzureDevOpsDsc Wiki](https://github.com/dsccommunity/AzureDevOpsDsc/wiki).

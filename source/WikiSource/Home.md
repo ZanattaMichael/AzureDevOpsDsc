@@ -1,53 +1,131 @@
 # Welcome to the AzureDevOpsDsc wiki
 
-<sup>*AzureDevOpsDsc v#.#.#*</sup>
+The **AzureDevOpsDsc** module provides class-based DSC resources for managing
+Azure DevOps organizations, projects, repositories, permissions, pipelines, and
+more — all through the Azure DevOps REST API.
 
-Here you will find all the information you need to make use of the AzureDevOpsDsc
-DSC resources in the latest release. This includes details of the resources
-that are available, current capabilities, known issues, and information to
-help plan a DSC based implementation of AzureDevOpsDsc.
+- [Issues and feature requests](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues)
+- [Changelog](https://github.com/ZanattaMichael/AzureDevOpsDsc/blob/main/CHANGELOG.md)
+- [Contributing](https://github.com/ZanattaMichael/AzureDevOpsDsc/blob/main/CONTRIBUTING.md)
 
-Please leave comments, feature requests, and bug reports for this module in
-the [issues section](https://github.com/dsccommunity/AzureDevOpsDsc/issues)
-for this repository.
+---
 
 ## Getting started
 
-To get started either:
-
-- Install from the PowerShell Gallery using PowerShellGet by running the
-  following command:
+Install from the PowerShell Gallery:
 
 ```powershell
 Install-Module -Name AzureDevOpsDsc -Repository PSGallery
 ```
 
-- Download AzureDevOpsDsc from the [PowerShell Gallery](https://www.powershellgallery.com/packages/AzureDevOpsDsc)
-  and then unzip it to one of your PowerShell modules folders (such as
-  `$env:ProgramFiles\WindowsPowerShell\Modules`).
-
-To confirm installation, run the below command and ensure you see the AzureDevOpsDsc
-DSC resources available:
+Verify installation:
 
 ```powershell
 Get-DscResource -Module AzureDevOpsDsc
 ```
 
-## DSC Resource Documentation
+See the [Quick-Start](Quick-Start) guide for a full walkthrough including
+authentication setup and your first DSC configuration.
 
-* [AzDoGitPermission](\Resources\AzDoGitPermission.md)
-* [AzDoGitRepository](\Resources\AzDoGitRepository.md)
-* [AzDoGroupMember](\Resources\AzDoGroupMember.md)
-* [AzDoGroupPermission](\Resources\AzDoGroupPermission.md)
-* [AzDoOrganizationGroup](\Resources\AzDoOrganizationGroup.md)
-* [AzDoProject](\Resources\AzDoProject.md)
-* [AzDoProjectGroup](\Resources\AzDoProjectGroup.md)
-* [AzDoProjectServices](\Resources\AzDoProjectServices.md)
+---
+
+## Guides
+
+| Guide | Description |
+|---|---|
+| [Quick-Start](Quick-Start) | Install, authenticate, and run your first DSC configuration |
+| [Authentication](Authentication) | All six authentication methods — PAT, Managed Identity, Service Principal, Certificate, Azure CLI, Workload Identity Federation |
+| [Development](Development) | Load from source, run unit tests, contribute |
+| [CI-CD](CI-CD) | GitHub Actions workflows, required secrets and variables |
+
+---
+
+## DSC resource documentation
+
+### Projects, organization, groups and teams
+
+| Resource | Description |
+|---|---|
+| [AzDoProject](Resources/AzDoProject) | Creates and manages Azure DevOps projects |
+| [AzDoProjectServices](Resources/AzDoProjectServices) | Enables or disables services within a project |
+| [AzDoOrganizationSettings](Resources/AzDoOrganizationSettings) | Manages organization-level settings |
+| [AzDoProjectGroup](Resources/AzDoProjectGroup) | Creates and manages groups within a project |
+| [AzDoOrganizationGroup](Resources/AzDoOrganizationGroup) | Creates and manages organization-level groups |
+| [AzDoGroupMember](Resources/AzDoGroupMember) | Manages membership of users, groups, and service principals |
+| [AzDoTeam](Resources/AzDoTeam) | Creates and manages teams within a project |
+| [AzDoTeamMember](Resources/AzDoTeamMember) | Manages team membership |
+| [AzDoTeamSettings](Resources/AzDoTeamSettings) | Configures a team's iteration/area paths, working days, and bug behaviour |
+| [AzDoUserEntitlement](Resources/AzDoUserEntitlement) | Adds/removes organization users and manages their access level |
+
+### Repositories and policies
+
+| Resource | Description |
+|---|---|
+| [AzDoGitRepository](Resources/AzDoGitRepository) | Creates and manages Git repositories |
+| [AzDoRepositorySettings](Resources/AzDoRepositorySettings) | Manages Git repository settings |
+| [AzDoBranchPolicy](Resources/AzDoBranchPolicy) | Manages branch policies |
+
+### Permissions
+
+| Resource | Description |
+|---|---|
+| [AzDoProjectPermission](Resources/AzDoProjectPermission) | Manages project-level permissions |
+| [AzDoGitPermission](Resources/AzDoGitPermission) | Manages Git repository permissions |
+| [AzDoAreaPermission](Resources/AzDoAreaPermission) | Manages area path permissions |
+| [AzDoIterationPermission](Resources/AzDoIterationPermission) | Manages iteration path permissions |
+| [AzDoAgentPoolPermission](Resources/AzDoAgentPoolPermission) | Manages agent pool permissions |
+| [AzDoEnvironmentPermission](Resources/AzDoEnvironmentPermission) | Manages pipeline environment permissions |
+| [AzDoPipelinePermission](Resources/AzDoPipelinePermission) | Manages build/pipeline permissions |
+| [AzDoServiceConnectionPermission](Resources/AzDoServiceConnectionPermission) | Manages service connection permissions |
+| [AzDoVariableGroupPermission](Resources/AzDoVariableGroupPermission) | Manages variable group permissions |
+| [AzDoArtifactFeedPermission](Resources/AzDoArtifactFeedPermission) | Manages artifact feed permissions |
+| [AzDoSecurityNamespacePermission](Resources/AzDoSecurityNamespacePermission) | Manages permissions for an arbitrary security namespace |
+| [AzDoProcessPermission](Resources/AzDoProcessPermission) | Manages Process security namespace permissions |
+| [AzDoGroupPermission](Resources/AzDoGroupPermission) | *(Not currently supported)* Manages group-level identity permissions |
+
+### Pipelines, environments and agents
+
+| Resource | Description |
+|---|---|
+| [AzDoPipeline](Resources/AzDoPipeline) | Creates and manages YAML pipeline definitions |
+| [AzDoPipelineEnvironment](Resources/AzDoPipelineEnvironment) | Creates and manages pipeline environments |
+| [AzDoEnvironmentApproval](Resources/AzDoEnvironmentApproval) | Manages approval checks on a pipeline environment |
+| [AzDoCheckConfiguration](Resources/AzDoCheckConfiguration) | Manages pipeline checks on a protected resource |
+| [AzDoDeploymentGroup](Resources/AzDoDeploymentGroup) | Creates and manages deployment groups |
+| [AzDoAgentPool](Resources/AzDoAgentPool) | Creates and manages organization agent pools |
+| [AzDoAgentQueue](Resources/AzDoAgentQueue) | Creates and manages project agent queues |
+| [AzDoTaskGroup](Resources/AzDoTaskGroup) | Creates and manages task groups |
+| [AzDoVariableGroup](Resources/AzDoVariableGroup) | Creates and manages variable groups |
+| [AzDoServiceConnection](Resources/AzDoServiceConnection) | Creates and manages service connections |
+| [AzDoPipelineSettings](Resources/AzDoPipelineSettings) | Manages a project's pipeline general settings |
+
+### Boards and work items
+
+| Resource | Description |
+|---|---|
+| [AzDoAreaNodes](Resources/AzDoAreaNodes) | Manages area path classification nodes |
+| [AzDoIterationNodes](Resources/AzDoIterationNodes) | Manages iteration path classification nodes |
+| [AzDoWIPTags](Resources/AzDoWIPTags) | Manages work item tags |
+| [AzDoProcess](Resources/AzDoProcess) | Creates and manages inherited processes |
+| [AzDoNotificationSubscription](Resources/AzDoNotificationSubscription) | Manages notification subscriptions |
+
+### Artifacts, wiki, extensions and auditing
+
+| Resource | Description |
+|---|---|
+| [AzDoArtifactFeed](Resources/AzDoArtifactFeed) | Creates and manages artifact feeds |
+| [AzDoArtifactFeedSettings](Resources/AzDoArtifactFeedSettings) | Configures feed upstream sources and retention |
+| [AzDoArtifactFeedView](Resources/AzDoArtifactFeedView) | Creates and manages feed views |
+| [AzDoWiki](Resources/AzDoWiki) | Creates and manages project and code wikis |
+| [AzDoExtension](Resources/AzDoExtension) | Installs and uninstalls organization extensions |
+| [AzDoAuditStream](Resources/AzDoAuditStream) | Manages audit log streaming |
+| [AzDoServiceHook](Resources/AzDoServiceHook) | Creates and manages service hook subscriptions |
+
+---
 
 ## Prerequisites
 
-The minimum requirement for this module is PowerShell 7.0.
-
-## Change log
-
-A full list of changes in each version can be found in the [change log](https://github.com/dsccommunity/AzureDevOpsDsc/blob/main/CHANGELOG.md).
+- PowerShell **7.0** or higher
+- Windows (DSC engine requires Windows for `Invoke-DscResource`)
+- An Azure DevOps organization with appropriate permissions
+- Authentication credentials — see the [Authentication](Authentication) guide
