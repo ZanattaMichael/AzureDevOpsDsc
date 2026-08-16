@@ -177,10 +177,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - AzureDevOpsDscNative
-  - Added a missing `Install Pester` step to the Integration Tests workflow. The
-    self-hosted runner does not ship Pester 5, and `Invoke-Tests.ps1` declares a
-    `#Requires` for it, so the script refused to start and the suite never ran -
-    the only workflow of the three without such a step.
+  - Fixed the Integration Tests workflow, which could never have run the suite.
+    Two independent blockers, both masked until `Invoke-Tests.ps1` was made to
+    report failures: the self-hosted runner does not ship Pester 5 while
+    `Invoke-Tests.ps1` declares a `#Requires` for it (this was the only one of the
+    three workflows with no `Install Pester` step), and the workflow put only
+    `./output` on `PSModulePath` when the built module lives at
+    `output/builtModule/<Module>/<Version>` with its nested modules one level
+    further down, so `Initalize-TestFramework.ps1` could not import
+    `AzureDevOpsDsc.Common`. The built paths are now resolved and prepended, ahead
+    of any stale copy deployed on the runner, and the step verifies all three
+    required modules resolve before the suite starts.
   - Fixed `tests/Integration/Invoke-Tests.ps1`, which called `Invoke-Pester`
     without `PassThru` and never inspected the result. The script always exited
     `0`, so a run with failing integration tests was indistinguishable from a

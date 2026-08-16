@@ -69,13 +69,50 @@ jobs:
           }
           Write-Host "Pester $($pester.Version) available at $($pester.ModuleBase)"
 
+      # Initalize-TestFramework.ps1 imports DscResource.Common, AzureDevOpsDsc.Common and
+      # AzureDevOpsDscNative by bare name, so every directory holding one has to be on
+      # PSModulePath. Adding only ./output is not enough: the built module lives at
+      # output/builtModule/<Module>/<Version> and its nested modules one level further
+      # down under /Modules. The version comes from the build, so those are globbed.
+      #
+      # Entries are prepended so a freshly built module always wins over any stale copy
+      # already deployed on the self-hosted runner - it carries a
+      # C:\Temp\DSCModule\AzureDevOpsDsc\0.0.1\Modules path from before the rename.
       - name: Add built module to PSModulePath
         shell: pwsh
         run: |
-          $outputPath = Resolve-Path -Path .\output
-          $env:PSModulePath = "$outputPath;$env:PSModulePath"
+          $outputPath = (Resolve-Path -Path .\output).Path
+          $builtModulePath = Join-Path -Path $outputPath -ChildPath 'builtModule'
+          $requiredModulesPath = Join-Path -Path $outputPath -ChildPath 'RequiredModules'
+
+          $nestedModulePaths = @(
+              Get-ChildItem -Path (Join-Path -Path $builtModulePath -ChildPath '*/*/Modules') -Directory -ErrorAction SilentlyContinue |
+                  Select-Object -ExpandProperty FullName
+          )
+
+          # Each entry is prepended, so the least specific is listed first.
+          $pathsToAdd = @($outputPath, $requiredModulesPath, $builtModulePath) + $nestedModulePaths
+          foreach ($path in $pathsToAdd) {
+              if (Test-Path -Path $path) {
+                  $env:PSModulePath = "$path;$env:PSModulePath"
+              }
+          }
+
           # Persist for subsequent steps via $GITHUB_ENV
           "PSModulePath=$env:PSModulePath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+          Write-Host 'PSModulePath entries:'
+          $env:PSModulePath -split ';' | Where-Object { $_ } | ForEach-Object { Write-Host "  $_" }
+
+          # Fail here, naming the module, rather than inside Initalize-TestFramework.ps1
+          # where the error does not say which path was searched.
+          foreach ($name in 'DscResource.Common', 'AzureDevOpsDsc.Common', 'AzureDevOpsDscNative') {
+              $found = Get-Module -Name $name -ListAvailable | Select-Object -First 1
+              if (-not $found) {
+                  throw "Module '$name' is not resolvable on PSModulePath after the build - the integration tests cannot initialise."
+              }
+              Write-Host "Resolved $name $($found.Version) -> $($found.ModuleBase)"
+          }
 
       - name: Write test framework configuration
         shell: pwsh
