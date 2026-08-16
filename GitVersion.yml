@@ -1,5 +1,12 @@
+# NOTE: This file configures GitVersion, which is only consumed by azure-pipelines.yml.
+# Releases from GitHub Actions are tag-driven: the version comes from the release tag
+# (see .github/workflows/publish.yml), not from GitVersion. `next-version` below is only
+# used as a baseline while the repository has no version tags at all; once the first
+# vX.Y.Z tag exists, GitVersion derives the version from tag history and ignores it.
+# It is kept in step with the `moduleVersion` fallback in
+# source/AzureDevOpsDscNative.psd1 so the two cannot disagree.
 mode: ContinuousDelivery
-next-version: 0.0.1
+next-version: 0.0.2
 major-version-bump-message: '\s?(breaking|major|breaking\schange)'
 minor-version-bump-message: '(adds?|features?|minor)\b'
 patch-version-bump-message: '\s?(fix|patch)'

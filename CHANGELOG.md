@@ -105,6 +105,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- AzureDevOpsDscNative
+  - Reworked the release process so that a released version has exactly one
+    source of truth - the git tag. `publish.yml` now also verifies the tag is
+    contained in `main` before releasing, accepts prerelease tags of the form
+    `vX.Y.Z-preview0001`, and runs the `docs` tasks during packaging so the
+    published package ships conceptual help. The `moduleVersion` in the module
+    manifest and `next-version` in `GitVersion.yml` are documented as build
+    fallbacks and brought into agreement with each other.
+  - Added a changelog roll-over step to `publish.yml`
+    (`Create_ChangeLog_GitHub_PR`), so a release converts the `[Unreleased]`
+    section into a versioned one instead of carrying its entries into the next
+    release.
+  - Moved `Publish_GitHub_Wiki_Content` out of the `publish` task chain in
+    `build.yaml` and into a separate non-blocking step, so a wiki failure can no
+    longer fail a release whose Gallery package has already been published.
+  - Added a `docs` step to `build.yml` so documentation generation is exercised
+    on every push and pull request rather than for the first time during a
+    release.
+  - Documented the full release procedure and required repository secrets in
+    `CONTRIBUTING.md`, and corrected the `Releases` section of `README.md`,
+    which described an automatic preview release on every merge to `main` that
+    this fork's workflows never performed.
 - AzureDevOpsDsc
   - Enabled integration tests against https://dev.azure.com/azuredevopsdsc/ (see
     comment https://github.com/dsccommunity/AzureDevOpsDsc/issues/9#issuecomment-766375424
@@ -147,6 +169,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - AzureDevOpsDscNative
+  - Removed the `build-publish.yml` workflow. It triggered on the same version
+    tags as `publish.yml`, so every release ran two competing publishes. Its
+    publish job could never succeed - it looked for the built module at
+    `output/AzureDevOpsDsc`, a path that predates the rename to
+    `AzureDevOpsDscNative` and the move to `output/builtModule` - and had it
+    succeeded it would have published version `0.0.2` regardless of the tag,
+    used a different Gallery secret name, and bypassed the unit test gate. It
+    also built the module a third redundant time on every pull request.
+  - Fixed the `PreLoad` build task, which added a hardcoded
+    `output/AzureDevOpsDsc/0.0.1/Modules` path to `PSModulePath`. Neither the
+    module name nor the version had been correct since the rename, and the path
+    also predates the move to the `builtModule` subdirectory, so the nested
+    modules were never actually added. The version cannot be hardcoded at all
+    now that it comes from the release tag, so the path is resolved by globbing
+    the built module output instead. The task now also adds
+    `output/RequiredModules`, and skips paths that do not exist rather than
+    adding unusable entries to `PSModulePath`.
   - Fixed an intermittent Pester class-loading race in the Classes unit test
     suite (`Could not find type [X]`) by switching from dot-sourcing raw
     source classes to `using module` against the built module - the Classes

@@ -30,6 +30,14 @@ jobs:
         run: |
           ./build.ps1 -ResolveDependency -Tasks build
 
+      # The publish workflow runs `docs` as part of packaging a release, so it is
+      # exercised here on every push and PR - a broken doc-generation task should
+      # surface in normal CI, not for the first time midway through a release.
+      - name: Generate conceptual help and wiki content
+        shell: pwsh
+        run: |
+          ./build.ps1 -Tasks docs
+
       - name: Generate DSC v3 adapted resource manifests
         shell: pwsh
         run: |
