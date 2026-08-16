@@ -115,11 +115,17 @@ jobs:
       # `docs` must run here, not just `dscv3`: Generate_Conceptual_Help writes the
       # about_*.help.txt files into the *built* module, so skipping it ships a Gallery
       # package with no conceptual help. It also produces output/WikiContent, which the
-      # wiki publish step below consumes.
-      - name: Generate docs and DSC v3 manifests, and package module
+      # wiki publish step below consumes. Kept as its own step so a doc-generation
+      # failure is attributable at a glance rather than hidden inside packaging.
+      - name: Generate documentation
         shell: pwsh
         run: |
-          ./build.ps1 -Tasks docs,dscv3,package_module_nupkg
+          ./build.ps1 -Tasks docs
+
+      - name: Generate DSC v3 manifests and package module
+        shell: pwsh
+        run: |
+          ./build.ps1 -Tasks dscv3,package_module_nupkg
 
       # Both sub-tasks self-guard on their own token being set, so this is safe to run
       # even if GALLERY_API_TOKEN isn't configured yet - it just skips the Gallery

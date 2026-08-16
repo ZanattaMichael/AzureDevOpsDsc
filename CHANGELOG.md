@@ -169,6 +169,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - AzureDevOpsDscNative
+  - Fixed the `docs` build task, which failed with `Cannot index into a null
+    array` and broke the Build workflow. The comment-based help in
+    `042.AzDoAreaPermission.ps1` and `043.AzDoIterationPermission.ps1` used a
+    `.METHOD` keyword, which PowerShell's help parser does not recognise - it
+    rejects the entire help block and `GetHelpContent()` returns `$null`, which
+    `DscResource.DocGenerator`'s `New-DscResourcePowerShellHelp` then indexes
+    into. The method documentation is folded into `.NOTES` instead, and the
+    placeholder `<link to the GitHub repository>` in both `.LINK` sections is
+    replaced with the actual repository URL. All 49 resource classes now produce
+    conceptual help.
+  - Removed `AzDevOpsProject` from `DscResourcesToExport`. No class, MOF schema,
+    or any other implementation of that resource exists - it is a leftover from
+    the upstream module - so the manifest advertised 50 resources while shipping
+    49, and the Gallery listing would have claimed a resource that could never
+    be found by `Get-DscResource`. Also added a missing comma after
+    `AzDoProcessPermission` in the same list.
   - Removed the `build-publish.yml` workflow. It triggered on the same version
     tags as `publish.yml`, so every release ran two competing publishes. Its
     publish job could never succeed - it looked for the built module at
