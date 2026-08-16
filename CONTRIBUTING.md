@@ -901,3 +901,81 @@ development), the following actions need to be performed:
 source control commits as part of changes made. These PATs would likely be
 available within the public, commit history and could/would pose a security risk
 to your Azure DevOps instance.
+
+## Releasing
+
+Releases are cut from git tags. Nothing is published on a merge to `main` —
+merging only runs the Build and Unit Tests workflows.
+
+### One-time repository setup
+
+| Kind | Name | Purpose |
+|------|------|---------|
+| Secret | `GALLERY_API_TOKEN` | PowerShell Gallery API key. If unset, the release still produces a GitHub Release but skips the Gallery publish. |
+| Secret | `AZURE_DEVOPS_PAT` | Only used by the Integration Tests workflow, not by releases. |
+| Variable | `AzureDevOpsOrg` | Only used by the Integration Tests workflow, not by releases. |
+
+`GITHUB_TOKEN` is supplied automatically and needs no setup. The publish
+workflow declares `contents: write` (GitHub Release, wiki) and
+`pull-requests: write` (changelog roll-over PR).
+
+To create the Gallery API key: sign in at
+[powershellgallery.com](https://www.powershellgallery.com/), then
+**Account settings → API Keys → Create**. Scope it to *Push new packages and
+package versions*, and glob the package name to `AzureDevOpsDscNative` so the
+key cannot publish anything else.
+
+### Cutting a release
+
+1. Make sure `main` is green — both the Build and Unit Tests workflows must be
+   passing for the commit you intend to tag.
+2. Make sure the `## [Unreleased]` section of [CHANGELOG.md](CHANGELOG.md)
+   accurately describes what is shipping. It becomes the GitHub Release notes
+   verbatim, so anything missing here is missing from the release.
+3. Decide the version according to [semver](https://semver.org/). There is no
+   automatic version increment — the tag *is* the version.
+4. Tag `main` and push:
+
+   ```powershell
+   git checkout main
+   git pull origin main
+   git tag v1.2.3
+   git push origin v1.2.3
+   ```
+
+5. Watch the Publish workflow. It will refuse to release if the tag is not on
+   `main`, if the tag is not a valid version, or if either unit test suite fails.
+
+For a prerelease, use an alphanumeric suffix — `v1.2.3-preview0001`. The Gallery
+requires the suffix to be alphanumeric only, with no dots and no second hyphen.
+Prereleases skip the changelog roll-over pull request.
+
+### What the publish workflow does
+
+1. Derives the module version from the tag and validates its format.
+2. Verifies the tagged commit is contained in `main`.
+3. Builds the module with `$env:ModuleVersion` set from the tag, which stamps
+   that version into the packaged manifest. The `moduleVersion` value in
+   `source/AzureDevOpsDscNative.psd1` is only a fallback for local and CI builds
+   and is never what gets released.
+4. Re-runs the Classes and Common unit suites as a release gate.
+5. Runs `docs`, `dscv3`, and `package_module_nupkg` to generate conceptual help,
+   the DSC v3 adapted resource manifests, and the NuGet package.
+6. Publishes the GitHub Release and the PowerShell Gallery package.
+7. Pushes wiki content (non-blocking — requires the repository wiki to be
+   enabled and initialised).
+8. Opens a pull request rolling `## [Unreleased]` over into a versioned
+   changelog section. **Merge this PR**, otherwise the next release's notes will
+   still contain this release's entries.
+
+### Versioning sources
+
+There is exactly one authoritative source of a released version — the git tag.
+Two other files mention versions and must not be mistaken for it:
+
+- `source/AzureDevOpsDscNative.psd1` (`moduleVersion`) — fallback for local and
+  CI builds only.
+- `GitVersion.yml` (`next-version`) — consumed only by `azure-pipelines.yml`,
+  which is retained from the upstream DSC Community repository and whose deploy
+  stage is gated to the `dsccommunity` organisation. It does not run for this
+  fork.

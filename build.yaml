@@ -94,10 +94,13 @@ BuildWorkflow:
   merge:
     - Merge_CodeCoverage_Files
 
+  # Publish_GitHub_Wiki_Content is deliberately NOT part of this chain. It requires the
+  # repository wiki to be enabled and initialised, and a failure there would fail the
+  # release job *after* the Gallery package had already been published. The publish
+  # workflow runs it as a separate, non-blocking step instead.
   publish:
     - Publish_release_to_GitHub
     - publish_module_to_gallery
-    - Publish_GitHub_Wiki_Content
 
 ####################################################
 #       PESTER  Configuration                      #
@@ -150,8 +153,11 @@ DscTest:
 GitHubConfig:
   GitHubFilesToAdd:
     - 'CHANGELOG.md'
-  GitHubConfigUserName: dscbot
-  GitHubConfigUserEmail: dsccommunity@outlook.com
+  # Identity used for the automated changelog roll-over commit. This fork is not
+  # published by the DSC Community bot, so the standard GitHub Actions bot identity is
+  # used instead - it matches the GITHUB_TOKEN the publish workflow authenticates with.
+  GitHubConfigUserName: github-actions[bot]
+  GitHubConfigUserEmail: 41898282+github-actions[bot]@users.noreply.github.com
   UpdateChangelogOnPrerelease: false
 
 ####################################################
