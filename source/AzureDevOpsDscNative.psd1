@@ -46,7 +46,6 @@
     NestedModules        = @()
 
     DscResourcesToExport = @(
-      'AzDevOpsProject',
       'AzDoGroupPermission',
       'AzDoOrganizationGroup',
       'AzDoProject',
@@ -92,7 +91,7 @@
       'AzDoArtifactFeedSettings',
       'AzDoArtifactFeedView',
       'AzDoProcess',
-      'AzDoProcessPermission'
+      'AzDoProcessPermission',
       'AzDoUserEntitlement',
       'AzDoServiceHook',
       'AzDoPipelineSettings'
