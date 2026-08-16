@@ -53,7 +53,7 @@ $config.CodeCoverage.Path               = @(
                                             '.\source\Classes\'
                                         )
 $config.CodeCoverage.OutputFormat       = 'CoverageGutters'
-$config.CodeCoverage.OutputPath         = ".\output\AzureDevOpsDsc.codeCoverage.xml"
+$config.CodeCoverage.OutputPath         = ".\output\AzureDevOpsDscNative.codeCoverage.xml"
 $config.CodeCoverage.OutputEncoding     = 'utf8'
 
 # Get the path to the function being tested

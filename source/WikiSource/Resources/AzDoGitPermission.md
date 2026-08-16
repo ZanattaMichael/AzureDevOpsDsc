@@ -127,7 +127,7 @@ $properties = @{
                         )
 }
 
-Invoke-DSCResource -Name 'AzDoGitPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DSCResource -Name 'AzDoGitPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration to clear permissions for an identity within a group
@@ -146,7 +146,7 @@ $properties = @{
                         )
 }
 
-Invoke-DSCResource -Name 'AzDoGitPermission' -Method Set -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DSCResource -Name 'AzDoGitPermission' -Method Set -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 4: Sample Configuration using AzDO-DSC-LCM
@@ -162,9 +162,9 @@ variables: {
 resources:
 
   - name: SampleGroup Permissions
-    type: AzureDevOpsDsc/AzDoGitPermission
+    type: AzureDevOpsDscNative/AzDoGitPermission
     dependsOn: 
-        - AzureDevOpsDsc/AzDoProjectGroup/SampleGroupReadAccess
+        - AzureDevOpsDscNative/AzDoProjectGroup/SampleGroupReadAccess
     properties:
       projectName: $ProjectName
       RepositoryName: $RepositoryName

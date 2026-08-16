@@ -39,7 +39,7 @@ This resource manages repository-level settings in Azure DevOps Git repositories
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoRepositorySettings ConfigureRepoSettings {
@@ -67,7 +67,7 @@ $properties = @{
     RepositoryName = 'MyRepository'
 }
 
-Invoke-DscResource -Name 'AzDoRepositorySettings' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoRepositorySettings' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -82,9 +82,9 @@ variables: {
 
 resources:
 - name: Repository Merge Settings
-  type: AzureDevOpsDsc/AzDoRepositorySettings
+  type: AzureDevOpsDscNative/AzDoRepositorySettings
   dependsOn:
-    - AzureDevOpsDsc/AzDoGitRepository/MyRepository
+    - AzureDevOpsDscNative/AzDoGitRepository/MyRepository
   properties:
     ProjectName: $ProjectName
     RepositoryName: $RepositoryName

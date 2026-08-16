@@ -71,16 +71,44 @@ Start-Sleep -Seconds 90
 
 $pesterConfig = New-PesterConfiguration
 $pesterConfig.Run.Path           = "$PSScriptRoot\Resources"
+# PassThru is required to see the result. Without it this script cannot tell whether
+# any test failed, always exits 0, and every caller - including the release gate in
+# the publish workflow - reads a failed run as a successful one.
+$pesterConfig.Run.PassThru       = $true
 $pesterConfig.Output.Verbosity   = 'Detailed'
 $pesterConfig.TestResult.Enabled = $true
 $pesterConfig.TestResult.OutputPath   = 'C:\Temp\integration-test-results.xml'
 $pesterConfig.TestResult.OutputFormat = 'NUnitXml'
 
-Invoke-Pester -Configuration $pesterConfig
+$testResults = Invoke-Pester -Configuration $pesterConfig
 
 #
-# Post-run teardown: clean up all resources created during the test run
+# Post-run teardown: clean up all resources created during the test run.
+# This runs before the pass/fail decision below so that a failing run still cleans up
+# after itself and does not leave the organization dirty for the next run.
 
 Write-Host "[Invoke-Tests] Running post-run teardown..."
 . "$($CurrentLocation.Path)\Supporting\Teardown.ps1" -ClearAll -OrganizationName $GLOBAL:DSCAZDO_OrganizationName -TestFrameworkConfiguration $TestFrameworkConfiguration
 Write-Host "[Invoke-Tests] Post-run teardown complete."
+
+#
+# Report the outcome with an exit code so callers (CI, the publish release gate) can
+# gate on it.
+
+if ($null -eq $testResults)
+{
+    Write-Error "[Invoke-Tests] Pester did not return a result object - treating the run as failed."
+    exit 1
+}
+
+Write-Host ("[Invoke-Tests] Passed: {0}, Failed: {1}, Skipped: {2}, NotRun: {3}" -f
+    $testResults.PassedCount, $testResults.FailedCount, $testResults.SkippedCount, $testResults.NotRunCount)
+
+if ($testResults.FailedCount -gt 0)
+{
+    Write-Error ("[Invoke-Tests] {0} integration test(s) failed." -f $testResults.FailedCount)
+    exit 1
+}
+
+Write-Host "[Invoke-Tests] All integration tests passed."
+exit 0

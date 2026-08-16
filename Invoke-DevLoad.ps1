@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Loads AzureDevOpsDsc from source into the current session for interactive testing.
+    Loads AzureDevOpsDscNative from source into the current session for interactive testing.
 
 .DESCRIPTION
     Bootstraps the module without a full build by dot-sourcing all enums, classes,
@@ -80,13 +80,13 @@ $ErrorActionPreference = 'Stop'
 
 if ($PSVersionTable.PSVersion.Major -lt 7)
 {
-    throw "AzureDevOpsDsc requires PowerShell 7.0+. Current: $($PSVersionTable.PSVersion). " +
+    throw "AzureDevOpsDscNative requires PowerShell 7.0+. Current: $($PSVersionTable.PSVersion). " +
           "Install from https://aka.ms/powershell"
 }
 
 Write-Host ''
 Write-Host '=======================================' -ForegroundColor Cyan
-Write-Host '  AzureDevOpsDsc  Dev Loader' -ForegroundColor Cyan
+Write-Host '  AzureDevOpsDscNative  Dev Loader' -ForegroundColor Cyan
 Write-Host "  PowerShell $($PSVersionTable.PSVersion)  |  $([System.Runtime.InteropServices.RuntimeInformation]::OSDescription)" -ForegroundColor Cyan
 Write-Host '=======================================' -ForegroundColor Cyan
 Write-Host ''

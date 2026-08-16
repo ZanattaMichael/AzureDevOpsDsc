@@ -76,7 +76,7 @@ $properties = @{
     GroupMembers = @('user1@example.com', 'user2@example.com')
 }
 
-Invoke-DSCResource -Name 'AzDoGroupMember' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DSCResource -Name 'AzDoGroupMember' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ### Example 3: Sample Configuration to remove/exclude an Azure DevOps Group using Invoke-DSCResource
@@ -88,7 +88,7 @@ $properties = @{
     Ensure       = 'Absent'
 }
 
-Invoke-DSCResource -Name 'AzDoGroupMember' -Method Set -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DSCResource -Name 'AzDoGroupMember' -Method Set -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ### Example 4: Sample Configuration using AzDO-DSC-LCM
@@ -104,7 +104,7 @@ variables: {
 resources:
 
   - name: Group
-    type: AzureDevOpsDsc/AzDoGroupMember
+    type: AzureDevOpsDscNative/AzDoGroupMember
     properties:
       groupName: $GroupName
       groupMembers: $GroupMembers

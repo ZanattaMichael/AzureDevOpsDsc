@@ -68,7 +68,7 @@ This resource manages security permissions on Azure DevOps pipeline environments
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoEnvironmentPermission AddEnvironmentPermission {
@@ -113,7 +113,7 @@ $properties = @{
     )
 }
 
-Invoke-DscResource -Name 'AzDoEnvironmentPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoEnvironmentPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -128,9 +128,9 @@ variables: {
 
 resources:
 - name: Production Environment Contributors Permission
-  type: AzureDevOpsDsc/AzDoEnvironmentPermission
+  type: AzureDevOpsDscNative/AzDoEnvironmentPermission
   dependsOn:
-    - AzureDevOpsDsc/AzDoPipelineEnvironment/Production
+    - AzureDevOpsDscNative/AzDoPipelineEnvironment/Production
   properties:
     ProjectName: $ProjectName
     EnvironmentName: $EnvironmentName

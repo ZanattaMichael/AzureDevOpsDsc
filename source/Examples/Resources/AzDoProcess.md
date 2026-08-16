@@ -31,7 +31,7 @@ This resource creates and manages Azure DevOps **inherited processes** (process 
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoProcess ContosoAgile {
@@ -55,7 +55,7 @@ $properties = @{
     ParentProcessName = 'Agile'
 }
 
-Invoke-DscResource -Name 'AzDoProcess' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoProcess' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -69,7 +69,7 @@ variables: {
 
 resources:
 - name: Contoso Agile Process
-  type: AzureDevOpsDsc/AzDoProcess
+  type: AzureDevOpsDscNative/AzDoProcess
   properties:
     ProcessName: $ProcessName
     ParentProcessName: Agile

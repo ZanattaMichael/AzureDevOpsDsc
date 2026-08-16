@@ -15,6 +15,17 @@ name: Integration Tests
 
 on:
   workflow_dispatch:
+  # Called by publish.yml as a release gate. A release does not proceed unless every
+  # integration test in this workflow passes.
+  workflow_call:
+    inputs:
+      moduleVersion:
+        description: >-
+          Version to build and test. The publish workflow passes the version derived
+          from the release tag so the tests exercise the exact build being released.
+          Left empty, the build falls back to the manifest version.
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -36,6 +47,8 @@ jobs:
 
       - name: Build module
         shell: pwsh
+        env:
+          ModuleVersion: ${{ inputs.moduleVersion }}
         run: |
           .\build.ps1 -Tasks build
 

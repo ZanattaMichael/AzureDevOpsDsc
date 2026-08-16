@@ -70,7 +70,7 @@ This resource manages security permissions on Azure DevOps variable groups (Libr
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoVariableGroupPermission AddVariableGroupPermission {
@@ -115,7 +115,7 @@ $properties = @{
     )
 }
 
-Invoke-DscResource -Name 'AzDoVariableGroupPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoVariableGroupPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -130,9 +130,9 @@ variables: {
 
 resources:
 - name: Variable Group Contributors Permission
-  type: AzureDevOpsDsc/AzDoVariableGroupPermission
+  type: AzureDevOpsDscNative/AzDoVariableGroupPermission
   dependsOn:
-    - AzureDevOpsDsc/AzDoVariableGroup/MyVariableGroup
+    - AzureDevOpsDscNative/AzDoVariableGroup/MyVariableGroup
   properties:
     ProjectName: $ProjectName
     VariableGroupName: $VariableGroupName

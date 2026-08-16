@@ -20,7 +20,7 @@ Certificate
 $tokenType = [TokenType]::ManagedIdentity
 
 .NOTES
-This enumeration is part of the AzureDevOpsDsc module.
+This enumeration is part of the AzureDevOpsDscNative module.
 #>
 enum TokenType
 {

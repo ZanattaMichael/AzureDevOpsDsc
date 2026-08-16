@@ -8,7 +8,7 @@ New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAc
 
 Configuration Example
 {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     node localhost
     {

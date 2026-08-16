@@ -11,11 +11,11 @@ New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAc
 Configuration Example
 {
 
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     node localhost
     {
-        AzDevOpsProject 'AddProject'
+        AzDoProject 'AddProject'
         {
             Ensure               = 'Present'
             ProjectName          = 'Test Project'

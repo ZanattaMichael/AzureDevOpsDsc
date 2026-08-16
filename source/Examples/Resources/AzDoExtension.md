@@ -31,7 +31,7 @@ This resource manages the installation of extensions from the Visual Studio Mark
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoExtension InstallExtension {
@@ -54,7 +54,7 @@ $properties = @{
     ExtensionId = 'vss-services-github'
 }
 
-Invoke-DscResource -Name 'AzDoExtension' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoExtension' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -66,14 +66,14 @@ variables: {}
 
 resources:
 - name: GitHub Services Extension
-  type: AzureDevOpsDsc/AzDoExtension
+  type: AzureDevOpsDscNative/AzDoExtension
   properties:
     PublisherId: ms
     ExtensionId: vss-services-github
     Ensure: Present
 
 - name: Work Item Search Extension
-  type: AzureDevOpsDsc/AzDoExtension
+  type: AzureDevOpsDscNative/AzDoExtension
   properties:
     PublisherId: ms-devlabs
     ExtensionId: workitemsearch

@@ -37,7 +37,7 @@ This resource manages variable groups in Azure DevOps, allowing shared variables
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoVariableGroup AddVariableGroup {
@@ -67,7 +67,7 @@ $properties = @{
     VariableGroupName = 'MyVariableGroup'
 }
 
-Invoke-DscResource -Name 'AzDoVariableGroup' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoVariableGroup' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -82,9 +82,9 @@ variables: {
 
 resources:
 - name: My Variable Group
-  type: AzureDevOpsDsc/AzDoVariableGroup
+  type: AzureDevOpsDscNative/AzDoVariableGroup
   dependsOn:
-    - AzureDevOpsDsc/AzDevOpsProject/MyProject
+    - AzureDevOpsDscNative/AzDoProject/MyProject
   properties:
     ProjectName: $ProjectName
     VariableGroupName: $VariableGroupName

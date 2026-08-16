@@ -39,7 +39,7 @@ This resource manages pipeline check configurations on Azure DevOps resources su
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoCheckConfiguration AddExclusiveLock {
@@ -68,7 +68,7 @@ $properties = @{
     CheckType    = 'ExclusiveLock'
 }
 
-Invoke-DscResource -Name 'AzDoCheckConfiguration' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoCheckConfiguration' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -83,9 +83,9 @@ variables: {
 
 resources:
 - name: Production Exclusive Lock
-  type: AzureDevOpsDsc/AzDoCheckConfiguration
+  type: AzureDevOpsDscNative/AzDoCheckConfiguration
   dependsOn:
-    - AzureDevOpsDsc/AzDoPipelineEnvironment/Production
+    - AzureDevOpsDscNative/AzDoPipelineEnvironment/Production
   properties:
     ProjectName: $ProjectName
     ResourceName: $EnvironmentName
