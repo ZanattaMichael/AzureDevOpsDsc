@@ -69,34 +69,45 @@ jobs:
           }
           Write-Host "Pester $($pester.Version) available at $($pester.ModuleBase)"
 
-      # Initalize-TestFramework.ps1 imports DscResource.Common, AzureDevOpsDsc.Common and
-      # AzureDevOpsDscNative by bare name, so every directory holding one has to be on
-      # PSModulePath. Adding only ./output is not enough: the built module lives at
-      # output/builtModule/<Module>/<Version> and its nested modules one level further
-      # down under /Modules. The version comes from the build, so those are globbed.
+      # Point PSModulePath at exactly one copy of each module the tests load.
       #
-      # Entries are prepended so a freshly built module always wins over any stale copy
-      # already deployed on the self-hosted runner - it carries a
-      # C:\Temp\DSCModule\AzureDevOpsDsc\0.0.1\Modules path from before the rename.
-      - name: Add built module to PSModulePath
+      # Initalize-TestFramework.ps1 imports DscResource.Common, AzureDevOpsDsc.Common and
+      # AzureDevOpsDscNative by bare name. AzureDevOpsDscNative lives at
+      # output/builtModule/<Module>/<Version>; its nested modules (AzureDevOpsDsc.Common,
+      # and DscResource.Common which build.yaml copies in) live one level down under
+      # /Modules. The version comes from the build, so those are globbed.
+      #
+      # Crucially, each of these modules must resolve from exactly ONE location. If a
+      # module is reachable from two places, Get-Module returns an array and DSC's
+      # GetResourceFromKeyword throws "Cannot convert System.Object[] to PSModuleInfo"
+      # inside Invoke-DscResource - which fails every test. Two sources of duplication
+      # are removed here rather than merely shadowed by prepending:
+      #   - output/RequiredModules also holds DscResource.Common (the built module already
+      #     bundles it under /Modules), so it is left off the path entirely; and
+      #   - the self-hosted runner carries stale hand-deployed copies under
+      #     C:\Temp\DSCModule (including an old 0.0.1 module under the former name), which
+      #     are stripped from the inherited PSModulePath.
+      - name: Set PSModulePath to the built module only
         shell: pwsh
         run: |
           $outputPath = (Resolve-Path -Path .\output).Path
           $builtModulePath = Join-Path -Path $outputPath -ChildPath 'builtModule'
-          $requiredModulesPath = Join-Path -Path $outputPath -ChildPath 'RequiredModules'
-
           $nestedModulePaths = @(
               Get-ChildItem -Path (Join-Path -Path $builtModulePath -ChildPath '*/*/Modules') -Directory -ErrorAction SilentlyContinue |
                   Select-Object -ExpandProperty FullName
           )
 
-          # Each entry is prepended, so the least specific is listed first.
-          $pathsToAdd = @($outputPath, $requiredModulesPath, $builtModulePath) + $nestedModulePaths
-          foreach ($path in $pathsToAdd) {
-              if (Test-Path -Path $path) {
-                  $env:PSModulePath = "$path;$env:PSModulePath"
-              }
+          # Keep the runner's default user/system module paths (Pester, base modules) but
+          # drop anything under this repo's ./output and any stale C:\Temp\DSCModule copies,
+          # so nothing outside the freshly built module can provide a second copy.
+          $keep = $env:PSModulePath -split ';' | Where-Object {
+              $_ -and
+              $_ -notlike "$outputPath*" -and
+              $_ -notlike 'C:\Temp\DSCModule*'
           }
+
+          $ordered = @($builtModulePath) + $nestedModulePaths + $keep
+          $env:PSModulePath = ($ordered | Where-Object { $_ } | Select-Object -Unique) -join ';'
 
           # Persist for subsequent steps via $GITHUB_ENV
           "PSModulePath=$env:PSModulePath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
@@ -104,14 +115,18 @@ jobs:
           Write-Host 'PSModulePath entries:'
           $env:PSModulePath -split ';' | Where-Object { $_ } | ForEach-Object { Write-Host "  $_" }
 
-          # Fail here, naming the module, rather than inside Initalize-TestFramework.ps1
-          # where the error does not say which path was searched.
+          # Assert each module resolves from exactly one location. Asserting "-ge 1" is what
+          # let the duplicate through last time; the duplicate itself is the failure mode, so
+          # fail here naming the module and its locations rather than deep inside DSC.
           foreach ($name in 'DscResource.Common', 'AzureDevOpsDsc.Common', 'AzureDevOpsDscNative') {
-              $found = Get-Module -Name $name -ListAvailable | Select-Object -First 1
-              if (-not $found) {
+              $bases = @(Get-Module -Name $name -ListAvailable | Select-Object -ExpandProperty ModuleBase -Unique)
+              if ($bases.Count -eq 0) {
                   throw "Module '$name' is not resolvable on PSModulePath after the build - the integration tests cannot initialise."
               }
-              Write-Host "Resolved $name $($found.Version) -> $($found.ModuleBase)"
+              if ($bases.Count -gt 1) {
+                  throw "Module '$name' resolves from $($bases.Count) locations, which makes Invoke-DscResource throw on a [PSModuleInfo] cast: $($bases -join ' ; ')"
+              }
+              Write-Host "Resolved $name -> $($bases[0])"
           }
 
       - name: Write test framework configuration

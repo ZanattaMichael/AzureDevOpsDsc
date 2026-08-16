@@ -178,16 +178,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - AzureDevOpsDscNative
   - Fixed the Integration Tests workflow, which could never have run the suite.
-    Two independent blockers, both masked until `Invoke-Tests.ps1` was made to
-    report failures: the self-hosted runner does not ship Pester 5 while
-    `Invoke-Tests.ps1` declares a `#Requires` for it (this was the only one of the
-    three workflows with no `Install Pester` step), and the workflow put only
+    Three independent blockers, all masked until `Invoke-Tests.ps1` was made to
+    report failures. (1) The self-hosted runner does not ship Pester 5 while
+    `Invoke-Tests.ps1` declares a `#Requires` for it - this was the only one of the
+    three workflows with no `Install Pester` step. (2) The workflow put only
     `./output` on `PSModulePath` when the built module lives at
     `output/builtModule/<Module>/<Version>` with its nested modules one level
     further down, so `Initalize-TestFramework.ps1` could not import
-    `AzureDevOpsDsc.Common`. The built paths are now resolved and prepended, ahead
-    of any stale copy deployed on the runner, and the step verifies all three
-    required modules resolve before the suite starts.
+    `AzureDevOpsDsc.Common`. (3) Once those directories were added, several modules
+    resolved from more than one location - `DscResource.Common` from both the built
+    module's bundled `Modules` folder and `output/RequiredModules`, plus stale
+    hand-deployed copies under `C:\Temp\DSCModule` on the runner - which made
+    `Get-Module` return an array and DSC's `GetResourceFromKeyword` throw
+    `Cannot convert System.Object[] to PSModuleInfo` inside every `Invoke-DscResource`,
+    failing all 381 tests. `PSModulePath` is now set to exactly one copy of each
+    module and the step asserts single-location resolution before the suite starts.
   - Fixed `tests/Integration/Invoke-Tests.ps1`, which called `Invoke-Pester`
     without `PassThru` and never inspected the result. The script always exited
     `0`, so a run with failing integration tests was indistinguishable from a
