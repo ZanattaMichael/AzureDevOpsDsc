@@ -1,17 +1,17 @@
 name: Integration Tests
 
-# Integration tests run against a live Azure DevOps organization.
-# They are gated behind the 'integration' GitHub Environment, which requires
-# manual approval from a project owner before each run.
+# Integration tests run against a live Azure DevOps organization on the
+# self-hosted AZDO-AGENT runner. This is an ordinary Actions workflow job, not a
+# deployment - it only runs when dispatched manually or called by publish.yml as a
+# release gate, so it never fires automatically on push or pull request.
 #
-# One-time repository setup required:
-#   1. Create an Environment named 'integration' in Settings > Environments.
-#   2. Add the project owner as a required reviewer.
-#   3. Optionally restrict deployment to protected branches only.
-#   4. Add repository variable:  AzureDevOpsOrg  (your Azure DevOps org name)
-#   5. Add repository secret:    AZURE_DEVOPS_PAT (a PAT with full-access scopes)
+# One-time repository setup required (repository scope, NOT an Environment):
+#   1. Add repository variable:  AzureDevOpsOrg   (your Azure DevOps org name)
+#   2. Add repository secret:    AZURE_DEVOPS_PAT (a PAT with full-access scopes)
 #      Leave AZURE_DEVOPS_PAT empty to use Managed Identity instead
 #      (only valid when AZDO-AGENT runs on an Azure VM/Arc machine).
+# These must be repository-level, not scoped to a GitHub Environment, since this
+# job no longer references one.
 
 on:
   workflow_dispatch:
@@ -34,7 +34,6 @@ jobs:
   integration-tests:
     name: Run Integration Tests
     runs-on: AZDO-AGENT
-    environment: integration
 
     steps:
       - name: Checkout

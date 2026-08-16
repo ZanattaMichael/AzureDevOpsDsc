@@ -79,9 +79,8 @@ jobs:
 
   # Release gate: every integration test must pass before anything is published.
   # This reuses integration-tests.yml rather than duplicating it, so the release runs
-  # exactly the suite that is maintained there - including its 'integration'
-  # environment approval and its self-hosted AZDO-AGENT runner. The release will wait
-  # at the approval prompt and will not publish until it is granted.
+  # exactly the suite that is maintained there, on its self-hosted AZDO-AGENT runner.
+  # If the runner is offline the release queues here rather than failing.
   integration-tests:
     name: Integration Tests (release gate)
     needs: validate

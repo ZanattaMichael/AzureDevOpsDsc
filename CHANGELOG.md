@@ -112,8 +112,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `integration-tests.yml` as a reusable workflow (rather than duplicating it)
     and builds the exact version being released. No GitHub Release and no
     PowerShell Gallery package is produced unless every integration test passes.
-    Note that a release now waits on the `integration` environment approval and
-    on the self-hosted `AZDO-AGENT` runner.
+    The integration job runs as an ordinary Actions job on the self-hosted
+    `AZDO-AGENT` runner - it does not use a GitHub Environment, so there is no
+    deployment record or manual approval gate, and `AZURE_DEVOPS_PAT` and
+    `AzureDevOpsOrg` must be repository-level rather than Environment-scoped.
   - Reworked the release process so that a released version has exactly one
     source of truth - the git tag. `publish.yml` now also verifies the tag is
     contained in `main` before releasing, accepts prerelease tags of the form

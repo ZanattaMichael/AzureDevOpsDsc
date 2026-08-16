@@ -915,8 +915,11 @@ merging only runs the Build and Unit Tests workflows.
 | Secret | `AZURE_DEVOPS_PAT` | PAT for the integration tests. **Required for releases** — the integration suite is a release gate. |
 | Variable | `AzureDevOpsOrg` | Azure DevOps organization the integration tests run against. **Required for releases.** |
 
-The `integration` GitHub Environment and the self-hosted `AZDO-AGENT` runner must
-both be available, since the release runs the integration suite through them.
+`AZURE_DEVOPS_PAT` and `AzureDevOpsOrg` must be **repository-level** secret and
+variable. The integration job runs as an ordinary Actions job (not a deployment)
+and does not reference a GitHub Environment, so Environment-scoped values would
+not resolve. The self-hosted `AZDO-AGENT` runner must be online for the release's
+integration gate to run — if it is offline the release queues rather than fails.
 
 `GITHUB_TOKEN` is supplied automatically and needs no setup. The publish
 workflow declares `contents: write` (GitHub Release, wiki) and
@@ -970,11 +973,13 @@ each gating the next.
    DevOps organization. **If any integration test fails, the release fails and
    nothing is published.**
 
-   This job waits for approval on the `integration` environment, so a release
-   pauses there until a reviewer approves it. The suite is slow — the
+   This job runs on the self-hosted `AZDO-AGENT` runner with no approval gate, so
+   it starts as soon as the runner is free. The suite is slow — the
    `AzDoAreaPermission`, `AzDoIterationPermission` and `AzDoPipelinePermission`
    resources scan all organization-level ACLs and take 200–400 seconds each — so
-   expect a release to take a long time to reach the publish step.
+   expect a release to take a long time to reach the publish step. Because it runs
+   automatically, be aware the suite's teardown clears test resources from the
+   target organization on every run.
 
 **`publish`**
 
