@@ -179,6 +179,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - AzureDevOpsDscNative
+  - Fixed `AzDoAPI_7_IdentitySubjectDescriptors` throwing `Cannot bind argument to
+    parameter 'SubjectDescriptor' because it is an empty string` when an
+    organization group, user, or service principal has an empty descriptor. The
+    mandatory-parameter bind aborted the entire cache refresh, and with it any
+    `AzDoProject` Set/Test that triggered it (3 integration test failures). Each
+    identity loop now skips entries with no descriptor, which cannot be resolved
+    anyway ([issue #43](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/43)).
+  - Fixed `New-WITTags` so a `Set` that has returned guarantees the created tags
+    are observable. Azure DevOps creates tags only as a side effect of a work item
+    and the `/wit/tags` list is eventually consistent, so adding several tags and
+    immediately testing could report not-in-desired-state
+    (`AzDoWIPTags` "add and remove multiple tags"). The function now confirms the
+    new tags are listable, with a short time-boxed retry, before returning
+    ([issue #44](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/44)).
   - Fixed the Integration Tests workflow, which could never have run the suite.
     Three independent blockers, all masked until `Invoke-Tests.ps1` was made to
     report failures. (1) The self-hosted runner does not ship Pester 5 while
