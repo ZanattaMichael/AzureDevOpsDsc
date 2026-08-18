@@ -115,8 +115,11 @@ function Set-AzDoProject
     Wait-DevOpsProject -ProjectURL $projectURL -OrganizationName $OrganizationName
 
     #
-    # Once the project has been created, refresh the entire cache.
+    # Refresh only the caches a project update can affect. See Refresh-AzDoCache for
+    # the full rationale - skipping the four org-wide caches and the eager identity
+    # enrichment is what makes AzDoProject Set operations return in seconds rather
+    # than minutes.
 
-    Refresh-AzDoCache -OrganizationName $OrganizationName
+    Refresh-AzDoCache -OrganizationName $OrganizationName -Scope 'AfterProjectOperation'
 
 }

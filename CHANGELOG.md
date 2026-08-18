@@ -5,6 +5,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- AzureDevOpsDscNative
+  - Made `AzDoProject` Set/Create operations dramatically faster by narrowing the
+    cache refresh they trigger. `Refresh-AzDoCache` gains a `-Scope` parameter
+    (default `Full`, matching the previous behaviour exactly). `New-AzDoProject`
+    and `Set-AzDoProject` now call it with `-Scope AfterProjectOperation`, which
+    skips five of the ten `AzDoAPI_*` cache-init commands whose data a project
+    operation cannot affect: `AzDoAPI_2_UserCache`, `AzDoAPI_5_PermissionsCache`,
+    `AzDoAPI_6_ServicePrinciple`, `AzDoAPI_7_IdentitySubjectDescriptors`, and
+    `AzDoAPI_8_ProcessTemplates`. `AzDoAPI_7` is the dominant cost - it makes one
+    Azure DevOps API call per organization identity - and is safe to skip because
+    `Find-Identity` already lazy-backfills `ACLIdentity` for individual identities
+    on first use. Each skip is guarded by an on-disk cache-file existence check,
+    so a first-run or wiped-cache environment still populates every cache. On the
+    integration suite the two `AzDoProject.Description`/`.NoDescription` files
+    account for ~1660 s / ~28 min out of a ~2 h run, with per-`Set` refreshes
+    driving that; narrowing the scope should recover most of that time.
+
 ### Added
 
 - AzureDevOpsDsc

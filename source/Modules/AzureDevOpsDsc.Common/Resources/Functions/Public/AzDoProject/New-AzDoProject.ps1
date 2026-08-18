@@ -118,9 +118,13 @@ function New-AzDoProject
     Wait-DevOpsProject -ProjectURL $projectURL -OrganizationName $OrganizationName
 
     #
-    # Once the project has been created, refresh the entire cache.
+    # Refresh only the caches a project create can affect (Projects, Groups,
+    # GroupMembers, GitRepositories, ClassificationNodes). The four org-wide caches
+    # and the eager identity enrichment are skipped - they cannot change from a
+    # project operation, and Find-Identity lazy-backfills any per-identity ACLIdentity
+    # on first use. See Refresh-AzDoCache -Scope for the full list.
 
-    Refresh-AzDoCache -OrganizationName $OrganizationName
+    Refresh-AzDoCache -OrganizationName $OrganizationName -Scope 'AfterProjectOperation'
 
 }
 
