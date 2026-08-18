@@ -179,6 +179,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - AzureDevOpsDscNative
+  - Fixed `Find-Identity` throwing `You cannot call a method on a null-valued
+    expression` when a cached organization group has a null or empty
+    `principalName`. The principalName group filter called `.replace()` on the
+    value unguarded, which aborted every ACL resolution
+    (`Get-AzDo*Permission` -> `ConvertTo-ACL` -> `ConvertTo-ACEList` ->
+    `Find-Identity`) and failed all permission resources. A malformed group can
+    never be the target of a principalName search, so it is now excluded from that
+    filter. This surfaced once the `AzDoAPI_7_IdentitySubjectDescriptors` fix below
+    stopped the cache refresh aborting early, letting such a group reach
+    `Find-Identity`.
   - Fixed `AzDoAPI_7_IdentitySubjectDescriptors` throwing `Cannot bind argument to
     parameter 'SubjectDescriptor' because it is an empty string` when an
     organization group, user, or service principal has an empty descriptor. The
