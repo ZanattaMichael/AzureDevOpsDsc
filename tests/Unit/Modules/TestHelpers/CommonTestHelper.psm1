@@ -263,8 +263,26 @@ function Set-OutputDirAsModulePath
     # Set the module path if it is not already set
     if ($ENV:PSModulePath -like "*$($RepositoryRoot)*") { return }
 
-    $ModulePath = '{0}{1}\' -f (($IsLinux) ? ':' : ';'), $RepositoryRoot
-    $ENV:PSModulePath = '{0}{1}\output' -f $ENV:PSModulePath, $ModulePath
-    $ENV:PSModulePath = '{0}{1}\output\AzureDevOpsDsc\0.0.0\Modules' -f $ENV:PSModulePath, $ModulePath
+    $delimiter = [System.IO.Path]::PathSeparator
+    $outputDir = Join-Path -Path $RepositoryRoot -ChildPath 'output'
+    $builtModuleDir = Join-Path -Path $outputDir -ChildPath 'builtModule'
+
+    $pathsToAdd = @($outputDir, $builtModuleDir)
+
+    # The nested modules live at output/builtModule/<ModuleName>/<Version>/Modules.
+    # Neither the module name nor the version can be hardcoded here - the version is
+    # supplied at build time from the release tag - so the path is resolved by globbing.
+    $pathsToAdd += @(
+        Get-ChildItem -Path (Join-Path -Path $builtModuleDir -ChildPath '*/*/Modules') -Directory -ErrorAction SilentlyContinue |
+            Select-Object -ExpandProperty FullName
+    )
+
+    foreach ($path in $pathsToAdd)
+    {
+        if (-not [System.String]::IsNullOrWhiteSpace($path) -and (Test-Path -Path $path))
+        {
+            $ENV:PSModulePath = '{0}{1}{2}' -f $ENV:PSModulePath, $delimiter, $path
+        }
+    }
 
 }

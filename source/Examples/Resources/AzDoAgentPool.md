@@ -33,7 +33,7 @@ This resource manages Azure DevOps agent pools at the organization level. Agent 
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoAgentPool AddAgentPool {
@@ -57,7 +57,7 @@ $properties = @{
     PoolName = 'MyAgentPool'
 }
 
-Invoke-DscResource -Name 'AzDoAgentPool' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoAgentPool' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -71,7 +71,7 @@ variables: {
 
 resources:
 - name: My Agent Pool
-  type: AzureDevOpsDsc/AzDoAgentPool
+  type: AzureDevOpsDscNative/AzDoAgentPool
   properties:
     PoolName: $PoolName
     PoolType: automation

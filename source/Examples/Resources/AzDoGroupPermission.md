@@ -67,7 +67,7 @@ This resource manages permissions on Azure DevOps groups (identity security name
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoGroupPermission AddGroupPermission {
@@ -107,7 +107,7 @@ $properties = @{
     )
 }
 
-Invoke-DscResource -Name 'AzDoGroupPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoGroupPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -121,9 +121,9 @@ variables: {
 
 resources:
 - name: Readers Group Permission
-  type: AzureDevOpsDsc/AzDoGroupPermission
+  type: AzureDevOpsDscNative/AzDoGroupPermission
   dependsOn:
-    - AzureDevOpsDsc/AzDoProjectGroup/Readers
+    - AzureDevOpsDscNative/AzDoProjectGroup/Readers
   properties:
     GroupName: '[$ProjectName]\Readers'
     isInherited: true

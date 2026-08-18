@@ -81,7 +81,7 @@ It includes properties for specifying the project name, repository name, permiss
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoGitPermission AddGitPermission {
@@ -123,7 +123,7 @@ $properties = @{
     )
 }
 
-Invoke-DscResource -Name 'AzDoGitPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoGitPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -138,9 +138,9 @@ variables: {
 
 resources:
 - name: Repository Contributors Permissions
-  type: AzureDevOpsDsc/AzDoGitPermission
+  type: AzureDevOpsDscNative/AzDoGitPermission
   dependsOn:
-    - AzureDevOpsDsc/AzDoGitRepository/MyRepository
+    - AzureDevOpsDscNative/AzDoGitRepository/MyRepository
   properties:
     ProjectName: $ProjectName
     RepositoryName: $RepositoryName

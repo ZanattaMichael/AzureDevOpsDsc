@@ -5,9 +5,17 @@ name: Publish
 # authoritative source of the module version, and it is baked into the manifest at
 # build time via $env:ModuleVersion.
 #
+# Release gates, in order. Nothing is published unless all of them pass:
+#   1. The tag is a valid version tag and points at a commit contained in main.
+#   2. Every integration test passes, against a live Azure DevOps organization.
+#   3. Both unit test suites pass against the freshly built module.
+#
 # Required repository secrets:
 #   GALLERY_API_TOKEN  - PowerShell Gallery API key. If unset, the Gallery publish
 #                        is skipped and only the GitHub Release is created.
+#   AZURE_DEVOPS_PAT   - PAT for the integration tests (see integration-tests.yml).
+# Required repository variable:
+#   AzureDevOpsOrg     - Azure DevOps organization the integration tests run against.
 # GITHUB_TOKEN is provided automatically and is used for the GitHub Release, the
 # wiki push, and the changelog roll-over pull request.
 
@@ -26,9 +34,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  publish:
-    name: Build, Test, and Publish Release
-    runs-on: windows-latest
+  validate:
+    name: Validate Release Tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.derive.outputs.version }}
+      isPrerelease: ${{ steps.derive.outputs.isPrerelease }}
 
     steps:
       - name: Checkout
@@ -37,6 +48,7 @@ jobs:
           fetch-depth: 0
 
       - name: Derive module version from tag
+        id: derive
         shell: pwsh
         run: |
           $tag = "${{ github.ref_name }}"
@@ -49,8 +61,8 @@ jobs:
           }
           $isPrerelease = $version.Contains('-')
           Write-Host "Publishing version $version (from tag $tag). Prerelease: $isPrerelease"
-          "ModuleVersion=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "IsPrerelease=$($isPrerelease.ToString().ToLower())" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "isPrerelease=$($isPrerelease.ToString().ToLower())" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       # A tag can be pushed pointing at any commit, including one that never went
       # through the Unit Tests workflow on main. Refuse to release from such a tag.
@@ -65,15 +77,49 @@ jobs:
           }
           Write-Host "Tag commit is contained in main."
 
+  # Release gate: the integration suite must run before anything is published.
+  # This reuses integration-tests.yml rather than duplicating it, so the release runs
+  # exactly the suite that is maintained there, on its self-hosted AZDO-AGENT runner.
+  # If the runner is offline the release queues here rather than failing.
+  #
+  # For a full release (vX.Y.Z) every test must pass. For a prerelease
+  # (vX.Y.Z-<suffix>) allowFailures is set, so individual test failures are logged as
+  # warnings and the release still proceeds - preview builds can ship despite flaky or
+  # in-progress tests. Setup/infrastructure failures (Pester missing, module not
+  # resolving, no test result object) still fail the gate in both modes, so a broken
+  # environment cannot silently pass.
+  integration-tests:
+    name: Integration Tests (release gate)
+    needs: validate
+    uses: ./.github/workflows/integration-tests.yml
+    secrets: inherit
+    with:
+      moduleVersion: ${{ needs.validate.outputs.version }}
+      allowFailures: ${{ needs.validate.outputs.isPrerelease == 'true' }}
+
+  publish:
+    name: Build, Test, and Publish Release
+    needs: [validate, integration-tests]
+    runs-on: windows-latest
+    env:
+      # $env:ModuleVersion has to be set before the *first* `build` task runs (not just
+      # before pack), since that is what bakes the version into the psd1. Setting it at
+      # job level makes it active for every step below.
+      ModuleVersion: ${{ needs.validate.outputs.version }}
+      IsPrerelease: ${{ needs.validate.outputs.isPrerelease }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Cache required build modules
         uses: actions/cache@v4
         with:
           path: output/RequiredModules
           key: ${{ runner.os }}-requiredmodules-${{ hashFiles('RequiredModules.psd1') }}
 
-      # $env:ModuleVersion, set via GITHUB_ENV above, is already active for every step in this job
-      # from here on - no per-step `env:` block needed. It has to be set before the *first*
-      # `build` task runs (not just before pack), since that's what bakes it into the psd1.
       - name: Build module
         shell: pwsh
         run: |

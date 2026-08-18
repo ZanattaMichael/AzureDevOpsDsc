@@ -33,7 +33,7 @@ This resource manages Azure DevOps deployment groups, which are collections of p
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoDeploymentGroup AddDeploymentGroup {
@@ -58,7 +58,7 @@ $properties = @{
     DeploymentGroupName = 'ProductionServers'
 }
 
-Invoke-DscResource -Name 'AzDoDeploymentGroup' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoDeploymentGroup' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -73,9 +73,9 @@ variables: {
 
 resources:
 - name: Production Servers Deployment Group
-  type: AzureDevOpsDsc/AzDoDeploymentGroup
+  type: AzureDevOpsDscNative/AzDoDeploymentGroup
   dependsOn:
-    - AzureDevOpsDsc/AzDevOpsProject/MyProject
+    - AzureDevOpsDscNative/AzDoProject/MyProject
   properties:
     ProjectName: $ProjectName
     DeploymentGroupName: $DeploymentGroupName

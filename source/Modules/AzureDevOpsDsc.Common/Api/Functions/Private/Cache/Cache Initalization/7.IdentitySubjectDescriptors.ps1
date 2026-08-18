@@ -60,6 +60,16 @@ function AzDoAPI_7_IdentitySubjectDescriptors
     # Iterate through each of the groups and query the Identity and add to the cache
     ForEach ($AzDoLiveGroup in $AzDoLiveGroups)
     {
+        # An identity with no descriptor cannot be resolved. Get-DevOpsDescriptorIdentity
+        # declares -SubjectDescriptor as a mandatory [String], so passing an empty value
+        # throws "Cannot bind argument to parameter 'SubjectDescriptor'" and aborts the
+        # whole cache refresh (and the DSC operation that triggered it). Skip it instead.
+        if ([string]::IsNullOrEmpty($AzDoLiveGroup.value.descriptor))
+        {
+            Write-Verbose "[AzDoAPI_7_IdentitySubjectDescriptors] Skipping group with no descriptor: $($AzDoLiveGroup.Key)"
+            continue
+        }
+
         $identity = Get-DevOpsDescriptorIdentity @params -SubjectDescriptor $AzDoLiveGroup.value.descriptor
         $ACLIdentity = [PSCustomObject]@{
             id = $identity.id
@@ -98,6 +108,14 @@ function AzDoAPI_7_IdentitySubjectDescriptors
 
     ForEach ($AzDoLiveUser in $AzDoLiveUsers)
     {
+        # See the note in the groups loop: skip identities with no descriptor rather than
+        # letting the mandatory-parameter bind throw and abort the cache refresh.
+        if ([string]::IsNullOrEmpty($AzDoLiveUser.value.descriptor))
+        {
+            Write-Verbose "[AzDoAPI_7_IdentitySubjectDescriptors] Skipping user with no descriptor: $($AzDoLiveUser.Key)"
+            continue
+        }
+
         $identity = Get-DevOpsDescriptorIdentity @params -SubjectDescriptor $AzDoLiveUser.value.descriptor
 
         $ACLIdentity = [PSCustomObject]@{
@@ -136,6 +154,14 @@ function AzDoAPI_7_IdentitySubjectDescriptors
 
     ForEach ($AzDoLiveServicePrinciple in $AzDoLiveServicePrinciples)
     {
+        # See the note in the groups loop: skip identities with no descriptor rather than
+        # letting the mandatory-parameter bind throw and abort the cache refresh.
+        if ([string]::IsNullOrEmpty($AzDoLiveServicePrinciple.value.descriptor))
+        {
+            Write-Verbose "[AzDoAPI_7_IdentitySubjectDescriptors] Skipping service principal with no descriptor: $($AzDoLiveServicePrinciple.Key)"
+            continue
+        }
+
         $identity = Get-DevOpsDescriptorIdentity @params -SubjectDescriptor $AzDoLiveServicePrinciple.value.descriptor
 
         $ACLIdentity = [PSCustomObject]@{

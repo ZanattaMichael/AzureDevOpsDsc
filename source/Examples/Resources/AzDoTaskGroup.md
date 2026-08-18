@@ -37,7 +37,7 @@ This resource manages task groups in Azure DevOps, which are reusable collection
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoTaskGroup AddTaskGroup {
@@ -62,7 +62,7 @@ $properties = @{
     TaskGroupName = 'MyBuildTaskGroup'
 }
 
-Invoke-DscResource -Name 'AzDoTaskGroup' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoTaskGroup' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -77,9 +77,9 @@ variables: {
 
 resources:
 - name: My Build Task Group
-  type: AzureDevOpsDsc/AzDoTaskGroup
+  type: AzureDevOpsDscNative/AzDoTaskGroup
   dependsOn:
-    - AzureDevOpsDsc/AzDevOpsProject/MyProject
+    - AzureDevOpsDscNative/AzDoProject/MyProject
   properties:
     ProjectName: $ProjectName
     TaskGroupName: $TaskGroupName

@@ -27,7 +27,7 @@ This resource manages work item tracking tags in Azure DevOps projects using Des
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoWIPTags AddWIPTags {
@@ -49,7 +49,7 @@ $properties = @{
     WorkItemTrackingTagList = @('Bug', 'Feature', 'Improvement')
 }
 
-Invoke-DscResource -Name 'AzDoWIPTags' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoWIPTags' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -63,9 +63,9 @@ variables: {
 
 resources:
 - name: Work Item Tags
-  type: AzureDevOpsDsc/AzDoWIPTags
+  type: AzureDevOpsDscNative/AzDoWIPTags
   dependsOn:
-    - AzureDevOpsDsc/AzDoProject/MyProject
+    - AzureDevOpsDscNative/AzDoProject/MyProject
   properties:
     ProjectName: $ProjectName
     WorkItemTrackingTagList:

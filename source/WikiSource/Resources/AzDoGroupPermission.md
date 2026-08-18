@@ -102,7 +102,7 @@ $properties = @{
                       )
 }
 
-Invoke-DSCResource -Name 'AzDoGroupPermission' -Method Set -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DSCResource -Name 'AzDoGroupPermission' -Method Set -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Methods

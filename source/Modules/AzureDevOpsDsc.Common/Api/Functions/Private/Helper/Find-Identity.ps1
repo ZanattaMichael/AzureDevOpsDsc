@@ -97,6 +97,13 @@ Function Find-Identity
         # When the caller uses "[]\GroupName" (empty org prefix), after bracket-stripping
         # $Name becomes "\GroupName". We match by suffix so "[orgName]\GroupName" resolves correctly.
         {
+            # A cached group can have a null/empty principalName (e.g. a malformed or
+            # partially-provisioned org group). Calling .replace() on it throws
+            # "You cannot call a method on a null-valued expression", which aborts every
+            # ACL resolution (ConvertTo-ACEList -> Find-Identity) and fails all permission
+            # resources. Such a group can never be the target of a principalName search,
+            # so exclude it.
+            if ([string]::IsNullOrEmpty($_.value.principalName)) { return $false }
             $normalizedPrincipal = $_.value.principalName.replace('[','').replace(']','')
             ($normalizedPrincipal -eq $Name) -or ($Name.StartsWith('\') -and $normalizedPrincipal.EndsWith($Name))
         }

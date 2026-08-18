@@ -1,4 +1,4 @@
-# Unit and integration tests for AzureDevOpsDsc
+# Unit and integration tests for AzureDevOpsDscNative
 
 This module is tested with [Pester 5](https://pester.dev/). Tests are split into two
 suites:

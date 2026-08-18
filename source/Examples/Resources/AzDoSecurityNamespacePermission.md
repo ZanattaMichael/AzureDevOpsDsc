@@ -103,7 +103,7 @@ This resource provides low-level access to Azure DevOps security namespaces, all
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoSecurityNamespacePermission AddNamespacePermission {
@@ -147,7 +147,7 @@ $properties = @{
     )
 }
 
-Invoke-DscResource -Name 'AzDoSecurityNamespacePermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoSecurityNamespacePermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -162,7 +162,7 @@ variables: {
 
 resources:
 - name: Build Namespace Contributors Permission
-  type: AzureDevOpsDsc/AzDoSecurityNamespacePermission
+  type: AzureDevOpsDscNative/AzDoSecurityNamespacePermission
   properties:
     SecurityNamespace: Build
     Token: $SecurityToken

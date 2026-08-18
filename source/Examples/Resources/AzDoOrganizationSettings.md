@@ -37,7 +37,7 @@ This resource manages organization-level security and access settings in Azure D
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoOrganizationSettings ConfigureOrgSettings {
@@ -63,7 +63,7 @@ $properties = @{
     OrganizationName = 'SampleAzDoOrgName'
 }
 
-Invoke-DscResource -Name 'AzDoOrganizationSettings' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoOrganizationSettings' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -77,7 +77,7 @@ variables: {
 
 resources:
 - name: Organization Security Settings
-  type: AzureDevOpsDsc/AzDoOrganizationSettings
+  type: AzureDevOpsDscNative/AzDoOrganizationSettings
   properties:
     OrganizationName: $OrganizationName
     AllowPublicProjects: false

@@ -1,20 +1,49 @@
 name: Integration Tests
 
-# Integration tests run against a live Azure DevOps organization.
-# They are gated behind the 'integration' GitHub Environment, which requires
-# manual approval from a project owner before each run.
+# Integration tests run against a live Azure DevOps organization on the
+# self-hosted AZDO-AGENT runner. This is an ordinary Actions workflow job, not a
+# deployment - it only runs when dispatched manually or called by publish.yml as a
+# release gate, so it never fires automatically on push or pull request.
 #
-# One-time repository setup required:
-#   1. Create an Environment named 'integration' in Settings > Environments.
-#   2. Add the project owner as a required reviewer.
-#   3. Optionally restrict deployment to protected branches only.
-#   4. Add repository variable:  AzureDevOpsOrg  (your Azure DevOps org name)
-#   5. Add repository secret:    AZURE_DEVOPS_PAT (a PAT with full-access scopes)
+# One-time repository setup required (repository scope, NOT an Environment):
+#   1. Add repository variable:  AzureDevOpsOrg   (your Azure DevOps org name)
+#   2. Add repository secret:    AZURE_DEVOPS_PAT (a PAT with full-access scopes)
 #      Leave AZURE_DEVOPS_PAT empty to use Managed Identity instead
 #      (only valid when AZDO-AGENT runs on an Azure VM/Arc machine).
+# These must be repository-level, not scoped to a GitHub Environment, since this
+# job no longer references one.
 
 on:
   workflow_dispatch:
+    inputs:
+      allowFailures:
+        description: >-
+          Exit 0 even if individual integration tests fail (setup/infrastructure
+          failures still fail the run). Useful for running the suite on a preview
+          branch without gating on flaky tests.
+        required: false
+        default: false
+        type: boolean
+  # Called by publish.yml as a release gate. A full release does not proceed unless every
+  # integration test passes; a prerelease (vX.Y.Z-<suffix>) passes allowFailures=true so
+  # the release still proceeds despite individual test failures, while any environmental
+  # break (Pester missing, module not resolving, etc.) still fails the gate.
+  workflow_call:
+    inputs:
+      moduleVersion:
+        description: >-
+          Version to build and test. The publish workflow passes the version derived
+          from the release tag so the tests exercise the exact build being released.
+          Left empty, the build falls back to the manifest version.
+        required: false
+        type: string
+      allowFailures:
+        description: >-
+          Exit 0 even if individual integration tests fail. Set by publish.yml on a
+          prerelease tag. Setup/infrastructure failures still fail the run.
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -23,7 +52,6 @@ jobs:
   integration-tests:
     name: Run Integration Tests
     runs-on: AZDO-AGENT
-    environment: integration
 
     steps:
       - name: Checkout
@@ -36,16 +64,87 @@ jobs:
 
       - name: Build module
         shell: pwsh
+        env:
+          ModuleVersion: ${{ inputs.moduleVersion }}
         run: |
           .\build.ps1 -Tasks build
 
-      - name: Add built module to PSModulePath
+      # The self-hosted runner does not ship Pester 5, and Invoke-Tests.ps1 declares
+      # `#Requires -Modules @{ ModuleName="Pester"; ModuleVersion="5.0.0" }`, so without
+      # this the script refuses to start and the suite never runs at all. Pinned to the
+      # same version the unit test and publish workflows install.
+      - name: Install Pester
         shell: pwsh
         run: |
-          $outputPath = Resolve-Path -Path .\output
-          $env:PSModulePath = "$outputPath;$env:PSModulePath"
+          Install-Module -Name Pester -RequiredVersion 5.7.1 -Force -SkipPublisherCheck -Scope CurrentUser
+          $pester = Get-Module -Name Pester -ListAvailable |
+              Where-Object Version -ge ([version]'5.0.0') |
+              Sort-Object Version -Descending |
+              Select-Object -First 1
+          if (-not $pester) {
+              throw "Pester 5.x is not available after install - Invoke-Tests.ps1 cannot run."
+          }
+          Write-Host "Pester $($pester.Version) available at $($pester.ModuleBase)"
+
+      # Point PSModulePath at exactly one copy of each module the tests load.
+      #
+      # Initalize-TestFramework.ps1 imports DscResource.Common, AzureDevOpsDsc.Common and
+      # AzureDevOpsDscNative by bare name. AzureDevOpsDscNative lives at
+      # output/builtModule/<Module>/<Version>; its nested modules (AzureDevOpsDsc.Common,
+      # and DscResource.Common which build.yaml copies in) live one level down under
+      # /Modules. The version comes from the build, so those are globbed.
+      #
+      # Crucially, each of these modules must resolve from exactly ONE location. If a
+      # module is reachable from two places, Get-Module returns an array and DSC's
+      # GetResourceFromKeyword throws "Cannot convert System.Object[] to PSModuleInfo"
+      # inside Invoke-DscResource - which fails every test. Two sources of duplication
+      # are removed here rather than merely shadowed by prepending:
+      #   - output/RequiredModules also holds DscResource.Common (the built module already
+      #     bundles it under /Modules), so it is left off the path entirely; and
+      #   - the self-hosted runner carries stale hand-deployed copies under
+      #     C:\Temp\DSCModule (including an old 0.0.1 module under the former name), which
+      #     are stripped from the inherited PSModulePath.
+      - name: Set PSModulePath to the built module only
+        shell: pwsh
+        run: |
+          $outputPath = (Resolve-Path -Path .\output).Path
+          $builtModulePath = Join-Path -Path $outputPath -ChildPath 'builtModule'
+          $nestedModulePaths = @(
+              Get-ChildItem -Path (Join-Path -Path $builtModulePath -ChildPath '*/*/Modules') -Directory -ErrorAction SilentlyContinue |
+                  Select-Object -ExpandProperty FullName
+          )
+
+          # Keep the runner's default user/system module paths (Pester, base modules) but
+          # drop anything under this repo's ./output and any stale C:\Temp\DSCModule copies,
+          # so nothing outside the freshly built module can provide a second copy.
+          $keep = $env:PSModulePath -split ';' | Where-Object {
+              $_ -and
+              $_ -notlike "$outputPath*" -and
+              $_ -notlike 'C:\Temp\DSCModule*'
+          }
+
+          $ordered = @($builtModulePath) + $nestedModulePaths + $keep
+          $env:PSModulePath = ($ordered | Where-Object { $_ } | Select-Object -Unique) -join ';'
+
           # Persist for subsequent steps via $GITHUB_ENV
           "PSModulePath=$env:PSModulePath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+          Write-Host 'PSModulePath entries:'
+          $env:PSModulePath -split ';' | Where-Object { $_ } | ForEach-Object { Write-Host "  $_" }
+
+          # Assert each module resolves from exactly one location. Asserting "-ge 1" is what
+          # let the duplicate through last time; the duplicate itself is the failure mode, so
+          # fail here naming the module and its locations rather than deep inside DSC.
+          foreach ($name in 'DscResource.Common', 'AzureDevOpsDsc.Common', 'AzureDevOpsDscNative') {
+              $bases = @(Get-Module -Name $name -ListAvailable | Select-Object -ExpandProperty ModuleBase -Unique)
+              if ($bases.Count -eq 0) {
+                  throw "Module '$name' is not resolvable on PSModulePath after the build - the integration tests cannot initialise."
+              }
+              if ($bases.Count -gt 1) {
+                  throw "Module '$name' resolves from $($bases.Count) locations, which makes Invoke-DscResource throw on a [PSModuleInfo] cast: $($bases -join ' ; ')"
+              }
+              Write-Host "Resolved $name -> $($bases[0])"
+          }
 
       - name: Write test framework configuration
         shell: pwsh
@@ -89,8 +188,17 @@ jobs:
       - name: Run integration tests
         shell: pwsh
         working-directory: tests/Integration
+        env:
+          # Booleans from workflow inputs arrive as PowerShell literals. Normalise to a
+          # bare 'true'/'false' string so the pwsh block below can treat it uniformly.
+          ALLOW_FAILURES: ${{ inputs.allowFailures && 'true' || 'false' }}
         run: |
-          .\Invoke-Tests.ps1 -TestFrameworkConfigurationPath .\TestFrameworkConfiguration.json
+          $params = @{ TestFrameworkConfigurationPath = '.\TestFrameworkConfiguration.json' }
+          if ($env:ALLOW_FAILURES -eq 'true') {
+              Write-Host 'AllowFailures is enabled - test failures will be reported but will not fail this run.'
+              $params['AllowFailures'] = $true
+          }
+          .\Invoke-Tests.ps1 @params
 
       - name: Upload test results
         if: always()
