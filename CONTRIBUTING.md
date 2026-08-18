@@ -970,8 +970,14 @@ each gating the next.
 
 3. Calls `integration-tests.yml` as a reusable workflow, building the exact
    version being released and running the full suite against the live Azure
-   DevOps organization. **If any integration test fails, the release fails and
-   nothing is published.**
+   DevOps organization. **For a full release (`vX.Y.Z`), any integration test
+   failure fails the release and nothing is published.** For a **prerelease**
+   (`vX.Y.Z-<suffix>`), the workflow passes `allowFailures=true`: individual
+   test failures are logged as warnings but the release still proceeds, so a
+   preview build can ship despite flaky or in-progress tests. Setup and
+   infrastructure failures — Pester missing, module not resolving, or no test
+   result at all — still fail the gate in both modes, so a broken environment
+   can never silently pass.
 
    This job runs on the self-hosted `AZDO-AGENT` runner with no approval gate, so
    it starts as soon as the runner is free. The suite is slow — the

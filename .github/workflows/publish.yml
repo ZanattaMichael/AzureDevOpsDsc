@@ -77,10 +77,17 @@ jobs:
           }
           Write-Host "Tag commit is contained in main."
 
-  # Release gate: every integration test must pass before anything is published.
+  # Release gate: the integration suite must run before anything is published.
   # This reuses integration-tests.yml rather than duplicating it, so the release runs
   # exactly the suite that is maintained there, on its self-hosted AZDO-AGENT runner.
   # If the runner is offline the release queues here rather than failing.
+  #
+  # For a full release (vX.Y.Z) every test must pass. For a prerelease
+  # (vX.Y.Z-<suffix>) allowFailures is set, so individual test failures are logged as
+  # warnings and the release still proceeds - preview builds can ship despite flaky or
+  # in-progress tests. Setup/infrastructure failures (Pester missing, module not
+  # resolving, no test result object) still fail the gate in both modes, so a broken
+  # environment cannot silently pass.
   integration-tests:
     name: Integration Tests (release gate)
     needs: validate
@@ -88,6 +95,7 @@ jobs:
     secrets: inherit
     with:
       moduleVersion: ${{ needs.validate.outputs.version }}
+      allowFailures: ${{ needs.validate.outputs.isPrerelease == 'true' }}
 
   publish:
     name: Build, Test, and Publish Release

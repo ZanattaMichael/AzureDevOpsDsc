@@ -15,8 +15,19 @@ name: Integration Tests
 
 on:
   workflow_dispatch:
-  # Called by publish.yml as a release gate. A release does not proceed unless every
-  # integration test in this workflow passes.
+    inputs:
+      allowFailures:
+        description: >-
+          Exit 0 even if individual integration tests fail (setup/infrastructure
+          failures still fail the run). Useful for running the suite on a preview
+          branch without gating on flaky tests.
+        required: false
+        default: false
+        type: boolean
+  # Called by publish.yml as a release gate. A full release does not proceed unless every
+  # integration test passes; a prerelease (vX.Y.Z-<suffix>) passes allowFailures=true so
+  # the release still proceeds despite individual test failures, while any environmental
+  # break (Pester missing, module not resolving, etc.) still fails the gate.
   workflow_call:
     inputs:
       moduleVersion:
@@ -26,6 +37,13 @@ on:
           Left empty, the build falls back to the manifest version.
         required: false
         type: string
+      allowFailures:
+        description: >-
+          Exit 0 even if individual integration tests fail. Set by publish.yml on a
+          prerelease tag. Setup/infrastructure failures still fail the run.
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -170,8 +188,17 @@ jobs:
       - name: Run integration tests
         shell: pwsh
         working-directory: tests/Integration
+        env:
+          # Booleans from workflow inputs arrive as PowerShell literals. Normalise to a
+          # bare 'true'/'false' string so the pwsh block below can treat it uniformly.
+          ALLOW_FAILURES: ${{ inputs.allowFailures && 'true' || 'false' }}
         run: |
-          .\Invoke-Tests.ps1 -TestFrameworkConfigurationPath .\TestFrameworkConfiguration.json
+          $params = @{ TestFrameworkConfigurationPath = '.\TestFrameworkConfiguration.json' }
+          if ($env:ALLOW_FAILURES -eq 'true') {
+              Write-Host 'AllowFailures is enabled - test failures will be reported but will not fail this run.'
+              $params['AllowFailures'] = $true
+          }
+          .\Invoke-Tests.ps1 @params
 
       - name: Upload test results
         if: always()
