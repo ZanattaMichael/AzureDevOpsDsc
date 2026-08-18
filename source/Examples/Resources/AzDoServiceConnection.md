@@ -39,7 +39,7 @@ This resource manages service connections in Azure DevOps, enabling pipelines to
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoServiceConnection AddServiceConnection {
@@ -75,7 +75,7 @@ $properties = @{
     ConnectionType = 'AzureRM'
 }
 
-Invoke-DscResource -Name 'AzDoServiceConnection' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoServiceConnection' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -90,9 +90,9 @@ variables: {
 
 resources:
 - name: Azure Service Connection
-  type: AzureDevOpsDsc/AzDoServiceConnection
+  type: AzureDevOpsDscNative/AzDoServiceConnection
   dependsOn:
-    - AzureDevOpsDsc/AzDevOpsProject/MyProject
+    - AzureDevOpsDscNative/AzDoProject/MyProject
   properties:
     ProjectName: $ProjectName
     ConnectionName: $ConnectionName

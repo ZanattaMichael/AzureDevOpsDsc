@@ -39,7 +39,7 @@ This resource manages branch policies in Azure DevOps Git repositories, enforcin
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoBranchPolicy AddBranchPolicy {
@@ -72,7 +72,7 @@ $properties = @{
     PolicyType     = 'MinimumReviewerCount'
 }
 
-Invoke-DscResource -Name 'AzDoBranchPolicy' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoBranchPolicy' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -87,9 +87,9 @@ variables: {
 
 resources:
 - name: Main Branch Minimum Reviewer Policy
-  type: AzureDevOpsDsc/AzDoBranchPolicy
+  type: AzureDevOpsDscNative/AzDoBranchPolicy
   dependsOn:
-    - AzureDevOpsDsc/AzDoGitRepository/MyRepository
+    - AzureDevOpsDscNative/AzDoGitRepository/MyRepository
   properties:
     ProjectName: $ProjectName
     RepositoryName: $RepositoryName

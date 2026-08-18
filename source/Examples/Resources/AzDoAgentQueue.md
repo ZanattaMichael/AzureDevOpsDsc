@@ -31,7 +31,7 @@ This resource manages agent queues within Azure DevOps projects. An agent queue 
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoAgentQueue AddAgentQueue {
@@ -56,7 +56,7 @@ $properties = @{
     PoolName    = 'MyAgentPool'
 }
 
-Invoke-DscResource -Name 'AzDoAgentQueue' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoAgentQueue' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -72,9 +72,9 @@ variables: {
 
 resources:
 - name: My Agent Queue
-  type: AzureDevOpsDsc/AzDoAgentQueue
+  type: AzureDevOpsDscNative/AzDoAgentQueue
   dependsOn:
-    - AzureDevOpsDsc/AzDoAgentPool/MyAgentPool
+    - AzureDevOpsDscNative/AzDoAgentPool/MyAgentPool
   properties:
     ProjectName: $ProjectName
     QueueName: $QueueName

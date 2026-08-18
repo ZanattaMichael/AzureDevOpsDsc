@@ -29,7 +29,7 @@ This resource manages the area path hierarchy within an Azure DevOps project. Ar
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoAreaNodes AddAzDoAreaNodes {
@@ -60,7 +60,7 @@ $properties = @{
     )
 }
 
-Invoke-DscResource -Name 'AzDoAreaNodes' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoAreaNodes' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -74,9 +74,9 @@ variables: {
 
 resources:
 - name: MyProject Area Nodes
-  type: AzureDevOpsDsc/AzDoAreaNodes
+  type: AzureDevOpsDscNative/AzDoAreaNodes
   dependsOn:
-    - AzureDevOpsDsc/AzDevOpsProject/MyProject
+    - AzureDevOpsDscNative/AzDoProject/MyProject
   properties:
     ProjectName: $ProjectName
     AreaPaths:

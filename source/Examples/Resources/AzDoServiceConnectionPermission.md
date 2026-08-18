@@ -69,7 +69,7 @@ This resource manages security permissions on Azure DevOps service connections, 
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoServiceConnectionPermission AddServiceConnectionPermission {
@@ -112,7 +112,7 @@ $properties = @{
     )
 }
 
-Invoke-DscResource -Name 'AzDoServiceConnectionPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoServiceConnectionPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -127,9 +127,9 @@ variables: {
 
 resources:
 - name: Service Connection Contributors Permission
-  type: AzureDevOpsDsc/AzDoServiceConnectionPermission
+  type: AzureDevOpsDscNative/AzDoServiceConnectionPermission
   dependsOn:
-    - AzureDevOpsDsc/AzDoServiceConnection/MyAzureServiceConnection
+    - AzureDevOpsDscNative/AzDoServiceConnection/MyAzureServiceConnection
   properties:
     ProjectName: $ProjectName
     ConnectionName: $ConnectionName

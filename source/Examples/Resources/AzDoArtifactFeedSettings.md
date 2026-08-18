@@ -37,7 +37,7 @@ This resource configures settings on an existing Azure Artifacts feed: upstream 
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoArtifactFeedSettings ConfigureFeed {
@@ -63,7 +63,7 @@ $properties = @{
     FeedName    = 'MyFeed'
 }
 
-Invoke-DscResource -Name 'AzDoArtifactFeedSettings' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoArtifactFeedSettings' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -78,9 +78,9 @@ variables: {
 
 resources:
 - name: Configure Feed Settings
-  type: AzureDevOpsDsc/AzDoArtifactFeedSettings
+  type: AzureDevOpsDscNative/AzDoArtifactFeedSettings
   dependsOn:
-    - AzureDevOpsDsc/AzDoArtifactFeed/MyFeed
+    - AzureDevOpsDscNative/AzDoArtifactFeed/MyFeed
   properties:
     ProjectName: $ProjectName
     FeedName: $FeedName

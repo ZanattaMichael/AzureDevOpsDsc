@@ -33,7 +33,7 @@ This resource manages audit streams that forward Azure DevOps audit events to ex
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoAuditStream AddAuditStream {
@@ -65,7 +65,7 @@ $properties = @{
     }
 }
 
-Invoke-DscResource -Name 'AzDoAuditStream' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoAuditStream' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -79,7 +79,7 @@ variables: {
 
 resources:
 - name: Azure Event Hub Audit Stream
-  type: AzureDevOpsDsc/AzDoAuditStream
+  type: AzureDevOpsDscNative/AzDoAuditStream
   properties:
     StreamName: $StreamName
     ConsumerType: AzureEventHub

@@ -1,6 +1,6 @@
 configuration Remove_AzDoAuditStream
 {
-    Import-DscResource -ModuleName AzureDevOpsDsc
+    Import-DscResource -ModuleName AzureDevOpsDscNative
 
     AzDoAuditStream 'RemoveAuditStream'
     {

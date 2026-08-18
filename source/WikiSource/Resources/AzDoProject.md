@@ -67,7 +67,7 @@ $properties = @{
     Visibility              = 'Private'
 }
 
-Invoke-DSCResource -Name 'AzDoProject' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DSCResource -Name 'AzDoProject' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration to remove/exclude an Azure DevOps Project using Invoke-DSCResource
@@ -79,7 +79,7 @@ $properties = @{
     Ensure                  = 'Absent'
 }
 
-Invoke-DSCResource -Name 'AzDoProject' -Method Set -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DSCResource -Name 'AzDoProject' -Method Set -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 4: Sample Configuration using AzDO-DSC-LCM
@@ -95,7 +95,7 @@ variables: {
 resources:
 
   - name: Project
-    type: AzureDevOpsDsc/AzDoProject
+    type: AzureDevOpsDscNative/AzDoProject
     properties:
       projectName: $ProjectName
       projectDescription: $ProjectDescription

@@ -29,7 +29,7 @@ This resource adds and removes organization users and manages their access level
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoUserEntitlement JaneBasic {
@@ -52,7 +52,7 @@ $properties = @{
     AccountLicenseType = 'express'
 }
 
-Invoke-DscResource -Name 'AzDoUserEntitlement' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoUserEntitlement' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -64,7 +64,7 @@ variables: {}
 
 resources:
 - name: Add Jane as a Basic user
-  type: AzureDevOpsDsc/AzDoUserEntitlement
+  type: AzureDevOpsDscNative/AzDoUserEntitlement
   properties:
     UserPrincipalName: jane@contoso.com
     AccountLicenseType: express

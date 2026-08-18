@@ -67,7 +67,7 @@ This resource manages security permissions on Azure DevOps agent pools, controll
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoAgentPoolPermission AddAgentPoolPermission {
@@ -108,7 +108,7 @@ $properties = @{
     )
 }
 
-Invoke-DscResource -Name 'AzDoAgentPoolPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoAgentPoolPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -123,9 +123,9 @@ variables: {
 
 resources:
 - name: Agent Pool Contributors Permission
-  type: AzureDevOpsDsc/AzDoAgentPoolPermission
+  type: AzureDevOpsDscNative/AzDoAgentPoolPermission
   dependsOn:
-    - AzureDevOpsDsc/AzDoAgentPool/MyPool
+    - AzureDevOpsDscNative/AzDoAgentPool/MyPool
   properties:
     PoolName: $PoolName
     GroupName: '[$ProjectName]\Contributors'

@@ -35,7 +35,7 @@ This resource manages Azure Artifacts feeds. A feed can be **project-scoped** (s
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoArtifactFeed AddArtifactFeed {
@@ -56,7 +56,7 @@ Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoArtifactFeed AddOrgFeed {
@@ -80,7 +80,7 @@ $properties = @{
     FeedName    = 'MyFeed'
 }
 
-Invoke-DscResource -Name 'AzDoArtifactFeed' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoArtifactFeed' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -95,9 +95,9 @@ variables: {
 
 resources:
 - name: My Artifact Feed
-  type: AzureDevOpsDsc/AzDoArtifactFeed
+  type: AzureDevOpsDscNative/AzDoArtifactFeed
   dependsOn:
-    - AzureDevOpsDsc/AzDevOpsProject/MyProject
+    - AzureDevOpsDscNative/AzDoProject/MyProject
   properties:
     ProjectName: $ProjectName
     FeedName: $FeedName

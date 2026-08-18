@@ -40,7 +40,7 @@ This resource manages the iteration (sprint) hierarchy within an Azure DevOps pr
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoIterationNodes AddAzDoIterationNodes {
@@ -80,7 +80,7 @@ $properties = @{
     )
 }
 
-Invoke-DscResource -Name 'AzDoIterationNodes' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoIterationNodes' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration using AzDO-DSC-LCM
@@ -94,9 +94,9 @@ variables: {
 
 resources:
 - name: MyProject Iteration Nodes
-  type: AzureDevOpsDsc/AzDoIterationNodes
+  type: AzureDevOpsDscNative/AzDoIterationNodes
   dependsOn:
-    - AzureDevOpsDsc/AzDevOpsProject/MyProject
+    - AzureDevOpsDscNative/AzDoProject/MyProject
   properties:
     ProjectName: $ProjectName
     IterationAttributes:

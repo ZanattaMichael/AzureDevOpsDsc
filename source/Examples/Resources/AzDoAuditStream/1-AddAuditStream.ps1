@@ -1,6 +1,6 @@
 configuration Add_AzDoAuditStream
 {
-    Import-DscResource -ModuleName AzureDevOpsDsc
+    Import-DscResource -ModuleName AzureDevOpsDscNative
 
     AzDoAuditStream 'AddAuditStream'
     {

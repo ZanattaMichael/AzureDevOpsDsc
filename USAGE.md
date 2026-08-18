@@ -120,9 +120,9 @@ Here is an example of how to invoke a resource using the module:
 1. Import the necessary modules:
 
     ```powershell
-    Import-Module "\AzureDevOpsDsc\0.0.1\Modules\DscResource.Common\0.17.1\DscResource.Common.psd1"
-    Import-Module "\AzureDevOpsDsc\0.0.1\Modules\AzureDevOpsDsc.Common\AzureDevOpsDsc.Common.psd1"
-    Import-Module "\AzureDevOpsDsc\0.0.1\AzureDevOpsDsc.psd1"
+    Import-Module "\AzureDevOpsDscNative\0.0.1\Modules\DscResource.Common\0.17.1\DscResource.Common.psd1"
+    Import-Module "\AzureDevOpsDscNative\0.0.1\Modules\AzureDevOpsDsc.Common\AzureDevOpsDsc.Common.psd1"
+    Import-Module "\AzureDevOpsDscNative\0.0.1\AzureDevOpsDscNative.psd1"
     ```
 
 1. Create a Managed Identity Token:
@@ -143,7 +143,7 @@ Here is an example of how to invoke a resource using the module:
 1. Invoke the DSC Resource:
 
     ```powershell
-    Invoke-DscResource -Name 'AzDoProjectGroup' -Method Set -Property $properties -ModuleName 'AzureDevOpsDsc'
+    Invoke-DscResource -Name 'AzDoProjectGroup' -Method Set -Property $properties -ModuleName 'AzureDevOpsDscNative'
     ```
 
 By following these steps, you can successfully set up and use the module with Azure DevOps.
@@ -166,7 +166,7 @@ variables: {
 resources:
 
   - name: Project
-    type: AzureDevOpsDsc/AzDoProject
+    type: AzureDevOpsDscNative/AzDoProject
     properties:
       projectName: $ProjectName
       projectDescription: $ProjectDescription
@@ -185,9 +185,9 @@ variables:
 
 resources:
   - name: Project Services
-    type: AzureDevOpsDsc/AzDoProjectServices
+    type: AzureDevOpsDscNative/AzDoProjectServices
     dependsOn:
-      - AzureDevOpsDsc/AzDoProject/Project
+      - AzureDevOpsDscNative/AzDoProject/Project
     properties:
       projectName: $ProjectName
       BuildPipelines: disabled
@@ -198,7 +198,7 @@ resources:
 
 - **Parameters**: This section is reserved for any input parameters that the configuration might require.
 - **Variables**: Here, you can define reusable variables such as `ProjectName` and `ProjectDescription`.
-- **Resources**: This section defines the actual resources to be managed. In this example, we have a resource named "Project Services" of type `AzureDevOpsDsc/AzDoProjectServices`. 
+- **Resources**: This section defines the actual resources to be managed. In this example, we have a resource named "Project Services" of type `AzureDevOpsDscNative/AzDoProjectServices`. 
 
 #### Resource Properties
 
@@ -206,4 +206,4 @@ resources:
 - `BuildPipelines`: Set to `disabled`.
 - `AzureArtifact`: Set to `disabled`.
 
-The `dependsOn` attribute ensures that the "Project Services" resource will only be configured after the `AzureDevOpsDsc/AzDoProject/Project` resource has been set up.
+The `dependsOn` attribute ensures that the "Project Services" resource will only be configured after the `AzureDevOpsDscNative/AzDoProject/Project` resource has been set up.

@@ -10,7 +10,7 @@ It inherits from the `AzDevOpsDscResourceBase` class and provides methods for re
     Author: Michael Zanatta
     Date: 2025-05-07
 
-- This class is part of the AzureDevOpsDsc module.
+- This class is part of the AzureDevOpsDscNative module.
 - The `Test()` and `Set()` methods are inherited from the base class `AzDevOpsDscResourceBase`.
 
 Methods:
