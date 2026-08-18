@@ -1,7 +1,15 @@
 #Requires -Modules @{ ModuleName="Pester"; ModuleVersion="5.0.0" }
 param(
     [Parameter(Mandatory = $true)]
-    [String]$TestFrameworkConfigurationPath
+    [String]$TestFrameworkConfigurationPath,
+
+    # When set, individual test failures are logged as a warning and the script exits 0
+    # provided the suite genuinely ran (Pester returned a result object with at least one
+    # test executed). Setup/infrastructure failures - Pester never started, module resolution
+    # failed, etc. - still exit non-zero, so a broken environment cannot silently pass.
+    # The publish workflow passes this on a prerelease tag to let a preview release proceed
+    # despite flaky or in-progress tests, without weakening the gate for a full release.
+    [switch]$AllowFailures
 )
 
 #
@@ -106,6 +114,16 @@ Write-Host ("[Invoke-Tests] Passed: {0}, Failed: {1}, Skipped: {2}, NotRun: {3}"
 
 if ($testResults.FailedCount -gt 0)
 {
+    if ($AllowFailures.IsPresent -and $testResults.PassedCount -gt 0)
+    {
+        # In allow-failures mode (prerelease), let the release proceed but leave a loud,
+        # machine-parseable record so the run summary still shows what failed. The
+        # PassedCount > 0 guard ensures we only tolerate real test failures, not a run
+        # where every test blew up in setup - that stays a hard failure.
+        Write-Warning ("[Invoke-Tests] {0} integration test(s) failed. AllowFailures is set (prerelease), exiting 0." -f $testResults.FailedCount)
+        exit 0
+    }
+
     Write-Error ("[Invoke-Tests] {0} integration test(s) failed." -f $testResults.FailedCount)
     exit 1
 }

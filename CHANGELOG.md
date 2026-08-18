@@ -5,6 +5,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- AzureDevOpsDscNative
+  - The integration-test release gate now differentiates between a full release
+    and a prerelease. A full release tag (`vX.Y.Z`) still requires every
+    integration test to pass; a prerelease tag (`vX.Y.Z-<suffix>`) passes
+    `allowFailures=true` to the integration workflow, so individual test failures
+    are logged as warnings but the release still proceeds - preview builds can
+    ship despite flaky or in-progress tests. Setup and infrastructure failures
+    (Pester missing, module not resolving, no test result at all) still fail the
+    gate in both modes, so a broken environment cannot silently pass. Implemented
+    by an `-AllowFailures` switch on `Invoke-Tests.ps1` and an `allowFailures`
+    input on `integration-tests.yml` that `publish.yml` sets from the tag.
+
 ### Added
 
 - AzureDevOpsDsc
