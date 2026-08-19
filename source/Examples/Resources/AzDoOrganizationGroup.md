@@ -56,7 +56,7 @@ $properties = @{
 Invoke-DSCResource -Name 'AzDoOrganizationGroup' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}
@@ -79,7 +79,7 @@ resources:
     GroupDescription: Service Accounts Organization Group
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 
