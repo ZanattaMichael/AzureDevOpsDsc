@@ -21,6 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- AzureDevOpsDscNative
+  - Added a `/run-azuredevopsdscnative` skill (`.claude/skills/run-azuredevopsdscnative/`)
+    with a self-contained driver script for running the Common unit suite
+    headless on Linux from a clean container. Installs PowerShell 7 if missing,
+    side-loads Pester 5.7.1 from `api.nuget.org` when PowerShell Gallery is
+    unreachable, runs the bootstrap, and exits non-zero on test failure. Does
+    not run the Classes suite (needs a built module) or the build (needs
+    PSGallery-hosted Sampler/ModuleBuilder) or integration tests (need the
+    self-hosted runner and a live org).
 - AzureDevOpsDsc
   - Added DSC v3 support: all 49 class-based DSC resources now declare `Set()`
     and `Test()` directly (delegating to `AzDevOpsDscResourceBase`) instead of
