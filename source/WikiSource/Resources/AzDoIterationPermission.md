@@ -235,7 +235,7 @@ Start-DscConfiguration -Path ./RemoveIterationPermissions -Wait -Verbose
 
 ### Permission Types
 
-The Iteration security namespace exposes these bit names (see [Permissions & ACLs](../Permissions.md) for the full table):
+The Iteration security namespace exposes these bit names (see [Permissions & ACLs](../Permissions) for the full table):
 
 - **GENERIC_READ** - View this node
 - **GENERIC_WRITE** - Edit this node
@@ -293,13 +293,13 @@ The Iteration security namespace exposes these bit names (see [Permissions & ACL
 
 ## Related Resources
 
-- [AzDoIterationNodes](AzDoIterationNodes.md) - Manage iteration nodes in a project
-- [AzDoAreaPermission](AzDoAreaPermission.md) - Manage area permissions
-- [AzDoProjectPermission](AzDoProjectPermission.md) - Manage project-level permissions
-- [AzDoGroupPermission](AzDoGroupPermission.md) - Manage group permissions
+- [AzDoIterationNodes](AzDoIterationNodes) - Manage iteration nodes in a project
+- [AzDoAreaPermission](AzDoAreaPermission) - Manage area permissions
+- [AzDoProjectPermission](AzDoProjectPermission) - Manage project-level permissions
+- [AzDoGroupPermission](AzDoGroupPermission) - Manage group permissions
 
 ## See Also
 
 - [Azure DevOps Documentation](https://docs.microsoft.com/en-us/azure/devops/)
 - [PowerShell DSC Documentation](https://docs.microsoft.com/en-us/powershell/dsc/overview)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

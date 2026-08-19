@@ -322,14 +322,14 @@ Invoke-DscResource -Name 'AzDoArtifactFeedView' `
 
 ## Related Resources
 
-- [AzDoArtifactFeed](AzDoArtifactFeed.md) - Create and manage artifact feeds
-- [AzDoArtifactFeedPermission](AzDoArtifactFeedPermission.md) - Manage feed permissions
-- [AzDoArtifactFeedSettings](AzDoArtifactFeedSettings.md) - Configure feed settings
-- [AzDoProject](AzDoProject.md) - Create projects containing feeds
+- [AzDoArtifactFeed](AzDoArtifactFeed) - Create and manage artifact feeds
+- [AzDoArtifactFeedPermission](AzDoArtifactFeedPermission) - Manage feed permissions
+- [AzDoArtifactFeedSettings](AzDoArtifactFeedSettings) - Configure feed settings
+- [AzDoProject](AzDoProject) - Create projects containing feeds
 
 ## See Also
 
 - [Azure Artifacts Feed Views](https://docs.microsoft.com/en-us/azure/devops/artifacts/concepts/feeds#views)
 - [Azure Artifacts Package Promotion](https://docs.microsoft.com/en-us/azure/devops/artifacts/feeds/views)
 - [PowerShell DSC Documentation](https://docs.microsoft.com/en-us/powershell/dsc/overview)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

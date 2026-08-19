@@ -339,10 +339,10 @@ Invoke-DscResource -Name 'AzDoPipeline' `
 
 ## Related Resources
 
-- [AzDoGitRepository](AzDoGitRepository.md) - Create Git repositories for pipeline YAML files
-- [AzDoPipelineSettings](AzDoPipelineSettings.md) - Configure project-level pipeline settings
-- [AzDoPipelineEnvironment](AzDoPipelineEnvironment.md) - Create deployment environments for pipelines
-- [AzDoProject](AzDoProject.md) - Create projects that host pipelines
+- [AzDoGitRepository](AzDoGitRepository) - Create Git repositories for pipeline YAML files
+- [AzDoPipelineSettings](AzDoPipelineSettings) - Configure project-level pipeline settings
+- [AzDoPipelineEnvironment](AzDoPipelineEnvironment) - Create deployment environments for pipelines
+- [AzDoProject](AzDoProject) - Create projects that host pipelines
 
 ## See Also
 
@@ -350,4 +350,4 @@ Invoke-DscResource -Name 'AzDoPipeline' `
 - [Azure Pipelines Documentation](https://docs.microsoft.com/en-us/azure/devops/pipelines)
 - [Azure Pipelines Triggers and Events](https://docs.microsoft.com/en-us/azure/devops/pipelines/build/triggers)
 - [PowerShell DSC Documentation](https://docs.microsoft.com/en-us/powershell/dsc/overview)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

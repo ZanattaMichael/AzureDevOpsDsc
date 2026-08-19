@@ -315,13 +315,13 @@ The Build security namespace exposes these bit names (see [Permissions & ACLs](.
 
 ## Related Resources
 
-- [AzDoPipeline](AzDoPipeline.md) - Create and manage pipelines
-- [AzDoProjectPermission](AzDoProjectPermission.md) - Manage project-level permissions
-- [AzDoGroupPermission](AzDoGroupPermission.md) - Manage group permissions
-- [AzDoProject](AzDoProject.md) - Manage Azure DevOps projects
+- [AzDoPipeline](AzDoPipeline) - Create and manage pipelines
+- [AzDoProjectPermission](AzDoProjectPermission) - Manage project-level permissions
+- [AzDoGroupPermission](AzDoGroupPermission) - Manage group permissions
+- [AzDoProject](AzDoProject) - Manage Azure DevOps projects
 
 ## See Also
 
 - [Azure DevOps Documentation](https://docs.microsoft.com/en-us/azure/devops/)
 - [PowerShell DSC Documentation](https://docs.microsoft.com/en-us/powershell/dsc/overview)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

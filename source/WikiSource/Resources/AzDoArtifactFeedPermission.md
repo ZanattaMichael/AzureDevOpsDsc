@@ -303,13 +303,13 @@ Start-DscConfiguration -Path ./CreateFeedWithPermissions -Wait -Verbose
 
 ## Related Resources
 
-- [AzDoArtifactFeed](AzDoArtifactFeed.md) - Create and manage artifact feeds
-- [AzDoProjectPermission](AzDoProjectPermission.md) - Manage project-level permissions
-- [AzDoGroupPermission](AzDoGroupPermission.md) - Manage group permissions
-- [AzDoPipeline](AzDoPipeline.md) - Create pipelines that use feeds
+- [AzDoArtifactFeed](AzDoArtifactFeed) - Create and manage artifact feeds
+- [AzDoProjectPermission](AzDoProjectPermission) - Manage project-level permissions
+- [AzDoGroupPermission](AzDoGroupPermission) - Manage group permissions
+- [AzDoPipeline](AzDoPipeline) - Create pipelines that use feeds
 
 ## See Also
 
 - [Azure DevOps Documentation](https://docs.microsoft.com/en-us/azure/devops/)
 - [PowerShell DSC Documentation](https://docs.microsoft.com/en-us/powershell/dsc/overview)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

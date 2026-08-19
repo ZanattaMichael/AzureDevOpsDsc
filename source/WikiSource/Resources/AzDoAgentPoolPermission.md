@@ -322,13 +322,13 @@ The Agent Pool security namespace exposes these bit names (see [Permissions & AC
 
 ## Related Resources
 
-- [AzDoAgentPool](AzDoAgentPool.md) - Create and manage agent pools
-- [AzDoAgentQueue](AzDoAgentQueue.md) - Create agent queues in projects
-- [AzDoProjectPermission](AzDoProjectPermission.md) - Manage project-level permissions
-- [AzDoGroupPermission](AzDoGroupPermission.md) - Manage group permissions
+- [AzDoAgentPool](AzDoAgentPool) - Create and manage agent pools
+- [AzDoAgentQueue](AzDoAgentQueue) - Create agent queues in projects
+- [AzDoProjectPermission](AzDoProjectPermission) - Manage project-level permissions
+- [AzDoGroupPermission](AzDoGroupPermission) - Manage group permissions
 
 ## See Also
 
 - [Azure DevOps Documentation](https://docs.microsoft.com/en-us/azure/devops/)
 - [PowerShell DSC Documentation](https://docs.microsoft.com/en-us/powershell/dsc/overview)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

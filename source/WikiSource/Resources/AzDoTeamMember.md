@@ -240,13 +240,13 @@ Start-DscConfiguration -Path ./RemoveTeamMember -Wait -Verbose
 
 ## Related Resources
 
-- [AzDoTeam](AzDoTeam.md) - Create and manage teams within projects
-- [AzDoProject](AzDoProject.md) - Create and manage Azure DevOps projects
-- [AzDoGroupMember](AzDoGroupMember.md) - Add members to organization groups
-- [AzDoTeamSettings](AzDoTeamSettings.md) - Configure team settings
+- [AzDoTeam](AzDoTeam) - Create and manage teams within projects
+- [AzDoProject](AzDoProject) - Create and manage Azure DevOps projects
+- [AzDoGroupMember](AzDoGroupMember) - Add members to organization groups
+- [AzDoTeamSettings](AzDoTeamSettings) - Configure team settings
 
 ## See Also
 
 - [Azure DevOps Documentation](https://docs.microsoft.com/en-us/azure/devops/)
 - [PowerShell DSC Documentation](https://docs.microsoft.com/en-us/powershell/dsc/overview)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

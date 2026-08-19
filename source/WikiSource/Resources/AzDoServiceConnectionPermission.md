@@ -295,13 +295,13 @@ The Service Endpoint security namespace exposes these bit names (see [Permission
 
 ## Related Resources
 
-- [AzDoServiceConnection](AzDoServiceConnection.md) - Create and manage service connections
-- [AzDoProjectPermission](AzDoProjectPermission.md) - Manage project-level permissions
-- [AzDoGroupPermission](AzDoGroupPermission.md) - Manage group permissions
-- [AzDoPipeline](AzDoPipeline.md) - Create pipelines that use service connections
+- [AzDoServiceConnection](AzDoServiceConnection) - Create and manage service connections
+- [AzDoProjectPermission](AzDoProjectPermission) - Manage project-level permissions
+- [AzDoGroupPermission](AzDoGroupPermission) - Manage group permissions
+- [AzDoPipeline](AzDoPipeline) - Create pipelines that use service connections
 
 ## See Also
 
 - [Azure DevOps Documentation](https://docs.microsoft.com/en-us/azure/devops/)
 - [PowerShell DSC Documentation](https://docs.microsoft.com/en-us/powershell/dsc/overview)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

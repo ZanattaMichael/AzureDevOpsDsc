@@ -316,13 +316,13 @@ Start-DscConfiguration -Path ./RemoveEnvironmentApproval -Wait -Verbose
 
 ## Related Resources
 
-- [AzDoPipelineEnvironment](AzDoPipelineEnvironment.md) - Create deployment environments
-- [AzDoPipeline](AzDoPipeline.md) - Create and manage pipelines
-- [AzDoProject](AzDoProject.md) - Manage Azure DevOps projects
-- [AzDoGroupPermission](AzDoGroupPermission.md) - Manage group permissions
+- [AzDoPipelineEnvironment](AzDoPipelineEnvironment) - Create deployment environments
+- [AzDoPipeline](AzDoPipeline) - Create and manage pipelines
+- [AzDoProject](AzDoProject) - Manage Azure DevOps projects
+- [AzDoGroupPermission](AzDoGroupPermission) - Manage group permissions
 
 ## See Also
 
 - [Azure DevOps Documentation](https://docs.microsoft.com/en-us/azure/devops/)
 - [PowerShell DSC Documentation](https://docs.microsoft.com/en-us/powershell/dsc/overview)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

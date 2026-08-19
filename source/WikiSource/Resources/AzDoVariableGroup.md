@@ -392,13 +392,13 @@ DependsOn = '[AzDoProject]MyProject'
 
 ## Related Resources
 
-- [AzDoProject](AzDoProject.md) - Create and manage projects
-- [AzDoVariableGroupPermission](../Resources/AzDoVariableGroupPermission.md) - Manage variable group permissions
-- [AzDoServiceConnection](../Resources/AzDoServiceConnection.md) - Create service connections
-- [AzDoPipeline](../Resources/AzDoPipeline.md) - Create and manage pipelines
+- [AzDoProject](AzDoProject) - Create and manage projects
+- [AzDoVariableGroupPermission](../Resources/AzDoVariableGroupPermission) - Manage variable group permissions
+- [AzDoServiceConnection](../Resources/AzDoServiceConnection) - Create service connections
+- [AzDoPipeline](../Resources/AzDoPipeline) - Create and manage pipelines
 
 ## See Also
 
 - [Azure DevOps Variable Groups Documentation](https://docs.microsoft.com/en-us/azure/devops/pipelines/library/variable-groups)
 - [Azure Key Vault Documentation](https://docs.microsoft.com/en-us/azure/key-vault/)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

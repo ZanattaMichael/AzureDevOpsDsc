@@ -309,12 +309,12 @@ Start-DscConfiguration -Path ./DisableBranchPolicy -Wait -Verbose
 
 ## Related Resources
 
-- [AzDoGitRepository](AzDoGitRepository.md) - Manage Git repositories
-- [AzDoGitPermission](AzDoGitPermission.md) - Manage Git repository permissions
-- [AzDoPipeline](AzDoPipeline.md) - Create build pipelines for validation
+- [AzDoGitRepository](AzDoGitRepository) - Manage Git repositories
+- [AzDoGitPermission](AzDoGitPermission) - Manage Git repository permissions
+- [AzDoPipeline](AzDoPipeline) - Create build pipelines for validation
 
 ## See Also
 
 - [Azure DevOps Documentation](https://docs.microsoft.com/en-us/azure/devops/)
 - [PowerShell DSC Documentation](https://docs.microsoft.com/en-us/powershell/dsc/overview)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

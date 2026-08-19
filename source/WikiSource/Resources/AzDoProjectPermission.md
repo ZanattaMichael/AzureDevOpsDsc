@@ -326,15 +326,15 @@ Project-level permissions use the `$PROJECT` security namespace. Key bit names (
 
 ## Related Resources
 
-- [AzDoProject](AzDoProject.md) - Create and manage projects
-- [AzDoProjectGroup](AzDoProjectGroup.md) - Manage project-level groups
-- [AzDoGroupPermission](AzDoGroupPermission.md) - Manage group permissions within projects
-- [AzDoGitPermission](AzDoGitPermission.md) - Manage repository permissions
-- [AzDoPipelinePermission](AzDoPipelinePermission.md) - Manage pipeline permissions
+- [AzDoProject](AzDoProject) - Create and manage projects
+- [AzDoProjectGroup](AzDoProjectGroup) - Manage project-level groups
+- [AzDoGroupPermission](AzDoGroupPermission) - Manage group permissions within projects
+- [AzDoGitPermission](AzDoGitPermission) - Manage repository permissions
+- [AzDoPipelinePermission](AzDoPipelinePermission) - Manage pipeline permissions
 
 ## See Also
 
 - [Azure DevOps Project-Level Permissions](https://docs.microsoft.com/en-us/azure/devops/organizations/security/permissions-reference#project-level-permissions)
 - [Azure DevOps Security Namespaces Documentation](https://docs.microsoft.com/en-us/azure/devops/organizations/security/namespace-reference)
 - [PowerShell DSC Documentation](https://docs.microsoft.com/en-us/powershell/dsc/overview)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

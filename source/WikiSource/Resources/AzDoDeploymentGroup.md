@@ -299,13 +299,13 @@ Start-DscConfiguration -Path ./RemoveDeploymentGroup -Wait -Verbose
 
 ## Related Resources
 
-- [AzDoProject](AzDoProject.md) - Create and manage Azure DevOps projects
-- [AzDoPipelineEnvironment](AzDoPipelineEnvironment.md) - Create deployment environments
-- [AzDoPipeline](AzDoPipeline.md) - Create and manage pipelines
-- [AzDoAgentPool](AzDoAgentPool.md) - Create agent pools
+- [AzDoProject](AzDoProject) - Create and manage Azure DevOps projects
+- [AzDoPipelineEnvironment](AzDoPipelineEnvironment) - Create deployment environments
+- [AzDoPipeline](AzDoPipeline) - Create and manage pipelines
+- [AzDoAgentPool](AzDoAgentPool) - Create agent pools
 
 ## See Also
 
 - [Azure DevOps Documentation](https://docs.microsoft.com/en-us/azure/devops/)
 - [PowerShell DSC Documentation](https://docs.microsoft.com/en-us/powershell/dsc/overview)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

@@ -338,12 +338,12 @@ DependsOn = '[AzDoProject]MyProject'
 
 ## Related Resources
 
-- [AzDoProject](AzDoProject.md) - Create and manage projects
-- [AzDoTeamMember](../Resources/AzDoTeamMember.md) - Add members to teams
-- [AzDoTeamSettings](../Resources/AzDoTeamSettings.md) - Configure team settings
-- [AzDoProjectGroup](AzDoProjectGroup.md) - Manage project-level groups
+- [AzDoProject](AzDoProject) - Create and manage projects
+- [AzDoTeamMember](../Resources/AzDoTeamMember) - Add members to teams
+- [AzDoTeamSettings](../Resources/AzDoTeamSettings) - Configure team settings
+- [AzDoProjectGroup](AzDoProjectGroup) - Manage project-level groups
 
 ## See Also
 
 - [Azure DevOps Teams Documentation](https://docs.microsoft.com/en-us/azure/devops/organizations/settings/about-teams-and-settings)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

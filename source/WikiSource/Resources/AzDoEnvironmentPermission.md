@@ -347,11 +347,11 @@ The Environment security namespace exposes these bit names (see [Permissions & A
 
 ## Related Resources
 
-- [AzDoPipelineEnvironment](AzDoPipelineEnvironment.md) - Create and manage deployment environments
-- [AzDoEnvironmentApproval](AzDoEnvironmentApproval.md) - Configure approvals for environments
-- [AzDoPipeline](AzDoPipeline.md) - Create pipelines that deploy to environments
-- [AzDoProjectPermission](AzDoProjectPermission.md) - Manage project-level permissions
-- [AzDoProjectGroup](AzDoProjectGroup.md) - Manage project groups
+- [AzDoPipelineEnvironment](AzDoPipelineEnvironment) - Create and manage deployment environments
+- [AzDoEnvironmentApproval](AzDoEnvironmentApproval) - Configure approvals for environments
+- [AzDoPipeline](AzDoPipeline) - Create pipelines that deploy to environments
+- [AzDoProjectPermission](AzDoProjectPermission) - Manage project-level permissions
+- [AzDoProjectGroup](AzDoProjectGroup) - Manage project groups
 
 ## See Also
 
@@ -359,4 +359,4 @@ The Environment security namespace exposes these bit names (see [Permissions & A
 - [Azure DevOps Environment Approvals and Checks](https://docs.microsoft.com/en-us/azure/devops/pipelines/process/approvals)
 - [Azure DevOps Security Namespaces Documentation](https://docs.microsoft.com/en-us/azure/devops/organizations/security/namespace-reference)
 - [PowerShell DSC Documentation](https://docs.microsoft.com/en-us/powershell/dsc/overview)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

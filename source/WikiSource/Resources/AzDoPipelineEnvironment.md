@@ -294,11 +294,11 @@ Invoke-DscResource -Name 'AzDoPipelineEnvironment' `
 
 ## Related Resources
 
-- [AzDoPipelineEnvironmentApproval](AzDoEnvironmentApproval.md) - Configure approvals for environments
-- [AzDoCheckConfiguration](AzDoCheckConfiguration.md) - Configure automated checks for environments
-- [AzDoEnvironmentPermission](AzDoEnvironmentPermission.md) - Manage environment-level permissions
-- [AzDoPipeline](AzDoPipeline.md) - Create pipelines that deploy to environments
-- [AzDoProject](AzDoProject.md) - Create and manage projects
+- [AzDoPipelineEnvironmentApproval](AzDoEnvironmentApproval) - Configure approvals for environments
+- [AzDoCheckConfiguration](AzDoCheckConfiguration) - Configure automated checks for environments
+- [AzDoEnvironmentPermission](AzDoEnvironmentPermission) - Manage environment-level permissions
+- [AzDoPipeline](AzDoPipeline) - Create pipelines that deploy to environments
+- [AzDoProject](AzDoProject) - Create and manage projects
 
 ## See Also
 
@@ -306,4 +306,4 @@ Invoke-DscResource -Name 'AzDoPipelineEnvironment' `
 - [Azure DevOps Approvals and Checks](https://docs.microsoft.com/en-us/azure/devops/pipelines/process/approvals)
 - [Azure DevOps Release Pipelines](https://docs.microsoft.com/en-us/azure/devops/pipelines/release)
 - [PowerShell DSC Documentation](https://docs.microsoft.com/en-us/powershell/dsc/overview)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

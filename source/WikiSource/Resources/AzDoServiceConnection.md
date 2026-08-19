@@ -360,14 +360,14 @@ Different connection types use different authorization schemes:
 
 ## Related Resources
 
-- [AzDoServiceConnectionPermission](AzDoServiceConnectionPermission.md) - Manage service connection permissions
-- [AzDoPipeline](AzDoPipeline.md) - Create pipelines that use service connections
-- [AzDoProject](AzDoProject.md) - Create and manage projects
-- [AzDoVariableGroup](AzDoVariableGroup.md) - Store connection credentials in variable groups
+- [AzDoServiceConnectionPermission](AzDoServiceConnectionPermission) - Manage service connection permissions
+- [AzDoPipeline](AzDoPipeline) - Create pipelines that use service connections
+- [AzDoProject](AzDoProject) - Create and manage projects
+- [AzDoVariableGroup](AzDoVariableGroup) - Store connection credentials in variable groups
 
 ## See Also
 
 - [Azure DevOps Service Connections](https://docs.microsoft.com/en-us/azure/devops/pipelines/library/service-endpoints)
 - [Azure DevOps Service Connection Security](https://docs.microsoft.com/en-us/azure/devops/pipelines/security/secure-project-settings)
 - [PowerShell DSC Documentation](https://docs.microsoft.com/en-us/powershell/dsc/overview)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

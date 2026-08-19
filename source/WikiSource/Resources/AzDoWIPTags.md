@@ -246,12 +246,12 @@ Start-DscConfiguration -Path ./EnvironmentSpecificWIPTags -Wait -Verbose
 
 ## Related Resources
 
-- [AzDoProject](AzDoProject.md) - Create and manage Azure DevOps projects
-- [AzDoAreaNodes](AzDoAreaNodes.md) - Manage area nodes in a project
-- [AzDoIterationNodes](AzDoIterationNodes.md) - Manage iteration nodes in a project
+- [AzDoProject](AzDoProject) - Create and manage Azure DevOps projects
+- [AzDoAreaNodes](AzDoAreaNodes) - Manage area nodes in a project
+- [AzDoIterationNodes](AzDoIterationNodes) - Manage iteration nodes in a project
 
 ## See Also
 
 - [Azure DevOps Documentation](https://docs.microsoft.com/en-us/azure/devops/)
 - [PowerShell DSC Documentation](https://docs.microsoft.com/en-us/powershell/dsc/overview)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

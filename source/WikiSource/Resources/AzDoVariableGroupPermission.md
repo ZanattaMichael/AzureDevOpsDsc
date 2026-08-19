@@ -301,13 +301,13 @@ The Library (variable group) security namespace exposes these bit names (see [Pe
 
 ## Related Resources
 
-- [AzDoVariableGroup](AzDoVariableGroup.md) - Create and manage variable groups
-- [AzDoProjectPermission](AzDoProjectPermission.md) - Manage project-level permissions
-- [AzDoGroupPermission](AzDoGroupPermission.md) - Manage group permissions
-- [AzDoPipeline](AzDoPipeline.md) - Create pipelines that use variable groups
+- [AzDoVariableGroup](AzDoVariableGroup) - Create and manage variable groups
+- [AzDoProjectPermission](AzDoProjectPermission) - Manage project-level permissions
+- [AzDoGroupPermission](AzDoGroupPermission) - Manage group permissions
+- [AzDoPipeline](AzDoPipeline) - Create pipelines that use variable groups
 
 ## See Also
 
 - [Azure DevOps Documentation](https://docs.microsoft.com/en-us/azure/devops/)
 - [PowerShell DSC Documentation](https://docs.microsoft.com/en-us/powershell/dsc/overview)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

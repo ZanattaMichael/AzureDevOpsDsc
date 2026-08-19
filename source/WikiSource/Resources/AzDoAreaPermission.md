@@ -257,13 +257,13 @@ Start-DscConfiguration -Path ./RemoveAreaPermissions -Wait -Verbose
 
 ## Related Resources
 
-- [AzDoAreaNodes](AzDoAreaNodes.md) - Manage area nodes in a project
-- [AzDoIterationPermission](AzDoIterationPermission.md) - Manage iteration permissions
-- [AzDoProjectPermission](AzDoProjectPermission.md) - Manage project-level permissions
-- [AzDoGroupPermission](AzDoGroupPermission.md) - Manage group permissions
+- [AzDoAreaNodes](AzDoAreaNodes) - Manage area nodes in a project
+- [AzDoIterationPermission](AzDoIterationPermission) - Manage iteration permissions
+- [AzDoProjectPermission](AzDoProjectPermission) - Manage project-level permissions
+- [AzDoGroupPermission](AzDoGroupPermission) - Manage group permissions
 
 ## See Also
 
 - [Azure DevOps Documentation](https://docs.microsoft.com/en-us/azure/devops/)
 - [PowerShell DSC Documentation](https://docs.microsoft.com/en-us/powershell/dsc/overview)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

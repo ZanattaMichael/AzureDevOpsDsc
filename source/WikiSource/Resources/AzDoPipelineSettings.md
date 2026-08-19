@@ -330,10 +330,10 @@ Invoke-DscResource -Name 'AzDoPipelineSettings' `
 
 ## Related Resources
 
-- [AzDoPipeline](AzDoPipeline.md) - Create and manage YAML pipelines
-- [AzDoProject](AzDoProject.md) - Create and manage projects
-- [AzDoPipelineEnvironment](AzDoPipelineEnvironment.md) - Create deployment environments
-- [AzDoServiceConnection](AzDoServiceConnection.md) - Create service connections for pipelines
+- [AzDoPipeline](AzDoPipeline) - Create and manage YAML pipelines
+- [AzDoProject](AzDoProject) - Create and manage projects
+- [AzDoPipelineEnvironment](AzDoPipelineEnvironment) - Create deployment environments
+- [AzDoServiceConnection](AzDoServiceConnection) - Create service connections for pipelines
 
 ## See Also
 
@@ -341,4 +341,4 @@ Invoke-DscResource -Name 'AzDoPipelineSettings' `
 - [Azure Pipelines Security Best Practices](https://docs.microsoft.com/en-us/azure/devops/pipelines/security/overview)
 - [Azure Pipelines Job Authorization Scope](https://docs.microsoft.com/en-us/azure/devops/pipelines/security/scope)
 - [PowerShell DSC Documentation](https://docs.microsoft.com/en-us/powershell/dsc/overview)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

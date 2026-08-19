@@ -282,12 +282,12 @@ Start-DscConfiguration -Path ./RemoveAgentPool -Wait -Verbose
 
 ## Related Resources
 
-- [AzDoAgentQueue](AzDoAgentQueue.md) - Create agent queues in projects
-- [AzDoAgentPoolPermission](AzDoAgentPoolPermission.md) - Manage pool permissions
-- [AzDoPipeline](AzDoPipeline.md) - Create pipelines that use pools
+- [AzDoAgentQueue](AzDoAgentQueue) - Create agent queues in projects
+- [AzDoAgentPoolPermission](AzDoAgentPoolPermission) - Manage pool permissions
+- [AzDoPipeline](AzDoPipeline) - Create pipelines that use pools
 
 ## See Also
 
 - [Azure DevOps Documentation](https://docs.microsoft.com/en-us/azure/devops/)
 - [PowerShell DSC Documentation](https://docs.microsoft.com/en-us/powershell/dsc/overview)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)

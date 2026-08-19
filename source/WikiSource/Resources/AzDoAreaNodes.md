@@ -281,13 +281,13 @@ Start-DscConfiguration -Path ./RemoveAreas -Wait -Verbose
 
 ## Related Resources
 
-- [AzDoProject](AzDoProject.md) - Create and manage Azure DevOps projects
-- [AzDoAreaPermission](AzDoAreaPermission.md) - Manage area-level permissions
-- [AzDoIterationNodes](AzDoIterationNodes.md) - Manage iteration nodes (sprints)
-- [AzDoWIPTags](AzDoWIPTags.md) - Configure work-in-progress tags
+- [AzDoProject](AzDoProject) - Create and manage Azure DevOps projects
+- [AzDoAreaPermission](AzDoAreaPermission) - Manage area-level permissions
+- [AzDoIterationNodes](AzDoIterationNodes) - Manage iteration nodes (sprints)
+- [AzDoWIPTags](AzDoWIPTags) - Configure work-in-progress tags
 
 ## See Also
 
 - [Azure DevOps Documentation](https://docs.microsoft.com/en-us/azure/devops/)
 - [PowerShell DSC Documentation](https://docs.microsoft.com/en-us/powershell/dsc/overview)
-- [AzureDevOpsDscNative Home](../Home.md)
+- [AzureDevOpsDscNative Home](../Home)
