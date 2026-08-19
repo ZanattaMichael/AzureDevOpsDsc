@@ -28,7 +28,7 @@ function Invoke-DscV3Resource
         PowerShell DSC class resource name (e.g. AzDoProject).
 
     .PARAMETER ModuleName
-        Module that exports the resource (default: AzureDevOpsDsc).
+        Module that exports the resource (default: AzureDevOpsDscNative).
 
     .PARAMETER Method
         Get | Set | Test
@@ -41,7 +41,7 @@ function Invoke-DscV3Resource
     #>
     param(
         [Parameter(Mandatory)][string]$ResourceName,
-        [string]$ModuleName  = 'AzureDevOpsDsc',
+        [string]$ModuleName  = 'AzureDevOpsDscNative',
         [Parameter(Mandatory)][ValidateSet('Get','Set','Test')][string]$Method,
         [Parameter(Mandatory)][hashtable]$Property
     )
@@ -56,33 +56,42 @@ function Invoke-DscV3Resource
         )
     } | ConvertTo-Json -Depth 10 -Compress
 
-    $rawOutput = switch ($Method)
+    # Force JSON on stdout (dsc defaults to YAML) and keep progress/trace on stderr so it
+    # never contaminates the parsed document. Redirect stderr to a temp file rather than
+    # merging with 2>&1, so a failure can still surface the diagnostic text.
+    $dscMethod  = $Method.ToLower()
+    $stderrPath = [System.IO.Path]::GetTempFileName()
+    try
     {
-        'Get'  { $payload | dsc resource get  --resource Microsoft.DSC/PowerShell 2>&1 }
-        'Set'  { $payload | dsc resource set  --resource Microsoft.DSC/PowerShell 2>&1 }
-        'Test' { $payload | dsc resource test --resource Microsoft.DSC/PowerShell 2>&1 }
+        $rawOutput  = $payload | dsc --output-format json resource $dscMethod --resource Microsoft.DSC/PowerShell 2>$stderrPath
+        $stderrText = (Get-Content -Path $stderrPath -Raw)
+    }
+    finally
+    {
+        Remove-Item -Path $stderrPath -Force -ErrorAction SilentlyContinue
     }
 
     if ($LASTEXITCODE -ne 0)
     {
-        throw "dsc resource $Method returned exit code $LASTEXITCODE.`nOutput: $rawOutput"
+        throw "dsc resource $Method returned exit code $LASTEXITCODE.`nStderr: $stderrText`nStdout: $rawOutput"
     }
 
-    # dsc may emit progress lines before the JSON block — extract the last JSON object.
-    $jsonLines = $rawOutput | Where-Object { $_ -match '^\s*\{' }
-    if (-not $jsonLines)
+    # With --output-format json the whole of stdout is a single JSON document (possibly
+    # pretty-printed across lines), so parse it as one — no line-by-line extraction.
+    $jsonText = ($rawOutput -join "`n").Trim()
+    if ([string]::IsNullOrWhiteSpace($jsonText))
     {
-        throw "dsc resource $Method produced no JSON output.`nRaw: $rawOutput"
+        throw "dsc resource $Method produced no output.`nStderr: $stderrText"
     }
 
-    return ($jsonLines | Select-Object -Last 1) | ConvertFrom-Json
+    return $jsonText | ConvertFrom-Json
 }
 
 function Test-DscV3InDesiredState
 {
     param(
         [string]$ResourceName,
-        [string]$ModuleName = 'AzureDevOpsDsc',
+        [string]$ModuleName = 'AzureDevOpsDscNative',
         [hashtable]$Property
     )
 
