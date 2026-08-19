@@ -94,7 +94,7 @@ resources:
     AzureArtifact: Enabled
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ```PowerShell
 

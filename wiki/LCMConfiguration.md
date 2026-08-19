@@ -1,20 +1,20 @@
-# LCM Configuration (Dsc.PipelineRunner)
+# Dsc.PipelineRunner Configuration
 
-**AzureDevOpsDscNative** gives you the DSC *resources* (`AzDoProject`, `AzDoGitPermission`, etc.). To actually run those resources at scale — across many projects, with reusable policy, dependency ordering, and conditional logic — you use the companion project **[Dsc.PipelineRunner](https://github.com/ZanattaMichael/Dsc.PipelineRunner/)**, a Local Configuration Manager (LCM) built on top of [Datum](https://github.com/gaelcolas/Datum) for configuration merging.
+**AzureDevOpsDscNative** gives you the DSC *resources* (`AzDoProject`, `AzDoGitPermission`, etc.). To actually run those resources at scale — across many projects, with reusable policy, dependency ordering, and conditional logic — you use the companion project **[Dsc.PipelineRunner](https://github.com/ZanattaMichael/Dsc.PipelineRunner/)**, a pipeline runner built on top of [Datum](https://github.com/gaelcolas/Datum) for configuration merging.
 
-This page explains how the two projects fit together and how to structure a configuration. It is a summary of `Dsc.PipelineRunner`'s own README — for anything not covered here, refer to that repository directly, as it is the source of truth for the LCM.
+This page explains how the two projects fit together and how to structure a configuration. It is a summary of `Dsc.PipelineRunner`'s own README — for anything not covered here, refer to that repository directly, as it is the source of truth for the pipeline runner.
 
 ## How it fits together
 
 ```
 Dsc.PipelineRunner (this page)          AzureDevOpsDscNative (rest of this wiki)
-─────────────────────────         ──────────────────────────────────────
+─────────────────────────               ──────────────────────────────────────
 Datum-merged YAML configs   ──►    DSC resources (AzDoProject, AzDoGitPermission, ...)
-LCM Rules (validation)      ──►    applied against your Azure DevOps org
+Pipeline rules (validation) ──►    applied against your Azure DevOps org
 dependsOn / condition logic
 ```
 
-Datum merges layered YAML configuration stubs (organization policy → project-area policy → per-project overrides) into one resolved configuration per project. The LCM then loads that resolved configuration, runs validation/formatting rules against it, orders resources by their `dependsOn` graph, and invokes each DSC resource in turn.
+Datum merges layered YAML configuration stubs (organization policy → project-area policy → per-project overrides) into one resolved configuration per project. Dsc.PipelineRunner then loads that resolved configuration, runs validation/formatting rules against it, orders resources by their `dependsOn` graph, and invokes each DSC resource in turn.
 
 ## Configuration directory layout
 
@@ -82,7 +82,7 @@ A real per-project resource block (from `Projects/Present/Magenta.yml`), showing
 
 Note the `type:` value is `AzureDevOpsDsc/<ResourceName>` and `name:` becomes part of the dependency-graph key referenced by other resources' `dependsOn` (`AzureDevOpsDsc/<ResourceName>/<name>`).
 
-## LCM features available on every resource
+## Pipeline runner features available on every resource
 
 - **`dependsOn`** — orders execution; a resource only runs after everything it depends on has completed.
 - **`condition`** — a PowerShell expression evaluated before the resource runs; if it evaluates `$true` **the resource is skipped**. Example: `condition: $ProjectWorkBoardsStatus -eq 'enabled'`.
@@ -90,7 +90,7 @@ Note the `type:` value is `AzureDevOpsDsc/<ResourceName>` and `name:` becomes pa
 - **Calculated properties** — any property value can be a PowerShell subexpression, e.g. `Ensure: $( if ([string]::IsNullOrEmpty($Project_Ensure)) { 'Present' } else { $Project_Ensure } )`.
 - **Custom variables** — declared in a `variables:` block per file and referenced with `$VariableName` inside `properties:`.
 
-## LCM Rules
+## Pipeline rules
 
 Modular scripts under `LCM Rules/` in the `Dsc.PipelineRunner` repo validate and format the merged configuration before anything is applied:
 
@@ -101,9 +101,9 @@ Modular scripts under `LCM Rules/` in the `Dsc.PipelineRunner` repo validate and
 
 These are plain PowerShell scripts, so you can add your own alongside them if your organization needs additional pre-flight checks.
 
-## Running the LCM: `Invoke-AZDoLCM`
+## Running Dsc.PipelineRunner: `Invoke-AZDoLCM`
 
-The entry point is the `Invoke-AZDoLCM` cmdlet, exported by the `azdo-dsc-lcm` module (`source/Public/Invoke-AZDoLCM.ps1`). Real parameters, taken from the cmdlet's source:
+The entry point is the `Invoke-AZDoLCM` cmdlet, exported by the `Dsc.PipelineRunner` module. Real parameters, taken from the cmdlet's source:
 
 | Parameter | Required | Notes |
 |---|---|---|
@@ -131,24 +131,24 @@ Internally, `Invoke-AZDoLCM`:
 2. Clones `ConfigurationSourcePath` if it's a URL, or uses it directly if it's a local directory.
 3. Compiles the Datum configuration into `exportConfigDir` via `Build-DatumConfiguration`.
 4. Establishes the Azure DevOps authentication provider (PAT or Managed Identity) via `New-AzDoAuthenticationProvider`.
-5. Runs the LCM Rules and applies/tests the resulting resources in dependency order.
+5. Runs the pipeline rules and applies/tests the resulting resources in dependency order.
 
-## Setting up a self-hosted agent to run the LCM
+## Setting up a self-hosted agent to run Dsc.PipelineRunner
 
 From `Dsc.PipelineRunner`'s own setup instructions:
 
 1. Clone `Dsc.PipelineRunner` onto the agent (or a path it can reach), and lay out your Datum configuration directory following the precedence guidance above — put organization-wide policy at the top, project-specific overrides at the bottom, and keep per-project YAML changes minimal to avoid "snowflake" projects.
 2. Store the configuration source in your normal source control, so it's versioned and auditable like any other infrastructure config.
-3. Set up a self-hosted Azure DevOps agent ([Microsoft's agent docs](https://learn.microsoft.com/en-us/azure/devops/pipelines/agents/agents?view=azure-devops)) to run the LCM.
+3. Set up a self-hosted Azure DevOps agent ([Microsoft's agent docs](https://learn.microsoft.com/en-us/azure/devops/pipelines/agents/agents?view=azure-devops)) to run Dsc.PipelineRunner.
    - If using **Managed Identity via Azure Arc**, run the Agent Pool service under an administrator account, and add the Arc machine's identity to the **Project Collection Administrators** group (or grant it equivalent namespace-level permissions for whatever it needs to manage — see [Permissions & ACLs](Permissions.md)).
    - If using **Managed Identity on an Azure VM**, enable the VM's managed identity per [Microsoft's managed identity docs](https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/overview), then grant it Azure DevOps permissions the same way.
    - If using a **PAT**, create a service identity in Azure DevOps and generate its PAT for the pipeline to consume.
-4. Install the modules listed under `RequiredModules` in `source/azdo-dsc-lcm.psd1` on the agent (`PSDesiredStateConfiguration`, `powershell-yaml`, `AzureDevOpsDsc.Common`, `AzureDevOpsDsc`, `datum`, plus anything else listed there for your version) with `Install-Module -Name <ModuleName>`, and confirm with `Get-Module -ListAvailable -Name <ModuleName>`.
-5. Keep `LCMConfigSettings` in `Datum.yml` (`ConfigurationVersion`, `AZDOLCMVersion`, `DSCResourceVersion`) aligned with the module versions you have installed — the LCM rejects a configuration whose declared versions don't match.
+4. Install the modules listed under `RequiredModules` in the `Dsc.PipelineRunner` module manifest on the agent (`PSDesiredStateConfiguration`, `powershell-yaml`, `AzureDevOpsDsc.Common`, `AzureDevOpsDsc`, `datum`, plus anything else listed there for your version) with `Install-Module -Name <ModuleName>`, and confirm with `Get-Module -ListAvailable -Name <ModuleName>`.
+5. Keep `LCMConfigSettings` in `Datum.yml` (`ConfigurationVersion`, `AZDOLCMVersion`, `DSCResourceVersion`) aligned with the module versions you have installed — Dsc.PipelineRunner rejects a configuration whose declared versions don't match.
 6. Run with `Mode = 'Test'` first in your pipeline to validate the configuration compiles and applies cleanly without making changes, watch for runtime errors, then switch to `Mode = 'Set'` to apply for real.
 
 ## See also
 
-- [Permissions & ACLs](Permissions.md) — the permission resources you'll most often see driven from LCM configuration, plus an `Dsc.PipelineRunner` YAML example for each
-- [Authentication](Authentication.md) — how `AZDODSC_CACHE_DIRECTORY` / `ModuleSettings.clixml` and the LCM's own auth provider relate
+- [Permissions & ACLs](Permissions.md) — the permission resources you'll most often see driven from pipeline runner configuration, plus a `Dsc.PipelineRunner` YAML example for each
+- [Authentication](Authentication.md) — how `AZDODSC_CACHE_DIRECTORY` / `ModuleSettings.clixml` and Dsc.PipelineRunner's own auth provider relate
 - [Dsc.PipelineRunner repository](https://github.com/ZanattaMichael/Dsc.PipelineRunner/) — source of truth for anything not covered here

@@ -110,7 +110,7 @@ resources:
       groupMembers: $GroupMembers
 ```
 
-## LCM Initialization
+## Pipeline runner initialization
 
 ```PowerShell
 $params = @{

@@ -13,7 +13,7 @@ The wiki is organized into several key sections to help you find what you need:
 | [Home](Home.md) | Overview and quick start | Getting started, module features |
 | [Resources](Resources.md) | Resource reference organized by category | Finding specific resources |
 | [Permissions & ACLs](Permissions.md) | Permission/ACL concepts, full bit-name reference, pitfalls | Configuring or troubleshooting any permission resource |
-| [LCM Configuration](LCMConfiguration.md) | How Dsc.PipelineRunner applies configurations at scale | Deploying with Dsc.PipelineRunner |
+| [Dsc.PipelineRunner Configuration](LCMConfiguration.md) | How Dsc.PipelineRunner applies configurations at scale | Deploying with Dsc.PipelineRunner |
 | [Authentication](Authentication.md) | Authentication methods and setup | Configuring authentication |
 | [Best Practices](BestPractices.md) | Guidelines and recommendations | Improving implementations |
 | [Examples](Examples.md) | Practical scenarios and workflows | Learning by example |
@@ -265,7 +265,7 @@ See [Resources/README.md](Resources/README.md) for detailed guidelines.
 - How do I manage permissions or ACLs? → [Permissions & ACLs](Permissions.md)
 - How do I set up a pipeline? → [Pipeline Example](Examples.md#pipeline-and-cicd-setup)
 - How do I authenticate? → [Authentication Guide](Authentication.md)
-- How do I apply configuration at scale / use the LCM? → [LCM Configuration](LCMConfiguration.md)
+- How do I apply configuration at scale / use Dsc.PipelineRunner? → [Dsc.PipelineRunner Configuration](LCMConfiguration.md)
 
 ## 🆘 Need Help?
 

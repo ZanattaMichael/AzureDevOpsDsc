@@ -176,7 +176,7 @@ resources:
             "Manage notes": "Allow"   
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

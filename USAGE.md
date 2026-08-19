@@ -152,7 +152,7 @@ By following these steps, you can successfully set up and use the module with Az
 
 [Current Source](https://github.com/ZanattaMichael/Dsc.PipelineRunner/)
 
-This module includes a custom Local Configuration Manager (LCM) built on Datum. By utilizing YAML resource files, similar to Ansible playbooks, administrators can manage their environment using Configuration as Code (CaC).
+This module integrates with `Dsc.PipelineRunner`, a pipeline runner built on Datum. By utilizing YAML resource files, similar to Ansible playbooks, administrators can manage their environment using Configuration as Code (CaC).
 
 Below is an example of how you can define parameters, variables, and resources in a YAML file to manage your Azure DevOps environment:
 

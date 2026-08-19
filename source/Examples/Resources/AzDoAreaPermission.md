@@ -149,7 +149,7 @@ resources:
             'Manage test suites': "Allow"
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

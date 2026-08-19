@@ -74,7 +74,7 @@ resources:
       - Improvement
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

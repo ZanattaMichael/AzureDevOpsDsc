@@ -79,7 +79,7 @@ resources:
     GroupDescription: Service Accounts Organization Group
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

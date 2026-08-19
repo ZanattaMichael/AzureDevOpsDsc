@@ -209,7 +209,7 @@ Invoke-DscResource -Name 'AzDoGitPermission' `
 
 ### Git Permission Bit Names
 
-Bit names inside `Permission` are Git Repositories security-namespace ActionNames. Names confirmed in this module's own integration tests and the companion LCM project's example configuration include: `GenericRead`, `GenericContribute`, `Read`, `Contribute`, `CreateBranch`, `CreateTag`, `PullRequestContribute`, `ManageNote`, `EditPolicies`, `RemoveOthersLocks`, `ManagePermissions`. The full, authoritative list for your organization can always be retrieved live — see [Permissions](../Permissions.md).
+Bit names inside `Permission` are Git Repositories security-namespace ActionNames. Names confirmed in this module's own integration tests and the companion Dsc.PipelineRunner project's example configuration include: `GenericRead`, `GenericContribute`, `Read`, `Contribute`, `CreateBranch`, `CreateTag`, `PullRequestContribute`, `ManageNote`, `EditPolicies`, `RemoveOthersLocks`, `ManagePermissions`. The full, authoritative list for your organization can always be retrieved live — see [Permissions](../Permissions.md).
 
 ### Inheritance Behavior
 

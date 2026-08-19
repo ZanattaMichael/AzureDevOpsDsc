@@ -104,7 +104,7 @@ resources:
       ProcessTemplate: Agile
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

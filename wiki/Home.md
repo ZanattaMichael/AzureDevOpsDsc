@@ -88,8 +88,8 @@ Complete reference for all available DSC resources in AzureDevOpsDscNative, orga
 ### 🔐 [Permissions & ACLs](Permissions.md)
 **The single starting point for permissions and ACLs.** Covers how CSS Security Namespaces, ACLs, and ACEs work in this module, a full table of every permission resource and its permission bits, identity syntax, and common pitfalls (including the slow-scan warning for Area/Iteration/Pipeline permission resources).
 
-### 🛠️ [LCM Configuration](LCMConfiguration.md)
-How to actually apply configurations built with this module at scale using the companion **[Dsc.PipelineRunner](https://github.com/ZanattaMichael/Dsc.PipelineRunner/)** project: Datum-based configuration layering, LCM Rules, `dependsOn`/`condition`/`postExecutionScript`, and running `Invoke-AZDoLCM`.
+### 🛠️ [Dsc.PipelineRunner Configuration](LCMConfiguration.md)
+How to actually apply configurations built with this module at scale using the companion **[Dsc.PipelineRunner](https://github.com/ZanattaMichael/Dsc.PipelineRunner/)** project: Datum-based configuration layering, pipeline rules, `dependsOn`/`condition`/`postExecutionScript`, and running `Invoke-AZDoLCM`.
 
 ### [Authentication Guide](Authentication.md)
 Learn how to authenticate with Azure DevOps using various methods:

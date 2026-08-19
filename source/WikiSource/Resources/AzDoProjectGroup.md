@@ -84,7 +84,7 @@ resources:
     GroupDescription: Service Accounts Project Group
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ```PowerShell
 
