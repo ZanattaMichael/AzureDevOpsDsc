@@ -364,25 +364,7 @@ Configuration ParallelConfiguration {
 }
 ```
 
-### 3. Implement Caching
-
-```powershell
-# Cache organization information to avoid repeated API calls
-$script:orgCache = @{}
-
-function Get-CachedOrganization {
-    param([string]$OrgName)
-    
-    if (-not $script:orgCache.Contains($OrgName)) {
-        # Fetch from API and cache
-        $script:orgCache[$OrgName] = Get-AzDevOpsOrganization -Name $OrgName
-    }
-    
-    return $script:orgCache[$OrgName]
-}
-```
-
-### 4. Monitor Resource Performance
+### 3. Monitor Resource Performance
 
 ```powershell
 # Measure configuration execution time
@@ -453,92 +435,56 @@ Compare-DscConfiguration -ReferenceConfiguration ./TestConfiguration
 
 ## Large-Scale Deployments
 
-### 1. Modularize Configurations
+For large-scale deployments across many projects and teams, the recommended approach is to use the
+companion **[AZDO-DSC-LCM](https://github.com/ZanattaMichael/AzDO-DSC-LCM)** (Local Configuration
+Manager). It provides a pipeline-based LCM built on [Datum](https://github.com/gaelcolas/Datum)
+that enables layered YAML configuration merging, dependency ordering, conditional logic, and
+organisation-wide policy enforcement without writing individual DSC configuration scripts per project.
+
+See the [LCM Configuration](LCMConfiguration.md) wiki page for a full walkthrough and example
+directory layout. Example configurations are available in the
+[AZDO-DSC-LCM repository](https://github.com/ZanattaMichael/AzDO-DSC-LCM/tree/main/Example%20Configuration).
+
+### Basic LCM Invocation
 
 ```powershell
-# Resource modules for reuse
-function New-ProjectConfiguration {
-    param(
-        [string]$ProjectName,
-        [string]$ProcessTemplate
-    )
-    
-    AzDoProject "Project_$ProjectName" {
-        Ensure              = 'Present'
-        ProjectName         = $ProjectName
-        SourceControlType   = 'Git'
-        ProcessTemplate     = $ProcessTemplate
-        Visibility          = 'Private'
-    }
+$params = @{
+    AzureDevopsOrganizationName = 'my-organization'
+    ConfigurationDirectory      = 'C:\Datum\DSCOutput\'
+    ConfigurationUrl            = 'https://my-config-repo/path'
+    AuthenticationType          = 'ManagedIdentity'
+    Mode                        = 'Set'
+    ReportPath                  = 'C:\Datum\DSCOutput\Reports'
 }
 
-# Use in main configuration
-Configuration LargeScaleDeployment {
-    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
-    
-    Node localhost {
-        New-ProjectConfiguration -ProjectName 'Frontend' -ProcessTemplate 'Agile'
-        New-ProjectConfiguration -ProjectName 'Backend' -ProcessTemplate 'Scrum'
-        New-ProjectConfiguration -ProjectName 'DevOps' -ProcessTemplate 'Agile'
-    }
-}
+Invoke-AzDoLCM @params
 ```
 
-### 2. Use Composite Resources
+### Example Resource Stub (YAML)
 
-```powershell
-# CompleteProjectSetup.psd1 - Composite resource
-@{
-    RootModule            = 'CompleteProjectSetup.psm1'
-    ModuleVersion         = '1.0.0'
-    CompanyName           = 'Your Company'
-    FunctionsToExport     = @()
-    DscResourcesToExport  = @('CompleteProjectSetup')
-}
+Resource configuration stubs are written in YAML and merged by Datum. Organisation-wide policy sits
+at the top of the merge precedence; per-project files override it.
 
-# CompleteProjectSetup.psm1
-Configuration CompleteProjectSetup {
-    [DscResource()]
-    param(
-        [Parameter(Mandatory)]
-        [ValidateNotNullOrEmpty()]
-        [String]$ProjectName
-    )
-    
-    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
-    
-    # Complete project setup with all standard resources
-    AzDoProject $ProjectName {
-        Ensure              = 'Present'
-        ProjectName         = $ProjectName
-        SourceControlType   = 'Git'
-        ProcessTemplate     = 'Agile'
-        Visibility          = 'Private'
-    }
-}
+```yaml
+resources:
+  - name: Project
+    type: AzureDevOpsDscNative/AzDoProject
+    properties:
+      projectName: $ProjectName
+      projectDescription: $ProjectDescription
+      visibility: private
+      SourceControlType: Git
+      ProcessTemplate: Agile
 ```
 
-### 3. Implement Progressive Rollout
+### When to Use the LCM vs Direct DSC
 
-```powershell
-Configuration ProgressiveRollout {
-    param(
-        [ValidateSet('Dev', 'Staging', 'Production')]
-        [string]$Environment
-    )
-    
-    # Different configurations per environment
-    if ($Environment -eq 'Dev') {
-        # Limited setup for dev
-    }
-    elseif ($Environment -eq 'Staging') {
-        # Staging setup
-    }
-    else {
-        # Full production setup
-    }
-}
-```
+| Scenario | Use |
+|----------|-----|
+| Single project, small team | Direct `Invoke-DscResource` or DSC configuration script |
+| Multiple projects, shared policy | **AZDO-DSC-LCM** (recommended) |
+| CI/CD pipeline at org scale | **AZDO-DSC-LCM** with Managed Identity or Workload Identity |
+| One-off or exploratory changes | Direct `Invoke-DscResource` |
 
 ## Testing & Validation
 
@@ -664,7 +610,6 @@ git commit -m "Configuration backup $(Get-Date -Format 'yyyy-MM-dd')"
 **Performance**
 - [ ] Batch related resources
 - [ ] Use parallel processing
-- [ ] Implement caching
 - [ ] Monitor performance
 
 **Reliability**

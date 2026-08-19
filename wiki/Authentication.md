@@ -1,439 +1,403 @@
 # Authentication Guide
 
-AzureDevOpsDscNative supports multiple authentication methods for connecting to Azure DevOps. This guide covers all available authentication options and how to configure them.
+AzureDevOpsDscNative supports multiple authentication methods for connecting to Azure DevOps.
+Authentication is configured by calling `New-AzDoAuthenticationProvider` before running any DSC
+resources. This guide covers all available options.
 
 ## Supported Authentication Methods
 
-1. **Personal Access Token (PAT)** - Most common and flexible
-2. **Managed Identity** - Best for Azure resources
-3. **Service Principal** - For service-to-service authentication
-4. **Certificate-Based Authentication** - For secure service principals
-5. **Azure CLI Token** - Use existing Azure CLI login session
-6. **Workload Identity Federation** - Keyless authentication for CI/CD
+1. **Personal Access Token (PAT)** — Most common and flexible
+2. **Managed Identity** — Best for Azure-hosted resources
+3. **Service Principal (Client Secret)** — For service-to-service authentication
+4. **Service Principal (Certificate)** — More secure alternative to client secrets
+5. **Azure CLI Token** — Use an existing `az login` session
+6. **Workload Identity Federation** — Keyless authentication for CI/CD pipelines
+
+---
 
 ## Personal Access Token (PAT)
 
-Personal Access Tokens are the most straightforward authentication method for most scenarios.
+Personal Access Tokens are scoped credentials tied to a specific Azure DevOps user account.
 
 ### Creating a PAT
 
-1. In Azure DevOps, click on your profile icon (top right)
+1. In Azure DevOps, click your profile icon (top right)
 2. Select **Personal access tokens**
 3. Click **New Token**
 4. Configure:
-   - **Name**: Give your token a meaningful name
-   - **Organization**: Select your organization
-   - **Expiration**: Set expiration (30, 60, 90 days or custom)
-   - **Scopes**: Select required scopes (typically "Full access" for DSC operations)
-5. Click **Create**
-6. Copy the token immediately (you won't see it again)
+   - **Name**: Give the token a meaningful name
+   - **Organization**: Select your organisation
+   - **Expiration**: Set an expiration (30, 60, or 90 days, or custom)
+   - **Scopes**: Select the required scopes (typically "Full access" for DSC operations)
+5. Click **Create** and copy the token immediately — you will not see it again
 
-### Using PAT in DSC Configuration
+### Configuring PAT Authentication
 
 ```powershell
-Configuration ExampleWithPAT {
-    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
-    
-    Node localhost {
-        # Method 1: Using hashtable with token
-        $authToken = @{
-            PersonalAccessToken = 'your-pat-token-here'
-            OrganizationName = 'your-org-name'
-        }
-        
-        AzDoProject 'MyProject' {
-            Ensure               = 'Present'
-            ProjectName          = 'MyProject'
-            ProjectDescription   = 'Sample project'
-            SourceControlType    = 'Git'
-            ProcessTemplate      = 'Agile'
-            Visibility           = 'Private'
-        }
-    }
-}
+# Plain-text PAT (suitable for interactive or test scripts)
+New-AzDoAuthenticationProvider -OrganizationName 'my-organization' -PersonalAccessToken 'my-pat-token-here'
 
-AzureDevOpsConfig
-Start-DscConfiguration -Path ./AzureDevOpsConfig -Wait -Verbose
+# SecureString PAT (preferred for production — avoids storing the plain-text value in memory)
+$SecureStringPAT = Read-Host -Prompt 'Enter your PAT' -AsSecureString
+New-AzDoAuthenticationProvider -OrganizationName 'my-organization' -SecureStringPersonalAccessToken $SecureStringPAT
+
+# Skip the initial connectivity verification check (useful in CI environments)
+New-AzDoAuthenticationProvider -OrganizationName 'my-organization' -PersonalAccessToken 'my-pat-token-here' -NoVerify
 ```
 
 ### Best Practices for PAT
 
-- ✅ Store PAT in secure location (Azure Key Vault, Windows Credential Manager, etc.)
-- ✅ Use minimal required scopes
-- ✅ Set reasonable expiration (30-90 days)
-- ✅ Rotate tokens periodically
-- ✅ Never commit PAT to version control
-- ❌ Don't use "Full access" scope if more limited scope suffices
-- ❌ Don't hardcode PAT in configuration files
+- Store the PAT in a secure location (Azure Key Vault, Windows Credential Manager, PowerShell SecretStore)
+- Use the minimum required scopes
+- Set a reasonable expiration date (30–90 days) and rotate regularly
+- Never commit a PAT to version control or hardcode it in a script
+
+---
 
 ## Managed Identity
 
-Managed Identity is recommended for Azure resources, as it doesn't require managing tokens or credentials.
+Managed Identity is the recommended approach when running DSC configurations on Azure resources
+(Virtual Machines, Azure Arc-enabled servers, Azure Automation, etc.). No credentials or secrets
+need to be stored — the identity is provided by the Azure platform.
 
 ### Prerequisites
 
-- Resource running in Azure (VM, App Service, Container Instance, etc.)
-- Managed Identity enabled on the resource
-- Appropriate permissions assigned to the identity
+- The hosting resource must have a System-assigned or User-assigned Managed Identity enabled
+- The Managed Identity must be added to the Azure DevOps organisation with appropriate permissions
 
-### Using Managed Identity
+### Configuring Managed Identity Authentication
 
 ```powershell
-Configuration ExampleWithManagedIdentity {
-    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
-    
-    Node localhost {
-        # Managed Identity authentication is automatically discovered
-        # No explicit credential configuration needed
-        
-        AzDoProject 'MyProject' {
-            Ensure               = 'Present'
-            ProjectName          = 'MyProject'
-            ProjectDescription   = 'Sample project'
-            SourceControlType    = 'Git'
-            ProcessTemplate      = 'Agile'
-            Visibility           = 'Private'
-        }
-    }
-}
+# Authenticate using the Managed Identity assigned to the current Azure resource
+New-AzDoAuthenticationProvider -OrganizationName 'my-organization' -useManagedIdentity
+
+# Skip the initial connectivity verification check
+New-AzDoAuthenticationProvider -OrganizationName 'my-organization' -useManagedIdentity -NoVerify
 ```
-
-### Setting Up Managed Identity
-
-1. **For Azure VM**:
-   ```powershell
-   # Enable system-assigned identity
-   Update-AzVm -ResourceGroupName $rg -VmName $vm -IdentityType SystemAssigned
-   ```
-
-2. **Grant permissions** to the identity in Azure DevOps:
-   - Add the identity as a member of appropriate groups
-   - Assign necessary permissions
-
-3. **On the resource**:
-   - Managed Identity is automatically available
-   - Use without explicit credential configuration
 
 ### Best Practices for Managed Identity
 
-- ✅ Use for Azure-hosted resources
-- ✅ Use system-assigned identity when possible
-- ✅ Principle of least privilege - grant minimal required permissions
-- ✅ No token rotation needed
-- ✅ Audit identity access regularly
+- Prefer System-assigned identity when only one resource needs access
+- Apply the principle of least privilege — grant the minimum permissions required
+- No token rotation is needed; tokens are issued and refreshed by the Azure platform
+- Audit identity access regularly
 
-## Service Principal
+---
 
-Service Principals are ideal for CI/CD pipelines and cross-tenant scenarios.
+## Service Principal (Client Secret)
 
-### Creating a Service Principal
+Service Principals are ideal for non-Azure environments, CI/CD pipelines, and cross-tenant scenarios
+where Managed Identity is not available.
 
-```powershell
-# Create a service principal
-$sp = New-AzADServicePrincipal -DisplayName "AzureDevOpsDsc-ServicePrincipal"
+### Prerequisites
 
-# Note the Application ID and Tenant ID for later use
-$appId = $sp.AppId
-$tenantId = (Get-AzContext).Tenant.Id
-```
+- An Azure AD App Registration with a Client Secret
+- The Service Principal (Enterprise Application) must be added to the Azure DevOps organisation with
+  appropriate permissions via Access Control
 
-### Using Service Principal
+### Configuring Service Principal Authentication
 
 ```powershell
-Configuration ExampleWithServicePrincipal {
-    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
-    
-    Node localhost {
-        $authToken = @{
-            ServicePrincipalId = 'your-app-id'
-            ServicePrincipalSecret = 'your-client-secret'
-            TenantId = 'your-tenant-id'
-            OrganizationName = 'your-org-name'
-        }
-        
-        AzDoProject 'MyProject' {
-            Ensure               = 'Present'
-            ProjectName          = 'MyProject'
-            ProjectDescription   = 'Sample project'
-            SourceControlType    = 'Git'
-            ProcessTemplate      = 'Agile'
-            Visibility           = 'Private'
-        }
-    }
-}
+# Plain-text client secret
+New-AzDoAuthenticationProvider `
+    -OrganizationName 'my-organization' `
+    -TenantId         '00000000-0000-0000-0000-000000000000' `
+    -ClientId         'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' `
+    -ClientSecret     'my-client-secret-value'
+
+# SecureString client secret (preferred for production)
+$SecureSecret = Read-Host -Prompt 'Enter client secret' -AsSecureString
+New-AzDoAuthenticationProvider `
+    -OrganizationName           'my-organization' `
+    -TenantId                   '00000000-0000-0000-0000-000000000000' `
+    -ClientId                   'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' `
+    -SecureStringClientSecret   $SecureSecret
+
+# Skip the initial connectivity verification check
+New-AzDoAuthenticationProvider `
+    -OrganizationName 'my-organization' `
+    -TenantId         '00000000-0000-0000-0000-000000000000' `
+    -ClientId         'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' `
+    -ClientSecret     'my-client-secret-value' `
+    -NoVerify
 ```
 
 ### Best Practices for Service Principal
 
-- ✅ Use in automated/CI-CD scenarios
-- ✅ Store secrets in Key Vault
-- ✅ Use certificate-based auth instead of client secret when possible
-- ✅ Rotate secrets regularly
-- ✅ Use minimal required permissions
-- ✅ Audit service principal activity
-- ❌ Don't hardcode credentials
-- ❌ Don't commit secrets to version control
+- Store client secrets in Azure Key Vault or PowerShell SecretStore — never in code or config files
+- Rotate secrets regularly
+- Prefer certificate-based authentication (see below) for higher-security scenarios
+- Grant minimal required permissions
 
-## Certificate-Based Authentication
+---
 
-Certificate-based authentication provides additional security for service principals.
+## Service Principal (Certificate)
 
-### Creating a Certificate
+Certificate-based authentication is more secure than client secrets because private keys never leave
+the machine and certificates can be stored in the Windows Certificate Store or as PFX files.
 
-```powershell
-# Create self-signed certificate
-$cert = New-SelfSignedCertificate `
-    -Subject "CN=AzureDevOpsDsc" `
-    -CertStoreLocation "Cert:\CurrentUser\My" `
-    -KeyExportPolicy Exportable `
-    -KeySpec Signature
+### Prerequisites
 
-# Export certificate
-$thumbprint = $cert.Thumbprint
-Export-PfxCertificate -Cert $cert -FilePath "C:\cert.pfx" -Password (ConvertTo-SecureString -String "password" -AsPlainText)
-```
+- An Azure AD App Registration with an uploaded certificate (public key)
+- The private key must be available on the machine running DSC (certificate store or PFX file)
+- The Service Principal must be added to the Azure DevOps organisation with appropriate permissions
 
-### Using Certificate Authentication
+### Configuring Certificate Authentication
 
 ```powershell
-Configuration ExampleWithCertificate {
-    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
-    
-    Node localhost {
-        $authToken = @{
-            ServicePrincipalId = 'your-app-id'
-            CertificateThumbprint = 'your-cert-thumbprint'
-            TenantId = 'your-tenant-id'
-            OrganizationName = 'your-org-name'
-        }
-        
-        AzDoProject 'MyProject' {
-            Ensure               = 'Present'
-            ProjectName          = 'MyProject'
-            ProjectDescription   = 'Sample project'
-            SourceControlType    = 'Git'
-            ProcessTemplate      = 'Agile'
-            Visibility           = 'Private'
-        }
-    }
-}
+# ── Windows certificate store (thumbprint) ──────────────────────────────────
+# The certificate must be present in the local machine or current user certificate store.
+New-AzDoAuthenticationProvider `
+    -OrganizationName        'my-organization' `
+    -TenantId                '00000000-0000-0000-0000-000000000000' `
+    -ClientId                'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' `
+    -CertificateThumbprint   'AABBCCDDEEFF00112233445566778899AABBCCDD'
+
+# ── PFX file (cross-platform — Linux, macOS, and Windows) ───────────────────
+$CertPassword = Read-Host -Prompt 'Enter PFX password' -AsSecureString
+
+New-AzDoAuthenticationProvider `
+    -OrganizationName    'my-organization' `
+    -TenantId            '00000000-0000-0000-0000-000000000000' `
+    -ClientId            'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' `
+    -CertificatePath     '/etc/azdo-dsc/auth.pfx' `
+    -CertificatePassword $CertPassword
+
+# Skip the initial connectivity verification check (either mode)
+New-AzDoAuthenticationProvider `
+    -OrganizationName        'my-organization' `
+    -TenantId                '00000000-0000-0000-0000-000000000000' `
+    -ClientId                'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' `
+    -CertificateThumbprint   'AABBCCDDEEFF00112233445566778899AABBCCDD' `
+    -NoVerify
 ```
 
 ### Best Practices for Certificates
 
-- ✅ More secure than client secrets
-- ✅ Longer expiration than secrets
-- ✅ Store certificate securely
-- ✅ Monitor certificate expiration
-- ✅ Rotate before expiration
-- ❌ Don't share certificates
+- Store the private key securely — Windows Certificate Store (LocalMachine\My) or a protected PFX file
+- Monitor certificate expiration and rotate before it expires
+- Use a unique certificate per environment (Dev/Staging/Production)
+- Do not share certificates across service principals
+
+---
 
 ## Azure CLI Token
 
-Use your existing Azure CLI session for authentication.
+Acquires a Bearer token from an existing `az login` session without requiring any additional
+credentials. Particularly useful for local development and interactive sessions.
 
 ### Prerequisites
 
-- Azure CLI installed and authenticated
-- Run `az login` to authenticate first
+- The Azure CLI must be installed and available in `PATH`
+- You must be signed in: run `az login` (or `az login --use-device-code` in headless environments)
+- The signed-in account must have access to the Azure DevOps organisation
+- Run `az account show` to verify the active context; use `az account set --subscription <id>` to switch
 
-### Using Azure CLI Token
+### Configuring Azure CLI Authentication
 
 ```powershell
-# Azure CLI authentication is automatic if you've run 'az login'
-Configuration ExampleWithAzureCli {
-    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
-    
-    Node localhost {
-        # No explicit credential configuration needed
-        # Uses current Azure CLI context
-        
-        AzDoProject 'MyProject' {
-            Ensure               = 'Present'
-            ProjectName          = 'MyProject'
-            ProjectDescription   = 'Sample project'
-            SourceControlType    = 'Git'
-            ProcessTemplate      = 'Agile'
-            Visibility           = 'Private'
-        }
-    }
-}
+# Authenticate using the active Azure CLI session
+New-AzDoAuthenticationProvider -OrganizationName 'my-organization' -useAzureCLI
+
+# Skip the initial connectivity verification check
+New-AzDoAuthenticationProvider -OrganizationName 'my-organization' -useAzureCLI -NoVerify
 ```
 
 ### Best Practices for Azure CLI
 
-- ✅ Convenient for local development
-- ✅ Automatically uses your Azure login
-- ✅ Token automatically refreshed
-- ✅ No manual credential management
-- ❌ Not ideal for automated scenarios
-- ❌ Only works on machines with Azure CLI installed
+- Suitable for local development and interactive sessions
+- Token is automatically refreshed by the CLI; no manual credential management required
+- Not recommended for automated/unattended scenarios — use a Service Principal or Managed Identity instead
+- Only works on machines with the Azure CLI installed
+
+---
 
 ## Workload Identity Federation
 
-Keyless authentication for GitHub Actions, GitLab CI, and other CI/CD systems.
+Keyless authentication for GitHub Actions, Kubernetes/AKS, Azure DevOps Pipelines, and any
+OIDC-compliant system. A short-lived JWT issued by the external identity provider is exchanged for
+an Azure AD access token — no client secret or certificate is required on the App Registration.
 
-### Setting Up Workload Identity
+Three token sources are supported:
 
-1. **Register your OIDC provider** with Azure AD
-2. **Create a service principal** and configure trust
-3. **Configure your CI/CD pipeline** to use federated credentials
+| Mode | Description |
+|------|-------------|
+| **File-based** | Token is read from a projected file path (Kubernetes/AKS Workload Identity) |
+| **GitHub Actions OIDC** | Token is requested from the GitHub Actions runtime endpoint automatically |
+| **Manual token** | Caller supplies a federated JWT obtained from another OIDC source |
 
-### Using in CI/CD Pipeline
+### Prerequisites
 
-```yaml
-# GitHub Actions example
-name: Deploy with Azure DevOps DSC
+- An Azure AD App Registration with a Federated Identity Credential configured for the appropriate
+  issuer and subject
+- The Service Principal must be added to the Azure DevOps organisation with required permissions
 
-on: [push]
+### Configuring Workload Identity Federation
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Run DSC Configuration
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      
-      - name: Apply Configuration
-        run: |
-          pwsh -Command {
-              # DSC configuration runs here
-              ./ApplyDscConfig.ps1
-          }
+```powershell
+# ── 1. File-based token (Kubernetes / AKS Workload Identity) ─────────────────
+# AKS projects the service-account token at the path in AZURE_FEDERATED_TOKEN_FILE.
+New-AzDoAuthenticationProvider `
+    -OrganizationName    'my-organization' `
+    -TenantId            '00000000-0000-0000-0000-000000000000' `
+    -ClientId            'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' `
+    -FederatedTokenFile  $ENV:AZURE_FEDERATED_TOKEN_FILE
+
+# Hard-coded file path variant
+New-AzDoAuthenticationProvider `
+    -OrganizationName    'my-organization' `
+    -TenantId            '00000000-0000-0000-0000-000000000000' `
+    -ClientId            'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' `
+    -FederatedTokenFile  '/var/run/secrets/azure/tokens/azure-identity-token'
+
+# ── 2. GitHub Actions OIDC ────────────────────────────────────────────────────
+# The workflow must grant `id-token: write` permission.
+# ACTIONS_ID_TOKEN_REQUEST_URL and ACTIONS_ID_TOKEN_REQUEST_TOKEN are injected
+# automatically by GitHub Actions when that permission is present.
+#
+# GitHub Actions workflow snippet:
+#   permissions:
+#     id-token: write
+#     contents: read
+New-AzDoAuthenticationProvider `
+    -OrganizationName       'my-organization' `
+    -TenantId               '00000000-0000-0000-0000-000000000000' `
+    -ClientId               'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' `
+    -useGitHubActionsOIDC
+
+# Custom audience (must match the federated identity credential audience in Azure AD)
+New-AzDoAuthenticationProvider `
+    -OrganizationName       'my-organization' `
+    -TenantId               '00000000-0000-0000-0000-000000000000' `
+    -ClientId               'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' `
+    -useGitHubActionsOIDC `
+    -GitHubActionsAudience  'api://AzureADTokenExchange'
+
+# ── 3. Manually-supplied federated token ─────────────────────────────────────
+# Use when the OIDC token has already been acquired externally (e.g. Azure DevOps
+# Pipelines OIDC service connection) and is available as a variable.
+$FederatedJWT = $ENV:SYSTEM_OIDCTOKEN | ConvertTo-SecureString -AsPlainText -Force
+
+New-AzDoAuthenticationProvider `
+    -OrganizationName  'my-organization' `
+    -TenantId          '00000000-0000-0000-0000-000000000000' `
+    -ClientId          'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' `
+    -FederatedToken    $FederatedJWT
+
+# ── Skip connectivity verification (any mode) ─────────────────────────────────
+New-AzDoAuthenticationProvider `
+    -OrganizationName    'my-organization' `
+    -TenantId            '00000000-0000-0000-0000-000000000000' `
+    -ClientId            'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' `
+    -FederatedTokenFile  '/var/run/secrets/azure/tokens/azure-identity-token' `
+    -NoVerify
 ```
 
 ### Best Practices for Workload Identity
 
-- ✅ No secrets stored in CI/CD
-- ✅ Short-lived tokens
-- ✅ Secure by default
-- ✅ Audit trail in OIDC provider
-- ✅ Recommended for modern CI/CD systems
+- No secrets stored in CI/CD — tokens are short-lived and issued on demand
+- Recommended for modern CI/CD systems (GitHub Actions, Azure DevOps Pipelines, AKS)
+- Manually-supplied tokens are not automatically refreshed; call `New-AzDoAuthenticationProvider`
+  again with a fresh token when the current one expires
 
-## Environment Variables
-
-Set environment variables for authentication:
-
-```powershell
-# PAT
-$env:AZDO_PAT = 'your-token'
-$env:AZDO_ORG = 'your-organization'
-
-# Service Principal
-$env:AZDO_SERVICE_PRINCIPAL_ID = 'your-app-id'
-$env:AZDO_SERVICE_PRINCIPAL_SECRET = 'your-secret'
-$env:AZDO_TENANT_ID = 'your-tenant-id'
-
-# Managed Identity
-$env:AZDO_MANAGED_IDENTITY = 'true'
-```
+---
 
 ## Storing Credentials Securely
 
-### Option 1: Windows Credential Manager
+Before passing credentials to `New-AzDoAuthenticationProvider`, retrieve them from a secure store
+rather than hardcoding them.
+
+### Option 1: Azure Key Vault
 
 ```powershell
-# Store PAT in Credential Manager
+# Retrieve PAT from Key Vault
+$token = (Get-AzKeyVaultSecret -VaultName 'MyKeyVault' -Name 'AzureDevOpsPAT').SecretValue
+New-AzDoAuthenticationProvider -OrganizationName 'my-organization' -SecureStringPersonalAccessToken $token
+```
+
+### Option 2: PowerShell SecretStore
+
+```powershell
+# Install SecretStore module
+Install-Module Microsoft.PowerShell.SecretStore
+
+# Store credential (one-time setup)
+Set-Secret -Name AzureDevOpsPAT -Secret 'your-pat-token' -Vault SecretStore
+
+# Retrieve in script
+$token = Get-Secret -Name AzureDevOpsPAT -AsPlainText
+New-AzDoAuthenticationProvider -OrganizationName 'my-organization' -PersonalAccessToken $token
+```
+
+### Option 3: Windows Credential Manager (Windows only)
+
+```powershell
+# Store PAT in Credential Manager (one-time setup)
 $cred = New-Object System.Management.Automation.PSCredential(
     'AzureDevOpsDsc',
     (ConvertTo-SecureString 'your-pat-token' -AsPlainText -Force)
 )
 $cred | Export-Clixml -Path "$env:APPDATA\AzureDevOpsDsc\cred.xml"
 
-# Retrieve in configuration
+# Retrieve in script
 $cred = Import-Clixml -Path "$env:APPDATA\AzureDevOpsDsc\cred.xml"
+New-AzDoAuthenticationProvider -OrganizationName 'my-organization' -SecureStringPersonalAccessToken $cred.Password
 ```
 
-### Option 2: Azure Key Vault
-
-```powershell
-# Store in Key Vault
-Set-AzKeyVaultSecret -VaultName 'MyKeyVault' `
-    -Name 'AzureDevOpsPAT' `
-    -SecretValue (ConvertTo-SecureString 'your-pat-token' -AsPlainText -Force)
-
-# Retrieve in configuration
-$token = Get-AzKeyVaultSecret -VaultName 'MyKeyVault' -Name 'AzureDevOpsPAT'
-```
-
-### Option 3: PowerShell SecretStore
-
-```powershell
-# Install SecretStore module
-Install-Module Microsoft.PowerShell.SecretStore
-
-# Store credential
-Set-Secret -Name AzureDevOpsPAT -Secret 'your-pat-token' -Vault SecretStore
-
-# Retrieve in configuration
-$token = Get-Secret -Name AzureDevOpsPAT
-```
-
-## Troubleshooting Authentication
-
-### Issue: "Authentication Failed"
-
-**Solution**: Verify your token/credentials:
-```powershell
-# Test connectivity
-Get-DscResource -Module AzureDevOpsDscNative
-```
-
-### Issue: "Insufficient Permissions"
-
-**Solution**: Ensure your authentication account has necessary permissions in Azure DevOps:
-- Check group memberships
-- Verify permission assignments
-- Review scope settings (for PAT)
-
-### Issue: "Token Expired"
-
-**Solution**: Refresh or regenerate:
-- Create new PAT
-- Rotate service principal secret
-- Re-authenticate with Azure CLI
-
-### Issue: "Cannot Find Resource"
-
-**Solution**: Verify module is installed:
-```powershell
-# List installed modules
-Get-Module -ListAvailable | Where-Object Name -eq AzureDevOpsDscNative
-
-# Import module explicitly
-Import-Module -Name AzureDevOpsDscNative
-```
+---
 
 ## Choosing the Right Authentication Method
 
 | Method | Best For | Pros | Cons |
 |--------|----------|------|------|
-| **PAT** | General use, local dev | Simple, flexible | Requires token management |
-| **Managed Identity** | Azure resources | No credential mgmt, secure | Azure-only |
-| **Service Principal** | CI/CD, automation | Cross-tenant, automated | Secret management needed |
-| **Certificate** | Secure scenarios | More secure than secret | More complex setup |
-| **Azure CLI** | Local development | Automatic, convenient | Not for automation |
-| **Workload Identity** | Modern CI/CD | Keyless, secure | Setup complexity |
+| **PAT** | Local dev, general use | Simple, no Azure AD required | Requires token management and rotation |
+| **Managed Identity** | Azure VMs, Arc, Automation | No credentials to manage, secure | Azure-hosted resources only |
+| **Service Principal (secret)** | CI/CD, on-premises automation | Works anywhere | Secret management required |
+| **Service Principal (cert)** | High-security scenarios | More secure than secrets | More complex certificate lifecycle |
+| **Azure CLI** | Local development | Automatic, uses existing login | Not suitable for automation |
+| **Workload Identity** | GitHub Actions, AKS, ADO Pipelines | Keyless, short-lived tokens | Requires OIDC federation setup |
+
+---
+
+## Troubleshooting Authentication
+
+### "Authentication Failed"
+
+Verify the token or credentials are correct and have not expired. For PAT, check that the token
+still exists in Azure DevOps and has the required scopes.
+
+### "Insufficient Permissions"
+
+The authenticated identity lacks the necessary permissions in Azure DevOps:
+- Check group memberships and permission assignments for the identity
+- For PAT, review the token scopes (Full access or specific scopes required)
+
+### "Token Expired"
+
+- **PAT**: Create a new token in Azure DevOps
+- **Service Principal secret**: Rotate the secret in Azure AD
+- **Azure CLI**: Re-run `az login`
+- **Workload Identity (manual)**: Acquire a fresh federated token
+
+### Module or Resource Not Found
+
+```powershell
+# Verify the module is installed
+Get-Module -ListAvailable | Where-Object Name -eq AzureDevOpsDscNative
+
+# Import explicitly if needed
+Import-Module -Name AzureDevOpsDscNative
+```
+
+---
 
 ## Security Checklist
 
-- [ ] Use minimal required permissions
-- [ ] Store credentials securely (not in code)
-- [ ] Rotate credentials regularly
-- [ ] Monitor authentication logs
-- [ ] Use expiration dates on tokens
-- [ ] Revoke unused credentials
-- [ ] Audit who has access
-- [ ] Use MFA for personal accounts
-- [ ] Enable activity logging
-- [ ] Review access regularly
+- [ ] Use the minimum required permissions for the authenticated identity
+- [ ] Store all credentials in a secure vault — never in code or config files
+- [ ] Set expiration dates on PATs and rotate them regularly
+- [ ] Rotate service principal secrets before they expire
+- [ ] Monitor authentication logs and audit access regularly
+- [ ] Revoke unused credentials and service principals
+- [ ] Use MFA for personal accounts (PAT is tied to the user account)
+- [ ] Prefer Managed Identity or Workload Identity over long-lived secrets where possible
