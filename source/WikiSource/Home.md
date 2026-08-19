@@ -134,99 +134,86 @@ Common issues and how to resolve them.
 
 ## DSC Resource Documentation
 
-### Resources with detailed documentation
-
-* [AzDoGitPermission](Resources/AzDoGitPermission.md)
-* [AzDoGitRepository](Resources/AzDoGitRepository.md)
-* [AzDoGroupMember](Resources/AzDoGroupMember.md)
-* [AzDoGroupPermission](Resources/AzDoGroupPermission.md)
-* [AzDoOrganizationGroup](Resources/AzDoOrganizationGroup.md)
-* [AzDoProject](Resources/AzDoProject.md)
-* [AzDoProjectGroup](Resources/AzDoProjectGroup.md)
-* [AzDoProjectServices](Resources/AzDoProjectServices.md)
-
-### All available resources
-
 AzureDevOpsDscNative includes **49 DSC resources** covering:
 
-**Organisation & Groups**
+### Organisation & Groups
 
-- `AzDoOrganizationGroup` — Manage organisation-level groups
-- `AzDoGroupMember` — Manage group membership
-- `AzDoGroupPermission` — Manage group permissions
-- `AzDoOrganizationSettings` — Configure organisation settings
-- `AzDoUserEntitlement` — Manage user entitlements
+* [AzDoOrganizationGroup](Resources/AzDoOrganizationGroup.md) — Manage organisation-level groups
+* [AzDoGroupMember](Resources/AzDoGroupMember.md) — Manage group membership
+* [AzDoGroupPermission](Resources/AzDoGroupPermission.md) — Manage group permissions
+* `AzDoOrganizationSettings` — Configure organisation settings
+* `AzDoUserEntitlement` — Manage user entitlements
 
-**Projects**
+### Projects
 
-- `AzDoProject` — Create and manage projects
-- `AzDoProjectGroup` — Manage project groups
-- `AzDoProjectServices` — Manage project services
-- `AzDoProjectPermission` — Manage project permissions
+* [AzDoProject](Resources/AzDoProject.md) — Create and manage projects
+* [AzDoProjectGroup](Resources/AzDoProjectGroup.md) — Manage project groups
+* [AzDoProjectServices](Resources/AzDoProjectServices.md) — Manage project services
+* [AzDoProjectPermission](Resources/AzDoProjectPermission.md) — Manage project permissions
 
-**Teams**
+### Teams
 
-- `AzDoTeam` — Create and manage teams
-- `AzDoTeamMember` — Manage team membership
-- `AzDoTeamSettings` — Configure team settings
+* [AzDoTeam](Resources/AzDoTeam.md) — Create and manage teams
+* [AzDoTeamMember](Resources/AzDoTeamMember.md) — Manage team membership
+* `AzDoTeamSettings` — Configure team settings
 
-**Repository & Git**
+### Repository & Git
 
-- `AzDoGitRepository` — Create and manage Git repositories
-- `AzDoGitPermission` — Manage repository permissions
-- `AzDoRepositorySettings` — Configure repository settings
-- `AzDoAreaNodes` — Manage area nodes
-- `AzDoIterationNodes` — Manage iteration nodes
+* [AzDoGitRepository](Resources/AzDoGitRepository.md) — Create and manage Git repositories
+* [AzDoGitPermission](Resources/AzDoGitPermission.md) — Manage repository permissions
+* `AzDoRepositorySettings` — Configure repository settings
+* [AzDoAreaNodes](Resources/AzDoAreaNodes.md) — Manage area nodes
+* [AzDoIterationNodes](Resources/AzDoIterationNodes.md) — Manage iteration nodes
 
-**Permissions & Security**
+### Permissions & Security
 
-- `AzDoAreaPermission` — Manage area permissions
-- `AzDoIterationPermission` — Manage iteration permissions
-- `AzDoSecurityNamespacePermission` — Manage security namespace permissions
-- `AzDoBranchPolicy` — Configure branch policies
+* [AzDoAreaPermission](Resources/AzDoAreaPermission.md) — Manage area permissions
+* [AzDoIterationPermission](Resources/AzDoIterationPermission.md) — Manage iteration permissions
+* [AzDoSecurityNamespacePermission](Resources/AzDoSecurityNamespacePermission.md) — Manage security namespace permissions
+* [AzDoBranchPolicy](Resources/AzDoBranchPolicy.md) — Configure branch policies
 
-**Pipelines & CI/CD**
+### Pipelines & CI/CD
 
-- `AzDoPipeline` — Create and manage pipelines
-- `AzDoPipelinePermission` — Manage pipeline permissions
-- `AzDoPipelineEnvironment` — Manage pipeline environments
-- `AzDoEnvironmentPermission` — Manage environment permissions
-- `AzDoEnvironmentApproval` — Configure environment approvals
-- `AzDoPipelineSettings` — Configure pipeline settings
-- `AzDoCheckConfiguration` — Manage pipeline checks
+* [AzDoPipeline](Resources/AzDoPipeline.md) — Create and manage pipelines
+* [AzDoPipelinePermission](Resources/AzDoPipelinePermission.md) — Manage pipeline permissions
+* [AzDoPipelineEnvironment](Resources/AzDoPipelineEnvironment.md) — Manage pipeline environments
+* [AzDoEnvironmentPermission](Resources/AzDoEnvironmentPermission.md) — Manage environment permissions
+* [AzDoEnvironmentApproval](Resources/AzDoEnvironmentApproval.md) — Configure environment approvals
+* [AzDoPipelineSettings](Resources/AzDoPipelineSettings.md) — Configure pipeline settings
+* `AzDoCheckConfiguration` — Manage pipeline checks
 
-**Service Connections & Variables**
+### Service Connections & Variables
 
-- `AzDoServiceConnection` — Create and manage service connections
-- `AzDoServiceConnectionPermission` — Manage service connection permissions
-- `AzDoVariableGroup` — Create and manage variable groups
-- `AzDoVariableGroupPermission` — Manage variable group permissions
+* [AzDoServiceConnection](Resources/AzDoServiceConnection.md) — Create and manage service connections
+* [AzDoServiceConnectionPermission](Resources/AzDoServiceConnectionPermission.md) — Manage service connection permissions
+* [AzDoVariableGroup](Resources/AzDoVariableGroup.md) — Create and manage variable groups
+* [AzDoVariableGroupPermission](Resources/AzDoVariableGroupPermission.md) — Manage variable group permissions
 
-**Agents & Infrastructure**
+### Agents & Infrastructure
 
-- `AzDoAgentPool` — Create and manage agent pools
-- `AzDoAgentPoolPermission` — Manage agent pool permissions
-- `AzDoAgentQueue` — Manage agent queues
-- `AzDoDeploymentGroup` — Create and manage deployment groups
+* [AzDoAgentPool](Resources/AzDoAgentPool.md) — Create and manage agent pools
+* [AzDoAgentPoolPermission](Resources/AzDoAgentPoolPermission.md) — Manage agent pool permissions
+* [AzDoAgentQueue](Resources/AzDoAgentQueue.md) — Manage agent queues
+* [AzDoDeploymentGroup](Resources/AzDoDeploymentGroup.md) — Create and manage deployment groups
 
-**Artifacts**
+### Artifacts
 
-- `AzDoArtifactFeed` — Create and manage artifact feeds
-- `AzDoArtifactFeedPermission` — Manage feed permissions
-- `AzDoArtifactFeedSettings` — Configure feed settings
-- `AzDoArtifactFeedView` — Manage feed views
+* [AzDoArtifactFeed](Resources/AzDoArtifactFeed.md) — Create and manage artifact feeds
+* [AzDoArtifactFeedPermission](Resources/AzDoArtifactFeedPermission.md) — Manage feed permissions
+* [AzDoArtifactFeedSettings](Resources/AzDoArtifactFeedSettings.md) — Configure feed settings
+* [AzDoArtifactFeedView](Resources/AzDoArtifactFeedView.md) — Manage feed views
 
-**Other Resources**
+### Other Resources
 
-- `AzDoWiki` — Manage project wikis
-- `AzDoTaskGroup` — Create and manage task groups
-- `AzDoExtension` — Manage extensions
-- `AzDoAuditStream` — Configure audit streams
-- `AzDoNotificationSubscription` — Manage notification subscriptions
-- `AzDoServiceHook` — Create and manage service hooks
-- `AzDoProcess` — Create and manage custom processes
-- `AzDoProcessPermission` — Manage process permissions
-- `AzDoWIPTags` — Manage WIP tags
+* `AzDoWiki` — Manage project wikis
+* `AzDoTaskGroup` — Create and manage task groups
+* `AzDoExtension` — Manage extensions
+* `AzDoAuditStream` — Configure audit streams
+* `AzDoNotificationSubscription` — Manage notification subscriptions
+* `AzDoServiceHook` — Create and manage service hooks
+* `AzDoProcess` — Create and manage custom processes
+* `AzDoProcessPermission` — Manage process permissions
+* [AzDoWIPTags](Resources/AzDoWIPTags.md) — Manage WIP tags
 
 ## Change log
 
