@@ -61,7 +61,7 @@ Function Refresh-AzDoCache
         # Users are org-wide.
         AzDoAPI_2_UserCache               = @('LiveUsers.clixml')
         # SecurityNamespaces are static per org.
-        AzDoAPI_5_PermissionsCache        = @('SecurityNamespaces.clixml')
+        AzDoAPI_5_PermissionsCache        = @('SecurityNameSpaces.clixml')
         # Service principals are unaffected by project creation.
         AzDoAPI_6_ServicePrinciple        = @('LiveServicePrinciples.clixml')
         # IdentitySubjectDescriptors enriches LiveGroups/LiveUsers/LiveServicePrinciples
