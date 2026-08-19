@@ -243,6 +243,6 @@ Examples:
 
 ## See also
 
-- [Dsc.PipelineRunner Configuration](LCMConfiguration.md) — how to apply permission resources (and everything else) at scale via `Dsc.PipelineRunner`
+- [Dsc.PipelineRunner Configuration](Dsc.PipelineRunner.md) — how to apply permission resources (and everything else) at scale via `Dsc.PipelineRunner`
 - [Authentication](Authentication.md) — the identity your DSC run applies these ACLs *as* needs sufficient rights itself (typically Project Collection Administrator or equivalent namespace-level Administer permission)
 - [Best Practices](BestPractices.md#security-best-practices) — permission management patterns
