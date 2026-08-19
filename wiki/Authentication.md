@@ -4,6 +4,27 @@ AzureDevOpsDscNative supports multiple authentication methods for connecting to 
 Authentication is configured by calling `New-AzDoAuthenticationProvider` before running any DSC
 resources. This guide covers all available options.
 
+## Prerequisites
+
+### `AZDODSC_CACHE_DIRECTORY` Environment Variable
+
+**This environment variable must be set before calling `New-AzDoAuthenticationProvider`.** The function
+throws immediately if it is absent:
+
+```powershell
+$ENV:AZDODSC_CACHE_DIRECTORY = 'C:\ProgramData\AzureDevOpsDsc'  # Windows
+$ENV:AZDODSC_CACHE_DIRECTORY = '/var/lib/azuredevopsdsc'         # Linux / macOS
+```
+
+This directory is used to persist the module's credential cache (`ModuleSettings.clixml`) and security
+descriptor cache (`SecurityDescriptors.clixml`). The directory must already exist and be writable by
+the account running the DSC configuration.
+
+When using the **AZDO-DSC-LCM** companion project, `Invoke-AZDoLCM` reads this variable and configures
+it automatically — see [LCM Configuration](LCMConfiguration) for details.
+
+---
+
 ## Supported Authentication Methods
 
 1. **Personal Access Token (PAT)** — Most common and flexible
@@ -42,8 +63,12 @@ $SecureStringPAT = Read-Host -Prompt 'Enter your PAT' -AsSecureString
 New-AzDoAuthenticationProvider -OrganizationName 'my-organization' -SecureStringPersonalAccessToken $SecureStringPAT
 
 # Skip the initial connectivity verification check (useful in CI environments)
+# Note: -NoVerify is only available with -PersonalAccessToken, not -SecureStringPersonalAccessToken
 New-AzDoAuthenticationProvider -OrganizationName 'my-organization' -PersonalAccessToken 'my-pat-token-here' -NoVerify
 ```
+
+> **Note:** The `-NoVerify` switch is not available when using `-SecureStringPersonalAccessToken`.
+> The SecureString PAT path always skips connectivity verification.
 
 ### Best Practices for PAT
 

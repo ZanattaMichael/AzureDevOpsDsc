@@ -1,81 +1,77 @@
-# AzDoGroupPermission Resource Documentation (Currently Disabled)
+# AzDoGroupPermission Resource
 
-## Overview
+## Description
 
-The `AzDoGroupPermission` resource is part of the Azure DevOps Desired State Configuration (DSC) module. It allows you to manage group permissions within an Azure DevOps project repository. This resource provides properties for specifying the group name, permission inheritance, and a list of permissions to be set.
+The `AzDoGroupPermission` DSC resource manages permissions (ACEs) for a single Azure DevOps group. Unlike most other permission resources in this module, `AzDoGroupPermission` does not target a project/repository/pipeline scope — it manages the ACL entries that apply to identities *for the group itself* (the group's own security descriptor), keyed only by the group's descriptor name.
+
+> **Verified against source:** `source/Classes/009.AzDoGroupPermission.ps1` in the `AzureDevOpsDscNative` repository.
 
 ## Syntax
 
-```PowerShell
+```powershell
 AzDoGroupPermission [string] #ResourceName
 {
-    GroupName = [String]$GroupName
-    [ isInherited = [Boolean]$isInherited ]
-    [ Permissions = [HashTable[]]$Permissions ]
+    GroupName = [String] $GroupName
+    [ isInherited = [Boolean] $isInherited ]
+    [ Permissions = [HashTable[]] $Permissions ]
+    [ Ensure = [String] {'Present', 'Absent'} ]
+    [ DependsOn = [String[]] ]
+    [ PsDscRunAsCredential = [PSCredential] ]
 }
 ```
 
-### Properties
+## Properties
 
-- **GroupName**: The name of the Azure DevOps group. This property is mandatory.
-- **isInherited**: Specifies whether the permissions should be inherited. Defaults to `$true`.
-- **Permissions**: A HashTable array that specifies the permissions to be set for the group. Refer to the 'Permissions Syntax' section below.
+### Key Properties (Required)
 
-## Permissions Syntax
+- **GroupName** [String] - The name (or `[Project]\GroupName` descriptor path) of the group whose permissions are being managed. Aliased as `Name`.
 
-```PowerShell
-AzDoGroupPermission/Permissions
-{
-    Identity = [String]$Identity
-    #   SYNTAX:     '[ProjectName | OrganizationName]\ServicePrincipalName, UserPrincipalName, UserDisplayName, GroupDisplayName'
-    #   ALTERNATIVE SYNTAX: 'this' Referring to the group.
-    #   EXAMPLE:    '[TestProject]\UserName@email.com'
-    #   EXAMPLE:    '[SampleOrganizationName]\Project Collection Administrators'
-    Permission = [Hashtable[]]$Permissions
-}
-```
+### Optional Properties
 
-### Permission Usage
+- **isInherited** [Boolean] - Whether the permissions are inherited from a parent group. Default is `$true`.
 
-```PowerShell
-AzDoGroupPermission/Permissions/Permission
-{
-    PermissionName|PermissionDisplayName = [String]$Name { 'Allow, Deny' }
-}
-```
+- **Permissions** [HashTable[]] - An array of ACE hashtables. Each entry has:
+  - `Identity` - The identity/group the ACE applies to (e.g. `'this'` to refer to the group itself, or `'[Project]\GroupName'`)
+  - `Permission` - A hashtable mapping permission bit names to `'Allow'` or `'Deny'` (e.g. `@{ Read = 'Allow'; Write = 'Allow' }`)
 
-### Permission List
+- **Ensure** [String] - Desired state of the resource:
+  - `'Present'` - (default) Permissions should be configured
+  - `'Absent'` - Permissions should be removed
 
-Either 'Name' or 'DisplayName' can be used:
+### Common Properties
 
-| Name                    | DisplayName                                          | Values          | Note             |
-|-------------------------|------------------------------------------------------|-----------------|------------------|
-| Read              | View identity information                                           | [ allow, deny ] | |
-| Write             | Edit identity information                                                 | [ allow, deny ] |                  |
-| Delete       | Delete identity information                                           | [ allow, deny ] |                  |
-| ManageMembership               |  Manage group membership | [ allow, deny ] |                  |
-| CreateScope            | Create identity scopes                                       | [ allow, deny ] |                  |
-| RestoreScope               | Restore identity scopes                                           | [ allow, deny ] |                  |
+- **DependsOn** [String[]] - Dependencies on other resources.
+
+- **PsDscRunAsCredential** [PSCredential] - Credentials to run this resource under.
+
+> **Note:** This resource has **no** `ProjectName`, `PermissionName`, `Allow`, or `Deny` top-level properties. Earlier drafts of this page documented those; they do not exist on the class. Permission bit names and their Allow/Deny state live inside each `Permissions` entry's `Permission` hashtable, as shown above.
+
+## Return Values
+
+- **GroupName** - The group name
+- **isInherited** - Whether permissions are inherited
+- **Permissions** - The configured permissions
+- **Ensure** - Current state ('Present' or 'Absent')
 
 ## Examples
 
-### Example 1: Set Group Permissions
+### Example 1: Grant Permissions on a Group's Own Descriptor
 
-```PowerShell
-Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzDevOpsDsc'
+```powershell
+Configuration GrantGroupPermission {
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
-        AzDoGroupPermission GroupPermission {
-            GroupName        = 'SampleGroup'
-            isInherited      = $true
-            Permissions      = @(
+        AzDoGroupPermission 'ReadersGroupPermission' {
+            Ensure      = 'Present'
+            GroupName   = '[MyProject]\Readers'
+            isInherited = $false
+            Permissions = @(
                 @{
-                    Identity = '[SampleProject]\SampleGroup'
-                    Permissions = @{
-                        "Read"      = 'Allow'
-                        "Write"     = 'Allow'
-                        "Delete"    = 'Deny'
+                    Identity   = 'this'
+                    Permission = @{
+                        Read  = 'Allow'
+                        Write = 'Allow'
                     }
                 }
             )
@@ -83,65 +79,119 @@ Configuration ExampleConfig {
     }
 }
 
-ExampleConfig
-Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
+GrantGroupPermission
+Start-DscConfiguration -Path ./GrantGroupPermission -Wait -Verbose
 ```
 
-### Example 2: Clear Group Permissions
+### Example 2: Grant Another Group Rights Over This Group
 
-```PowerShell
-# Remove all permissions from the group.
+```powershell
+Configuration CrossGroupPermission {
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
+
+    Node localhost {
+        AzDoGroupPermission 'DevelopersManagedByAdmins' {
+            Ensure      = 'Present'
+            GroupName   = '[MyProject]\Developers'
+            isInherited = $false
+            Permissions = @(
+                @{
+                    Identity   = '[MyProject]\Group1'
+                    Permission = @{
+                        Read  = 'Allow'
+                        Write = 'Allow'
+                    }
+                }
+            )
+        }
+    }
+}
+
+CrossGroupPermission
+Start-DscConfiguration -Path ./CrossGroupPermission -Wait -Verbose
+```
+
+### Example 3: Change Permissions for an Existing Entry
+
+```powershell
+Configuration UpdateGroupPermission {
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
+
+    Node localhost {
+        AzDoGroupPermission 'DevelopersUpdated' {
+            Ensure      = 'Present'
+            GroupName   = '[MyProject]\Developers'
+            isInherited = $false
+            Permissions = @(
+                @{
+                    Identity   = '[MyProject]\Group1'
+                    Permission = @{
+                        Read  = 'Allow'
+                        Write = 'Deny'
+                    }
+                }
+            )
+        }
+    }
+}
+
+UpdateGroupPermission
+Start-DscConfiguration -Path ./UpdateGroupPermission -Wait -Verbose
+```
+
+### Example 4: Query Current Permissions
+
+```powershell
 $properties = @{
-    GroupName        = 'SampleGroup'
-    isInherited      = $true
-    Permissions      = @(
-                            @{
-                                Identity = '[SampleProject]\SampleGroup'
-                                Permissions = @{}
-                            }
-                      )
+    GroupName = '[MyProject]\Readers'
 }
 
-Invoke-DSCResource -Name 'AzDoGroupPermission' -Method Set -Property $properties -ModuleName 'AzureDevOpsDscNative'
+$result = Invoke-DscResource -Name 'AzDoGroupPermission' `
+    -Method Get `
+    -Property $properties `
+    -ModuleName 'AzureDevOpsDscNative'
+
+$result | Select-Object GroupName, isInherited, Permissions
 ```
 
-## Methods
+### Example 5: Remove a Group's Explicit Permissions
 
-### Get Method
+```powershell
+Configuration RemoveGroupPermission {
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
-Retrieves the current state properties of the `AzDoGroupPermission` resource.
-
-```PowerShell
-[AzDoGroupPermission] Get()
-{
-    return [AzDoGroupPermission]$($this.GetDscCurrentStateProperties())
-}
-```
-
-### GetDscCurrentStateProperties Method
-
-Returns the current state properties of the resource object.
-
-```PowerShell
-hidden [Hashtable] GetDscCurrentStateProperties([PSCustomObject]$CurrentResourceObject)
-{
-    $properties = @{
-        Ensure = [Ensure]::Absent
+    Node localhost {
+        AzDoGroupPermission 'RemoveDeveloperPerms' {
+            Ensure    = 'Absent'
+            GroupName = '[MyProject]\Developers'
+        }
     }
-
-    if ($null -eq $CurrentResourceObject)
-    {
-        return $properties
-    }
-
-    $properties.GroupName   = $CurrentResourceObject.GroupName
-    $properties.isInherited = $CurrentResourceObject.isInherited
-    $properties.Permissions = $CurrentResourceObject.Permissions
-
-    Write-Verbose "[AzDoGroupPermission] Current state properties: $($properties | Out-String)"
-
-    return $properties
 }
+
+RemoveGroupPermission
+Start-DscConfiguration -Path ./RemoveGroupPermission -Wait -Verbose
 ```
 
-This class inherits from the `AzDevOpsDscResourceBase` class, which provides the base functionality for DSC resources in the Azure DevOps DSC module.
+## Important Notes
+
+### Permission Bit Names
+
+The valid keys inside each `Permission` hashtable are the ActionName values defined by the Identity security namespace for the group being managed (e.g. `Read`, `Write`), and are confirmed against this module's integration test suite (`tests/Integration/Resources/AzDoGroupPermission.tests.ps1`). See [Permissions](../Permissions) for how to discover the full bit list for a namespace.
+
+### `isInherited`
+
+- When `$true` (default), the group inherits ACEs from its parent scope.
+- Setting `isInherited` to `$false` breaks inheritance so only the entries you list apply.
+
+## Related Resources
+
+- [AzDoOrganizationGroup](AzDoOrganizationGroup) - Create organization groups
+- [AzDoProjectGroup](AzDoProjectGroup) - Create project groups
+- [AzDoGroupMember](AzDoGroupMember) - Add members to groups
+- [AzDoProjectPermission](AzDoProjectPermission) - Project-level permissions
+- [Permissions overview](../Permissions) - Conceptual guide to permission resources
+
+## See Also
+
+- [Azure DevOps Permissions Documentation](https://docs.microsoft.com/en-us/azure/devops/organizations/security/permissions)
+- [AzureDevOpsDscNative Home](../Home)

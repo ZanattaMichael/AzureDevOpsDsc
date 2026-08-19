@@ -56,7 +56,7 @@ Manages membership within Azure DevOps groups.
 
 **Key Properties:**
 - `GroupName` (Key, Required) - Name of the group
-- `MemberDescriptor` (Key, Required) - Descriptor of the member to add/remove
+- `GroupMembers` (Required) - Array of member descriptors/UPNs to add to the group
 - `Ensure` (Optional) - Ensure presence or absence
 
 [View Full Documentation](Resources/AzDoGroupMember)
@@ -66,9 +66,8 @@ Manages permissions for Azure DevOps groups.
 
 **Key Properties:**
 - `GroupName` (Key, Required) - Name of the group
-- `PermissionName` (Key, Required) - Name of the permission
-- `Allow` (Optional) - Grant or deny permission
-- `Deny` (Optional) - Explicitly deny permission
+- `isInherited` (Optional) - Whether permissions are inherited from a parent (default: `$true`)
+- `Permissions` (Optional) - Array of permission hashtables, each with `Permission` (name) and `Allow` ($true/$false) keys
 
 [View Full Documentation](Resources/AzDoGroupPermission)
 
@@ -84,8 +83,8 @@ Configures organization-level settings.
 Manages user entitlements in Azure DevOps.
 
 **Key Properties:**
-- `UserEmail` (Key, Required) - Email address of the user
-- `AccessLevel` (Optional) - Access level for the user
+- `UserPrincipalName` (Key, Required) - The user's UPN / email address
+- `AccountLicenseType` (Required) - License type: `'stakeholder'`, `'express'` (Basic), `'advanced'` (Basic + Test Plans), `'professional'`, `'earlyAdopter'`, or `'none'`
 - `Ensure` (Optional) - Ensure presence or absence
 
 
