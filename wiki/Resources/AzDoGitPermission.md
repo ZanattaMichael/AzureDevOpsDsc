@@ -124,7 +124,7 @@ Start-DscConfiguration -Path ./ConfigureAdvancedRepositoryPermissions -Wait -Ver
 
 ### Example 3: Broader Set of ACEs (Branch Management, Policies, Locks)
 
-Modeled on the real Git-permission ACEs used in the companion `AZDO-DSC-LCM` project's example configuration:
+Modeled on the real Git-permission ACEs used in the companion `Dsc.PipelineRunner` project's example configuration:
 
 ```powershell
 Configuration GitPermissionsExample {

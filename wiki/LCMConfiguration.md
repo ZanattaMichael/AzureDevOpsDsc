@@ -1,13 +1,13 @@
-# LCM Configuration (AZDO-DSC-LCM)
+# LCM Configuration (Dsc.PipelineRunner)
 
-**AzureDevOpsDscNative** gives you the DSC *resources* (`AzDoProject`, `AzDoGitPermission`, etc.). To actually run those resources at scale — across many projects, with reusable policy, dependency ordering, and conditional logic — you use the companion project **[AZDO-DSC-LCM](https://github.com/ZanattaMichael/AzDO-DSC-LCM)**, a Local Configuration Manager (LCM) built on top of [Datum](https://github.com/gaelcolas/Datum) for configuration merging.
+**AzureDevOpsDscNative** gives you the DSC *resources* (`AzDoProject`, `AzDoGitPermission`, etc.). To actually run those resources at scale — across many projects, with reusable policy, dependency ordering, and conditional logic — you use the companion project **[Dsc.PipelineRunner](https://github.com/ZanattaMichael/Dsc.PipelineRunner/)**, a Local Configuration Manager (LCM) built on top of [Datum](https://github.com/gaelcolas/Datum) for configuration merging.
 
-This page explains how the two projects fit together and how to structure a configuration. It is a summary of `AZDO-DSC-LCM`'s own README — for anything not covered here, refer to that repository directly, as it is the source of truth for the LCM.
+This page explains how the two projects fit together and how to structure a configuration. It is a summary of `Dsc.PipelineRunner`'s own README — for anything not covered here, refer to that repository directly, as it is the source of truth for the LCM.
 
 ## How it fits together
 
 ```
-AZDO-DSC-LCM (this page)          AzureDevOpsDscNative (rest of this wiki)
+Dsc.PipelineRunner (this page)          AzureDevOpsDscNative (rest of this wiki)
 ─────────────────────────         ──────────────────────────────────────
 Datum-merged YAML configs   ──►    DSC resources (AzDoProject, AzDoGitPermission, ...)
 LCM Rules (validation)      ──►    applied against your Azure DevOps org
@@ -18,7 +18,7 @@ Datum merges layered YAML configuration stubs (organization policy → project-a
 
 ## Configuration directory layout
 
-A `Datum.yml` at the root of your configuration repo defines the merge precedence and versioning. From the real example shipped in `AZDO-DSC-LCM`'s `Example Configuration/Datum.yml`:
+A `Datum.yml` at the root of your configuration repo defines the merge precedence and versioning. From the real example shipped in `Dsc.PipelineRunner`'s `Example Configuration/Datum.yml`:
 
 ```yaml
 ResolutionPrecedence:
@@ -92,7 +92,7 @@ Note the `type:` value is `AzureDevOpsDsc/<ResourceName>` and `name:` becomes pa
 
 ## LCM Rules
 
-Modular scripts under `LCM Rules/` in the `AZDO-DSC-LCM` repo validate and format the merged configuration before anything is applied:
+Modular scripts under `LCM Rules/` in the `Dsc.PipelineRunner` repo validate and format the merged configuration before anything is applied:
 
 - `LCM Rules/PreParse/Test-CircularReferences.ps1` — fails the run if `dependsOn` forms a cycle.
 - `LCM Rules/PreParse/Test-ResourcesForIncorrectProperties.ps1` — validates resource properties against the documented spec for that resource type; errors block the run.
@@ -135,9 +135,9 @@ Internally, `Invoke-AZDoLCM`:
 
 ## Setting up a self-hosted agent to run the LCM
 
-From `AZDO-DSC-LCM`'s own setup instructions:
+From `Dsc.PipelineRunner`'s own setup instructions:
 
-1. Clone `AZDO-DSC-LCM` onto the agent (or a path it can reach), and lay out your Datum configuration directory following the precedence guidance above — put organization-wide policy at the top, project-specific overrides at the bottom, and keep per-project YAML changes minimal to avoid "snowflake" projects.
+1. Clone `Dsc.PipelineRunner` onto the agent (or a path it can reach), and lay out your Datum configuration directory following the precedence guidance above — put organization-wide policy at the top, project-specific overrides at the bottom, and keep per-project YAML changes minimal to avoid "snowflake" projects.
 2. Store the configuration source in your normal source control, so it's versioned and auditable like any other infrastructure config.
 3. Set up a self-hosted Azure DevOps agent ([Microsoft's agent docs](https://learn.microsoft.com/en-us/azure/devops/pipelines/agents/agents?view=azure-devops)) to run the LCM.
    - If using **Managed Identity via Azure Arc**, run the Agent Pool service under an administrator account, and add the Arc machine's identity to the **Project Collection Administrators** group (or grant it equivalent namespace-level permissions for whatever it needs to manage — see [Permissions & ACLs](Permissions.md)).
@@ -149,6 +149,6 @@ From `AZDO-DSC-LCM`'s own setup instructions:
 
 ## See also
 
-- [Permissions & ACLs](Permissions.md) — the permission resources you'll most often see driven from LCM configuration, plus an `AzDO-DSC-LCM` YAML example for each
+- [Permissions & ACLs](Permissions.md) — the permission resources you'll most often see driven from LCM configuration, plus an `Dsc.PipelineRunner` YAML example for each
 - [Authentication](Authentication.md) — how `AZDODSC_CACHE_DIRECTORY` / `ModuleSettings.clixml` and the LCM's own auth provider relate
-- [AZDO-DSC-LCM repository](https://github.com/ZanattaMichael/AzDO-DSC-LCM) — source of truth for anything not covered here
+- [Dsc.PipelineRunner repository](https://github.com/ZanattaMichael/Dsc.PipelineRunner/) — source of truth for anything not covered here

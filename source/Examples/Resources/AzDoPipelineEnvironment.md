@@ -58,7 +58,7 @@ $properties = @{
 Invoke-DscResource -Name 'AzDoPipelineEnvironment' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}
