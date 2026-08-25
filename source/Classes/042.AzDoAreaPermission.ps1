@@ -10,11 +10,20 @@ It inherits from the `AzDevOpsDscResourceBase` class and provides methods for re
     Author: Michael Zanatta
     Date: 2025-05-07
 
-- This class is part of the AzureDevOpsDsc module.
+- This class is part of the AzureDevOpsDscNative module.
 - The `Test()` and `Set()` methods are inherited from the base class `AzDevOpsDscResourceBase`.
 
+Methods:
+
+- `Get()` retrieves the current state of the area permissions as an instance of
+  the `AzDoAreaPermission` class.
+- `GetDscResourcePropertyNamesWithNoSetSupport()` returns an array of property
+  names that do not support the `Set` operation. This method is hidden.
+- `GetDscCurrentStateProperties()` retrieves the current state properties of the
+  resource as a hashtable. This method is hidden.
+
 .LINK
-    GitHub Repository: <link to the GitHub repository>
+    GitHub Repository: https://github.com/ZanattaMichael/AzureDevOpsDsc
 
 .PARAMETER ProjectName
 Specifies the name of the Azure DevOps project. This is a mandatory key property.
@@ -27,15 +36,6 @@ Indicates whether the permissions are inherited. Defaults to `$true`.
 
 .PARAMETER Permissions
 Specifies a hashtable array of permissions to be applied to the area.
-
-.METHOD Get
-Retrieves the current state of the iteration permissions as an instance of the `AzDoIterationPermission` class.
-
-.METHOD GetDscResourcePropertyNamesWithNoSetSupport
-Returns an array of property names that do not support the `Set` operation. This method is hidden.
-
-.METHOD GetDscCurrentStateProperties
-Retrieves the current state properties of the resource as a hashtable. This method is hidden.
 
 .EXAMPLE
 # Example usage of the AzDoAreaPermission DSC resource

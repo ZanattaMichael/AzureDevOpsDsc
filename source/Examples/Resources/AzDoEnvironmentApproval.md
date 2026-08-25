@@ -39,7 +39,7 @@ This resource configures approval gates on Azure DevOps pipeline environments. W
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoEnvironmentApproval AddApproval {
@@ -68,10 +68,10 @@ $properties = @{
     Approvers       = @('approver@example.com')
 }
 
-Invoke-DscResource -Name 'AzDoEnvironmentApproval' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoEnvironmentApproval' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}
@@ -83,9 +83,9 @@ variables: {
 
 resources:
 - name: Production Approval Gate
-  type: AzureDevOpsDsc/AzDoEnvironmentApproval
+  type: AzureDevOpsDscNative/AzDoEnvironmentApproval
   dependsOn:
-    - AzureDevOpsDsc/AzDoPipelineEnvironment/Production
+    - AzureDevOpsDscNative/AzDoPipelineEnvironment/Production
   properties:
     ProjectName: $ProjectName
     EnvironmentName: $EnvironmentName
@@ -98,7 +98,7 @@ resources:
     Ensure: Present
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

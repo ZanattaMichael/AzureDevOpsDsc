@@ -31,7 +31,7 @@ This resource manages membership of individual users or groups within a team. Th
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoTeamMember AddTeamMember {
@@ -56,10 +56,10 @@ $properties = @{
     MemberName  = 'user@example.com'
 }
 
-Invoke-DscResource -Name 'AzDoTeamMember' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoTeamMember' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}
@@ -70,9 +70,9 @@ variables: {
 
 resources:
 - name: Frontend Team Member
-  type: AzureDevOpsDsc/AzDoTeamMember
+  type: AzureDevOpsDscNative/AzDoTeamMember
   dependsOn:
-    - AzureDevOpsDsc/AzDoTeam/FrontendTeam
+    - AzureDevOpsDscNative/AzDoTeam/FrontendTeam
   properties:
     ProjectName: $ProjectName
     TeamName: Frontend Team
@@ -80,7 +80,7 @@ resources:
     Ensure: Present
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

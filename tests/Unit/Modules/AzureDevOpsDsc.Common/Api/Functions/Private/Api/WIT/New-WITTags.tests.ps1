@@ -37,6 +37,18 @@ Describe "New-WITTags" -Tag "Unit", "WIT" {
             return @{ Id = 123 }
         } -ParameterFilter { $Method -eq "POST" }
         Mock -CommandName Invoke-AzDevOpsApiRestMethod { return $true } -ParameterFilter { $Method -eq "DELETE" }
+
+        # New-WITTags now confirms the created tags are listable before returning (the
+        # /wit/tags collection is eventually consistent). Return the created tags so the
+        # verification loop is satisfied immediately, and no-op Start-Sleep so the retry
+        # never delays the unit test.
+        Mock -CommandName List-WITTags {
+            return @(
+                [PSCustomObject]@{ name = 'Tag1' }
+                [PSCustomObject]@{ name = 'Tag2' }
+            )
+        }
+        Mock -CommandName Start-Sleep
     }
 
     Context "When called with valid parameters" {

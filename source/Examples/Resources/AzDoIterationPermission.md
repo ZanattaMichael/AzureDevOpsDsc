@@ -60,7 +60,7 @@ This resource allows you to manage Azure DevOps iteration path permissions using
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoIterationPermission AddIterationPermission {
@@ -103,10 +103,10 @@ $properties = @{
     )
 }
 
-Invoke-DscResource -Name 'AzDoIterationPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoIterationPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}
@@ -117,9 +117,9 @@ variables: {
 
 resources:
 - name: Sprint 1 Team Permissions
-  type: AzureDevOpsDsc/AzDoIterationPermission
+  type: AzureDevOpsDscNative/AzDoIterationPermission
   dependsOn:
-    - AzureDevOpsDsc/AzDoIterationNodes/MyProject
+    - AzureDevOpsDscNative/AzDoIterationNodes/MyProject
   properties:
     ProjectName: $ProjectName
     IterationPath: '\$ProjectName\Sprint 1'
@@ -132,7 +132,7 @@ resources:
     Ensure: Present
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

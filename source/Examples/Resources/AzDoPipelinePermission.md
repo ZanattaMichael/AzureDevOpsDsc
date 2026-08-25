@@ -79,7 +79,7 @@ This resource manages security permissions on individual Azure DevOps pipelines 
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoPipelinePermission AddPipelinePermission {
@@ -123,10 +123,10 @@ $properties = @{
     )
 }
 
-Invoke-DscResource -Name 'AzDoPipelinePermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoPipelinePermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}
@@ -138,9 +138,9 @@ variables: {
 
 resources:
 - name: Pipeline Contributors Permission
-  type: AzureDevOpsDsc/AzDoPipelinePermission
+  type: AzureDevOpsDscNative/AzDoPipelinePermission
   dependsOn:
-    - AzureDevOpsDsc/AzDoPipeline/MyBuildPipeline
+    - AzureDevOpsDscNative/AzDoPipeline/MyBuildPipeline
   properties:
     ProjectName: $ProjectName
     PipelineName: $PipelineName
@@ -154,7 +154,7 @@ resources:
     Ensure: Present
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

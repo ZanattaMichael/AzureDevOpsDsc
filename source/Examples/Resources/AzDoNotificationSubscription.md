@@ -39,7 +39,7 @@ This resource manages Azure DevOps notification subscriptions, which deliver ale
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoNotificationSubscription BuildFailureNotification {
@@ -66,10 +66,10 @@ $properties = @{
     EventType        = 'ms.vss-build.build-completed-failed-id'
 }
 
-Invoke-DscResource -Name 'AzDoNotificationSubscription' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoNotificationSubscription' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}
@@ -80,9 +80,9 @@ variables: {
 
 resources:
 - name: Build Failure Alert
-  type: AzureDevOpsDsc/AzDoNotificationSubscription
+  type: AzureDevOpsDscNative/AzDoNotificationSubscription
   dependsOn:
-    - AzureDevOpsDsc/AzDevOpsProject/MyProject
+    - AzureDevOpsDscNative/AzDoProject/MyProject
   properties:
     SubscriptionName: BuildFailureAlert
     EventType: ms.vss-build.build-completed-failed-id
@@ -93,7 +93,7 @@ resources:
     Ensure: Present
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

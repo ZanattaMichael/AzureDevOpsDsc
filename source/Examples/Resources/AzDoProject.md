@@ -35,7 +35,7 @@ This resource manages Azure DevOps projects using Desired State Configuration (D
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoProject AddProject {
@@ -65,7 +65,7 @@ $properties = @{
     Visibility              = 'Private'
 }
 
-Invoke-DSCResource -Name 'AzDoProject' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DSCResource -Name 'AzDoProject' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
 ## Example 3: Sample Configuration to remove/exclude an Azure DevOps Project using Invoke-DSCResource
@@ -77,10 +77,10 @@ $properties = @{
     Ensure                  = 'Absent'
 }
 
-Invoke-DscResource -Name 'AzDoProject' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoProject' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}
@@ -92,7 +92,7 @@ variables: {
 
 resources:
 - name: My Sample Project
-  type: AzureDevOpsDsc/AzDoProject
+  type: AzureDevOpsDscNative/AzDoProject
   properties:
     ProjectName: $ProjectName
     ProjectDescription: $ProjectDescription
@@ -102,7 +102,7 @@ resources:
     Ensure: Present
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

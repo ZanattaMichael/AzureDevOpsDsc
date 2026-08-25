@@ -10,12 +10,12 @@ New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAc
 Configuration Example
 {
 
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     node localhost
     {
 
-        AzDevOpsProject 'DeleteProject'
+        AzDoProject 'DeleteProject'
         {
             Ensure               = 'Absent'  # 'Absent' ensures this will be removed/deleted
             ProjectName          = 'Test Project'  # Identifies the name of the project to be deleted

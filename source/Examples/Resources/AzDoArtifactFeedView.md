@@ -35,7 +35,7 @@ This resource creates and manages views on an Azure Artifacts feed. Feed views (
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoArtifactFeedView AddReleaseView {
@@ -62,10 +62,10 @@ $properties = @{
     ViewName    = 'Release'
 }
 
-Invoke-DscResource -Name 'AzDoArtifactFeedView' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoArtifactFeedView' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}
@@ -77,9 +77,9 @@ variables: {
 
 resources:
 - name: Release Feed View
-  type: AzureDevOpsDsc/AzDoArtifactFeedView
+  type: AzureDevOpsDscNative/AzDoArtifactFeedView
   dependsOn:
-    - AzureDevOpsDsc/AzDoArtifactFeed/MyFeed
+    - AzureDevOpsDscNative/AzDoArtifactFeed/MyFeed
   properties:
     ProjectName: $ProjectName
     FeedName: $FeedName
@@ -89,7 +89,7 @@ resources:
     Ensure: Present
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

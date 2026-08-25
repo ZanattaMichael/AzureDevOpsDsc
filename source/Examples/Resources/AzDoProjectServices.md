@@ -70,10 +70,10 @@ $properties = @{
     AzureArtifact    = 'Enabled'
 }
 
-Invoke-DSCResource -Name 'AzDoProjectServices' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DSCResource -Name 'AzDoProjectServices' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-### Example 3: Sample Configuration using AzDO-DSC-LCM
+### Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ```YAML
 parameters: {}
@@ -84,7 +84,7 @@ variables: {
 
 resources:
 - name: Sample Project Services
-  type: AzureDevOpsDsc/AzDoProjectServices
+  type: AzureDevOpsDscNative/AzDoProjectServices
   properties:
     ProjectName: SampleProject
     GitRepositories: Enabled
@@ -94,7 +94,7 @@ resources:
     AzureArtifact: Enabled
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ```PowerShell
 

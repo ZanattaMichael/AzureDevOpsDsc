@@ -45,7 +45,7 @@ This resource manages a project's pipeline general settings (Project Settings â†
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoPipelineSettings HardenPipelines {
@@ -70,10 +70,10 @@ $properties = @{
     EnforceJobAuthScope = 'true'
 }
 
-Invoke-DscResource -Name 'AzDoPipelineSettings' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoPipelineSettings' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}
@@ -84,9 +84,9 @@ variables: {
 
 resources:
 - name: Harden pipeline settings
-  type: AzureDevOpsDsc/AzDoPipelineSettings
+  type: AzureDevOpsDscNative/AzDoPipelineSettings
   dependsOn:
-    - AzureDevOpsDsc/AzDevOpsProject/MyProject
+    - AzureDevOpsDscNative/AzDoProject/MyProject
   properties:
     ProjectName: $ProjectName
     EnforceJobAuthScope: 'true'
@@ -95,7 +95,7 @@ resources:
     Ensure: Present
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

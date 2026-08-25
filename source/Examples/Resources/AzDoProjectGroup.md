@@ -58,10 +58,10 @@ $properties = @{
     GroupDescription = 'This is a sample project group!'
 }
 
-Invoke-DSCResource -Name 'AzDoProjectGroup' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DSCResource -Name 'AzDoProjectGroup' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-### Example 3: Sample Configuration using AzDO-DSC-LCM
+### Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ```YAML
 parameters: {}
@@ -72,21 +72,21 @@ variables: {
 
 resources:
 - name: Team Leaders Project Group
-  type: AzureDevOpsDsc/AzDoProjectGroup
+  type: AzureDevOpsDscNative/AzDoProjectGroup
   properties:
     GroupName: AZDO_TeamLeaders_ProjectGroup
     ProjectName: SampleProject
     GroupDescription: Team Leaders Project Group
 
 - name: Service Accounts Project Group
-  type: AzureDevOpsDsc/AzDoProjectGroup
+  type: AzureDevOpsDscNative/AzDoProjectGroup
   properties:
     GroupName: AZDO_ServiceAccounts_ProjectGroup
     ProjectName: SampleProject
     GroupDescription: Service Accounts Project Group
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ```PowerShell
 

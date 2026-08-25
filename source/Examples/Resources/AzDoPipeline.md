@@ -37,7 +37,7 @@ This resource manages YAML-based pipelines in Azure DevOps. It creates or remove
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoPipeline AddPipeline {
@@ -66,10 +66,10 @@ $properties = @{
     YamlPath       = '.azurepipelines/build.yml'
 }
 
-Invoke-DscResource -Name 'AzDoPipeline' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoPipeline' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}
@@ -81,9 +81,9 @@ variables: {
 
 resources:
 - name: My Build Pipeline
-  type: AzureDevOpsDsc/AzDoPipeline
+  type: AzureDevOpsDscNative/AzDoPipeline
   dependsOn:
-    - AzureDevOpsDsc/AzDoGitRepository/MyRepository
+    - AzureDevOpsDscNative/AzDoGitRepository/MyRepository
   properties:
     ProjectName: $ProjectName
     PipelineName: MyBuildPipeline
@@ -94,7 +94,7 @@ resources:
     Ensure: Present
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

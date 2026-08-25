@@ -31,7 +31,7 @@ This resource manages teams within Azure DevOps projects. Teams group users toge
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoTeam AddTeam {
@@ -55,10 +55,10 @@ $properties = @{
     TeamName    = 'Frontend Team'
 }
 
-Invoke-DscResource -Name 'AzDoTeam' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoTeam' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}
@@ -69,9 +69,9 @@ variables: {
 
 resources:
 - name: Frontend Team
-  type: AzureDevOpsDsc/AzDoTeam
+  type: AzureDevOpsDscNative/AzDoTeam
   dependsOn:
-    - AzureDevOpsDsc/AzDevOpsProject/MyProject
+    - AzureDevOpsDscNative/AzDoProject/MyProject
   properties:
     ProjectName: $ProjectName
     TeamName: Frontend Team
@@ -79,7 +79,7 @@ resources:
     Ensure: Present
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

@@ -37,7 +37,7 @@ This resource manages wikis in Azure DevOps projects. Project wikis are automati
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoWiki AddProjectWiki {
@@ -61,10 +61,10 @@ $properties = @{
     WikiName    = 'MyProjectWiki'
 }
 
-Invoke-DscResource -Name 'AzDoWiki' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoWiki' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}
@@ -76,9 +76,9 @@ variables: {
 
 resources:
 - name: Project Wiki
-  type: AzureDevOpsDsc/AzDoWiki
+  type: AzureDevOpsDscNative/AzDoWiki
   dependsOn:
-    - AzureDevOpsDsc/AzDevOpsProject/MyProject
+    - AzureDevOpsDscNative/AzDoProject/MyProject
   properties:
     ProjectName: $ProjectName
     WikiName: MyProjectWiki
@@ -86,9 +86,9 @@ resources:
     Ensure: Present
 
 - name: Code Wiki
-  type: AzureDevOpsDsc/AzDoWiki
+  type: AzureDevOpsDscNative/AzDoWiki
   dependsOn:
-    - AzureDevOpsDsc/AzDoGitRepository/MyRepository
+    - AzureDevOpsDscNative/AzDoGitRepository/MyRepository
   properties:
     ProjectName: $ProjectName
     WikiName: MyCodeWiki
@@ -99,7 +99,7 @@ resources:
     Ensure: Present
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

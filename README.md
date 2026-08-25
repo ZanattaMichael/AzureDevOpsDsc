@@ -18,10 +18,25 @@ Please review the following [Usage Documentation](USAGE.md)
 
 ## Releases
 
-For each merge to the branch `main` a preview release will be
-deployed to [PowerShell Gallery](https://www.powershellgallery.com/).
-Periodically a release version tag will be pushed which will deploy a
-full release to [PowerShell Gallery](https://www.powershellgallery.com/).
+Releases are tag-driven. Merging to `main` builds and tests the module but does
+**not** publish anything. A release is cut by pushing a version tag:
+
+```powershell
+git tag v1.2.3
+git push origin v1.2.3
+```
+
+That triggers the [Publish workflow](.github/workflows/publish.yml), which
+verifies the tag is on `main`, rebuilds the module with the version taken from
+the tag, re-runs both unit test suites as a release gate, then creates a GitHub
+Release and publishes to
+[PowerShell Gallery](https://www.powershellgallery.com/packages/AzureDevOpsDscNative/).
+
+Prerelease versions use an alphanumeric suffix — for example `v1.2.3-preview0001`
+— and publish to the Gallery as prereleases, installable with
+`Install-Module AzureDevOpsDscNative -AllowPrerelease`.
+
+See [Releasing](CONTRIBUTING.md#releasing) for the full procedure.
 
 ## Contributing
 

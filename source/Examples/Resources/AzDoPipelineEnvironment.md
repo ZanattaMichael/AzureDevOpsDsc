@@ -31,7 +31,7 @@ This resource manages pipeline environments in Azure DevOps. Environments repres
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoPipelineEnvironment AddEnvironment {
@@ -55,10 +55,10 @@ $properties = @{
     EnvironmentName = 'Production'
 }
 
-Invoke-DscResource -Name 'AzDoPipelineEnvironment' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoPipelineEnvironment' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}
@@ -70,9 +70,9 @@ variables: {
 
 resources:
 - name: Production Environment
-  type: AzureDevOpsDsc/AzDoPipelineEnvironment
+  type: AzureDevOpsDscNative/AzDoPipelineEnvironment
   dependsOn:
-    - AzureDevOpsDsc/AzDevOpsProject/MyProject
+    - AzureDevOpsDscNative/AzDoProject/MyProject
   properties:
     ProjectName: $ProjectName
     EnvironmentName: $EnvironmentName
@@ -80,7 +80,7 @@ resources:
     Ensure: Present
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

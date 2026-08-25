@@ -43,7 +43,7 @@ This resource manages service hook subscriptions via the Service Hooks REST API 
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoServiceHook NotifyOnPush {
@@ -76,10 +76,10 @@ $properties = @{
     ConsumerInputs   = @{ url = 'https://ci.contoso.com/hook' }
 }
 
-Invoke-DscResource -Name 'AzDoServiceHook' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoServiceHook' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}
@@ -90,9 +90,9 @@ variables: {
 
 resources:
 - name: Notify CI on push
-  type: AzureDevOpsDsc/AzDoServiceHook
+  type: AzureDevOpsDscNative/AzDoServiceHook
   dependsOn:
-    - AzureDevOpsDsc/AzDevOpsProject/MyProject
+    - AzureDevOpsDscNative/AzDoProject/MyProject
   properties:
     Name: notify-ci-on-push
     ProjectName: $ProjectName
@@ -105,7 +105,7 @@ resources:
     Ensure: Present
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

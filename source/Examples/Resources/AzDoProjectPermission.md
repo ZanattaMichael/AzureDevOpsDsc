@@ -82,7 +82,7 @@ This resource manages project-level permissions in Azure DevOps, controlling wha
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoProjectPermission AddProjectPermission {
@@ -124,10 +124,10 @@ $properties = @{
     )
 }
 
-Invoke-DscResource -Name 'AzDoProjectPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoProjectPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}
@@ -138,9 +138,9 @@ variables: {
 
 resources:
 - name: Project Contributors Permissions
-  type: AzureDevOpsDsc/AzDoProjectPermission
+  type: AzureDevOpsDscNative/AzDoProjectPermission
   dependsOn:
-    - AzureDevOpsDsc/AzDoProjectGroup/Contributors
+    - AzureDevOpsDscNative/AzDoProjectGroup/Contributors
   properties:
     ProjectName: $ProjectName
     GroupName: '[$ProjectName]\Contributors'
@@ -153,7 +153,7 @@ resources:
     Ensure: Present
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

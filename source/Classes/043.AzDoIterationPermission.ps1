@@ -13,8 +13,17 @@ It inherits from the `AzDevOpsDscResourceBase` class and provides properties and
 - The `Get()` and `Set()` methods are inherited from the base class `AzDevOpsDscResourceBase`.
 - The `GetDscCurrentStateProperties` method includes verbose logging for debugging purposes.
 
+Methods:
+
+- `Get()` retrieves the current state of the iteration permissions as an instance
+  of the `AzDoIterationPermission` class.
+- `GetDscResourcePropertyNamesWithNoSetSupport()` returns an array of property
+  names that do not support the `Set` operation. This method is hidden.
+- `GetDscCurrentStateProperties()` retrieves the current state properties of the
+  resource as a hashtable. This method is hidden.
+
 .LINK
-    GitHub Repository: <link to the GitHub repository>
+    GitHub Repository: https://github.com/ZanattaMichael/AzureDevOpsDsc
 
 .PARAMETER ProjectName
 Specifies the name of the Azure DevOps project. This is a mandatory key property.
@@ -27,15 +36,6 @@ Indicates whether the permissions are inherited. Defaults to `$true`.
 
 .PARAMETER Permissions
 Specifies a hashtable array of permissions to be applied to the iteration.
-
-.METHOD Get
-Retrieves the current state of the iteration permissions as an instance of the `AzDoIterationPermission` class.
-
-.METHOD GetDscResourcePropertyNamesWithNoSetSupport
-Returns an array of property names that do not support the `Set` operation. This method is hidden.
-
-.METHOD GetDscCurrentStateProperties
-Retrieves the current state properties of the resource as a hashtable. This method is hidden.
 
 .EXAMPLE
 # Example usage of the AzDoIterationPermission DSC resource

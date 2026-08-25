@@ -43,7 +43,7 @@ This resource configures an existing Azure DevOps team's board/backlog settings:
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoTeamSettings ConfigureTeam {
@@ -73,10 +73,10 @@ $properties = @{
     TeamName    = 'MyProject Team'
 }
 
-Invoke-DscResource -Name 'AzDoTeamSettings' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoTeamSettings' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}
@@ -88,9 +88,9 @@ variables: {
 
 resources:
 - name: Configure Team Settings
-  type: AzureDevOpsDsc/AzDoTeamSettings
+  type: AzureDevOpsDscNative/AzDoTeamSettings
   dependsOn:
-    - AzureDevOpsDsc/AzDoTeam/MyProject Team
+    - AzureDevOpsDscNative/AzDoTeam/MyProject Team
   properties:
     ProjectName: $ProjectName
     TeamName: $TeamName
@@ -112,7 +112,7 @@ resources:
     Ensure: Present
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

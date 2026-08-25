@@ -41,7 +41,7 @@ This resource manages Git repositories in Azure DevOps projects using Desired St
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoGitRepository AddGitRepository {
@@ -65,10 +65,10 @@ $properties = @{
     RepositoryName = 'MyRepository'
 }
 
-Invoke-DscResource -Name 'AzDoGitRepository' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoGitRepository' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}
@@ -80,9 +80,9 @@ variables: {
 
 resources:
 - name: My Git Repository
-  type: AzureDevOpsDsc/AzDoGitRepository
+  type: AzureDevOpsDscNative/AzDoGitRepository
   dependsOn:
-    - AzureDevOpsDsc/AzDoProject/MyProject
+    - AzureDevOpsDscNative/AzDoProject/MyProject
   properties:
     ProjectName: $ProjectName
     RepositoryName: $RepositoryName
@@ -90,7 +90,7 @@ resources:
     Ensure: Present
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

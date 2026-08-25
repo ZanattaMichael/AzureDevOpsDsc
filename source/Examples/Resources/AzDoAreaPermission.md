@@ -72,7 +72,7 @@ None
 Configuration ExampleConfig
 {
 
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     node localhost
     {
@@ -121,10 +121,10 @@ $properties = @{
     )
 }
 
-Invoke-DSCResource -Name 'AzDoAreaPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DSCResource -Name 'AzDoAreaPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}
@@ -137,7 +137,7 @@ variables: {
 resources:
 
   - name: Sample AreaPath Permissions
-    type: AzureDevOpsDsc/AzDoAreaPermission
+    type: AzureDevOpsDscNative/AzDoAreaPermission
     properties:
       projectName: $ProjectName
       AreaPath: '\Test Area\Sub Area'
@@ -149,7 +149,7 @@ resources:
             'Manage test suites': "Allow"
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

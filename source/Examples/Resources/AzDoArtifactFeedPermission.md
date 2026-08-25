@@ -55,7 +55,7 @@ This resource manages role-based permissions on Azure Artifacts feeds, controlli
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzureDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoArtifactFeedPermission AddArtifactFeedPermission {
@@ -85,10 +85,10 @@ $properties = @{
     )
 }
 
-Invoke-DscResource -Name 'AzDoArtifactFeedPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDsc'
+Invoke-DscResource -Name 'AzDoArtifactFeedPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using AzDO-DSC-LCM
+## Example 3: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}
@@ -100,9 +100,9 @@ variables: {
 
 resources:
 - name: Artifact Feed Permissions
-  type: AzureDevOpsDsc/AzDoArtifactFeedPermission
+  type: AzureDevOpsDscNative/AzDoArtifactFeedPermission
   dependsOn:
-    - AzureDevOpsDsc/AzDoArtifactFeed/MyFeed
+    - AzureDevOpsDscNative/AzDoArtifactFeed/MyFeed
   properties:
     ProjectName: $ProjectName
     FeedName: $FeedName
@@ -114,7 +114,7 @@ resources:
     Ensure: Present
 ```
 
-LCM Initialization:
+Pipeline runner initialization:
 
 ``` PowerShell
 

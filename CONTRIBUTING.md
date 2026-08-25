@@ -901,3 +901,120 @@ development), the following actions need to be performed:
 source control commits as part of changes made. These PATs would likely be
 available within the public, commit history and could/would pose a security risk
 to your Azure DevOps instance.
+
+## Releasing
+
+Releases are cut from git tags. Nothing is published on a merge to `main` —
+merging only runs the Build and Unit Tests workflows.
+
+### One-time repository setup
+
+| Kind | Name | Purpose |
+|------|------|---------|
+| Secret | `GALLERY_API_TOKEN` | PowerShell Gallery API key. If unset, the release still produces a GitHub Release but skips the Gallery publish. |
+| Secret | `AZURE_DEVOPS_PAT` | PAT for the integration tests. **Required for releases** — the integration suite is a release gate. |
+| Variable | `AzureDevOpsOrg` | Azure DevOps organization the integration tests run against. **Required for releases.** |
+
+`AZURE_DEVOPS_PAT` and `AzureDevOpsOrg` must be **repository-level** secret and
+variable. The integration job runs as an ordinary Actions job (not a deployment)
+and does not reference a GitHub Environment, so Environment-scoped values would
+not resolve. The self-hosted `AZDO-AGENT` runner must be online for the release's
+integration gate to run — if it is offline the release queues rather than fails.
+
+`GITHUB_TOKEN` is supplied automatically and needs no setup. The publish
+workflow declares `contents: write` (GitHub Release, wiki) and
+`pull-requests: write` (changelog roll-over PR).
+
+To create the Gallery API key: sign in at
+[powershellgallery.com](https://www.powershellgallery.com/), then
+**Account settings → API Keys → Create**. Scope it to *Push new packages and
+package versions*, and glob the package name to `AzureDevOpsDscNative` so the
+key cannot publish anything else.
+
+### Cutting a release
+
+1. Make sure `main` is green — both the Build and Unit Tests workflows must be
+   passing for the commit you intend to tag.
+2. Make sure the `## [Unreleased]` section of [CHANGELOG.md](CHANGELOG.md)
+   accurately describes what is shipping. It becomes the GitHub Release notes
+   verbatim, so anything missing here is missing from the release.
+3. Decide the version according to [semver](https://semver.org/). There is no
+   automatic version increment — the tag *is* the version.
+4. Tag `main` and push:
+
+   ```powershell
+   git checkout main
+   git pull origin main
+   git tag v1.2.3
+   git push origin v1.2.3
+   ```
+
+5. Watch the Publish workflow. It will refuse to release if the tag is not on
+   `main`, if the tag is not a valid version, or if either unit test suite fails.
+
+For a prerelease, use an alphanumeric suffix — `v1.2.3-preview0001`. The Gallery
+requires the suffix to be alphanumeric only, with no dots and no second hyphen.
+Prereleases skip the changelog roll-over pull request.
+
+### What the publish workflow does
+
+The workflow runs as three jobs — `validate`, `integration-tests`, `publish` —
+each gating the next.
+
+**`validate`**
+
+1. Derives the module version from the tag and validates its format.
+2. Verifies the tagged commit is contained in `main`.
+
+**`integration-tests`** (release gate)
+
+3. Calls `integration-tests.yml` as a reusable workflow, building the exact
+   version being released and running the full suite against the live Azure
+   DevOps organization. **For a full release (`vX.Y.Z`), any integration test
+   failure fails the release and nothing is published.** For a **prerelease**
+   (`vX.Y.Z-<suffix>`), the workflow passes `allowFailures=true`: individual
+   test failures are logged as warnings but the release still proceeds, so a
+   preview build can ship despite flaky or in-progress tests. Setup and
+   infrastructure failures — Pester missing, module not resolving, or no test
+   result at all — still fail the gate in both modes, so a broken environment
+   can never silently pass.
+
+   This job runs on the self-hosted `AZDO-AGENT` runner with no approval gate, so
+   it starts as soon as the runner is free. The suite is slow — the
+   `AzDoAreaPermission`, `AzDoIterationPermission` and `AzDoPipelinePermission`
+   resources scan all organization-level ACLs and take 200–400 seconds each — so
+   expect a release to take a long time to reach the publish step. Because it runs
+   automatically, be aware the suite's teardown clears test resources from the
+   target organization on every run.
+
+**`publish`**
+
+4. Builds the module with `$env:ModuleVersion` set from the tag, which stamps
+   that version into the packaged manifest. The `moduleVersion` value in
+   `source/AzureDevOpsDscNative.psd1` is only a fallback for local and CI builds
+   and is never what gets released.
+5. Re-runs the Classes and Common unit suites as a second release gate.
+6. Runs `docs`, `dscv3`, and `package_module_nupkg` to generate conceptual help,
+   the DSC v3 adapted resource manifests, and the NuGet package.
+7. Publishes the GitHub Release and the PowerShell Gallery package.
+8. Pushes wiki content (non-blocking — requires the repository wiki to be
+   enabled and initialised).
+9. Opens a pull request rolling `## [Unreleased]` over into a versioned
+   changelog section. **Merge this PR**, otherwise the next release's notes will
+   still contain this release's entries.
+
+Steps 1–6 all fail safe: nothing is published until step 7. Once the Gallery
+accepts a version, that version number is permanently consumed — it can be
+unlisted but never re-pushed.
+
+### Versioning sources
+
+There is exactly one authoritative source of a released version — the git tag.
+Two other files mention versions and must not be mistaken for it:
+
+- `source/AzureDevOpsDscNative.psd1` (`moduleVersion`) — fallback for local and
+  CI builds only.
+- `GitVersion.yml` (`next-version`) — consumed only by `azure-pipelines.yml`,
+  which is retained from the upstream DSC Community repository and whose deploy
+  stage is gated to the `dsccommunity` organisation. It does not run for this
+  fork.

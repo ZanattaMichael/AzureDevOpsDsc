@@ -2,6 +2,11 @@
     RootModule           = 'AzureDevOpsDscNative.psm1'
 
     # Version number of this module.
+    #
+    # This value is a fallback for local and CI builds only. Released versions are
+    # driven by the git tag: the publish workflow sets $env:ModuleVersion from the
+    # tag, and the build stamps that value into the packaged manifest instead of this
+    # one. Do not hand-edit this to cut a release - push a vX.Y.Z tag.
     moduleVersion      = '0.0.2'
 
     # ID used to uniquely identify this module
@@ -41,7 +46,6 @@
     NestedModules        = @()
 
     DscResourcesToExport = @(
-      'AzDevOpsProject',
       'AzDoGroupPermission',
       'AzDoOrganizationGroup',
       'AzDoProject',
@@ -87,7 +91,7 @@
       'AzDoArtifactFeedSettings',
       'AzDoArtifactFeedView',
       'AzDoProcess',
-      'AzDoProcessPermission'
+      'AzDoProcessPermission',
       'AzDoUserEntitlement',
       'AzDoServiceHook',
       'AzDoPipelineSettings'
@@ -114,8 +118,11 @@
             # A URL to an icon representing this module.
             IconUri      = 'https://dsccommunity.org/images/DSC_Logo_300p.png'
 
-            # ReleaseNotes of this module
-            ReleaseNotes = ''
+            # ReleaseNotes of this module.
+            # Per-release notes are generated from the CHANGELOG's [Unreleased] section
+            # at build time and attached to the GitHub Release. This link is the fallback
+            # shown on the Gallery listing.
+            ReleaseNotes = 'https://github.com/ZanattaMichael/AzureDevOpsDsc/blob/main/CHANGELOG.md'
 
         } # End of PSData hashtable
 
