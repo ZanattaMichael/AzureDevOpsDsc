@@ -136,15 +136,17 @@ Pipeline runner initialization:
 
 ``` PowerShell
 
+Import-Module Dsc.PipelineRunner
+
 $params = @{
     AzureDevopsOrganizationName = "SampleAzDoOrgName"
-    ConfigurationDirectory      = "C:\Datum\DSCOutput\"
-    ConfigurationUrl            = 'https://configuration-path'
+    exportConfigDir             = "C:\Datum\DSCOutput\"
+    ConfigurationSourcePath     = 'https://configuration-path'
     JITToken                    = 'SampleJITToken'
     Mode                        = 'Set'
     AuthenticationType          = 'ManagedIdentity'
     ReportPath                  = 'C:\Datum\DSCOutput\Reports'
 }
 
-Invoke-AzDoLCM @params
+Invoke-DscPipelineRunner @params
 ```
