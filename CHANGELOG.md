@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - AzureDevOpsDscNative
+  - Updated the `Dsc.PipelineRunner` documentation in `USAGE.md` and the
+    "Pipeline runner initialization" example in every resource doc under
+    `source/Examples/Resources` (published to the GitHub wiki on release) to
+    match the latest `Dsc.PipelineRunner` release: `Invoke-AzDoLCM` is now
+    `Invoke-DscPipelineRunner` (an Azure DevOps back-compat shim) or, for new
+    integrations, the provider-agnostic `Invoke-DscRunner`. The
+    `ConfigurationDirectory` and `ConfigurationUrl` parameters were renamed to
+    `exportConfigDir` and `ConfigurationSourcePath`, and the cache directory
+    environment variable is now `PIPELINERUNNER_CACHE_DIRECTORY` (with
+    `AZDODSC_CACHE_DIRECTORY` retained as a back-compat alias).
   - The integration-test release gate now differentiates between a full release
     and a prerelease. A full release tag (`vX.Y.Z`) still requires every
     integration test to pass; a prerelease tag (`vX.Y.Z-<suffix>`) passes
