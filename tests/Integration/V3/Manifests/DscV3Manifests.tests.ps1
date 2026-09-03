@@ -173,7 +173,11 @@ BeforeDiscovery {
     $manifestCases = @(
         foreach ($file in $manifestFiles)
         {
-            $className = ($file.Name -replace '^' + [regex]::Escape($moduleName) + '\.', '') -replace '\.dsc\.adaptedResource\.json$', ''
+            # Build the pattern into a variable first. Inline, the comma in the -replace
+            # argument list binds tighter than '+', so '\.', '' would be parsed as an array,
+            # string-joined into the pattern and the replacement argument silently dropped.
+            $prefixPattern = '^' + [regex]::Escape($moduleName) + '\.'
+            $className = ($file.Name -replace $prefixPattern, '') -replace '\.dsc\.adaptedResource\.json$', ''
 
             @{
                 FileName      = $file.Name

@@ -280,15 +280,11 @@ function Invoke-DscV3Resource
         [Parameter(Mandatory)][hashtable]$Property
     )
 
-    $payload = @{
-        resources = @(
-            @{
-                name       = "$ResourceName-dscv3-test"
-                type       = "$ModuleName/$ResourceName"
-                properties = $Property
-            }
-        )
-    } | ConvertTo-Json -Depth 10 -Compress
+    # 'dsc resource get|set|test' takes the bare properties object on stdin, not a
+    # configuration document. A '{ resources: [...] }' wrapper is rejected with
+    # 'Desired input is empty' (set) and 'Expected input is required' (test) - the
+    # config document shape belongs to 'dsc config', not to 'dsc resource'.
+    $payload = ConvertTo-Json -InputObject $Property -Depth 10 -Compress
 
     # A non-zero exit from dsc is handled below with the stderr text attached. Without
     # this the caller's $ErrorActionPreference='Stop' (PowerShell 7.4 applies it to
@@ -301,9 +297,15 @@ function Invoke-DscV3Resource
     # Redirect stderr to a temp file rather than merging with 2>&1, so a failure can still
     # surface the diagnostic text.
     $dscMethod  = $Method.ToLower()
-    $adapter    = Resolve-DscV3PowerShellAdapter
     $form       = Resolve-DscV3JsonForm
-    $dscArgs    = @($form.Global) + @('resource', $dscMethod, '--resource', $adapter) + @($form.Sub)
+
+    # --resource names the *adapted* resource type, not the adapter that hosts it.
+    # Passing the adapter itself fails with exit 2 'Can not perform this operation on
+    # the adapter itself'. Resolving the adapter is still worthwhile: it fails early
+    # and with a clear message when the PowerShell adapter is missing entirely.
+    $null       = Resolve-DscV3PowerShellAdapter
+    $resourceType = "$ModuleName/$ResourceName"
+    $dscArgs    = @($form.Global) + @('resource', $dscMethod, '--resource', $resourceType) + @($form.Sub)
     $stderrPath = [System.IO.Path]::GetTempFileName()
     try
     {
