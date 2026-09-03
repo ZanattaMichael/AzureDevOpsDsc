@@ -97,9 +97,22 @@ jobs:
       moduleVersion: ${{ needs.validate.outputs.version }}
       allowFailures: ${{ needs.validate.outputs.isPrerelease == 'true' }}
 
+  # Second release gate: the DSC v3 suite, which lives in its own workflow so it can be
+  # dispatched and re-run without waiting out the hour-long v2 suite. Both target the
+  # same self-hosted runner, so they queue rather than contend. allowFailures follows the
+  # same prerelease rule as the v2 gate.
+  integration-tests-v3:
+    name: DSC v3 Integration Tests (release gate)
+    needs: validate
+    uses: ./.github/workflows/integration-tests-v3.yml
+    secrets: inherit
+    with:
+      moduleVersion: ${{ needs.validate.outputs.version }}
+      allowFailures: ${{ needs.validate.outputs.isPrerelease == 'true' }}
+
   publish:
     name: Build, Test, and Publish Release
-    needs: [validate, integration-tests]
+    needs: [validate, integration-tests, integration-tests-v3]
     runs-on: windows-latest
     env:
       # $env:ModuleVersion has to be set before the *first* `build` task runs (not just

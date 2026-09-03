@@ -50,11 +50,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     deprecated `Microsoft.DSC/PowerShell` on an older CLI - and can be pinned
     with the `DSC_V3_ADAPTER` environment variable. The runner reports
     pass/fail counts and exits non-zero on failure, and honours the same
-    `-AllowFailures` switch as the v2 runner, so `integration-tests.yml` passes
-    `allowFailures` through to both suites and a prerelease is not blocked by an
-    in-progress v3 test. `integration-tests.yml` also installs the `dsc` CLI
-    (before the v2 suite, so a bad download surfaces in seconds rather than an
-    hour) and uploads `v3-integration-test-results.xml` beside the v2 results.
+    `-AllowFailures` switch as the v2 runner, so a prerelease is not blocked by
+    an in-progress v3 test.
+  - Added `.github/workflows/integration-tests-v3.yml`, a standalone workflow
+    for the DSC v3 suite. It is kept separate from `integration-tests.yml`
+    deliberately: the v2 suite takes the better part of an hour, so running v3
+    inside it means waiting v2 out to learn anything about v3. Split, the two
+    can be dispatched, gated and re-run independently, and since both target the
+    same self-hosted runner they queue rather than contend. The workflow builds
+    the module, pins `PSModulePath` to that single build, installs the `dsc`
+    CLI, runs `Invoke-V3Tests.ps1` and uploads
+    `v3-integration-test-results.xml`. `publish.yml` calls it as a second
+    release gate beside the v2 gate, with the same prerelease `allowFailures`
+    rule, so a release still gates on both suites.
 - AzureDevOpsDsc
   - Added DSC v3 support: all 49 class-based DSC resources now declare `Set()`
     and `Test()` directly (delegating to `AzDevOpsDscResourceBase`) instead of

@@ -1,33 +1,45 @@
-name: Integration Tests
+name: DSC v3 Integration Tests
 
-# Integration tests run against a live Azure DevOps organization on the
-# self-hosted AZDO-AGENT runner. This is an ordinary Actions workflow job, not a
-# deployment - it only runs when dispatched manually or called by publish.yml as a
-# release gate, so it never fires automatically on push or pull request.
+# DSC v3 integration tests run against a live Azure DevOps organization on the
+# self-hosted AZDO-AGENT runner, driving the module's class-based resources through
+# the `dsc` CLI and its PowerShell adapter.
 #
-# One-time repository setup required (repository scope, NOT an Environment):
+# Deliberately a separate workflow from integration-tests.yml. The v2 suite takes the
+# better part of an hour; running the v3 suite inside it means waiting out v2 to learn
+# anything about v3. Split, the two can be dispatched, gated and re-run independently.
+# Both target the same single self-hosted runner, so they queue rather than contend.
+#
+# One-time repository setup required (repository scope, NOT an Environment) - the same
+# variable and secret integration-tests.yml uses:
 #   1. Add repository variable:  AzureDevOpsOrg   (your Azure DevOps org name)
 #   2. Add repository secret:    AZURE_DEVOPS_PAT (a PAT with full-access scopes)
 #      Leave AZURE_DEVOPS_PAT empty to use Managed Identity instead
 #      (only valid when AZDO-AGENT runs on an Azure VM/Arc machine).
-# These must be repository-level, not scoped to a GitHub Environment, since this
-# job no longer references one.
 
 on:
+  # TEMPORARY - validation trigger for the DSC v3 suite added in this branch, so the
+  # steps below actually execute at least once before they land on main.
+  #
+  # A push filter matches the branch that was pushed, unlike `pull_request`, whose
+  # `branches:` filter matches the BASE branch and would therefore fire this live-org
+  # suite on every PR targeting main.
+  #
+  # Remove this trigger before merging (or widen it deliberately, if the project
+  # decides the suite should gate pull requests).
+  push:
+    branches:
+      - claude/pr-51-continuation-ncxcao
   workflow_dispatch:
     inputs:
       allowFailures:
         description: >-
-          Exit 0 even if individual integration tests fail (setup/infrastructure
+          Exit 0 even if individual v3 integration tests fail (setup/infrastructure
           failures still fail the run). Useful for running the suite on a preview
-          branch without gating on flaky tests.
+          branch without gating on in-progress tests.
         required: false
         default: false
         type: boolean
-  # Called by publish.yml as a release gate. A full release does not proceed unless every
-  # integration test passes; a prerelease (vX.Y.Z-<suffix>) passes allowFailures=true so
-  # the release still proceeds despite individual test failures, while any environmental
-  # break (Pester missing, module not resolving, etc.) still fails the gate.
+  # Called by publish.yml as a release gate, alongside the v2 suite.
   workflow_call:
     inputs:
       moduleVersion:
@@ -39,7 +51,7 @@ on:
         type: string
       allowFailures:
         description: >-
-          Exit 0 even if individual integration tests fail. Set by publish.yml on a
+          Exit 0 even if individual v3 integration tests fail. Set by publish.yml on a
           prerelease tag. Setup/infrastructure failures still fail the run.
         required: false
         default: false
@@ -49,8 +61,8 @@ permissions:
   contents: read
 
 jobs:
-  integration-tests:
-    name: Run Integration Tests
+  integration-tests-v3:
+    name: Run DSC v3 Integration Tests
     runs-on: AZDO-AGENT
 
     steps:
@@ -69,7 +81,7 @@ jobs:
         run: |
           .\build.ps1 -Tasks build
 
-      # The self-hosted runner does not ship Pester 5, and Invoke-Tests.ps1 declares
+      # The self-hosted runner does not ship Pester 5, and Invoke-V3Tests.ps1 declares
       # `#Requires -Modules @{ ModuleName="Pester"; ModuleVersion="5.0.0" }`, so without
       # this the script refuses to start and the suite never runs at all. Pinned to the
       # same version the unit test and publish workflows install.
@@ -82,28 +94,16 @@ jobs:
               Sort-Object Version -Descending |
               Select-Object -First 1
           if (-not $pester) {
-              throw "Pester 5.x is not available after install - Invoke-Tests.ps1 cannot run."
+              throw "Pester 5.x is not available after install - Invoke-V3Tests.ps1 cannot run."
           }
           Write-Host "Pester $($pester.Version) available at $($pester.ModuleBase)"
 
-      # Point PSModulePath at exactly one copy of each module the tests load.
-      #
-      # Initalize-TestFramework.ps1 imports DscResource.Common, AzureDevOpsDsc.Common and
-      # AzureDevOpsDscNative by bare name. AzureDevOpsDscNative lives at
-      # output/builtModule/<Module>/<Version>; its nested modules (AzureDevOpsDsc.Common,
-      # and DscResource.Common which build.yaml copies in) live one level down under
-      # /Modules. The version comes from the build, so those are globbed.
-      #
-      # Crucially, each of these modules must resolve from exactly ONE location. If a
-      # module is reachable from two places, Get-Module returns an array and DSC's
-      # GetResourceFromKeyword throws "Cannot convert System.Object[] to PSModuleInfo"
-      # inside Invoke-DscResource - which fails every test. Two sources of duplication
-      # are removed here rather than merely shadowed by prepending:
-      #   - output/RequiredModules also holds DscResource.Common (the built module already
-      #     bundles it under /Modules), so it is left off the path entirely; and
-      #   - the self-hosted runner carries stale hand-deployed copies under
-      #     C:\Temp\DSCModule (including an old 0.0.1 module under the former name), which
-      #     are stripped from the inherited PSModulePath.
+      # Point PSModulePath at exactly one copy of each module the tests load. See the
+      # equivalent step in integration-tests.yml for the full rationale: a module
+      # reachable from two locations makes Get-Module return an array, which DSC cannot
+      # cast to [PSModuleInfo]. The v3 PowerShell adapter resolves this module's
+      # class-based resources off PSModulePath too, so the same single-copy guarantee
+      # applies here.
       - name: Set PSModulePath to the built module only
         shell: pwsh
         run: |
@@ -132,16 +132,15 @@ jobs:
           Write-Host 'PSModulePath entries:'
           $env:PSModulePath -split ';' | Where-Object { $_ } | ForEach-Object { Write-Host "  $_" }
 
-          # Assert each module resolves from exactly one location. Asserting "-ge 1" is what
-          # let the duplicate through last time; the duplicate itself is the failure mode, so
-          # fail here naming the module and its locations rather than deep inside DSC.
+          # Assert each module resolves from exactly one location, failing here naming the
+          # module and its locations rather than deep inside the DSC adapter.
           foreach ($name in 'DscResource.Common', 'AzureDevOpsDsc.Common', 'AzureDevOpsDscNative') {
               $bases = @(Get-Module -Name $name -ListAvailable | Select-Object -ExpandProperty ModuleBase -Unique)
               if ($bases.Count -eq 0) {
                   throw "Module '$name' is not resolvable on PSModulePath after the build - the integration tests cannot initialise."
               }
               if ($bases.Count -gt 1) {
-                  throw "Module '$name' resolves from $($bases.Count) locations, which makes Invoke-DscResource throw on a [PSModuleInfo] cast: $($bases -join ' ; ')"
+                  throw "Module '$name' resolves from $($bases.Count) locations, which makes the DSC PowerShell adapter throw on a [PSModuleInfo] cast: $($bases -join ' ; ')"
               }
               Write-Host "Resolved $name -> $($bases[0])"
           }
@@ -180,30 +179,80 @@ jobs:
           "AZDODSC_CACHE_DIRECTORY=$cacheDir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           Write-Host "Cache directory: $cacheDir"
 
+      - name: Install DSC v3 CLI
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $dscDir = 'C:\dsc'
+
+          # Already on PATH (pre-installed on the runner image)? Nothing to do.
+          if (Get-Command dsc -CommandType Application -ErrorAction SilentlyContinue) {
+              Write-Host "DSC v3 already available: $(dsc --version 2>&1)"
+          }
+          elseif (Test-Path (Join-Path $dscDir 'dsc.exe')) {
+              # Installed by a previous run on this self-hosted runner - reuse it rather
+              # than re-downloading; only the PATH entry is per-run.
+              $dscDir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+              Write-Host "Reusing existing DSC v3 install at $dscDir"
+          }
+          else {
+              Write-Host "Downloading DSC v3..."
+              # Authenticated so the release lookup is not subject to the unauthenticated
+              # api.github.com rate limit, which a shared self-hosted runner can exhaust.
+              $headers = @{
+                  'Accept'               = 'application/vnd.github+json'
+                  'X-GitHub-Api-Version' = '2022-11-28'
+              }
+              if (-not [string]::IsNullOrEmpty($env:GH_TOKEN)) {
+                  $headers['Authorization'] = "Bearer $($env:GH_TOKEN)"
+              }
+              $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/PowerShell/DSC/releases/latest' -Headers $headers
+              $asset = $release.assets |
+                  Where-Object { $_.name -match 'x86_64-pc-windows-msvc\.zip$' } |
+                  Select-Object -First 1
+              if (-not $asset) {
+                  throw "No x86_64-pc-windows-msvc .zip asset found in DSC release '$($release.tag_name)'. Assets: $($release.assets.name -join ', ')"
+              }
+              $zipPath = Join-Path $env:RUNNER_TEMP 'dsc-v3.zip'
+              Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zipPath -UseBasicParsing
+              Expand-Archive -Path $zipPath -DestinationPath $dscDir -Force
+              Remove-Item -Path $zipPath -Force -ErrorAction SilentlyContinue
+              if (-not (Test-Path (Join-Path $dscDir 'dsc.exe'))) {
+                  throw "dsc.exe not found under $dscDir after extracting $($asset.name)."
+              }
+              # Add to PATH for subsequent steps
+              $dscDir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+              Write-Host "DSC v3 $($release.tag_name) installed to $dscDir"
+          }
+
       - name: Prepare results directory
         shell: pwsh
         run: |
           New-Item -Path 'C:\Temp' -ItemType Directory -Force | Out-Null
 
-      - name: Run integration tests
+      - name: Run DSC v3 integration tests
         shell: pwsh
-        working-directory: tests/Integration
+        working-directory: tests/Integration/V3
         env:
           # Booleans from workflow inputs arrive as PowerShell literals. Normalise to a
           # bare 'true'/'false' string so the pwsh block below can treat it uniformly.
           ALLOW_FAILURES: ${{ inputs.allowFailures && 'true' || 'false' }}
         run: |
-          $params = @{ TestFrameworkConfigurationPath = '.\TestFrameworkConfiguration.json' }
+          $params = @{
+              TestFrameworkConfigurationPath = '..\TestFrameworkConfiguration.json'
+              ResultsPath                    = 'C:\Temp\v3-integration-test-results.xml'
+          }
           if ($env:ALLOW_FAILURES -eq 'true') {
               Write-Host 'AllowFailures is enabled - test failures will be reported but will not fail this run.'
               $params['AllowFailures'] = $true
           }
-          .\Invoke-Tests.ps1 @params
+          .\Invoke-V3Tests.ps1 @params
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: integration-test-results-${{ github.run_number }}
-          path: C:\Temp\integration-test-results.xml
+          name: v3-integration-test-results-${{ github.run_number }}
+          path: C:\Temp\v3-integration-test-results.xml
           if-no-files-found: ignore
