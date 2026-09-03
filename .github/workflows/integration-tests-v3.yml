@@ -199,18 +199,52 @@ jobs:
           $PSNativeCommandUseErrorActionPreference = $false
           $dscDir = 'C:\dsc'
 
-          # Enumerate unfiltered and match here. Passing the adapter's type name
-          # positionally to `dsc resource list` is the obvious probe and is not a reliable
-          # one: on dsc 3.2.3 it came back empty for an adapter the unfiltered listing
-          # names, which read as "adapter missing" and failed this step against a
-          # perfectly good install.
-          function Get-DscResourceType {
+          # Enumerate unfiltered and match here. Two obvious probes are both wrong, and
+          # each failed this step against a perfectly good install:
+          #   * `dsc resource list <TypeName>` as a filter came back empty on dsc 3.2.3
+          #     for an adapter the unfiltered listing names.
+          #   * reading the listing line by line found zero types, because under
+          #     --output-format json the whole of stdout is ONE json document (an array,
+          #     pretty-printed across lines) rather than one document per line.
+          # So parse the whole document first, fall back to document-per-line, and try
+          # the plain listing as well rather than trusting a single output shape.
+          function ConvertFrom-DscResourceListing([string] $Text) {
               $types = @()
-              foreach ($line in @(dsc --output-format json resource list 2>$null)) {
-                  if ([string]::IsNullOrWhiteSpace($line)) { continue }
-                  try { $types += (ConvertFrom-Json -InputObject $line).type } catch { }
+              if ([string]::IsNullOrWhiteSpace($Text)) { return $types }
+              try {
+                  $types = @(ConvertFrom-Json -InputObject $Text |
+                      ForEach-Object { $_.type } |
+                      Where-Object { $_ })
+              }
+              catch { }
+              if ($types.Count -eq 0) {
+                  # One malformed line is skipped rather than failing the enumeration, so
+                  # a single bad manifest cannot hide every good one.
+                  foreach ($line in ($Text -split "`r?`n")) {
+                      if ([string]::IsNullOrWhiteSpace($line)) { continue }
+                      try {
+                          $lineType = (ConvertFrom-Json -InputObject $line).type
+                          if ($lineType) { $types += $lineType }
+                      }
+                      catch { }
+                  }
               }
               return $types
+          }
+
+          $script:lastListing = ''
+
+          function Get-DscResourceType {
+              foreach ($dscArgs in @(
+                      @('--output-format', 'json', 'resource', 'list'),
+                      @('resource', 'list', '--output-format', 'json'),
+                      @('resource', 'list'))) {
+                  $raw = (@(& dsc @dscArgs 2>$null) -join "`n")
+                  $types = @(ConvertFrom-DscResourceListing $raw)
+                  if ($types.Count -gt 0) { return $types }
+                  if (-not [string]::IsNullOrWhiteSpace($raw)) { $script:lastListing = $raw }
+              }
+              return @()
           }
 
           function Test-DscPowerShellAdapter {
@@ -226,6 +260,24 @@ jobs:
                   }
               }
               Write-Host "No PowerShell adapter among the $($types.Count) type(s) listed: $($types -join ', ')"
+              # Print what the CLI actually said. A type count alone cannot tell "the CLI
+              # listed nothing" apart from "the listing was not parsed", which is exactly
+              # the ambiguity that cost a CI round here.
+              if ($script:lastListing) {
+                  Write-Host 'Unparsed output from the resource listing (first 2000 chars):'
+                  Write-Host $script:lastListing.Substring(0, [Math]::Min(2000, $script:lastListing.Length))
+
+                  # Last resort: the CLI printed a listing in a shape nothing above could
+                  # read. Its text still names the adapter when the adapter is installed,
+                  # and matching on that beats failing a good install over output format.
+                  foreach ($candidate in 'Microsoft.Adapter/PowerShell', 'Microsoft.DSC/PowerShell') {
+                      if ($script:lastListing -like "*$candidate*") {
+                          Write-Host "PowerShell adapter named in the unparsed listing: $candidate"
+                          $script:adapterType = $candidate
+                          return $true
+                      }
+                  }
+              }
               return $false
           }
 

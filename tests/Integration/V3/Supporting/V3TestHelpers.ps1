@@ -66,15 +66,91 @@ function Resolve-DscV3PowerShellAdapter
         }
     }
 
+    # Last resort before failing: the CLI printed a listing that nothing above could read.
+    # Its text still names the adapter when the adapter is installed, and matching on that
+    # beats failing the suite over an output shape.
+    if ($script:LastDscV3Listing)
+    {
+        foreach ($candidate in 'Microsoft.Adapter/PowerShell', 'Microsoft.DSC/PowerShell')
+        {
+            if ($script:LastDscV3Listing -like "*$candidate*")
+            {
+                $script:DscV3AdapterType = $candidate
+                Write-Host "[V3] PowerShell adapter named in the unparsed listing: $candidate"
+                return $candidate
+            }
+        }
+    }
+
     # Report what the CLI does expose. An incomplete install - the executable without the
     # adapter manifests that sit beside it in the release archive - satisfies
     # 'dsc --version' and then lists nothing, which is otherwise indistinguishable here
     # from a CLI that simply predates both adapter names.
     $availableText = if ($types) { ($types | Sort-Object -Unique) -join ', ' } else { '(none)' }
 
+    # Include the unparsed listing text. A type count on its own cannot tell "the CLI
+    # listed nothing" apart from "the listing was not parsed", and those need opposite fixes.
+    $rawText = if ($script:LastDscV3Listing)
+    {
+        "`nUnparsed listing output: " + $script:LastDscV3Listing.Substring(0, [Math]::Min(2000, $script:LastDscV3Listing.Length))
+    }
+    else { '' }
+
     throw ("Neither 'Microsoft.Adapter/PowerShell' nor 'Microsoft.DSC/PowerShell' is listed by the " +
            "dsc CLI ($(dsc --version 2>&1)). The PowerShell adapter is required to invoke this " +
-           "module's class-based resources.`nResource types the CLI can see: {0}" -f $availableText)
+           "module's class-based resources.`nResource types the CLI can see: " + $availableText + $rawText)
+}
+
+# Raw text of the last resource listing that produced no types, kept so a failure can
+# report what the CLI actually said rather than only how many types were read out of it.
+$script:LastDscV3Listing = ''
+
+function ConvertFrom-DscV3ResourceListing
+{
+    <#
+    .SYNOPSIS
+        Reads the resource types out of the text 'dsc resource list' printed.
+
+    .DESCRIPTION
+        Tries the whole of the text as one JSON document first, then falls back to one
+        document per line. Both shapes occur: under --output-format json the listing is a
+        single JSON array (pretty-printed across lines), so a line-by-line read of it
+        finds nothing at all, while the plain listing emits one document per line.
+    #>
+    param(
+        [string]$Text
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Text))
+    {
+        return @()
+    }
+
+    try
+    {
+        $types = @(ConvertFrom-Json -InputObject $Text |
+            ForEach-Object { $_.type } |
+            Where-Object { $_ })
+
+        if ($types.Count -gt 0)
+        {
+            return $types
+        }
+    }
+    catch
+    {
+        # Not a single document - fall through to the per-line read below.
+    }
+
+    # A malformed line is skipped rather than failing the enumeration, so one bad
+    # manifest does not hide every good one.
+    return @(
+        foreach ($line in ($Text -split "`r?`n"))
+        {
+            if ([string]::IsNullOrWhiteSpace($line)) { continue }
+            try { (ConvertFrom-Json -InputObject $line).type } catch { }
+        }
+    )
 }
 
 function Get-DscV3ResourceType
@@ -84,11 +160,16 @@ function Get-DscV3ResourceType
         Returns the resource types the dsc CLI lists, as a string array.
 
     .DESCRIPTION
-        Enumerates without a filter and matches in PowerShell. Passing the type name
+        Enumerates without a type filter and matches in PowerShell. Passing the type name
         positionally to 'dsc resource list' looks like the cheaper probe, but it is not a
         reliable one: on dsc 3.2.3 'resource list Microsoft.Adapter/PowerShell' came back
         empty on the very CLI whose unfiltered listing names that adapter, which read as
         "no adapter installed" and failed the suite during setup.
+
+        The listing is requested in more than one form because its output shape is not
+        fixed: --output-format json yields one JSON document for the whole listing, the
+        plain listing yields one document per line, and where the flag sits on the command
+        line has differed between releases. The first form that yields types wins.
 
     .PARAMETER Adapter
         Adapter to enumerate adapted resources from. Adapted resources - this module's
@@ -102,26 +183,33 @@ function Get-DscV3ResourceType
     # A non-zero exit is an answer to read, not a terminating error.
     $PSNativeCommandUseErrorActionPreference = $false
 
-    $output = if ([string]::IsNullOrWhiteSpace($Adapter))
-    {
-        dsc --output-format json resource list 2>$null
-    }
-    else
-    {
-        dsc --output-format json resource list --adapter $Adapter 2>$null
-    }
+    $adapterArgs = if ([string]::IsNullOrWhiteSpace($Adapter)) { @() } else { @('--adapter', $Adapter) }
 
-    # Each line is one resource document; a malformed line is skipped rather than
-    # failing the enumeration, so one bad manifest does not hide every good one.
-    $types = @(
-        foreach ($line in @($output))
-        {
-            if ([string]::IsNullOrWhiteSpace($line)) { continue }
-            try { (ConvertFrom-Json -InputObject $line).type } catch { }
-        }
+    # The unary comma matters: entries written on their own lines inside @() are
+    # enumerated, which would flatten the three argument lists into one flat list.
+    $forms = @(
+        , (@('--output-format', 'json', 'resource', 'list') + $adapterArgs)
+        , (@('resource', 'list') + $adapterArgs + @('--output-format', 'json'))
+        , (@('resource', 'list') + $adapterArgs)
     )
 
-    return $types
+    foreach ($dscArgs in $forms)
+    {
+        $raw = (@(& dsc @dscArgs 2>$null) -join "`n")
+
+        $types = @(ConvertFrom-DscV3ResourceListing -Text $raw)
+        if ($types.Count -gt 0)
+        {
+            return $types
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($raw))
+        {
+            $script:LastDscV3Listing = $raw
+        }
+    }
+
+    return @()
 }
 
 function Invoke-DscV3Resource
