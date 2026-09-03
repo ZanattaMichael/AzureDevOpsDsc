@@ -179,25 +179,52 @@ jobs:
           "AZDODSC_CACHE_DIRECTORY=$cacheDir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           Write-Host "Cache directory: $cacheDir"
 
+      # The dsc executable alone is not enough: this suite drives the module's
+      # class-based resources through the PowerShell adapter, which ships as manifest
+      # files alongside dsc.exe in the release archive. A partial install - just the
+      # executable, as the pre-existing C:\dsc on this runner turned out to be - answers
+      # `dsc --version` happily and then lists no adapter at all, failing at test time.
+      # So the check here is "is the adapter usable", not "does dsc exist".
       - name: Install DSC v3 CLI
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # A non-zero exit from a dsc probe is an answer, not a terminating error.
+          $PSNativeCommandUseErrorActionPreference = $false
           $dscDir = 'C:\dsc'
 
-          # Already on PATH (pre-installed on the runner image)? Nothing to do.
-          if (Get-Command dsc -CommandType Application -ErrorAction SilentlyContinue) {
-              Write-Host "DSC v3 already available: $(dsc --version 2>&1)"
+          function Test-DscPowerShellAdapter {
+              if (-not (Get-Command dsc -CommandType Application -ErrorAction SilentlyContinue)) {
+                  return $false
+              }
+              foreach ($candidate in 'Microsoft.Adapter/PowerShell', 'Microsoft.DSC/PowerShell') {
+                  $listed = dsc --output-format json resource list $candidate 2>$null
+                  if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace(($listed -join ''))) {
+                      Write-Host "PowerShell adapter available: $candidate"
+                      return $true
+                  }
+              }
+              return $false
           }
-          elseif (Test-Path (Join-Path $dscDir 'dsc.exe')) {
-              # Installed by a previous run on this self-hosted runner - reuse it rather
-              # than re-downloading; only the PATH entry is per-run.
-              $dscDir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-              Write-Host "Reusing existing DSC v3 install at $dscDir"
+
+          function Add-DscToPath([string] $dir) {
+              # $GITHUB_PATH only affects later steps; $env:PATH makes dsc usable in this one.
+              if (($env:PATH -split ';') -notcontains $dir) {
+                  $env:PATH = "$dir;$env:PATH"
+                  $dir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+              }
+          }
+
+          if (Test-Path (Join-Path $dscDir 'dsc.exe')) {
+              Add-DscToPath $dscDir
+          }
+
+          if (Test-DscPowerShellAdapter) {
+              Write-Host "DSC v3 already usable: $(dsc --version 2>&1)"
           }
           else {
-              Write-Host "Downloading DSC v3..."
+              Write-Host "No usable PowerShell adapter found - installing DSC v3..."
               # Authenticated so the release lookup is not subject to the unauthenticated
               # api.github.com rate limit, which a shared self-hosted runner can exhaust.
               $headers = @{
@@ -216,14 +243,24 @@ jobs:
               }
               $zipPath = Join-Path $env:RUNNER_TEMP 'dsc-v3.zip'
               Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zipPath -UseBasicParsing
+              # -Force overwrites the partial install rather than leaving it half-shadowed.
               Expand-Archive -Path $zipPath -DestinationPath $dscDir -Force
               Remove-Item -Path $zipPath -Force -ErrorAction SilentlyContinue
               if (-not (Test-Path (Join-Path $dscDir 'dsc.exe'))) {
                   throw "dsc.exe not found under $dscDir after extracting $($asset.name)."
               }
-              # Add to PATH for subsequent steps
-              $dscDir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+              Add-DscToPath $dscDir
               Write-Host "DSC v3 $($release.tag_name) installed to $dscDir"
+
+              if (-not (Test-DscPowerShellAdapter)) {
+                  Write-Host 'Files extracted:'
+                  Get-ChildItem -Path $dscDir | Select-Object -ExpandProperty Name | ForEach-Object { Write-Host "  $_" }
+                  Write-Host 'Resources the dsc CLI can see:'
+                  dsc resource list
+                  throw "DSC $($release.tag_name) was installed to $dscDir, but neither " +
+                        "'Microsoft.Adapter/PowerShell' nor 'Microsoft.DSC/PowerShell' is listed. " +
+                        "The suite cannot invoke class-based resources without the PowerShell adapter."
+              }
           }
 
       - name: Prepare results directory

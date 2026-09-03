@@ -54,23 +54,57 @@ function Resolve-DscV3PowerShellAdapter
     # A non-zero exit here is an expected 'not this one' answer, not a terminating error.
     $PSNativeCommandUseErrorActionPreference = $false
 
+    $probes = @()
+
     foreach ($candidate in 'Microsoft.Adapter/PowerShell', 'Microsoft.DSC/PowerShell')
     {
         # An exact type name keeps this to an adapter lookup - without a filter, 'resource
         # list' enumerates every adapted resource in every module on PSModulePath.
-        $listed = dsc --output-format json resource list $candidate 2>$null
+        $stderrPath = [System.IO.Path]::GetTempFileName()
+        try
+        {
+            $listed = dsc --output-format json resource list $candidate 2>$stderrPath
+            $exitCode = $LASTEXITCODE
+            $stderrText = (Get-Content -Path $stderrPath -Raw)
+        }
+        finally
+        {
+            Remove-Item -Path $stderrPath -Force -ErrorAction SilentlyContinue
+        }
 
-        if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace(($listed -join '')))
+        if ($exitCode -eq 0 -and -not [string]::IsNullOrWhiteSpace(($listed -join '')))
         {
             $script:DscV3AdapterType = $candidate
             Write-Host "[V3] PowerShell adapter: $candidate"
             return $candidate
         }
+
+        # Keep the evidence for the throw below. Without it the failure says only which
+        # names are absent, which does not distinguish a CLI too old to have them from an
+        # install that shipped dsc.exe without its adapter manifests.
+        $probes += "    {0} -> exit {1}; stdout: '{2}'; stderr: '{3}'" -f
+            $candidate,
+            $exitCode,
+            ((($listed -join ' ') -replace '\s+', ' ').Trim()),
+            (("$stderrText" -replace '\s+', ' ').Trim())
     }
 
-    throw "Neither 'Microsoft.Adapter/PowerShell' nor 'Microsoft.DSC/PowerShell' is listed by the " +
-          "dsc CLI ($(dsc --version 2>&1)). The PowerShell adapter is required to invoke this " +
-          "module's class-based resources."
+    # Report what the CLI does expose. An incomplete install - the executable without the
+    # adapter manifests that sit beside it in the release archive - satisfies
+    # 'dsc --version' and then lists nothing, which is otherwise indistinguishable here
+    # from a CLI that simply predates both adapter names.
+    $availableTypes = @()
+    foreach ($line in @(dsc --output-format json resource list 2>$null))
+    {
+        if ([string]::IsNullOrWhiteSpace($line)) { continue }
+        try { $availableTypes += (ConvertFrom-Json -InputObject $line).type } catch { }
+    }
+    $availableText = if ($availableTypes) { ($availableTypes | Sort-Object -Unique) -join ', ' } else { '(none)' }
+
+    throw ("Neither 'Microsoft.Adapter/PowerShell' nor 'Microsoft.DSC/PowerShell' is listed by the " +
+           "dsc CLI ($(dsc --version 2>&1)). The PowerShell adapter is required to invoke this " +
+           "module's class-based resources.`nProbes:`n{0}`nResource types the CLI can see: {1}" -f
+           ($probes -join "`n"), $availableText)
 }
 
 function Invoke-DscV3Resource
