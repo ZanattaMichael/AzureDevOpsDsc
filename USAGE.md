@@ -152,7 +152,61 @@ By following these steps, you can successfully set up and use the module with Az
 
 [Current Source](https://github.com/ZanattaMichael/Dsc.PipelineRunner/)
 
-This module integrates with `Dsc.PipelineRunner`, a pipeline runner built on Datum. By utilizing YAML resource files, similar to Ansible playbooks, administrators can manage their environment using Configuration as Code (CaC).
+This module integrates with `Dsc.PipelineRunner`, a platform-agnostic pipeline
+runner built on Datum. By utilizing YAML resource files, similar to Ansible
+playbooks, administrators can manage their environment using Configuration as
+Code (CaC).
+
+`Dsc.PipelineRunner` has no hard dependency on Azure DevOps: configuration
+source, authentication, and the resource execution engine (DSC v2's
+`Invoke-DscResource` or cross-platform DSC v3's `dsc.exe`) are all pluggable
+**Actions**. Azure DevOps support is one opt-in `Connect` action among
+several, resolved via `AzureDevOpsDsc.Common` and this module
+(`AzureDevOpsDscNative`), and is not required to use the runner.
+
+Import the module and invoke it with the provider-agnostic entry point:
+
+```powershell
+Import-Module Dsc.PipelineRunner
+
+Invoke-DscRunner -Source Git -SourceContext @{ Url = $repoUrl } `
+                 -Connect AzureDevOps -ConnectContext @{ OrganizationName = 'MyOrg'; AuthenticationType = 'ManagedIdentity' } `
+                 -Engine DscV2 `
+                 -Mode Set
+```
+
+Existing Azure DevOps pipelines can continue to use the `Invoke-DscPipelineRunner`
+back-compat shim, which maps its Azure DevOps-flavored parameters onto
+`Invoke-DscRunner -Source Git -Connect AzureDevOps` with no functional change
+for existing callers. It requires the `AzureDevOpsDsc.Common` module to be
+installed separately, since Azure DevOps support is no longer a hard
+dependency of the core `Dsc.PipelineRunner` module:
+
+```powershell
+Import-Module Dsc.PipelineRunner
+
+$params = @{
+    AzureDevopsOrganizationName = 'MyOrg'
+    exportConfigDir             = 'C:\Datum\DSCOutput\'
+    ConfigurationSourcePath     = 'https://configuration-path'
+    JITToken                    = $env:SYSTEM_ACCESSTOKEN
+    Mode                        = 'Set'
+    AuthenticationType          = 'ManagedIdentity'
+    ReportPath                  = 'C:\Datum\DSCOutput\Reports'
+}
+
+Invoke-DscPipelineRunner @params
+```
+
+> New integrations should prefer `Invoke-DscRunner`. See the [Dsc.PipelineRunner
+> README](https://github.com/ZanattaMichael/Dsc.PipelineRunner#public-commands)
+> for the full parameter reference for both commands.
+
+The cache directory used to compile Datum configuration is set via
+`PIPELINERUNNER_CACHE_DIRECTORY` (the legacy `AZDODSC_CACHE_DIRECTORY` is
+still honoured as a back-compat alias). `Invoke-DscRunner` doesn't require
+either — pass `-CacheDirectory` explicitly, set one of those environment
+variables, or let it fall back to a temporary directory.
 
 Below is an example of how you can define parameters, variables, and resources in a YAML file to manage your Azure DevOps environment:
 
