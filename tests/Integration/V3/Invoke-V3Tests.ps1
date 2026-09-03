@@ -5,7 +5,8 @@
 
 .DESCRIPTION
     Bootstraps the test environment, dot-sources helper functions, authenticates
-    the AzureDevOpsDsc module, then runs Pester against tests/Integration/V3/Resources/.
+    the AzureDevOpsDsc module, then runs Pester against tests/Integration/V3/Manifests/ and
+    tests/Integration/V3/Resources/.
 
     Requires:
       - 'dsc' (DSC v3 CLI) on PATH
@@ -74,7 +75,10 @@ if (-not (Test-Path $resultsDir)) { New-Item -Path $resultsDir -ItemType Directo
 Write-Host "[V3] Starting DSC v3 integration tests..."
 
 $pesterConfig = New-PesterConfiguration
-$pesterConfig.Run.Path           = "$here\Resources"
+# Manifests first: they are offline checks on what `build.ps1 -Tasks dscv3` emitted,
+# and a wrong or missing manifest is the explanation for the resource failures that
+# would otherwise follow it. Reading them in that order saves diagnosing twice.
+$pesterConfig.Run.Path           = @("$here\Manifests", "$here\Resources")
 # PassThru is required to see the result. Without it this script cannot tell whether
 # any test failed, always exits 0, and every caller - including the release gate in
 # the publish workflow - reads a failed run as a successful one.

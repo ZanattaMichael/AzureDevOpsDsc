@@ -63,6 +63,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `v3-integration-test-results.xml`. `publish.yml` calls it as a second
     release gate beside the v2 gate, with the same prerelease `allowFailures`
     rule, so a release still gates on both suites.
+  - Added `tests/Integration/V3/Manifests/DscV3Manifests.tests.ps1`, covering the
+    DSC v3 adapted resource manifests that `build.ps1 -Tasks dscv3` generates.
+    Nothing was checking them, and their failure mode is silent:
+    `DscResource.Authoring` derives each property's JSON schema type from the
+    AST type name, which yields `System.Boolean` for this module's convention
+    rather than the `bool` its type map expects, so the property quietly falls
+    back to `"string"`. `Fix_DscAdaptedResourceManifestTypes` repairs that after
+    generation - 25 of the 49 manifests need it - but if that task stops running
+    or stops matching, every boolean and numeric property becomes a string again
+    and the build still goes green. The suite asserts a manifest exists for every
+    `[DscResource()]` class, that each declares the right type and the built
+    module version, that every property's schema type matches the type its class
+    declares, that no configurable `[DscProperty()]` is missing, that the
+    combined manifest list agrees with the individual files (they are generated
+    and patched separately, so they can drift), and that the `dsc` CLI can
+    actually discover the resources through the adapter. Class shapes are read
+    from the built module's AST, including inherited properties, so the checks do
+    not need a DSC host able to load the module.
 - AzureDevOpsDsc
   - Added DSC v3 support: all 49 class-based DSC resources now declare `Set()`
     and `Test()` directly (delegating to `AzDevOpsDscResourceBase`) instead of

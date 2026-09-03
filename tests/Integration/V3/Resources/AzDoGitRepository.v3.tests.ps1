@@ -1,6 +1,11 @@
 Describe "AzDoGitRepository DSC v3 Integration Tests" -Tag "V3", "Integration", "GitRepository" {
 
     BeforeAll {
+        # Dot-source the helpers here rather than relying on the runner's dot-source:
+        # Pester runs test files in their own session state, so functions defined in the
+        # runner's script scope are not guaranteed to resolve from inside a test.
+        . (Join-Path -Path $PSScriptRoot -ChildPath '..\Supporting\V3TestHelpers.ps1')
+
         $PROJECTNAME = 'V3_TESTPROJECT_GITREPO'
         $REPONAME    = 'v3-test-repository'
 

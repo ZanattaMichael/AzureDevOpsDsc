@@ -74,12 +74,17 @@ jobs:
         run: |
           .\build.ps1 -Tasks noop -ResolveDependency
 
-      - name: Build module
+      # `dscv3` is not optional here: it is what writes the *.dsc.adaptedResource.json
+      # manifests into the built module, and those manifests are both what the manifest
+      # tests assert against and what the PowerShell adapter reads to surface this
+      # module's class-based resources to the dsc CLI.
+      - name: Build module and generate DSC v3 manifests
         shell: pwsh
         env:
           ModuleVersion: ${{ inputs.moduleVersion }}
         run: |
           .\build.ps1 -Tasks build
+          .\build.ps1 -Tasks dscv3
 
       # The self-hosted runner does not ship Pester 5, and Invoke-V3Tests.ps1 declares
       # `#Requires -Modules @{ ModuleName="Pester"; ModuleVersion="5.0.0" }`, so without
@@ -194,17 +199,33 @@ jobs:
           $PSNativeCommandUseErrorActionPreference = $false
           $dscDir = 'C:\dsc'
 
+          # Enumerate unfiltered and match here. Passing the adapter's type name
+          # positionally to `dsc resource list` is the obvious probe and is not a reliable
+          # one: on dsc 3.2.3 it came back empty for an adapter the unfiltered listing
+          # names, which read as "adapter missing" and failed this step against a
+          # perfectly good install.
+          function Get-DscResourceType {
+              $types = @()
+              foreach ($line in @(dsc --output-format json resource list 2>$null)) {
+                  if ([string]::IsNullOrWhiteSpace($line)) { continue }
+                  try { $types += (ConvertFrom-Json -InputObject $line).type } catch { }
+              }
+              return $types
+          }
+
           function Test-DscPowerShellAdapter {
               if (-not (Get-Command dsc -CommandType Application -ErrorAction SilentlyContinue)) {
                   return $false
               }
+              $types = Get-DscResourceType
               foreach ($candidate in 'Microsoft.Adapter/PowerShell', 'Microsoft.DSC/PowerShell') {
-                  $listed = dsc --output-format json resource list $candidate 2>$null
-                  if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace(($listed -join ''))) {
+                  if ($types -contains $candidate) {
                       Write-Host "PowerShell adapter available: $candidate"
+                      $script:adapterType = $candidate
                       return $true
                   }
               }
+              Write-Host "No PowerShell adapter among the $($types.Count) type(s) listed: $($types -join ', ')"
               return $false
           }
 
@@ -255,13 +276,20 @@ jobs:
               if (-not (Test-DscPowerShellAdapter)) {
                   Write-Host 'Files extracted:'
                   Get-ChildItem -Path $dscDir | Select-Object -ExpandProperty Name | ForEach-Object { Write-Host "  $_" }
-                  Write-Host 'Resources the dsc CLI can see:'
-                  dsc resource list
                   throw "DSC $($release.tag_name) was installed to $dscDir, but neither " +
                         "'Microsoft.Adapter/PowerShell' nor 'Microsoft.DSC/PowerShell' is listed. " +
                         "The suite cannot invoke class-based resources without the PowerShell adapter."
               }
           }
+
+          # Diagnostics only - never fail the install on this. Adapted resources are listed
+          # only when an adapter is named, so this is the first point where the adapter and
+          # the generated manifests are exercised together. Seeing the module's types here
+          # tells a later test failure apart from a discovery problem that precedes it.
+          Write-Host "Adapted resources visible through $script:adapterType :"
+          $adapted = @(dsc --output-format json resource list --adapter $script:adapterType 2>&1)
+          if ($adapted) { $adapted | ForEach-Object { Write-Host "  $_" } }
+          else { Write-Host '  (none - the manifest tests will report this in detail)' }
 
       - name: Prepare results directory
         shell: pwsh

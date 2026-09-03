@@ -54,57 +54,74 @@ function Resolve-DscV3PowerShellAdapter
     # A non-zero exit here is an expected 'not this one' answer, not a terminating error.
     $PSNativeCommandUseErrorActionPreference = $false
 
-    $probes = @()
+    $types = Get-DscV3ResourceType
 
     foreach ($candidate in 'Microsoft.Adapter/PowerShell', 'Microsoft.DSC/PowerShell')
     {
-        # An exact type name keeps this to an adapter lookup - without a filter, 'resource
-        # list' enumerates every adapted resource in every module on PSModulePath.
-        $stderrPath = [System.IO.Path]::GetTempFileName()
-        try
-        {
-            $listed = dsc --output-format json resource list $candidate 2>$stderrPath
-            $exitCode = $LASTEXITCODE
-            $stderrText = (Get-Content -Path $stderrPath -Raw)
-        }
-        finally
-        {
-            Remove-Item -Path $stderrPath -Force -ErrorAction SilentlyContinue
-        }
-
-        if ($exitCode -eq 0 -and -not [string]::IsNullOrWhiteSpace(($listed -join '')))
+        if ($types -contains $candidate)
         {
             $script:DscV3AdapterType = $candidate
             Write-Host "[V3] PowerShell adapter: $candidate"
             return $candidate
         }
-
-        # Keep the evidence for the throw below. Without it the failure says only which
-        # names are absent, which does not distinguish a CLI too old to have them from an
-        # install that shipped dsc.exe without its adapter manifests.
-        $probes += "    {0} -> exit {1}; stdout: '{2}'; stderr: '{3}'" -f
-            $candidate,
-            $exitCode,
-            ((($listed -join ' ') -replace '\s+', ' ').Trim()),
-            (("$stderrText" -replace '\s+', ' ').Trim())
     }
 
     # Report what the CLI does expose. An incomplete install - the executable without the
     # adapter manifests that sit beside it in the release archive - satisfies
     # 'dsc --version' and then lists nothing, which is otherwise indistinguishable here
     # from a CLI that simply predates both adapter names.
-    $availableTypes = @()
-    foreach ($line in @(dsc --output-format json resource list 2>$null))
-    {
-        if ([string]::IsNullOrWhiteSpace($line)) { continue }
-        try { $availableTypes += (ConvertFrom-Json -InputObject $line).type } catch { }
-    }
-    $availableText = if ($availableTypes) { ($availableTypes | Sort-Object -Unique) -join ', ' } else { '(none)' }
+    $availableText = if ($types) { ($types | Sort-Object -Unique) -join ', ' } else { '(none)' }
 
     throw ("Neither 'Microsoft.Adapter/PowerShell' nor 'Microsoft.DSC/PowerShell' is listed by the " +
            "dsc CLI ($(dsc --version 2>&1)). The PowerShell adapter is required to invoke this " +
-           "module's class-based resources.`nProbes:`n{0}`nResource types the CLI can see: {1}" -f
-           ($probes -join "`n"), $availableText)
+           "module's class-based resources.`nResource types the CLI can see: {0}" -f $availableText)
+}
+
+function Get-DscV3ResourceType
+{
+    <#
+    .SYNOPSIS
+        Returns the resource types the dsc CLI lists, as a string array.
+
+    .DESCRIPTION
+        Enumerates without a filter and matches in PowerShell. Passing the type name
+        positionally to 'dsc resource list' looks like the cheaper probe, but it is not a
+        reliable one: on dsc 3.2.3 'resource list Microsoft.Adapter/PowerShell' came back
+        empty on the very CLI whose unfiltered listing names that adapter, which read as
+        "no adapter installed" and failed the suite during setup.
+
+    .PARAMETER Adapter
+        Adapter to enumerate adapted resources from. Adapted resources - this module's
+        class-based resources among them - are only listed when an adapter is named, so
+        an unfiltered listing shows the built-in resources alone.
+    #>
+    param(
+        [string]$Adapter
+    )
+
+    # A non-zero exit is an answer to read, not a terminating error.
+    $PSNativeCommandUseErrorActionPreference = $false
+
+    $output = if ([string]::IsNullOrWhiteSpace($Adapter))
+    {
+        dsc --output-format json resource list 2>$null
+    }
+    else
+    {
+        dsc --output-format json resource list --adapter $Adapter 2>$null
+    }
+
+    # Each line is one resource document; a malformed line is skipped rather than
+    # failing the enumeration, so one bad manifest does not hide every good one.
+    $types = @(
+        foreach ($line in @($output))
+        {
+            if ([string]::IsNullOrWhiteSpace($line)) { continue }
+            try { (ConvertFrom-Json -InputObject $line).type } catch { }
+        }
+    )
+
+    return $types
 }
 
 function Invoke-DscV3Resource
