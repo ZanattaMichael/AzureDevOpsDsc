@@ -153,6 +153,63 @@ function ConvertFrom-DscV3ResourceListing
     )
 }
 
+# How this dsc is asked for JSON, resolved once by Resolve-DscV3JsonForm below.
+$script:DscV3JsonForm = $null
+
+function Resolve-DscV3JsonForm
+{
+    <#
+    .SYNOPSIS
+        Returns how to ask this dsc CLI for JSON, as @{ Global = @(); Sub = @() }.
+
+    .DESCRIPTION
+        Where --output-format goes - or whether it exists at all - differs between
+        releases, so it is probed rather than assumed. dsc 3.2.3 rejects it globally
+        outright ("unexpected argument '--output-format' ... a similar argument exists:
+        '--trace-format'") and prints JSON from 'resource list' without being asked. A
+        hard-coded 'dsc --output-format json ...' therefore fails on that CLI, and every
+        such call returned nothing at all rather than an error the caller could read.
+
+        'resource list' is read-only, so it is the safe command to probe with; the form
+        it settles on is reused for the get/set/test calls.
+    #>
+    if ($script:DscV3JsonForm)
+    {
+        return $script:DscV3JsonForm
+    }
+
+    # A non-zero exit is an answer to read, not a terminating error.
+    $PSNativeCommandUseErrorActionPreference = $false
+
+    # The unary comma matters: entries written on their own lines inside @() are
+    # enumerated, so without it the hashtables would be fine but any array would flatten.
+    foreach ($form in @(
+            , @{ Global = @('--output-format', 'json'); Sub = @() }
+            , @{ Global = @();                          Sub = @('--output-format', 'json') }
+            , @{ Global = @();                          Sub = @() }))
+    {
+        $dscArgs = @($form.Global) + @('resource', 'list') + @($form.Sub)
+        $raw = (@(& dsc @dscArgs 2>$null) -join "`n")
+
+        if (@(ConvertFrom-DscV3ResourceListing -Text $raw).Count -gt 0)
+        {
+            $script:DscV3JsonForm = $form
+            return $form
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($raw))
+        {
+            $script:LastDscV3Listing = $raw
+        }
+    }
+
+    # Nothing answered. Settle on the plain form rather than throwing here: the callers
+    # report the output they actually got, which says more than a failure raised at the
+    # probe would.
+    $script:DscV3JsonForm = @{ Global = @(); Sub = @() }
+    return $script:DscV3JsonForm
+}
+
 function Get-DscV3ResourceType
 {
     <#
@@ -166,11 +223,6 @@ function Get-DscV3ResourceType
         empty on the very CLI whose unfiltered listing names that adapter, which read as
         "no adapter installed" and failed the suite during setup.
 
-        The listing is requested in more than one form because its output shape is not
-        fixed: --output-format json yields one JSON document for the whole listing, the
-        plain listing yields one document per line, and where the flag sits on the command
-        line has differed between releases. The first form that yields types wins.
-
     .PARAMETER Adapter
         Adapter to enumerate adapted resources from. Adapted resources - this module's
         class-based resources among them - are only listed when an adapter is named, so
@@ -183,33 +235,20 @@ function Get-DscV3ResourceType
     # A non-zero exit is an answer to read, not a terminating error.
     $PSNativeCommandUseErrorActionPreference = $false
 
+    $form = Resolve-DscV3JsonForm
     $adapterArgs = if ([string]::IsNullOrWhiteSpace($Adapter)) { @() } else { @('--adapter', $Adapter) }
 
-    # The unary comma matters: entries written on their own lines inside @() are
-    # enumerated, which would flatten the three argument lists into one flat list.
-    $forms = @(
-        , (@('--output-format', 'json', 'resource', 'list') + $adapterArgs)
-        , (@('resource', 'list') + $adapterArgs + @('--output-format', 'json'))
-        , (@('resource', 'list') + $adapterArgs)
-    )
+    $dscArgs = @($form.Global) + @('resource', 'list') + $adapterArgs + @($form.Sub)
+    $raw = (@(& dsc @dscArgs 2>$null) -join "`n")
 
-    foreach ($dscArgs in $forms)
+    $types = @(ConvertFrom-DscV3ResourceListing -Text $raw)
+
+    if ($types.Count -eq 0 -and -not [string]::IsNullOrWhiteSpace($raw))
     {
-        $raw = (@(& dsc @dscArgs 2>$null) -join "`n")
-
-        $types = @(ConvertFrom-DscV3ResourceListing -Text $raw)
-        if ($types.Count -gt 0)
-        {
-            return $types
-        }
-
-        if (-not [string]::IsNullOrWhiteSpace($raw))
-        {
-            $script:LastDscV3Listing = $raw
-        }
+        $script:LastDscV3Listing = $raw
     }
 
-    return @()
+    return $types
 }
 
 function Invoke-DscV3Resource
@@ -257,15 +296,18 @@ function Invoke-DscV3Resource
     # the diagnostic assembled here is never seen.
     $PSNativeCommandUseErrorActionPreference = $false
 
-    # Force JSON on stdout (dsc defaults to YAML) and keep progress/trace on stderr so it
-    # never contaminates the parsed document. Redirect stderr to a temp file rather than
-    # merging with 2>&1, so a failure can still surface the diagnostic text.
+    # Ask for JSON on stdout in whichever form this CLI accepts (see Resolve-DscV3JsonForm)
+    # and keep progress/trace on stderr so it never contaminates the parsed document.
+    # Redirect stderr to a temp file rather than merging with 2>&1, so a failure can still
+    # surface the diagnostic text.
     $dscMethod  = $Method.ToLower()
     $adapter    = Resolve-DscV3PowerShellAdapter
+    $form       = Resolve-DscV3JsonForm
+    $dscArgs    = @($form.Global) + @('resource', $dscMethod, '--resource', $adapter) + @($form.Sub)
     $stderrPath = [System.IO.Path]::GetTempFileName()
     try
     {
-        $rawOutput  = $payload | dsc --output-format json resource $dscMethod --resource $adapter 2>$stderrPath
+        $rawOutput  = $payload | & dsc @dscArgs 2>$stderrPath
         $exitCode   = $LASTEXITCODE
         $stderrText = (Get-Content -Path $stderrPath -Raw)
     }
@@ -276,10 +318,11 @@ function Invoke-DscV3Resource
 
     if ($exitCode -ne 0)
     {
-        throw "dsc resource $Method returned exit code $exitCode.`nStderr: $stderrText`nStdout: $rawOutput"
+        throw ("dsc $($dscArgs -join ' ') returned exit code $exitCode." +
+               "`nStderr: $stderrText`nStdout: $rawOutput")
     }
 
-    # With --output-format json the whole of stdout is a single JSON document (possibly
+    # For get/set/test the whole of stdout is a single JSON document (possibly
     # pretty-printed across lines), so parse it as one - no line-by-line extraction.
     $jsonText = ($rawOutput -join "`n").Trim()
     if ([string]::IsNullOrWhiteSpace($jsonText))

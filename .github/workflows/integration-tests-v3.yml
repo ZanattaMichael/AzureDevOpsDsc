@@ -234,17 +234,27 @@ jobs:
 
           $script:lastListing = ''
 
-          function Get-DscResourceType {
-              foreach ($dscArgs in @(
-                      @('--output-format', 'json', 'resource', 'list'),
-                      @('resource', 'list', '--output-format', 'json'),
-                      @('resource', 'list'))) {
+          # Asking dsc for JSON is version-dependent, so the form is probed rather than
+          # assumed: 3.2.3 rejects a global --output-format outright ("unexpected argument
+          # ... a similar argument exists: '--trace-format'"), and its plain listing is
+          # already one JSON document per line. `resource list` is read-only, so probing
+          # with it costs nothing.
+          function Get-DscListing([string[]] $ExtraArgs) {
+              foreach ($form in @(
+                      , @{ Global = @('--output-format', 'json'); Sub = @() }
+                      , @{ Global = @();                          Sub = @('--output-format', 'json') }
+                      , @{ Global = @();                          Sub = @() })) {
+                  $dscArgs = @($form.Global) + @('resource', 'list') + @($ExtraArgs) + @($form.Sub)
                   $raw = (@(& dsc @dscArgs 2>$null) -join "`n")
                   $types = @(ConvertFrom-DscResourceListing $raw)
-                  if ($types.Count -gt 0) { return $types }
+                  if ($types.Count -gt 0) { return @{ Text = $raw; Types = $types } }
                   if (-not [string]::IsNullOrWhiteSpace($raw)) { $script:lastListing = $raw }
               }
-              return @()
+              return @{ Text = $script:lastListing; Types = @() }
+          }
+
+          function Get-DscResourceType {
+              return @((Get-DscListing).Types)
           }
 
           function Test-DscPowerShellAdapter {
@@ -339,9 +349,19 @@ jobs:
           # the generated manifests are exercised together. Seeing the module's types here
           # tells a later test failure apart from a discovery problem that precedes it.
           Write-Host "Adapted resources visible through $script:adapterType :"
-          $adapted = @(dsc --output-format json resource list --adapter $script:adapterType 2>&1)
-          if ($adapted) { $adapted | ForEach-Object { Write-Host "  $_" } }
-          else { Write-Host '  (none - the manifest tests will report this in detail)' }
+          $adapted = Get-DscListing @('--adapter', $script:adapterType)
+          if ($adapted.Types.Count -gt 0) {
+              $adapted.Types | Sort-Object | ForEach-Object { Write-Host "  $_" }
+          }
+          else {
+              Write-Host '  (none - the manifest tests will report this in detail)'
+          }
+
+          # A diagnostic must not decide the step. pwsh fails a step on a non-zero
+          # $LASTEXITCODE left behind by the last native command, which is how a rejected
+          # dsc argument in the block above failed an install that had already succeeded.
+          # Real failures above throw, and a throw exits non-zero regardless of this.
+          exit 0
 
       - name: Prepare results directory
         shell: pwsh
