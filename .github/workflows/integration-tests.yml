@@ -200,10 +200,40 @@ jobs:
           }
           .\Invoke-Tests.ps1 @params
 
+      - name: Install DSC v3 CLI
+        shell: pwsh
+        run: |
+          # Download and install the latest DSC v3 release from GitHub.
+          # Skip if already on PATH (e.g. pre-installed on the runner image).
+          if (Get-Command dsc -CommandType Application -ErrorAction SilentlyContinue) {
+              Write-Host "DSC v3 already available: $(dsc --version 2>&1)"
+          } else {
+              Write-Host "Downloading DSC v3..."
+              $release  = Invoke-RestMethod 'https://api.github.com/repos/PowerShell/DSC/releases/latest'
+              $asset    = $release.assets | Where-Object { $_.name -match 'x86_64-pc-windows-msvc\.zip$' }
+              $zipPath  = Join-Path $env:TEMP 'dsc-v3.zip'
+              $dscDir   = 'C:\dsc'
+              Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zipPath -UseBasicParsing
+              Expand-Archive -Path $zipPath -DestinationPath $dscDir -Force
+              # Add to PATH for this and subsequent steps
+              "C:\dsc" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+              Write-Host "DSC v3 installed to $dscDir"
+          }
+
+      - name: Run DSC v3 integration tests
+        shell: pwsh
+        working-directory: tests/Integration/V3
+        run: |
+          .\Invoke-V3Tests.ps1 `
+              -TestFrameworkConfigurationPath ..\TestFrameworkConfiguration.json `
+              -ResultsPath 'C:\Temp\v3-integration-test-results.xml'
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: integration-test-results-${{ github.run_number }}
-          path: C:\Temp\integration-test-results.xml
+          path: |
+            C:\Temp\integration-test-results.xml
+            C:\Temp\v3-integration-test-results.xml
           if-no-files-found: ignore
