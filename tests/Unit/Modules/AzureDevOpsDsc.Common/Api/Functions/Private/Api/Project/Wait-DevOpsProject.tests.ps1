@@ -21,6 +21,9 @@ Describe "Wait-DevOpsProject" -Tag "Unit", "Project", "API" {
 
         Mock -CommandName Write-Error
 
+        # Otherwise the timeout context below really sleeps for its ten attempts.
+        Mock -CommandName Start-Sleep
+
     }
 
     Context "When project is created successfully" {
@@ -38,13 +41,21 @@ Describe "Wait-DevOpsProject" -Tag "Unit", "Project", "API" {
 
             { Wait-DevOpsProject @params } | Should -Not -Throw
 
-            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Time 1
+            # One poll, and no spurious timeout: 'wellFormed' is terminal.
+            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Exactly -Times 1
+            Assert-MockCalled -CommandName Write-Error -Exactly -Times 0
         }
     }
 
     Context "When project creation fails" {
-        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith {
-            return @{ status = 'failed'; message = 'Creation failed' }
+        BeforeAll {
+            # In Pester 5 a Mock sitting directly in a Context body runs during discovery
+            # and never takes effect, so these contexts used to run against the
+            # 'wellFormed' mock above and only passed because the timeout error fired
+            # unconditionally. Put them in BeforeAll so they actually apply.
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith {
+                return @{ status = 'failed'; message = 'Creation failed' }
+            }
         }
 
         It "Should detect the failure and write an error message" {
@@ -65,8 +76,10 @@ Describe "Wait-DevOpsProject" -Tag "Unit", "Project", "API" {
     }
 
     Context "When project creation times out" {
-        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith {
-            return @{ status = 'creating' }
+        BeforeAll {
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith {
+                return @{ status = 'creating' }
+            }
         }
 
         It "Should time out after 10 attempts and write an error message" {
@@ -82,13 +95,16 @@ Describe "Wait-DevOpsProject" -Tag "Unit", "Project", "API" {
 
             { Wait-DevOpsProject @params } | Should -Not -Throw
 
-            Assert-MockCalled -CommandName Write-Error
+            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Exactly -Times 10
+            Assert-MockCalled -CommandName Write-Error -Exactly -Times 1
         }
     }
 
     Context "When project creation status is not set" {
-        Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith {
-            return @{ status = 'notSet'; message = 'Status not set' }
+        BeforeAll {
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith {
+                return @{ status = 'notSet'; message = 'Status not set' }
+            }
         }
 
         It "Should detect the status is not set and write an error message" {
