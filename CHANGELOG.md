@@ -40,6 +40,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     not run the Classes suite (needs a built module) or the build (needs
     PSGallery-hosted Sampler/ModuleBuilder) or integration tests (need the
     self-hosted runner and a live org).
+  - Added a DSC v3 integration test suite under `tests/Integration/V3/`, run by
+    `Invoke-V3Tests.ps1` alongside the existing v2 suite on the self-hosted
+    runner. It exercises `AzDoProject`, `AzDoGitRepository` and
+    `AzDoProjectGroup` end to end through the `dsc` CLI and the PowerShell
+    adapter, rather than through `Invoke-DscResource`, so the DSC v3 path is
+    covered by CI. The adapter type is resolved at runtime -
+    `Microsoft.Adapter/PowerShell` on DSC 3.2.0 and later, falling back to the
+    deprecated `Microsoft.DSC/PowerShell` on an older CLI - and can be pinned
+    with the `DSC_V3_ADAPTER` environment variable. The runner reports
+    pass/fail counts and exits non-zero on failure, and honours the same
+    `-AllowFailures` switch as the v2 runner, so `integration-tests.yml` passes
+    `allowFailures` through to both suites and a prerelease is not blocked by an
+    in-progress v3 test. `integration-tests.yml` also installs the `dsc` CLI
+    (before the v2 suite, so a bad download surfaces in seconds rather than an
+    hour) and uploads `v3-integration-test-results.xml` beside the v2 results.
 - AzureDevOpsDsc
   - Added DSC v3 support: all 49 class-based DSC resources now declare `Set()`
     and `Test()` directly (delegating to `AzDevOpsDscResourceBase`) instead of

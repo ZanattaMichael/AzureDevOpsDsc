@@ -2,7 +2,7 @@
 # DSC v3 helper functions for integration tests.
 # Dot-sourced by Invoke-V3Tests.ps1 and available to all V3 test files.
 #
-# Requires: DSC v3 CLI ('dsc') on $env:PATH and the AzureDevOpsDsc module
+# Requires: DSC v3 CLI ('dsc') on $env:PATH and the AzureDevOpsDscNative module
 # in $env:PSModulePath (built via build.ps1 and added by the CI workflow).
 #
 
@@ -16,13 +16,69 @@ function Assert-DscV3Available
     }
     $ver = (dsc --version 2>&1) -replace '^v', ''
     Write-Host "[V3] DSC CLI version: $ver"
+
+    # Resolve (and report) the adapter now, so a CLI without a usable PowerShell adapter
+    # fails during setup rather than inside the first test.
+    Resolve-DscV3PowerShellAdapter | Out-Null
+}
+
+# Resource type of the PowerShell adapter, resolved once per session by
+# Resolve-DscV3PowerShellAdapter below.
+$script:DscV3AdapterType = $null
+
+function Resolve-DscV3PowerShellAdapter
+{
+    <#
+    .SYNOPSIS
+        Returns the resource type of the PowerShell adapter this dsc CLI provides.
+
+    .DESCRIPTION
+        DSC 3.2.0 renamed the adapter from 'Microsoft.DSC/PowerShell' to
+        'Microsoft.Adapter/PowerShell', keeping the old name as a deprecated alias that
+        is removed in 4.0.0. CI installs whatever the latest release is, so neither name
+        can be hard-coded: probe for the current one and fall back to the legacy name on
+        an older CLI. Set $env:DSC_V3_ADAPTER to pin a specific adapter type.
+    #>
+    if ($script:DscV3AdapterType)
+    {
+        return $script:DscV3AdapterType
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($env:DSC_V3_ADAPTER))
+    {
+        $script:DscV3AdapterType = $env:DSC_V3_ADAPTER
+        Write-Host "[V3] PowerShell adapter (from DSC_V3_ADAPTER): $script:DscV3AdapterType"
+        return $script:DscV3AdapterType
+    }
+
+    # A non-zero exit here is an expected 'not this one' answer, not a terminating error.
+    $PSNativeCommandUseErrorActionPreference = $false
+
+    foreach ($candidate in 'Microsoft.Adapter/PowerShell', 'Microsoft.DSC/PowerShell')
+    {
+        # An exact type name keeps this to an adapter lookup - without a filter, 'resource
+        # list' enumerates every adapted resource in every module on PSModulePath.
+        $listed = dsc --output-format json resource list $candidate 2>$null
+
+        if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace(($listed -join '')))
+        {
+            $script:DscV3AdapterType = $candidate
+            Write-Host "[V3] PowerShell adapter: $candidate"
+            return $candidate
+        }
+    }
+
+    throw "Neither 'Microsoft.Adapter/PowerShell' nor 'Microsoft.DSC/PowerShell' is listed by the " +
+          "dsc CLI ($(dsc --version 2>&1)). The PowerShell adapter is required to invoke this " +
+          "module's class-based resources."
 }
 
 function Invoke-DscV3Resource
 {
     <#
     .SYNOPSIS
-        Thin wrapper around 'dsc resource <method>' using the Microsoft.DSC/PowerShell adapter.
+        Thin wrapper around 'dsc resource <method>' using the PowerShell adapter
+        (Microsoft.Adapter/PowerShell, or Microsoft.DSC/PowerShell on a pre-3.2 CLI).
 
     .PARAMETER ResourceName
         PowerShell DSC class resource name (e.g. AzDoProject).
@@ -37,7 +93,7 @@ function Invoke-DscV3Resource
         Hashtable of resource properties.
 
     .OUTPUTS
-        PSCustomObject — parsed JSON output from the dsc CLI.
+        PSCustomObject - parsed JSON output from the dsc CLI.
     #>
     param(
         [Parameter(Mandatory)][string]$ResourceName,
@@ -56,14 +112,22 @@ function Invoke-DscV3Resource
         )
     } | ConvertTo-Json -Depth 10 -Compress
 
+    # A non-zero exit from dsc is handled below with the stderr text attached. Without
+    # this the caller's $ErrorActionPreference='Stop' (PowerShell 7.4 applies it to
+    # native commands) turns the exit code into a bare NativeCommandExitException and
+    # the diagnostic assembled here is never seen.
+    $PSNativeCommandUseErrorActionPreference = $false
+
     # Force JSON on stdout (dsc defaults to YAML) and keep progress/trace on stderr so it
     # never contaminates the parsed document. Redirect stderr to a temp file rather than
     # merging with 2>&1, so a failure can still surface the diagnostic text.
     $dscMethod  = $Method.ToLower()
+    $adapter    = Resolve-DscV3PowerShellAdapter
     $stderrPath = [System.IO.Path]::GetTempFileName()
     try
     {
-        $rawOutput  = $payload | dsc --output-format json resource $dscMethod --resource Microsoft.DSC/PowerShell 2>$stderrPath
+        $rawOutput  = $payload | dsc --output-format json resource $dscMethod --resource $adapter 2>$stderrPath
+        $exitCode   = $LASTEXITCODE
         $stderrText = (Get-Content -Path $stderrPath -Raw)
     }
     finally
@@ -71,13 +135,13 @@ function Invoke-DscV3Resource
         Remove-Item -Path $stderrPath -Force -ErrorAction SilentlyContinue
     }
 
-    if ($LASTEXITCODE -ne 0)
+    if ($exitCode -ne 0)
     {
-        throw "dsc resource $Method returned exit code $LASTEXITCODE.`nStderr: $stderrText`nStdout: $rawOutput"
+        throw "dsc resource $Method returned exit code $exitCode.`nStderr: $stderrText`nStdout: $rawOutput"
     }
 
     # With --output-format json the whole of stdout is a single JSON document (possibly
-    # pretty-printed across lines), so parse it as one — no line-by-line extraction.
+    # pretty-printed across lines), so parse it as one - no line-by-line extraction.
     $jsonText = ($rawOutput -join "`n").Trim()
     if ([string]::IsNullOrWhiteSpace($jsonText))
     {
@@ -89,10 +153,20 @@ function Invoke-DscV3Resource
 
 function Test-DscV3InDesiredState
 {
+    <#
+    .SYNOPSIS
+        Runs 'dsc resource test' and returns the boolean in-desired-state verdict.
+
+    .DESCRIPTION
+        Throws rather than returning $false when the verdict cannot be read out of the
+        dsc output. A missing 'inDesiredState' means the shape of the result changed or
+        the adapter failed - reporting that as "not in desired state" would turn a
+        broken harness into a plain assertion failure and hide the real cause.
+    #>
     param(
-        [string]$ResourceName,
+        [Parameter(Mandatory)][string]$ResourceName,
         [string]$ModuleName = 'AzureDevOpsDscNative',
-        [hashtable]$Property
+        [Parameter(Mandatory)][hashtable]$Property
     )
 
     $result = Invoke-DscV3Resource -ResourceName $ResourceName -ModuleName $ModuleName `
@@ -101,5 +175,20 @@ function Test-DscV3InDesiredState
     # DSC v3 test output: { "desiredState": {}, "actualState": {}, "inDesiredState": true }
     # The PowerShell adapter wraps this inside a "results" array from the group resource.
     $testResult = if ($result.results) { $result.results[0] } else { $result }
-    return [bool]$testResult.inDesiredState
+
+    $verdict = $testResult.inDesiredState
+
+    if ($null -eq $verdict)
+    {
+        # Fall back to the adapter's per-resource verdict before giving up.
+        $verdict = $testResult.actualState.result[0].properties.InDesiredState
+    }
+
+    if ($null -eq $verdict)
+    {
+        throw ("dsc resource Test for $ResourceName returned no 'inDesiredState' verdict. " +
+               "Raw result: " + ($result | ConvertTo-Json -Depth 10 -Compress))
+    }
+
+    return [bool]$verdict
 }
