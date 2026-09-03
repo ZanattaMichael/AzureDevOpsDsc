@@ -65,6 +65,11 @@ jobs:
     name: Run DSC v3 Integration Tests
     runs-on: AZDO-AGENT
 
+    # AZDO-AGENT is the project's only self-hosted runner and the v2 suite queues behind
+    # this job. A hung dsc invocation would otherwise hold it for the 6-hour default.
+    # Full v3 runs so far take ~24 minutes end to end.
+    timeout-minutes: 60
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4

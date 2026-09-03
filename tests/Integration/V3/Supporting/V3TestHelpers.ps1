@@ -251,6 +251,62 @@ function Get-DscV3ResourceType
     return $types
 }
 
+$script:DscV3InputForm = $null
+$script:LastDscV3ResourceHelp = ''
+
+function Resolve-DscV3InputForm
+{
+    <#
+    .SYNOPSIS
+        Works out how this dsc CLI wants the properties object handed to
+        'dsc resource get|set|test', and caches the answer.
+
+    .DESCRIPTION
+        dsc does not read a bare pipe on stdin. Input has to be named: '--file -'
+        reads stdin, '--input <json>' takes the document as an argument. Without
+        either, dsc runs the resource with no properties at all - which is exactly
+        what the first run showed: 'Desired input is empty' from set, 'Expected
+        input is required' from test, and a get that reached the resource and then
+        failed with "Cannot bind argument to parameter 'ProjectName' because it is
+        an empty string".
+
+        '--file -' is preferred: the payload never touches the command line, so
+        native-argument quoting of embedded double quotes cannot corrupt it.
+
+    .OUTPUTS
+        Hashtable with a Kind key of 'File' or 'Input'.
+    #>
+    if ($script:DscV3InputForm)
+    {
+        return $script:DscV3InputForm
+    }
+
+    $PSNativeCommandUseErrorActionPreference = $false
+    $help = (@(& dsc resource get --help 2>&1) -join "`n")
+    $script:LastDscV3ResourceHelp = $help
+
+    # Match the flag anywhere in the help text rather than anchoring to a particular
+    # option-list layout - clap renders '-f, --file <FILE>' and a bare '--file <FILE>'
+    # differently, and the layout is not worth depending on.
+    if ($help -match '--file\b')
+    {
+        $script:DscV3InputForm = @{ Kind = 'File' }
+    }
+    elseif ($help -match '--input\b')
+    {
+        $script:DscV3InputForm = @{ Kind = 'Input' }
+    }
+    else
+    {
+        throw ("'dsc resource get --help' advertises neither --file nor --input, so " +
+               "there is no way to hand the resource its properties.`nHelp text: " +
+               $help.Substring(0, [Math]::Min(2000, $help.Length)))
+    }
+
+    Write-Host "[V3] dsc resource input form: $($script:DscV3InputForm.Kind)"
+    return $script:DscV3InputForm
+}
+
 function Invoke-DscV3Resource
 {
     <#
@@ -280,10 +336,10 @@ function Invoke-DscV3Resource
         [Parameter(Mandatory)][hashtable]$Property
     )
 
-    # 'dsc resource get|set|test' takes the bare properties object on stdin, not a
-    # configuration document. A '{ resources: [...] }' wrapper is rejected with
-    # 'Desired input is empty' (set) and 'Expected input is required' (test) - the
-    # config document shape belongs to 'dsc config', not to 'dsc resource'.
+    # 'dsc resource get|set|test' takes the bare properties object, not a configuration
+    # document. A '{ resources: [...] }' wrapper is rejected with 'Desired input is
+    # empty' (set) and 'Expected input is required' (test) - that shape belongs to
+    # 'dsc config'. How the object is handed over is decided by Resolve-DscV3InputForm.
     $payload = ConvertTo-Json -InputObject $Property -Depth 10 -Compress
 
     # A non-zero exit from dsc is handled below with the stderr text attached. Without
@@ -305,11 +361,27 @@ function Invoke-DscV3Resource
     # and with a clear message when the PowerShell adapter is missing entirely.
     $null       = Resolve-DscV3PowerShellAdapter
     $resourceType = "$ModuleName/$ResourceName"
-    $dscArgs    = @($form.Global) + @('resource', $dscMethod, '--resource', $resourceType) + @($form.Sub)
+    $inputForm  = Resolve-DscV3InputForm
+
+    # Standard argument passing keeps the double quotes inside the JSON intact when the
+    # payload has to travel as an argument. It is a no-op for the --file - path.
+    $PSNativeCommandArgumentPassing = 'Standard'
+
+    $dscArgs    = @($form.Global) + @('resource', $dscMethod, '--resource', $resourceType) +
+                  $(if ($inputForm.Kind -eq 'File') { @('--file', '-') } else { @('--input', $payload) }) +
+                  @($form.Sub)
+
     $stderrPath = [System.IO.Path]::GetTempFileName()
     try
     {
-        $rawOutput  = $payload | & dsc @dscArgs 2>$stderrPath
+        if ($inputForm.Kind -eq 'File')
+        {
+            $rawOutput = $payload | & dsc @dscArgs 2>$stderrPath
+        }
+        else
+        {
+            $rawOutput = & dsc @dscArgs 2>$stderrPath
+        }
         $exitCode   = $LASTEXITCODE
         $stderrText = (Get-Content -Path $stderrPath -Raw)
     }
@@ -321,6 +393,7 @@ function Invoke-DscV3Resource
     if ($exitCode -ne 0)
     {
         throw ("dsc $($dscArgs -join ' ') returned exit code $exitCode." +
+               "`nInput ($($inputForm.Kind)): $payload" +
                "`nStderr: $stderrText`nStdout: $rawOutput")
     }
 
