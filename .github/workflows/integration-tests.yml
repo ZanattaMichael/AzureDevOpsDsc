@@ -14,6 +14,19 @@ name: Integration Tests
 # job no longer references one.
 
 on:
+  # TEMPORARY - validation trigger for the DSC v3 suite added in this branch.
+  #
+  # The suite is otherwise only reachable by manual dispatch or as publish.yml's
+  # release gate, so the v3 steps below would land on main having never executed.
+  # A push filter matches the branch that was pushed, unlike `pull_request`, whose
+  # `branches:` filter matches the BASE branch and would therefore fire this
+  # hour-long live-org suite on every PR targeting main.
+  #
+  # Remove this trigger before merging (or widen it deliberately, if the project
+  # decides the suite should gate pull requests).
+  push:
+    branches:
+      - claude/pr-51-continuation-ncxcao
   workflow_dispatch:
     inputs:
       allowFailures:
