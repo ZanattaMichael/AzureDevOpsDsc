@@ -404,6 +404,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     of their own, which collided with the new parameter and handed
     `Add-CacheItem -Type` a `[string[]]`; they are now dot-sourced through a
     scriptblock so they get a scope of their own rather than this function's.
+  - Fixed the `AzDoTaskGroup` and `AzDoDeploymentGroup` integration tests failing
+    against an organization that disables classic pipelines. Task groups and
+    deployment groups are classic-pipeline objects, and creating one is refused
+    with `400 Bad Request - "The classic pipelines are disabled for this project /
+    organization."` whenever the "Disable creation of classic build and release
+    pipelines" policy is on - the default for newer Azure DevOps organizations -
+    which failed eight tests and, through `publish.yml`, the release gate. Both
+    suites now call a new `Enable-TestClassicPipeline` helper, which turns the
+    policy off for their own test project through the same two settable fields
+    `AzDoPipelineSettings` drives and reads the result back rather than assuming
+    the PATCH took effect. Where an organization-level policy pins the setting on
+    and the resource cannot be exercised at all, the tests that need to create the
+    object report as skipped instead of failing.
 
 - AzDevOpsProject
   - Added description to the comment-based help.
