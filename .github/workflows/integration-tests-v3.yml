@@ -16,19 +16,12 @@ name: DSC v3 Integration Tests
 #      Leave AZURE_DEVOPS_PAT empty to use Managed Identity instead
 #      (only valid when AZDO-AGENT runs on an Azure VM/Arc machine).
 
+# Like the v2 suite, this never fires automatically on push or pull request - it hits a
+# live organization on the project's single self-hosted runner, so it runs only when
+# dispatched manually or called by publish.yml as a release gate. A `pull_request`
+# trigger would be the wrong tool for gating PRs in any case: its `branches:` filter
+# matches the BASE branch, so it would fire on every PR targeting main.
 on:
-  # TEMPORARY - validation trigger for the DSC v3 suite added in this branch, so the
-  # steps below actually execute at least once before they land on main.
-  #
-  # A push filter matches the branch that was pushed, unlike `pull_request`, whose
-  # `branches:` filter matches the BASE branch and would therefore fire this live-org
-  # suite on every PR targeting main.
-  #
-  # Remove this trigger before merging (or widen it deliberately, if the project
-  # decides the suite should gate pull requests).
-  push:
-    branches:
-      - claude/pr-51-continuation-ncxcao
   workflow_dispatch:
     inputs:
       allowFailures:
