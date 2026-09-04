@@ -51,6 +51,19 @@ Function Refresh-AzDoCache
         [string[]]$CacheType
     )
 
+    # These initializers are dot-sourced, which runs them in *this* function's scope
+    # rather than one of their own. That is how it has always worked, but it means
+    # their locals land here and ours are visible to them - and five of them assign
+    # $CacheType, which now collides with this function's parameter. The assignment
+    # inherits the parameter's [string[]] constraint, so 'Add-CacheItem -Type' is
+    # handed a string array and fails to bind. Dot-source through a scriptblock
+    # instead: the initializer still gets a scope it can write globals from, but it
+    # is a scope of its own rather than ours.
+    $invokeInitializer = {
+        param($InitializerName, $Organization)
+        . $InitializerName -OrganizationName $Organization
+    }
+
     # What each initializer produces, and what it reads to do so. Consumes matters
     # for more than ordering: 7 stamps subject descriptors onto the group, user and
     # service principal caches, and 3 derives group membership from groups and
@@ -128,7 +141,7 @@ Function Refresh-AzDoCache
         Get-Variable Azdo* -Scope Global | Remove-Variable -Scope Global
 
         Get-Command "AzDoAPI_*" | Where-Object Source -eq 'AzureDevOpsDsc.Common' | ForEach-Object {
-            . $_.Name -OrganizationName $OrganizationName
+            & $invokeInitializer $_.Name $OrganizationName
         }
 
         Get-AzDoCacheObjects | ForEach-Object {
@@ -156,7 +169,7 @@ Function Refresh-AzDoCache
             Write-Warning "[Refresh-AzDoCache] Cache initializer '$_' was not found."
             return
         }
-        . $_ -OrganizationName $OrganizationName
+        & $invokeInitializer $_ $OrganizationName
     }
 
     $affected | ForEach-Object {

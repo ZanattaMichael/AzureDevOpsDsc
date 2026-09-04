@@ -47,6 +47,72 @@ Describe "Wait-DevOpsProject" -Tag "Unit", "Project", "API" {
         }
     }
 
+    Context "When the operations endpoint reports success" {
+        BeforeAll {
+            # Both callers poll an operation reference, not the project, so 'succeeded'
+            # - not 'wellFormed' - is what the terminal success case actually looks like
+            # in production.
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith {
+                return @{ status = 'succeeded' }
+            }
+        }
+
+        It "Should treat 'succeeded' as terminal and exit after a single poll" {
+            $params = @{
+                OrganizationName = "TestOrg"
+                ProjectURL       = "https://dev.azure.com/TestOrg/_apis/operations/00000000-0000-0000-0000-000000000000"
+                ApiVersion       = "6.0"
+            }
+
+            { Wait-DevOpsProject @params } | Should -Not -Throw
+
+            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Exactly -Times 1
+            Assert-MockCalled -CommandName Write-Error -Exactly -Times 0
+        }
+    }
+
+    Context "When the operation is still queued" {
+        BeforeAll {
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith {
+                return @{ status = 'inProgress' }
+            }
+        }
+
+        It "Should keep polling and time out rather than returning early" {
+            $params = @{
+                OrganizationName = "TestOrg"
+                ProjectURL       = "https://dev.azure.com/TestOrg/_apis/operations/00000000-0000-0000-0000-000000000000"
+                ApiVersion       = "6.0"
+            }
+
+            { Wait-DevOpsProject @params } | Should -Not -Throw
+
+            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Exactly -Times 10
+            Assert-MockCalled -CommandName Write-Error -Exactly -Times 1
+        }
+    }
+
+    Context "When the operation is cancelled" {
+        BeforeAll {
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith {
+                return @{ status = 'cancelled' }
+            }
+        }
+
+        It "Should treat 'cancelled' as a terminal failure" {
+            $params = @{
+                OrganizationName = "TestOrg"
+                ProjectURL       = "https://dev.azure.com/TestOrg/_apis/operations/00000000-0000-0000-0000-000000000000"
+                ApiVersion       = "6.0"
+            }
+
+            { Wait-DevOpsProject @params } | Should -Not -Throw
+
+            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Exactly -Times 1
+            Assert-MockCalled -CommandName Write-Error -Exactly -Times 1
+        }
+    }
+
     Context "When project creation fails" {
         BeforeAll {
             # In Pester 5 a Mock sitting directly in a Context body runs during discovery

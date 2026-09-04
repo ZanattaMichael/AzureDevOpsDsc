@@ -60,18 +60,26 @@ Function Wait-DevOpsProject
         Write-Verbose "[Wait-DevOpsProject] Sending request to check project status..."
         $response = Invoke-AzDevOpsApiRestMethod @params
 
-        # Check the status of the project
+        # Check the status of the project.
+        #
+        # Both callers reach here with an *operations* URL, not a project one: POST
+        # /_apis/projects and PATCH /_apis/projects/{id} each return a 202 operation
+        # reference whose 'url' points at /_apis/operations/{id}. That endpoint reports
+        # 'queued', 'inProgress', 'succeeded' or 'cancelled' - it never says 'wellFormed',
+        # which is a *project* state. Only the project vocabulary was handled, so every
+        # poll fell through to 'default', slept, and the loop exhausted its ten attempts
+        # on a project that had in fact been created. Match both vocabularies.
         switch ($response.status)
         {
-            'creating' {
-                Write-Verbose "[Wait-DevOpsProject] Project is still being created..."
+            { $_ -in 'creating', 'queued', 'inProgress' } {
+                Write-Verbose "[Wait-DevOpsProject] Project is still being created (status: $_)..."
                 Start-Sleep -Seconds 5
             }
-            'wellFormed' {
+            { $_ -in 'wellFormed', 'succeeded' } {
                 Write-Verbose "[Wait-DevOpsProject] Project has been created successfully."
                 $completed = $true
             }
-            'failed' {
+            { $_ -in 'failed', 'cancelled' } {
                 Write-Error "[Wait-DevOpsProject] Project creation failed: $response"
                 $completed = $true
             }
