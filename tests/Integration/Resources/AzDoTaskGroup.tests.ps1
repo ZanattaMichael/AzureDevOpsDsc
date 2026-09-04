@@ -1,3 +1,13 @@
+# A task group is a classic-pipeline object: creating one is refused with
+#
+#     400 Bad Request - "The classic pipelines are disabled for this project / organization."
+#
+# whenever the "Disable creation of classic build and release pipelines" policy is on, which is the
+# default for newer Azure DevOps organizations. Enable-TestClassicPipeline turns the policy off for
+# this test project and reports whether that actually took effect; an organization-level policy
+# overrides the project setting, and there the tests that need to create a task group are skipped
+# rather than failed - the resource cannot be exercised against such an organization at all.
+
 Describe "AzDoTaskGroup Integration Tests" -Tag "Integration", "TaskGroup" {
 
     BeforeAll {
@@ -28,6 +38,8 @@ Describe "AzDoTaskGroup Integration Tests" -Tag "Integration", "TaskGroup" {
         }
 
         New-TestProject -ProjectName $PROJECTNAME
+
+        $classicPipelinesEnabled = Enable-TestClassicPipeline -ProjectName $PROJECTNAME
     }
 
     Context "Testing if the task group exists" {
@@ -53,10 +65,20 @@ Describe "AzDoTaskGroup Integration Tests" -Tag "Integration", "TaskGroup" {
         }
 
         It "Should not throw any exceptions" {
+            if (-not $classicPipelinesEnabled)
+            {
+                Set-ItResult -Skipped -Because 'classic pipeline creation is disabled for this organization'
+            }
+
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
         It "Should return True after creation" {
+            if (-not $classicPipelinesEnabled)
+            {
+                Set-ItResult -Skipped -Because 'classic pipeline creation is disabled for this organization'
+            }
+
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
@@ -71,10 +93,20 @@ Describe "AzDoTaskGroup Integration Tests" -Tag "Integration", "TaskGroup" {
         }
 
         It "Should not throw any exceptions" {
+            if (-not $classicPipelinesEnabled)
+            {
+                Set-ItResult -Skipped -Because 'classic pipeline creation is disabled for this organization'
+            }
+
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
         It "Should return True after update" {
+            if (-not $classicPipelinesEnabled)
+            {
+                Set-ItResult -Skipped -Because 'classic pipeline creation is disabled for this organization'
+            }
+
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
@@ -93,10 +125,20 @@ Describe "AzDoTaskGroup Integration Tests" -Tag "Integration", "TaskGroup" {
         }
 
         It "Should not throw any exceptions" {
+            if (-not $classicPipelinesEnabled)
+            {
+                Set-ItResult -Skipped -Because 'classic pipeline creation is disabled for this organization'
+            }
+
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
         It "Should return True (Absent is desired state)" {
+            if (-not $classicPipelinesEnabled)
+            {
+                Set-ItResult -Skipped -Because 'classic pipeline creation is disabled for this organization'
+            }
+
             $parameters.Method = 'Test'
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue

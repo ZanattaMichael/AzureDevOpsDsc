@@ -222,3 +222,77 @@ function New-TestAgentPool
         if ("$_" -notmatch '409|already exist') { throw "[New-TestAgentPool] Failed to create agent pool '$PoolName': $_" }
     }
 }
+
+# ---------------------------------------------------------------------------
+# Capability probes — features an organization policy can withhold.
+# ---------------------------------------------------------------------------
+
+function Enable-TestClassicPipeline
+{
+    #
+    # Task groups and deployment groups are classic-pipeline features. Azure DevOps ships the
+    # "Disable creation of classic build and release pipelines" policy ON for newer organizations,
+    # and the API answers any attempt to create one with
+    #
+    #     400 Bad Request - "The classic pipelines are disabled for this project / organization."
+    #
+    # The policy exists at both project and organization scope. The project half is settable - it is
+    # the pair of fields AzDoPipelineSettings drives through DisableClassicPipelineCreation - so turn
+    # it off for the test project. When an organization-level policy pins it on, the PATCH is still
+    # accepted and the live value simply does not move, which is why the result is read back from the
+    # API rather than inferred from the PATCH succeeding.
+    #
+    # Returns $true only when classic creation is genuinely enabled afterwards, so callers can skip
+    # rather than fail against an organization that forbids the feature outright. Never throws: an
+    # unreachable or unexpected settings endpoint is reported the same way as a pinned policy.
+    #
+    param(
+        [string]$Organization,
+        [Parameter(Mandatory)][string]$ProjectName,
+        [hashtable]$AuthHeader
+    )
+
+    if (-not $Organization) { $Organization = Resolve-TestOrg }
+    if (-not $AuthHeader)   { $AuthHeader   = Resolve-TestAuthHeader }
+
+    $uri = "https://dev.azure.com/$Organization/$ProjectName/_apis/build/generalsettings?api-version=7.1"
+
+    # 'disableClassicPipelineCreation' is a read-only aggregate of the two fields below - PATCHing it
+    # returns 200 and changes nothing - so drive the two settable fields directly.
+    $body = @{
+        disableClassicBuildPipelineCreation   = $false
+        disableClassicReleasePipelineCreation = $false
+    } | ConvertTo-Json
+
+    try
+    {
+        $null = Invoke-RestMethod -Uri $uri -Method Patch -Headers $AuthHeader -Body $body -ContentType 'application/json'
+    }
+    catch
+    {
+        Write-Warning "[Enable-TestClassicPipeline] Could not update pipeline settings for '$ProjectName': $_"
+    }
+
+    try
+    {
+        $live = Invoke-RestMethod -Uri $uri -Method Get -Headers $AuthHeader
+    }
+    catch
+    {
+        Write-Warning "[Enable-TestClassicPipeline] Could not read pipeline settings back for '$ProjectName': $_"
+        return $false
+    }
+
+    $enabled = (-not [bool]$live.disableClassicBuildPipelineCreation) -and
+               (-not [bool]$live.disableClassicReleasePipelineCreation)
+
+    if (-not $enabled)
+    {
+        Write-Warning ("[Enable-TestClassicPipeline] Classic pipeline creation is still disabled for " +
+            "'$ProjectName' (build: $($live.disableClassicBuildPipelineCreation), " +
+            "release: $($live.disableClassicReleasePipelineCreation)) - an organization-level policy " +
+            "is pinning it on. Tests that need to create a classic pipeline object will be skipped.")
+    }
+
+    return $enabled
+}

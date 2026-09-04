@@ -112,3 +112,20 @@ cache directories** (`AzureDevOpsDscCache` and `AzureDevOpsDscCache-V3`, the lat
 start of each run). The module imports whatever cache is on disk at startup, so a shared directory
 would let one suite be answered out of the other's exported state - which is exactly what running
 the same resources through two hosts is supposed to rule out.
+
+## Features an organization policy can withhold
+
+Some resources cover Azure DevOps features an organization can turn off outright. Where that happens
+the tests skip rather than fail, so a policy decision in the test organization does not read as a
+product regression - and, through `publish.yml`, does not block a release.
+
+| Feature | Resources | How it is handled |
+|---|---|---|
+| Classic build and release pipelines | `AzDoTaskGroup`, `AzDoDeploymentGroup` | `Enable-TestClassicPipeline` (in `Supporting/Functions/SupportingFunctions.ps1`) clears the project-level half of the "Disable creation of classic build and release pipelines" policy for the test project and reads the setting back. If an organization-level policy pins it on, the tests that create the object are skipped. |
+| Real tenant user identities | `AzDoUserEntitlement`, `AzDoNotificationSubscription` | Skipped unless `AZDODSC_TEST_USER_UPN` names a real user in the organization's Entra ID tenant. The value is PII, so it is never committed - set it as a masked CI secret. |
+| An external service hook endpoint | `AzDoServiceHook` | Not skipped - `AZDODSC_TEST_HOOK_URL` supplies a real endpoint when set, and otherwise a per-run `example.com` URL is used. Azure DevOps does not call the URL at create time, so the full lifecycle still runs. |
+| A provisioned Event Hub | `AzDoAuditStream` | Skipped unconditionally - there is no safe placeholder connection string. |
+
+`Enable-TestClassicPipeline` returns `$true` only when it can confirm from the API that classic
+creation is genuinely enabled afterwards; a successful `PATCH` is not evidence, because Azure DevOps
+accepts the request and silently leaves the value alone when an organization policy owns it.
