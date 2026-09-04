@@ -40,6 +40,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     not run the Classes suite (needs a built module) or the build (needs
     PSGallery-hosted Sampler/ModuleBuilder) or integration tests (need the
     self-hosted runner and a live org).
+  - Added a DSC v3 integration test suite under `tests/Integration/V3/`, run by
+    `Invoke-V3Tests.ps1` alongside the existing v2 suite on the self-hosted
+    runner. It exercises `AzDoProject`, `AzDoGitRepository` and
+    `AzDoProjectGroup` end to end through the `dsc` CLI and the PowerShell
+    adapter, rather than through `Invoke-DscResource`, so the DSC v3 path is
+    covered by CI. The adapter type is resolved at runtime -
+    `Microsoft.Adapter/PowerShell` on DSC 3.2.0 and later, falling back to the
+    deprecated `Microsoft.DSC/PowerShell` on an older CLI - and can be pinned
+    with the `DSC_V3_ADAPTER` environment variable. The runner reports
+    pass/fail counts and exits non-zero on failure, and honours the same
+    `-AllowFailures` switch as the v2 runner, so a prerelease is not blocked by
+    an in-progress v3 test.
+  - Added `.github/workflows/integration-tests-v3.yml`, a standalone workflow
+    for the DSC v3 suite. It is kept separate from `integration-tests.yml`
+    deliberately: the v2 suite takes the better part of an hour, so running v3
+    inside it means waiting v2 out to learn anything about v3. Split, the two
+    can be dispatched, gated and re-run independently, and since both target the
+    same self-hosted runner they queue rather than contend. The workflow builds
+    the module, pins `PSModulePath` to that single build, installs the `dsc`
+    CLI, runs `Invoke-V3Tests.ps1` and uploads
+    `v3-integration-test-results.xml`. `publish.yml` calls it as a second
+    release gate beside the v2 gate, with the same prerelease `allowFailures`
+    rule, so a release still gates on both suites.
+  - Added `tests/Integration/V3/Manifests/DscV3Manifests.tests.ps1`, covering the
+    DSC v3 adapted resource manifests that `build.ps1 -Tasks dscv3` generates.
+    Nothing was checking them, and their failure mode is silent:
+    `DscResource.Authoring` derives each property's JSON schema type from the
+    AST type name, which yields `System.Boolean` for this module's convention
+    rather than the `bool` its type map expects, so the property quietly falls
+    back to `"string"`. `Fix_DscAdaptedResourceManifestTypes` repairs that after
+    generation - 25 of the 49 manifests need it - but if that task stops running
+    or stops matching, every boolean and numeric property becomes a string again
+    and the build still goes green. The suite asserts a manifest exists for every
+    `[DscResource()]` class, that each declares the right type and the built
+    module version, that every property's schema type matches the type its class
+    declares, that no configurable `[DscProperty()]` is missing, that the
+    combined manifest list agrees with the individual files (they are generated
+    and patched separately, so they can drift), and that the `dsc` CLI can
+    actually discover the resources through the adapter. Class shapes are read
+    from the built module's AST, including inherited properties, so the checks do
+    not need a DSC host able to load the module.
 - AzureDevOpsDsc
   - Added DSC v3 support: all 49 class-based DSC resources now declare `Set()`
     and `Test()` directly (delegating to `AzDevOpsDscResourceBase`) instead of
@@ -332,6 +373,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     explicit dependency dot-source, and a mock incompatible with a typed
     parameter in `Get-AzServicePrincipalCertificateToken`. The Common suite
     now passes 1703/1703 (10 intentionally skipped), also verified on CI.
+  - Fixed `Wait-DevOpsProject` never observing a completed project, so every
+    `AzDoProject` New or Set spent the full ten-attempt poll (50 seconds) before
+    returning. Two defects compounded: the `break` statements inside the status
+    `switch` broke out of the enclosing `while` rather than the switch, so the
+    loop exited on its first iteration through the error branch; and the switch
+    only knew the *project* status vocabulary (`creating`/`wellFormed`/`failed`)
+    while both callers pass an *operations* URL - `POST /_apis/projects` and
+    `PATCH /_apis/projects/{id}` each return a 202 operation reference pointing
+    at `/_apis/operations/{id}`, which reports `queued`, `inProgress`,
+    `succeeded` or `cancelled` and never `wellFormed`. Every poll therefore fell
+    through to `default`, slept, and exhausted its attempts on a project that had
+    in fact been created. The switch now matches both vocabularies and no longer
+    breaks the loop from inside a case.
+  - Fixed `Remove-DevOpsGroup`, `New-DevOpsGroupMember` and
+    `Remove-DevOpsGroupMember` failing with `VssInvalidPreviewVersionException`.
+    All three defaulted their API version to `Get-AzDevOpsApiVersion -Default`
+    (`7.1`), but the graph API is preview-only and rejects a plain `7.1`. They
+    now pin `7.1-preview.1`, matching the eleven other graph call sites in the
+    module - including `New-`/`Remove-DevOpsTeamMember`, which hit the same
+    `/_apis/graph/memberships/` endpoint.
+  - Fixed `Refresh-AzDoCache` rebuilding every cache on each call. It now accepts
+    a `-CacheType` parameter and runs only the initializers that feed the caches
+    named, falling back to a full refresh when a name is unrecognised.
+    `New-AzDoProject` and `Set-AzDoProject` now ask for `LiveProjects` alone
+    rather than every cache, which is what dominated the DSC v3 integration run
+    time: the PowerShell adapter spawns a fresh
+    process per `dsc resource` call, so a full refresh was paid on every
+    invocation. The initializers are dot-sourced and assign a local `$CacheType`
+    of their own, which collided with the new parameter and handed
+    `Add-CacheItem -Type` a `[string[]]`; they are now dot-sourced through a
+    scriptblock so they get a scope of their own rather than this function's.
 
 - AzDevOpsProject
   - Added description to the comment-based help.

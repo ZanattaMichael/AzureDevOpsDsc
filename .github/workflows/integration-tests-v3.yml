@@ -1,0 +1,404 @@
+name: DSC v3 Integration Tests
+
+# DSC v3 integration tests run against a live Azure DevOps organization on the
+# self-hosted AZDO-AGENT runner, driving the module's class-based resources through
+# the `dsc` CLI and its PowerShell adapter.
+#
+# Deliberately a separate workflow from integration-tests.yml. The v2 suite takes the
+# better part of an hour; running the v3 suite inside it means waiting out v2 to learn
+# anything about v3. Split, the two can be dispatched, gated and re-run independently.
+# Both target the same single self-hosted runner, so they queue rather than contend.
+#
+# One-time repository setup required (repository scope, NOT an Environment) - the same
+# variable and secret integration-tests.yml uses:
+#   1. Add repository variable:  AzureDevOpsOrg   (your Azure DevOps org name)
+#   2. Add repository secret:    AZURE_DEVOPS_PAT (a PAT with full-access scopes)
+#      Leave AZURE_DEVOPS_PAT empty to use Managed Identity instead
+#      (only valid when AZDO-AGENT runs on an Azure VM/Arc machine).
+
+# Like the v2 suite, this never fires automatically on push or pull request - it hits a
+# live organization on the project's single self-hosted runner, so it runs only when
+# dispatched manually or called by publish.yml as a release gate. A `pull_request`
+# trigger would be the wrong tool for gating PRs in any case: its `branches:` filter
+# matches the BASE branch, so it would fire on every PR targeting main.
+on:
+  workflow_dispatch:
+    inputs:
+      allowFailures:
+        description: >-
+          Exit 0 even if individual v3 integration tests fail (setup/infrastructure
+          failures still fail the run). Useful for running the suite on a preview
+          branch without gating on in-progress tests.
+        required: false
+        default: false
+        type: boolean
+  # Called by publish.yml as a release gate, alongside the v2 suite.
+  workflow_call:
+    inputs:
+      moduleVersion:
+        description: >-
+          Version to build and test. The publish workflow passes the version derived
+          from the release tag so the tests exercise the exact build being released.
+          Left empty, the build falls back to the manifest version.
+        required: false
+        type: string
+      allowFailures:
+        description: >-
+          Exit 0 even if individual v3 integration tests fail. Set by publish.yml on a
+          prerelease tag. Setup/infrastructure failures still fail the run.
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  integration-tests-v3:
+    name: Run DSC v3 Integration Tests
+    runs-on: AZDO-AGENT
+
+    # AZDO-AGENT is the project's only self-hosted runner and the v2 suite queues behind
+    # this job. A hung dsc invocation would otherwise hold it for the 6-hour default.
+    # Full v3 runs so far take ~24 minutes end to end.
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        shell: pwsh
+        run: |
+          .\build.ps1 -Tasks noop -ResolveDependency
+
+      # `dscv3` is not optional here: it is what writes the *.dsc.adaptedResource.json
+      # manifests into the built module, and those manifests are both what the manifest
+      # tests assert against and what the PowerShell adapter reads to surface this
+      # module's class-based resources to the dsc CLI.
+      - name: Build module and generate DSC v3 manifests
+        shell: pwsh
+        env:
+          ModuleVersion: ${{ inputs.moduleVersion }}
+        run: |
+          .\build.ps1 -Tasks build
+          .\build.ps1 -Tasks dscv3
+
+      # The self-hosted runner does not ship Pester 5, and Invoke-V3Tests.ps1 declares
+      # `#Requires -Modules @{ ModuleName="Pester"; ModuleVersion="5.0.0" }`, so without
+      # this the script refuses to start and the suite never runs at all. Pinned to the
+      # same version the unit test and publish workflows install.
+      - name: Install Pester
+        shell: pwsh
+        run: |
+          Install-Module -Name Pester -RequiredVersion 5.7.1 -Force -SkipPublisherCheck -Scope CurrentUser
+          $pester = Get-Module -Name Pester -ListAvailable |
+              Where-Object Version -ge ([version]'5.0.0') |
+              Sort-Object Version -Descending |
+              Select-Object -First 1
+          if (-not $pester) {
+              throw "Pester 5.x is not available after install - Invoke-V3Tests.ps1 cannot run."
+          }
+          Write-Host "Pester $($pester.Version) available at $($pester.ModuleBase)"
+
+      # Point PSModulePath at exactly one copy of each module the tests load. See the
+      # equivalent step in integration-tests.yml for the full rationale: a module
+      # reachable from two locations makes Get-Module return an array, which DSC cannot
+      # cast to [PSModuleInfo]. The v3 PowerShell adapter resolves this module's
+      # class-based resources off PSModulePath too, so the same single-copy guarantee
+      # applies here.
+      - name: Set PSModulePath to the built module only
+        shell: pwsh
+        run: |
+          $outputPath = (Resolve-Path -Path .\output).Path
+          $builtModulePath = Join-Path -Path $outputPath -ChildPath 'builtModule'
+          $nestedModulePaths = @(
+              Get-ChildItem -Path (Join-Path -Path $builtModulePath -ChildPath '*/*/Modules') -Directory -ErrorAction SilentlyContinue |
+                  Select-Object -ExpandProperty FullName
+          )
+
+          # Keep the runner's default user/system module paths (Pester, base modules) but
+          # drop anything under this repo's ./output and any stale C:\Temp\DSCModule copies,
+          # so nothing outside the freshly built module can provide a second copy.
+          $keep = $env:PSModulePath -split ';' | Where-Object {
+              $_ -and
+              $_ -notlike "$outputPath*" -and
+              $_ -notlike 'C:\Temp\DSCModule*'
+          }
+
+          $ordered = @($builtModulePath) + $nestedModulePaths + $keep
+          $env:PSModulePath = ($ordered | Where-Object { $_ } | Select-Object -Unique) -join ';'
+
+          # Persist for subsequent steps via $GITHUB_ENV
+          "PSModulePath=$env:PSModulePath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+          Write-Host 'PSModulePath entries:'
+          $env:PSModulePath -split ';' | Where-Object { $_ } | ForEach-Object { Write-Host "  $_" }
+
+          # Assert each module resolves from exactly one location, failing here naming the
+          # module and its locations rather than deep inside the DSC adapter.
+          foreach ($name in 'DscResource.Common', 'AzureDevOpsDsc.Common', 'AzureDevOpsDscNative') {
+              $bases = @(Get-Module -Name $name -ListAvailable | Select-Object -ExpandProperty ModuleBase -Unique)
+              if ($bases.Count -eq 0) {
+                  throw "Module '$name' is not resolvable on PSModulePath after the build - the integration tests cannot initialise."
+              }
+              if ($bases.Count -gt 1) {
+                  throw "Module '$name' resolves from $($bases.Count) locations, which makes the DSC PowerShell adapter throw on a [PSModuleInfo] cast: $($bases -join ' ; ')"
+              }
+              Write-Host "Resolved $name -> $($bases[0])"
+          }
+
+      - name: Write test framework configuration
+        shell: pwsh
+        env:
+          AZURE_DEVOPS_ORG: ${{ vars.AzureDevOpsOrg }}
+          AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
+        run: |
+          if ([string]::IsNullOrEmpty($env:AZURE_DEVOPS_ORG)) {
+              throw "Required variable 'AzureDevOpsOrg' is not set. " +
+                    "Add it under Settings > Secrets and variables > Actions > Variables."
+          }
+          $authType = if (-not [string]::IsNullOrEmpty($env:AZURE_DEVOPS_PAT)) { 'PAT' } else { 'ManagedIdentity' }
+          Write-Host "Organization : $($env:AZURE_DEVOPS_ORG)"
+          Write-Host "Auth type    : $authType"
+
+          $config = [ordered]@{
+              Organization       = $env:AZURE_DEVOPS_ORG
+              AuthenticationType = $authType
+              excludedProjectsFromTeardown = @()
+          }
+          if ($authType -eq 'PAT') {
+              $config.PATToken = $env:AZURE_DEVOPS_PAT
+          }
+          $config | ConvertTo-Json -Depth 3 |
+              Set-Content -Path .\tests\Integration\TestFrameworkConfiguration.json -Encoding UTF8
+          Write-Host "TestFrameworkConfiguration.json written."
+
+      # A directory of this suite's own, deliberately not the 'AzureDevOpsDscCache' the
+      # v2 workflow uses. Both suites run on the same self-hosted runner against the same
+      # organization, so a shared directory means one suite reads cache files the other
+      # exported - and the module imports whatever is on disk at startup. That is worth
+      # avoiding on its own, but it also matters for what the two suites are for: v2 and
+      # v3 exercise the same resources through different hosts, and a run that inherits
+      # the other's cache is not independently telling you the host works. Cleared at the
+      # start of each run so a run is never answered out of a previous one's cache.
+      - name: Prepare cache directory
+        shell: pwsh
+        run: |
+          $cacheDir = Join-Path $env:TEMP 'AzureDevOpsDscCache-V3'
+          if (Test-Path -LiteralPath $cacheDir) {
+              Remove-Item -LiteralPath $cacheDir -Recurse -Force
+          }
+          New-Item -Path $cacheDir -ItemType Directory -Force | Out-Null
+          "AZDODSC_CACHE_DIRECTORY=$cacheDir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "Cache directory: $cacheDir"
+
+      # The dsc executable alone is not enough: this suite drives the module's
+      # class-based resources through the PowerShell adapter, which ships as manifest
+      # files alongside dsc.exe in the release archive. A partial install - just the
+      # executable, as the pre-existing C:\dsc on this runner turned out to be - answers
+      # `dsc --version` happily and then lists no adapter at all, failing at test time.
+      # So the check here is "is the adapter usable", not "does dsc exist".
+      - name: Install DSC v3 CLI
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # A non-zero exit from a dsc probe is an answer, not a terminating error.
+          $PSNativeCommandUseErrorActionPreference = $false
+          $dscDir = 'C:\dsc'
+
+          # Enumerate unfiltered and match here. Two obvious probes are both wrong, and
+          # each failed this step against a perfectly good install:
+          #   * `dsc resource list <TypeName>` as a filter came back empty on dsc 3.2.3
+          #     for an adapter the unfiltered listing names.
+          #   * reading the listing line by line found zero types, because under
+          #     --output-format json the whole of stdout is ONE json document (an array,
+          #     pretty-printed across lines) rather than one document per line.
+          # So parse the whole document first, fall back to document-per-line, and try
+          # the plain listing as well rather than trusting a single output shape.
+          function ConvertFrom-DscResourceListing([string] $Text) {
+              $types = @()
+              if ([string]::IsNullOrWhiteSpace($Text)) { return $types }
+              try {
+                  $types = @(ConvertFrom-Json -InputObject $Text |
+                      ForEach-Object { $_.type } |
+                      Where-Object { $_ })
+              }
+              catch { }
+              if ($types.Count -eq 0) {
+                  # One malformed line is skipped rather than failing the enumeration, so
+                  # a single bad manifest cannot hide every good one.
+                  foreach ($line in ($Text -split "`r?`n")) {
+                      if ([string]::IsNullOrWhiteSpace($line)) { continue }
+                      try {
+                          $lineType = (ConvertFrom-Json -InputObject $line).type
+                          if ($lineType) { $types += $lineType }
+                      }
+                      catch { }
+                  }
+              }
+              return $types
+          }
+
+          $script:lastListing = ''
+
+          # Asking dsc for JSON is version-dependent, so the form is probed rather than
+          # assumed: 3.2.3 rejects a global --output-format outright ("unexpected argument
+          # ... a similar argument exists: '--trace-format'"), and its plain listing is
+          # already one JSON document per line. `resource list` is read-only, so probing
+          # with it costs nothing.
+          function Get-DscListing([string[]] $ExtraArgs) {
+              foreach ($form in @(
+                      , @{ Global = @('--output-format', 'json'); Sub = @() }
+                      , @{ Global = @();                          Sub = @('--output-format', 'json') }
+                      , @{ Global = @();                          Sub = @() })) {
+                  $dscArgs = @($form.Global) + @('resource', 'list') + @($ExtraArgs) + @($form.Sub)
+                  $raw = (@(& dsc @dscArgs 2>$null) -join "`n")
+                  $types = @(ConvertFrom-DscResourceListing $raw)
+                  if ($types.Count -gt 0) { return @{ Text = $raw; Types = $types } }
+                  if (-not [string]::IsNullOrWhiteSpace($raw)) { $script:lastListing = $raw }
+              }
+              return @{ Text = $script:lastListing; Types = @() }
+          }
+
+          function Get-DscResourceType {
+              return @((Get-DscListing).Types)
+          }
+
+          function Test-DscPowerShellAdapter {
+              if (-not (Get-Command dsc -CommandType Application -ErrorAction SilentlyContinue)) {
+                  return $false
+              }
+              $types = Get-DscResourceType
+              foreach ($candidate in 'Microsoft.Adapter/PowerShell', 'Microsoft.DSC/PowerShell') {
+                  if ($types -contains $candidate) {
+                      Write-Host "PowerShell adapter available: $candidate"
+                      $script:adapterType = $candidate
+                      return $true
+                  }
+              }
+              Write-Host "No PowerShell adapter among the $($types.Count) type(s) listed: $($types -join ', ')"
+              # Print what the CLI actually said. A type count alone cannot tell "the CLI
+              # listed nothing" apart from "the listing was not parsed", which is exactly
+              # the ambiguity that cost a CI round here.
+              if ($script:lastListing) {
+                  Write-Host 'Unparsed output from the resource listing (first 2000 chars):'
+                  Write-Host $script:lastListing.Substring(0, [Math]::Min(2000, $script:lastListing.Length))
+
+                  # Last resort: the CLI printed a listing in a shape nothing above could
+                  # read. Its text still names the adapter when the adapter is installed,
+                  # and matching on that beats failing a good install over output format.
+                  foreach ($candidate in 'Microsoft.Adapter/PowerShell', 'Microsoft.DSC/PowerShell') {
+                      if ($script:lastListing -like "*$candidate*") {
+                          Write-Host "PowerShell adapter named in the unparsed listing: $candidate"
+                          $script:adapterType = $candidate
+                          return $true
+                      }
+                  }
+              }
+              return $false
+          }
+
+          function Add-DscToPath([string] $dir) {
+              # $GITHUB_PATH only affects later steps; $env:PATH makes dsc usable in this one.
+              if (($env:PATH -split ';') -notcontains $dir) {
+                  $env:PATH = "$dir;$env:PATH"
+                  $dir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+              }
+          }
+
+          if (Test-Path (Join-Path $dscDir 'dsc.exe')) {
+              Add-DscToPath $dscDir
+          }
+
+          if (Test-DscPowerShellAdapter) {
+              Write-Host "DSC v3 already usable: $(dsc --version 2>&1)"
+          }
+          else {
+              Write-Host "No usable PowerShell adapter found - installing DSC v3..."
+              # Authenticated so the release lookup is not subject to the unauthenticated
+              # api.github.com rate limit, which a shared self-hosted runner can exhaust.
+              $headers = @{
+                  'Accept'               = 'application/vnd.github+json'
+                  'X-GitHub-Api-Version' = '2022-11-28'
+              }
+              if (-not [string]::IsNullOrEmpty($env:GH_TOKEN)) {
+                  $headers['Authorization'] = "Bearer $($env:GH_TOKEN)"
+              }
+              $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/PowerShell/DSC/releases/latest' -Headers $headers
+              $asset = $release.assets |
+                  Where-Object { $_.name -match 'x86_64-pc-windows-msvc\.zip$' } |
+                  Select-Object -First 1
+              if (-not $asset) {
+                  throw "No x86_64-pc-windows-msvc .zip asset found in DSC release '$($release.tag_name)'. Assets: $($release.assets.name -join ', ')"
+              }
+              $zipPath = Join-Path $env:RUNNER_TEMP 'dsc-v3.zip'
+              Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zipPath -UseBasicParsing
+              # -Force overwrites the partial install rather than leaving it half-shadowed.
+              Expand-Archive -Path $zipPath -DestinationPath $dscDir -Force
+              Remove-Item -Path $zipPath -Force -ErrorAction SilentlyContinue
+              if (-not (Test-Path (Join-Path $dscDir 'dsc.exe'))) {
+                  throw "dsc.exe not found under $dscDir after extracting $($asset.name)."
+              }
+              Add-DscToPath $dscDir
+              Write-Host "DSC v3 $($release.tag_name) installed to $dscDir"
+
+              if (-not (Test-DscPowerShellAdapter)) {
+                  Write-Host 'Files extracted:'
+                  Get-ChildItem -Path $dscDir | Select-Object -ExpandProperty Name | ForEach-Object { Write-Host "  $_" }
+                  throw "DSC $($release.tag_name) was installed to $dscDir, but neither " +
+                        "'Microsoft.Adapter/PowerShell' nor 'Microsoft.DSC/PowerShell' is listed. " +
+                        "The suite cannot invoke class-based resources without the PowerShell adapter."
+              }
+          }
+
+          # Diagnostics only - never fail the install on this. Adapted resources are listed
+          # only when an adapter is named, so this is the first point where the adapter and
+          # the generated manifests are exercised together. Seeing the module's types here
+          # tells a later test failure apart from a discovery problem that precedes it.
+          Write-Host "Adapted resources visible through $script:adapterType :"
+          $adapted = Get-DscListing @('--adapter', $script:adapterType)
+          if ($adapted.Types.Count -gt 0) {
+              $adapted.Types | Sort-Object | ForEach-Object { Write-Host "  $_" }
+          }
+          else {
+              Write-Host '  (none - the manifest tests will report this in detail)'
+          }
+
+          # A diagnostic must not decide the step. pwsh fails a step on a non-zero
+          # $LASTEXITCODE left behind by the last native command, which is how a rejected
+          # dsc argument in the block above failed an install that had already succeeded.
+          # Real failures above throw, and a throw exits non-zero regardless of this.
+          exit 0
+
+      - name: Prepare results directory
+        shell: pwsh
+        run: |
+          New-Item -Path 'C:\Temp' -ItemType Directory -Force | Out-Null
+
+      - name: Run DSC v3 integration tests
+        shell: pwsh
+        working-directory: tests/Integration/V3
+        env:
+          # Booleans from workflow inputs arrive as PowerShell literals. Normalise to a
+          # bare 'true'/'false' string so the pwsh block below can treat it uniformly.
+          ALLOW_FAILURES: ${{ inputs.allowFailures && 'true' || 'false' }}
+        run: |
+          $params = @{
+              TestFrameworkConfigurationPath = '..\TestFrameworkConfiguration.json'
+              ResultsPath                    = 'C:\Temp\v3-integration-test-results.xml'
+          }
+          if ($env:ALLOW_FAILURES -eq 'true') {
+              Write-Host 'AllowFailures is enabled - test failures will be reported but will not fail this run.'
+              $params['AllowFailures'] = $true
+          }
+          .\Invoke-V3Tests.ps1 @params
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v3-integration-test-results-${{ github.run_number }}
+          path: C:\Temp\v3-integration-test-results.xml
+          if-no-files-found: ignore

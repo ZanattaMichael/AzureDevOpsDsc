@@ -9,7 +9,8 @@ The Remove-DevOpsGroup function is used to remove a group from Azure DevOps usin
 The mandatory parameter for the API URI.
 
 .PARAMETER ApiVersion
-The optional parameter for the API version with a default value obtained from the Get-AzDevOpsApiVersion function.
+The optional parameter for the API version. Defaults to '7.1-preview.1' - the graph
+API is preview-only and rejects a plain '7.1'.
 
 .PARAMETER GroupDescriptor
 The optional parameter for the project scope descriptor.
@@ -42,7 +43,10 @@ Function Remove-DevOpsGroup
         $GroupDescriptor
     )
 
-    if (-not $ApiVersion) { $ApiVersion = Get-AzDevOpsApiVersion -Default }
+    # The graph API is preview-only: it rejects a plain '7.1' with
+    # VssInvalidPreviewVersionException. Get-AzDevOpsApiVersion -Default returns '7.1',
+    # so pin the preview version the way every other graph call in this module does.
+    if (-not $ApiVersion) { $ApiVersion = '7.1-preview.1' }
 
     $params = @{
         Uri = '{0}/_apis/graph/groups/{1}?api-version={2}' -f $ApiUri.TrimEnd('/'), $GroupDescriptor, $ApiVersion

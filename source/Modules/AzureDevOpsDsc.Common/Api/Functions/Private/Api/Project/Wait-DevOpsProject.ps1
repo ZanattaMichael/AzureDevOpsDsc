@@ -44,32 +44,48 @@ Function Wait-DevOpsProject
 
     Write-Verbose "[Wait-DevOpsProject] URI: $($params.URI)"
 
-    # Loop until the project is created
-    $counter = 0
+    # Loop until the project reaches a terminal status.
+    #
+    # 'break' inside a switch leaves the switch, not the enclosing do/while, so the
+    # loop used to run its full ten iterations no matter what the API reported and
+    # the '$counter -ge 10' check afterwards was therefore always true - every call
+    # slept 50 seconds and then wrote a spurious timeout error. Track completion
+    # explicitly instead.
+    $maxAttempts = 10
+    $counter     = 0
+    $completed   = $false
+
     do
     {
         Write-Verbose "[Wait-DevOpsProject] Sending request to check project status..."
         $response = Invoke-AzDevOpsApiRestMethod @params
-        $project = $response
 
-        # Check the status of the project
+        # Check the status of the project.
+        #
+        # Both callers reach here with an *operations* URL, not a project one: POST
+        # /_apis/projects and PATCH /_apis/projects/{id} each return a 202 operation
+        # reference whose 'url' points at /_apis/operations/{id}. That endpoint reports
+        # 'queued', 'inProgress', 'succeeded' or 'cancelled' - it never says 'wellFormed',
+        # which is a *project* state. Only the project vocabulary was handled, so every
+        # poll fell through to 'default', slept, and the loop exhausted its ten attempts
+        # on a project that had in fact been created. Match both vocabularies.
         switch ($response.status)
         {
-            'creating' {
-                Write-Verbose "[Wait-DevOpsProject] Project is still being created..."
+            { $_ -in 'creating', 'queued', 'inProgress' } {
+                Write-Verbose "[Wait-DevOpsProject] Project is still being created (status: $_)..."
                 Start-Sleep -Seconds 5
             }
-            'wellFormed' {
+            { $_ -in 'wellFormed', 'succeeded' } {
                 Write-Verbose "[Wait-DevOpsProject] Project has been created successfully."
-                break
+                $completed = $true
             }
-            'failed' {
+            { $_ -in 'failed', 'cancelled' } {
                 Write-Error "[Wait-DevOpsProject] Project creation failed: $response"
-                break
+                $completed = $true
             }
             'notSet' {
                 Write-Error "[Wait-DevOpsProject] Project creation status is not set: $response"
-                break
+                $completed = $true
             }
             default {
                 # Still creating
@@ -81,9 +97,9 @@ Function Wait-DevOpsProject
         # Increment the counter
         $counter++
 
-    } while ($counter -lt 10)
+    } while ((-not $completed) -and ($counter -lt $maxAttempts))
 
-    if ($counter -ge 10)
+    if (-not $completed)
     {
         Write-Error "[Wait-DevOpsProject] Timed out waiting for project to be created."
     }

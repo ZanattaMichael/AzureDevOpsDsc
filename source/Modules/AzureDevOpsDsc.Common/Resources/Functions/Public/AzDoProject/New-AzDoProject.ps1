@@ -118,9 +118,12 @@ function New-AzDoProject
     Wait-DevOpsProject -ProjectURL $projectURL -OrganizationName $OrganizationName
 
     #
-    # Once the project has been created, refresh the entire cache.
+    # Only the project caches are stale. Narrowing the refresh skips the group,
+    # user, permission and identity scans this resource never touched - which
+    # matters under DSC v3, where every invocation is a fresh process and pays
+    # for the refresh again.
 
-    Refresh-AzDoCache -OrganizationName $OrganizationName
+    Refresh-AzDoCache -OrganizationName $OrganizationName -CacheType 'LiveProjects'
 
 }
 

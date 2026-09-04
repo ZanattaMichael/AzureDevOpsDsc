@@ -15,14 +15,17 @@ Describe 'Remove-DevOpsGroup' -Tag "Unit", "Group", "API" {
             . $file.FullName
         }
 
-        Mock -CommandName Get-AzDevOpsApiVersion -MockWith { "6.0" }
         Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith {
             [PSCustomObject]@{ success = $true }
         }
 
         $Uri = "https://dev.azure.com/myorganization"
         $GroupDescriptor = "MyGroup"
-        $ApiVersion = "6.0"
+
+        # The graph API is preview-only - it rejects the module-wide '7.1' default with
+        # VssInvalidPreviewVersionException - so Remove-DevOpsGroup pins the preview
+        # version rather than calling Get-AzDevOpsApiVersion.
+        $ApiVersion = "7.1-preview.1"
     }
 
     Context 'When all mandatory parameters are provided' {
@@ -44,12 +47,13 @@ Describe 'Remove-DevOpsGroup' -Tag "Unit", "Group", "API" {
     }
 
     Context 'When ApiVersion parameter is not provided' {
-        It 'should use the default ApiVersion' {
-            Mock -CommandName Get-AzDevOpsApiVersion -MockWith { "6.0" }
+        It 'should default to the preview version the graph API requires' {
 
             $result = Remove-DevOpsGroup -ApiUri $Uri -GroupDescriptor $GroupDescriptor
 
-            Assert-MockCalled -CommandName Get-AzDevOpsApiVersion -Exactly -Times 1
+            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Exactly 1 -ParameterFilter {
+                $Uri -like '*api-version=7.1-preview.1'
+            }
             $result.success | Should -Be $true
         }
     }
