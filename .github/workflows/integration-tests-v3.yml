@@ -181,10 +181,21 @@ jobs:
               Set-Content -Path .\tests\Integration\TestFrameworkConfiguration.json -Encoding UTF8
           Write-Host "TestFrameworkConfiguration.json written."
 
+      # A directory of this suite's own, deliberately not the 'AzureDevOpsDscCache' the
+      # v2 workflow uses. Both suites run on the same self-hosted runner against the same
+      # organization, so a shared directory means one suite reads cache files the other
+      # exported - and the module imports whatever is on disk at startup. That is worth
+      # avoiding on its own, but it also matters for what the two suites are for: v2 and
+      # v3 exercise the same resources through different hosts, and a run that inherits
+      # the other's cache is not independently telling you the host works. Cleared at the
+      # start of each run so a run is never answered out of a previous one's cache.
       - name: Prepare cache directory
         shell: pwsh
         run: |
-          $cacheDir = Join-Path $env:TEMP 'AzureDevOpsDscCache'
+          $cacheDir = Join-Path $env:TEMP 'AzureDevOpsDscCache-V3'
+          if (Test-Path -LiteralPath $cacheDir) {
+              Remove-Item -LiteralPath $cacheDir -Recurse -Force
+          }
           New-Item -Path $cacheDir -ItemType Directory -Force | Out-Null
           "AZDODSC_CACHE_DIRECTORY=$cacheDir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           Write-Host "Cache directory: $cacheDir"

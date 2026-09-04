@@ -13,7 +13,8 @@
     The identity of the member to be added to the group. This parameter is mandatory.
 
 .PARAMETER ApiVersion
-    The version of the Azure DevOps API to use. If not specified, the default value is obtained from the Get-AzDevOpsApiVersion function.
+    The version of the Azure DevOps API to use. If not specified, defaults to the
+    graph API's preview version, '7.1-preview.1'.
 
 .PARAMETER ApiUri
     The URI for the Azure DevOps API. This parameter is mandatory.
@@ -44,7 +45,7 @@ Function New-DevOpsGroupMember
         [Alias('Member')]
         [Object]$MemberIdentity,
 
-        # Optional parameter for the API version with a default value obtained from the Get-AzDevOpsApiVersion function
+        # Optional parameter for the API version; defaults to the pinned graph preview version
         [Parameter()]
         [String]
         $ApiVersion,
@@ -55,7 +56,11 @@ Function New-DevOpsGroupMember
         $ApiUri
     )
 
-    if (-not $ApiVersion) { $ApiVersion = Get-AzDevOpsApiVersion -Default }
+    # The graph API is preview-only: it rejects a plain '7.1' with
+    # VssInvalidPreviewVersionException. Get-AzDevOpsApiVersion -Default returns '7.1',
+    # so pin the preview version the way every other graph call in this module does -
+    # including New-/Remove-DevOpsTeamMember, which hit this same memberships endpoint.
+    if (-not $ApiVersion) { $ApiVersion = '7.1-preview.1' }
 
     # Define a hashtable to store parameters for the Invoke-AzDevOpsApiRestMethod function.
     $params = @{

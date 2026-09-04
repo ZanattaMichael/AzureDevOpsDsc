@@ -14,7 +14,6 @@ Describe 'Remove-DevOpsGroupMember' -Tag "Unit", "GroupMember", "API" {
             . $file.FullName
         }
 
-        Mock -CommandName Get-AzDevOpsApiVersion -MockWith { return '6.0-preview' }
         Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
     }
 
@@ -26,9 +25,10 @@ Describe 'Remove-DevOpsGroupMember' -Tag "Unit", "GroupMember", "API" {
 
             Remove-DevOpsGroupMember -GroupIdentity $group -MemberIdentity $member -ApiUri $apiUri
 
-            Assert-MockCalled Get-AzDevOpsApiVersion -Times 1
+            # The graph API is preview-only, so the default has to be the pinned preview
+            # version rather than whatever Get-AzDevOpsApiVersion -Default returns.
             Assert-MockCalled Invoke-AzDevOpsApiRestMethod -ParameterFilter {
-                $ApiUri -eq 'https://dev.azure.com/myorg/_apis/graph/memberships/member-descriptor/group-descriptor?api-version=6.0-preview' -and
+                $ApiUri -eq 'https://dev.azure.com/myorg/_apis/graph/memberships/member-descriptor/group-descriptor?api-version=7.1-preview.1' -and
                 $Method -eq 'DELETE'
             } -Times 1
         }

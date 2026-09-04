@@ -15,7 +15,6 @@ Describe "New-DevOpsGroupMember Tests" -Tag "Unit", "GroupMember", "API" {
             . $file.FullName
         }
 
-        Mock -CommandName Get-AzDevOpsApiVersion -MockWith { return "3.0-preview" }
         Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith {
             return @{
                 success = $true
@@ -28,17 +27,21 @@ Describe "New-DevOpsGroupMember Tests" -Tag "Unit", "GroupMember", "API" {
 
     Context "When adding a new member to a DevOps group" {
 
-        It "should call Get-AzDevOpsApiVersion if ApiVersion is not provided" {
+        It "should default to the pinned preview api-version" {
             $GroupIdentity = [PSCustomObject]@{ descriptor = "group-descriptor" }
             $MemberIdentity = [PSCustomObject]@{ descriptor = "member-descriptor" }
             $ApiUri = "https://dev.azure.com/organization"
 
             New-DevOpsGroupMember -GroupIdentity $GroupIdentity -MemberIdentity $MemberIdentity -ApiUri $ApiUri
 
-            Assert-MockCalled Get-AzDevOpsApiVersion -Exactly 1
+            # The graph API is preview-only, so the default has to be the pinned preview
+            # version rather than the module-wide default.
+            Assert-MockCalled Invoke-AzDevOpsApiRestMethod -Exactly 1 -ParameterFilter {
+                $ApiUri -like '*api-version=7.1-preview.1'
+            }
         }
 
-        It "should not call Get-AzDevOpsApiVersion if ApiVersion is provided" {
+        It "should use an explicitly supplied ApiVersion over the default" {
             $GroupIdentity = [PSCustomObject]@{ descriptor = "group-descriptor" }
             $MemberIdentity = [PSCustomObject]@{ descriptor = "member-descriptor" }
             $ApiVersion = "6.0"
@@ -46,7 +49,9 @@ Describe "New-DevOpsGroupMember Tests" -Tag "Unit", "GroupMember", "API" {
 
             New-DevOpsGroupMember -GroupIdentity $GroupIdentity -MemberIdentity $MemberIdentity -ApiUri $ApiUri -ApiVersion $ApiVersion
 
-            Assert-MockCalled Get-AzDevOpsApiVersion -Exactly 0
+            Assert-MockCalled Invoke-AzDevOpsApiRestMethod -Exactly 1 -ParameterFilter {
+                $ApiUri -like '*api-version=6.0'
+            }
         }
 
         It "should call Invoke-AzDevOpsApiRestMethod with correct parameters" {
