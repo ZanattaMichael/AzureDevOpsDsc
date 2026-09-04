@@ -14,6 +14,24 @@ name: Integration Tests
 # job no longer references one.
 
 on:
+  # TEMPORARY - validation trigger for the classic-pipeline test fix in this branch.
+  #
+  # The v2 suite is otherwise only reachable by manual dispatch or as publish.yml's
+  # release gate, so a change to the integration tests themselves lands on main having
+  # never executed. The AzDoTaskGroup and AzDoDeploymentGroup fixes here can only be
+  # judged against the live organization - whether Enable-TestClassicPipeline reads the
+  # policy back as off and the six guarded tests actually run, or the organization still
+  # pins it and they report as skipped - so run the suite on every push to this branch.
+  #
+  # A push filter matches the branch that was pushed, unlike `pull_request`, whose
+  # `branches:` filter matches the BASE branch and would therefore fire this hour-long
+  # live-org suite on every PR targeting main, on the project's single self-hosted runner.
+  #
+  # Remove this trigger before merging (or widen it deliberately, if the project decides
+  # the suite should gate pull requests).
+  push:
+    branches:
+      - claude/pr-51-continuation-ncxcao
   workflow_dispatch:
     inputs:
       allowFailures:
