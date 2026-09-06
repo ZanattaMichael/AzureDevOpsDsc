@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - AzureDevOpsDscNative
+  - Removed the `Fix_DscAdaptedResourceManifestTypes` build task and
+    `.build/tasks/2.Fix_DscAdaptedResourceManifestTypes.ps1`. `DscResource.Authoring`
+    0.3.0 and later maps fully-qualified type names (`System.Boolean`,
+    `System.Int32`, ...) itself, so the `dscv3` workflow is now only the two
+    upstream tasks `Create_DscAdaptedResourceManifests` and
+    `Create_DscResourceManifestsList`, the same way SqlServerDsc consumes them.
+    The V3 manifest integration tests keep asserting every property type, so a
+    regression in the tool still fails a test.
   - Updated the `Dsc.PipelineRunner` documentation in `USAGE.md` and the
     "Pipeline runner initialization" example in every resource doc under
     `source/Examples/Resources` (published to the GitHub wiki on release) to
