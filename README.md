@@ -180,6 +180,8 @@ Each resource links to its example/usage documentation.
 | [AzDoAreaNodes](source/Examples/Resources/AzDoAreaNodes.md) | Manages area path classification nodes. |
 | [AzDoIterationNodes](source/Examples/Resources/AzDoIterationNodes.md) | Manages iteration path classification nodes. |
 | [AzDoWIPTags](source/Examples/Resources/AzDoWIPTags.md) | Manages work item tags. |
+| [AzDoQueryFolder](source/Examples/Resources/AzDoQueryFolder.md) | Manages folders in the shared work item query tree. |
+| [AzDoWorkItemQuery](source/Examples/Resources/AzDoWorkItemQuery.md) | Manages shared work item queries, including WIQL, columns and sort order. |
 | [AzDoProcess](source/Examples/Resources/AzDoProcess.md) | Creates and manages inherited processes (process templates). |
 | [AzDoNotificationSubscription](source/Examples/Resources/AzDoNotificationSubscription.md) | Manages notification subscriptions. |
 

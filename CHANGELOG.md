@@ -5,6 +5,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- AzureDevOpsDscNative
+  - Added `AzDoQueryFolder`, a resource managing folders in a project's shared work
+    item query tree. Folders are declared in their own right so that queries can
+    depend on them, rather than each query creating its own ancestry - which would
+    let two queries in the same folder race to create it and make `Test()` results
+    depend on apply order. Deleting a query folder in Azure DevOps deletes its whole
+    subtree, so removal of a folder that still has children is refused unless
+    `AllowRecursiveDelete` is set.
+  - Added `AzDoWorkItemQuery`, a resource managing shared work item queries,
+    including the WIQL statement, query type, display columns and sort order.
+    Changes are applied in place with PATCH rather than by delete-and-recreate,
+    because recreating a query changes its id and would silently break any
+    dashboard widget, delivery plan or ACL token referencing it. Queries deleted
+    earlier are restored from the query recycle bin instead of failing with a name
+    conflict.
+  - Added the private Queries API functions `Get-DevOpsQuery`, `New-DevOpsQuery`,
+    `Update-DevOpsQuery` and `Remove-DevOpsQuery`.
+  - Added the helper `ConvertTo-NormalizedWiql`, which makes WIQL drift detection
+    work. The Queries API does not return the WIQL it was given - it re-indents,
+    re-wraps, re-cases and appends a semicolon - so comparing the raw strings would
+    report drift on every `Test()`, forever, even when nothing had changed.
+  - Added the helpers `Format-AzDoQueryPath`, which normalizes the several ways a
+    query path can be written (backslashes, leading/trailing and doubled separators)
+    into one canonical form, and `Resolve-AzDoQueryPath`, which walks a query path
+    and collects the id of each segment - the ids that a `WorkItemQueryFolders` ACL
+    token is built from.
+  - Added `docs/ResourceRoadmap.md`, a verified backlog of resources still to be
+    added to the module, reconciling the phased plan in issue #59 against the code.
+
 ### Changed
 
 - AzureDevOpsDscNative
