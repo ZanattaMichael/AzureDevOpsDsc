@@ -2,8 +2,14 @@ name: Integration Tests
 
 # Integration tests run against a live Azure DevOps organization on the
 # self-hosted AZDO-AGENT runner. This is an ordinary Actions workflow job, not a
-# deployment - it only runs when dispatched manually or called by publish.yml as a
-# release gate, so it never fires automatically on push or pull request.
+# deployment.
+#
+# It runs when dispatched manually, when called by publish.yml as a release gate, and
+# - TEMPORARILY - on pull requests whose HEAD branch is prefixed `resource-add/`, so a
+# batch of new resources can be exercised against a real organization before merging.
+# It still never fires on an ordinary push, or on a PR from any other branch prefix.
+# Remove the `pull_request` trigger and the head_ref condition on the job below to put
+# this back to dispatch-only.
 #
 # One-time repository setup required (repository scope, NOT an Environment):
 #   1. Add repository variable:  AzureDevOpsOrg   (your Azure DevOps org name)
@@ -44,13 +50,44 @@ on:
         required: false
         default: false
         type: boolean
+  # TEMPORARY - see the note at the top of this file.
+  #
+  # There is deliberately no `branches:` filter here. For `pull_request`, `branches:`
+  # matches the BASE branch (what the PR merges into), not the head branch the work is
+  # on - a `branches: [resource-add/**]` filter would therefore match nothing, since
+  # these PRs target main. Selecting on the head branch has to happen in a job-level
+  # condition, which is what `if: startsWith(github.head_ref, ...)` below does.
+  #
+  # `ready_for_review` is included alongside the defaults so that taking a PR out of
+  # draft starts a run; drafts themselves are skipped by the job condition.
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
   contents: read
 
+# The suite takes the better part of an hour against a live organization on a single
+# self-hosted runner, so a PR that is pushed to repeatedly must not stack up runs. Each
+# PR gets its own group and supersedes its own earlier run. Cancelling mid-run can leave
+# resources behind in the organization, which is tolerable here only because
+# Invoke-Tests.ps1 runs a teardown BEFORE the suite as well as after, so the next run
+# clears whatever a cancelled one stranded.
+concurrency:
+  group: integration-tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   integration-tests:
     name: Run Integration Tests
+    # Gate the pull_request trigger on the HEAD branch prefix (see the trigger comment
+    # above for why this cannot be a `branches:` filter), and skip drafts so an hour of
+    # live-organization time is not spent on work in progress. Non-PR events have an
+    # empty github.head_ref, so they are admitted by the first clause and keep their
+    # existing dispatch-only behaviour.
+    if: >-
+      github.event_name != 'pull_request' ||
+      (startsWith(github.head_ref, 'resource-add/') &&
+       github.event.pull_request.draft == false)
     runs-on: AZDO-AGENT
 
     steps:
@@ -191,6 +228,8 @@ jobs:
         env:
           # Booleans from workflow inputs arrive as PowerShell literals. Normalise to a
           # bare 'true'/'false' string so the pwsh block below can treat it uniformly.
+          # On the pull_request trigger there are no inputs at all, so this evaluates to
+          # 'false' and a failing test fails the run - which is the point of the gate.
           ALLOW_FAILURES: ${{ inputs.allowFailures && 'true' || 'false' }}
         run: |
           $params = @{ TestFrameworkConfigurationPath = '.\TestFrameworkConfiguration.json' }
