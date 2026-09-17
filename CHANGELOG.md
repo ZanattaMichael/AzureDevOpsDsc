@@ -57,6 +57,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     rewrite in one run.
   - Added the private API function `Update-WITTags` (tag rename/merge) and the
     helper `Get-AzDoTagMisalignment`, the pure matching logic behind the resource.
+  - Added `AzDoSecureFile`, a resource managing the secure files a project makes
+    available to its pipelines (certificates, keystores, provisioning profiles).
+    Azure DevOps never returns a secure file's content, so `Test()` confirms the
+    file exists and its properties match but cannot detect content drift; set
+    `ForceUpload` to replace the content on every run. Since the API cannot update
+    content in place, `ForceUpload` deletes and re-uploads, which changes the
+    file's id - so any permission granted against the old id has to be re-applied.
+  - Added `AzDoSecureFilePermission`, managing a secure file's ACL in the `Library`
+    security namespace, and extended the `Library` ACL token with the
+    `SecureFile/{id}` segment across `New-ACLToken`, `ConvertTo-FormattedToken` and
+    the localized token patterns.
+  - Fixed `Get-AzDoVariableGroupPermission`: its project-root Library filter matched
+    any token without a variable group segment, which now also matches a secure
+    file's token. The filter excludes secure file tokens explicitly.
+  - Added the private API functions `List-DevOpsSecureFiles`, `New-DevOpsSecureFile`,
+    `Update-DevOpsSecureFile` and `Remove-DevOpsSecureFile`, and a `LiveSecureFiles`
+    cache type.
   - Added `docs/ResourceRoadmap.md`, a verified backlog of resources still to be
     added to the module, reconciling the phased plan in issue #59 against the code.
 

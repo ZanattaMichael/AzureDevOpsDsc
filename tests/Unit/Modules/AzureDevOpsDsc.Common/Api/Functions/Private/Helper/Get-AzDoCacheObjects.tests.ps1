@@ -16,9 +16,9 @@ Describe 'Get-AzDoCacheObjects' -Tag "Unit", "Helper" {
         }
     }
 
-    It 'Returns an array with 34 elements' {
+    It 'Returns an array with 35 elements' {
         $result = Get-AzDoCacheObjects
-        $result.Length | Should -Be 34
+        $result.Length | Should -Be 35
     }
 
     It 'Contains all legacy and Live* cache types' {
@@ -51,6 +51,7 @@ Describe 'Get-AzDoCacheObjects' -Tag "Unit", "Helper" {
             'LiveProcesses',
             'LiveProjects',
             'LiveRepositories',
+            'LiveSecureFiles',
             'LiveServiceConnections',
             'LiveServicePrinciples',
             'LiveTaskGroups',

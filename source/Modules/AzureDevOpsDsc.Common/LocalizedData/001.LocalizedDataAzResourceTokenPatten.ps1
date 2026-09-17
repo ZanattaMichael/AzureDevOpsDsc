@@ -44,7 +44,7 @@ data LocalizedDataAzResourceTokenPatten
         # Build (Pipeline) Token Patterns — ProjectName only, or ProjectName/PipelineName
         BuildPermission         = '^(?<ProjectName>[A-Za-z0-9-_]+)(\/(?<PipelineName>[A-Za-z0-9-_ ]+))?$'
         # Library (VariableGroup) Token Patterns
-        LibraryPermission       = '^Library\/Project\/(?<ProjectName>[A-Za-z0-9-_]+)(\/VariableGroup\/(?<VariableGroupName>[A-Za-z0-9-_ ]+))?$'
+        LibraryPermission       = '^Library\/Project\/(?<ProjectName>[A-Za-z0-9-_]+)(\/VariableGroup\/(?<VariableGroupName>[A-Za-z0-9-_ ]+))?(\/SecureFile\/(?<SecureFileName>[A-Za-z0-9-_. ]+))?$'
         # ServiceEndpoints Token Patterns
         ServiceEndpointPermission = '^endpoints\/Project\/(?<ProjectName>[A-Za-z0-9-_]+)(\/endpoint\/(?<EndpointName>[A-Za-z0-9-_ ]+))?$'
         # DistributedTask — AgentPool Token

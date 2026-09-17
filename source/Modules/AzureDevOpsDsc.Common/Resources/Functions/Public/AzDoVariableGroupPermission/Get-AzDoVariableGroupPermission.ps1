@@ -65,7 +65,9 @@ Function Get-AzDoVariableGroupPermission
     else
     {
         $DifferenceACLs = $DifferenceACLs | Where-Object {
-            ($_.Token.Type -eq 'Library') -and ($_.Token.ProjectId -eq $projectCache.id) -and (-not $_.Token.VariableGroupId)
+            # SecureFileId is excluded as well: secure files share the Library namespace, so a
+            # secure file's ACL would otherwise be picked up as the project-root Library ACL.
+            ($_.Token.Type -eq 'Library') -and ($_.Token.ProjectId -eq $projectCache.id) -and (-not $_.Token.VariableGroupId) -and (-not $_.Token.SecureFileId)
         }
     }
 

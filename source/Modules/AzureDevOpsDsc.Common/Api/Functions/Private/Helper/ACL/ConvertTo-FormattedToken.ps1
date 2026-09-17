@@ -95,8 +95,9 @@ Function ConvertTo-FormattedToken {
         }
         # Library (VariableGroup) permissions
         {$_.type -eq 'Library'} {
-            $string = if ($Token.VariableGroupId) { 'Library/Project/{0}/VariableGroup/{1}' -f $Token.ProjectId, $Token.VariableGroupId }
-                      else                        { 'Library/Project/{0}' -f $Token.ProjectId }
+            $string = if ($Token.SecureFileId)         { 'Library/Project/{0}/SecureFile/{1}' -f $Token.ProjectId, $Token.SecureFileId }
+                      elseif ($Token.VariableGroupId)  { 'Library/Project/{0}/VariableGroup/{1}' -f $Token.ProjectId, $Token.VariableGroupId }
+                      else                             { 'Library/Project/{0}' -f $Token.ProjectId }
             break
         }
         # ServiceEndpoints permissions

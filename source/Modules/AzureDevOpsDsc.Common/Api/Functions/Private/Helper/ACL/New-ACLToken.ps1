@@ -262,6 +262,13 @@ Function New-ACLToken
                     $vgEntry                = Get-CacheItem -Key $vgCacheKey -Type 'LiveVariableGroups'
                     $result.VariableGroupId = if ($vgEntry) { $vgEntry.id.ToString() } else { $matches.VariableGroupName.Trim() }
                 }
+                # Secure files share the Library namespace with variable groups but carry their
+                # own token segment, so they are resolved the same way.
+                if ($matches.SecureFileName) {
+                    $sfCacheKey           = '{0}\{1}' -f $matches.ProjectName.Trim(), $matches.SecureFileName.Trim()
+                    $sfEntry              = Get-CacheItem -Key $sfCacheKey -Type 'LiveSecureFiles'
+                    $result.SecureFileId  = if ($sfEntry) { $sfEntry.id.ToString() } else { $matches.SecureFileName.Trim() }
+                }
             }
             else
             {

@@ -46,7 +46,7 @@ data LocalizedDataAzACLTokenPatten
         # Build (Pipeline) ACL Token Patterns  — ProjectId only, or ProjectId/PipelineId
         BuildPermission         = '^(?<ProjectId>[A-Za-z0-9-]+)(\/(?<PipelineId>[0-9]+))?$'
         # Library (VariableGroup) ACL Token Patterns
-        LibraryPermission       = '^Library\/Project\/(?<ProjectId>[A-Za-z0-9-]+)(\/VariableGroup\/(?<VariableGroupId>[0-9]+))?$'
+        LibraryPermission       = '^Library\/Project\/(?<ProjectId>[A-Za-z0-9-]+)(\/VariableGroup\/(?<VariableGroupId>[0-9]+))?(\/SecureFile\/(?<SecureFileId>[A-Za-z0-9-]+))?$'
         # ServiceEndpoints ACL Token Patterns
         ServiceEndpointPermission = '^endpoints\/Project\/(?<ProjectId>[A-Za-z0-9-]+)(\/endpoint\/(?<EndpointId>[A-Za-z0-9-]+))?$'
         # DistributedTask — Agent Pool ACL Token Patterns
