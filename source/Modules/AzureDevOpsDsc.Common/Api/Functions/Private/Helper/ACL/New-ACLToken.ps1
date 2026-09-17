@@ -162,6 +162,40 @@ Function New-ACLToken
 
         }
 
+        # Work item queries ($/{projectId}/{folderId}/{subfolderId})
+        'WorkItemQueryFolders' {
+
+            if ($TokenName -notmatch $LocalizedDataAzResourceTokenPatten.QueryPermission)
+            {
+                $result.type = 'QueryUnknown'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known Query ACL Token Patterns."
+                break
+            }
+
+            $result.type      = 'Query'
+            $result.ProjectId = $matches.ProjectId
+
+            # The project id is itself a GUID, so the folder ids are extracted from the remainder
+            # of the token rather than from the whole string - otherwise the project would be
+            # picked up as the first folder in the chain.
+            $remainder = $matches.Remainder
+            $result.Identifiers = @()
+
+            if (-not [String]::IsNullOrEmpty($remainder))
+            {
+                $folderMatches = [regex]::Matches($remainder, $LocalizedDataAzResourceTokenPatten.QueryFolderIdentifier)
+
+                foreach ($match in $folderMatches)
+                {
+                    $result.Identifiers += @{
+                        identifier = $match.Groups['identifiers'].Value
+                    }
+                }
+            }
+
+            break;
+        }
+
         # Project-level permissions  ($PROJECT:vstfs:///Classification/TeamProject/{id})
         'Project' {
             if ($TokenName -match $LocalizedDataAzACLTokenPatten.ProjectPermission)

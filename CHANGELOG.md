@@ -24,6 +24,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     conflict.
   - Added the private Queries API functions `Get-DevOpsQuery`, `New-DevOpsQuery`,
     `Update-DevOpsQuery` and `Remove-DevOpsQuery`.
+  - Added `AzDoQueryPermission`, a resource managing the ACL on a work item query
+    folder via the `WorkItemQueryFolders` security namespace. Permissions are set
+    on folders and inherited by the queries beneath them; omitting `QueryPath`
+    targets the project's query root. Removing the ACL on the query root is
+    refused, since that token has no parent to inherit from.
+  - Added `WorkItemQueryFolders` support to `New-ACLToken`, `ConvertTo-FormattedToken`
+    and `Parse-ACLToken`, with the token patterns in the localized data files. The
+    token addresses folders by GUID (`$/{projectId}/{folderId}/...`); because the
+    project id is a GUID too, the folder chain is extracted from the remainder of
+    the token so the project is not read as the first folder.
   - Added the helper `ConvertTo-NormalizedWiql`, which makes WIQL drift detection
     work. The Queries API does not return the WIQL it was given - it re-indents,
     re-wraps, re-cases and appends a semicolon - so comparing the raw strings would

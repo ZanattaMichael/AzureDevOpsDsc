@@ -25,6 +25,10 @@ Describe 'Parse-ACLToken' -Tag "Unit", "ACL", "Helper" {
             GroupPermission         = '^group:(.+)$'
             IterationPathPermission = '^iteration:(.+)$'
             AreaPathPermission      = '^area:(.+)$'
+            # Real patterns: the query branch is shape-sensitive (the project id is a GUID
+            # too), so stand-in patterns would not exercise what it actually does.
+            QueryPermission         = '^\$\/(?<ProjectId>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})(?<Remainder>(\/[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})*)$'
+            QueryFolderIdentifier   = '\/(?<identifiers>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})'
         }
 
         # If there were any Mock commands needed, they should be added here using the complete syntax.
@@ -105,6 +109,42 @@ Describe 'Parse-ACLToken' -Tag "Unit", "ACL", "Helper" {
         $token = "badIteration:testIteration"
         $SecurityNamespace = "iteration"
         { Parse-ACLToken -Token $token -SecurityNamespace $SecurityNamespace } | Should -Throw "Token '$token' is not recognized."
+    }
+
+    It 'Should parse a project-root Query token' {
+        $projectId = [guid]::NewGuid().ToString()
+        $result = Parse-ACLToken -Token "`$/$projectId" -SecurityNamespace 'WorkItemQueryFolders'
+
+        $result.type | Should -Be 'QueryPermission'
+        $result.ProjectId | Should -Be $projectId
+        $result.Identifiers.Count | Should -Be 0
+    }
+
+    It 'Should parse a nested Query token into its folder chain' {
+        $projectId = [guid]::NewGuid().ToString()
+        $folderId1 = [guid]::NewGuid().ToString()
+        $folderId2 = [guid]::NewGuid().ToString()
+
+        $result = Parse-ACLToken -Token "`$/$projectId/$folderId1/$folderId2" -SecurityNamespace 'WorkItemQueryFolders'
+
+        $result.ProjectId | Should -Be $projectId
+        $result.Identifiers.Count | Should -Be 2
+        $result.Identifiers[0].identifier | Should -Be $folderId1
+        $result.Identifiers[1].identifier | Should -Be $folderId2
+    }
+
+    It 'Should not read the project id as the first folder' {
+        $projectId = [guid]::NewGuid().ToString()
+        $folderId  = [guid]::NewGuid().ToString()
+
+        $result = Parse-ACLToken -Token "`$/$projectId/$folderId" -SecurityNamespace 'WorkItemQueryFolders'
+
+        $result.Identifiers.identifier | Should -Not -Contain $projectId
+    }
+
+    It 'Should throw for an unrecognized Query token' {
+        $token = 'not-a-query-token'
+        { Parse-ACLToken -Token $token -SecurityNamespace 'WorkItemQueryFolders' } | Should -Throw "Token '$token' is not recognized."
     }
 
     It 'Should throw for unrecognized Identity token' {

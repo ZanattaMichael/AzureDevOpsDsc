@@ -71,6 +71,31 @@ Function Parse-ACLToken
             }
         }
 
+        'WorkItemQueryFolders' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.QueryPermission {
+                    $result.type      = 'QueryPermission'
+                    $result.ProjectId = $matches.ProjectId
+
+                    # As in New-ACLToken: the folder ids come from the remainder, because the
+                    # project id is a GUID too and would otherwise be read as the first folder.
+                    $remainder = $matches.Remainder
+                    $result.Identifiers = @()
+
+                    if (-not [String]::IsNullOrEmpty($remainder))
+                    {
+                        $folderMatches = [regex]::Matches($remainder, $LocalizedDataAzACLTokenPatten.QueryFolderIdentifier)
+                        $result.Identifiers = @($folderMatches | ForEach-Object { @{ identifier = $_.Groups['identifiers'].Value } })
+                    }
+
+                    $useRegexVariable = $false
+                    break
+                }
+                default { throw "Token '$Token' is not recognized." }
+            }
+        }
+
         'Project' {
             switch -regex ($Token.Trim())
             {

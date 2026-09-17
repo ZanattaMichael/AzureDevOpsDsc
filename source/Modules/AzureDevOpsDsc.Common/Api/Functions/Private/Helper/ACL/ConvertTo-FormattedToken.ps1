@@ -63,6 +63,15 @@ Function ConvertTo-FormattedToken {
             $string = $(($Token.Identifiers | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_.identifier }) -join ':')
             break
         }
+        # Work item queries — $/{projectId}, plus one folder id per level beneath it
+        {$_.type -eq 'Query'} {
+            $string = '$/{0}' -f $Token.ProjectId
+            if ($Token.Identifiers)
+            {
+                $string += ($Token.Identifiers | ForEach-Object { '/{0}' -f $_.identifier }) -join ''
+            }
+            break
+        }
         # Project-level permissions
         {$_.type -eq 'Project'} {
             $string = '$PROJECT:vstfs:///Classification/TeamProject/{0}' -f $Token.ProjectId

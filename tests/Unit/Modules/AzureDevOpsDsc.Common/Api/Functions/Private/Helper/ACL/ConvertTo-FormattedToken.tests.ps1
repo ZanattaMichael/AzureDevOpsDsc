@@ -52,6 +52,34 @@ Describe "ConvertTo-FormattedToken" -Tag "Unit", "ACL", "Helper" {
         $result | Should -Be 'repoV2/myProject/myRepo'
     }
 
+    It "should format a project-root query token" {
+        $projectId = [guid]::NewGuid().ToString()
+        $token = @{ type = 'Query'; ProjectId = $projectId; Identifiers = @() }
+
+        ConvertTo-FormattedToken -Token $token | Should -Be "`$/$projectId"
+    }
+
+    it "should format a query token with a single folder" {
+        $projectId = [guid]::NewGuid().ToString()
+        $folderId  = [guid]::NewGuid().ToString()
+        $token = @{ type = 'Query'; ProjectId = $projectId; Identifiers = @(@{ identifier = $folderId }) }
+
+        ConvertTo-FormattedToken -Token $token | Should -Be "`$/$projectId/$folderId"
+    }
+
+    It "should format a query token with a nested folder chain, preserving order" {
+        $projectId = [guid]::NewGuid().ToString()
+        $folderId1 = [guid]::NewGuid().ToString()
+        $folderId2 = [guid]::NewGuid().ToString()
+        $token = @{
+            type        = 'Query'
+            ProjectId   = $projectId
+            Identifiers = @(@{ identifier = $folderId1 }, @{ identifier = $folderId2 })
+        }
+
+        ConvertTo-FormattedToken -Token $token | Should -Be "`$/$projectId/$folderId1/$folderId2"
+    }
+
     It "should return an empty string for unrecognized token type" {
         $token = @{
             type = 'UnknownType'
