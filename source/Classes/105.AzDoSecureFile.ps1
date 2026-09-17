@@ -94,26 +94,30 @@ class AzDoSecureFile : AzDevOpsDscResourceBase
 
     hidden [Hashtable]GetDscCurrentStateProperties([PSCustomObject]$CurrentResourceObject)
     {
-        $properties = @{
+        # Named $currentState rather than $properties: this class declares a DSC property called
+        # 'Properties', and inside a class method PowerShell resolves a bare $properties to that
+        # property rather than to a local variable, failing with
+        # "Cannot assign property, use '$this.Properties'".
+        $currentState = @{
             Ensure = [Ensure]::Absent
         }
 
         # If the resource object is null, return the properties
         if ($null -eq $CurrentResourceObject)
         {
-            return $properties
+            return $currentState
         }
 
-        $properties.ProjectName    = $CurrentResourceObject.ProjectName
-        $properties.SecureFileName = $CurrentResourceObject.SecureFileName
-        $properties.FilePath       = $CurrentResourceObject.FilePath
-        $properties.Properties     = $CurrentResourceObject.Properties
-        $properties.ForceUpload    = $CurrentResourceObject.ForceUpload
-        $properties.LookupResult   = $CurrentResourceObject.LookupResult
-        $properties.Ensure         = $CurrentResourceObject.Ensure
+        $currentState.ProjectName    = $CurrentResourceObject.ProjectName
+        $currentState.SecureFileName = $CurrentResourceObject.SecureFileName
+        $currentState.FilePath       = $CurrentResourceObject.FilePath
+        $currentState.Properties     = $CurrentResourceObject.Properties
+        $currentState.ForceUpload    = $CurrentResourceObject.ForceUpload
+        $currentState.LookupResult   = $CurrentResourceObject.LookupResult
+        $currentState.Ensure         = $CurrentResourceObject.Ensure
 
-        Write-Verbose "[AzDoSecureFile] Current state properties: $($properties | Out-String)"
+        Write-Verbose "[AzDoSecureFile] Current state properties: $($currentState | Out-String)"
 
-        return $properties
+        return $currentState
     }
 }
