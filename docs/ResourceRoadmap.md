@@ -325,7 +325,30 @@ Items from #59 checked against the code:
 
 ---
 
-## 8. Suggested order of work
+## 8. Status
+
+Implemented on this branch (12 new resources, classes `101`–`110`):
+
+| Resource | Notes |
+|---|---|
+| `AzDoQueryFolder`, `AzDoWorkItemQuery`, `AzDoQueryPermission` | §3. Includes WIQL normalization and `WorkItemQueryFolders` ACL token support. |
+| `AzDoWIPTagHygiene` | §4. Report-only by default. |
+| `AzDoSecureFile`, `AzDoSecureFilePermission` | §6. Includes the `SecureFile` form of the `Library` ACL token. |
+| `AzDoPipelineFolder`, `AzDoPipelineFolderPermission` | §5.3–5.4. Includes the `Build` folder ACL token, which also closed the shipped `AzDoPipelinePermission` gap recorded in §5.4. |
+| `AzDoGroupEntitlement`, `AzDoServicePrincipalEntitlement` | §6. |
+
+Still outstanding, in the order below:
+
+- **Process customization** (§6) — the largest single gap: `AzDoProcessWorkItemType`, `AzDoProcessField`, `AzDoProcessState`, `AzDoProcessRule`, `AzDoProcessBehavior`, `AzDoProcessLayout`, `AzDoPicklist`.
+- **Dashboards, delivery plans and board configuration** (§6) — `AzDoDashboard`, `AzDoDashboardWidget`, `AzDoDashboardPermission`, `AzDoDeliveryPlan`, `AzDoBoardColumn`, `AzDoBoardSettings`, `AzDoCardRule`. The `Dashboards` and `Plan` ACL namespaces are still unimplemented (§2).
+- **Remaining §6 gaps** — `AzDoElasticPool`, `AzDoBuildRetentionSettings`, `AzDoWikiPage`.
+- **Org-scoped pipeline settings** (§7) — extend `AzDoPipelineSettings` rather than adding six resources.
+- **Test management** (§7), then **classic release management** (§7) with `AzDoReleaseFolder` (§5.5).
+- **Tenant-scoped items** (§7) — `AzDoBillingSettings`, `AzDoPatPolicy`, `AzDoExtensionPolicy`, `AzDoAuditLogAlert`. Spike each first; several of these APIs are undocumented or preview.
+
+---
+
+## 9. Suggested order of work
 
 1. **ACL token support** for `WorkItemQueryFolders` (§2) — unblocks 3.3.
 2. **Queries**: `AzDoQueryFolder` → `AzDoWorkItemQuery` → `AzDoQueryPermission` (§3).
