@@ -74,6 +74,16 @@ Function Parse-ACLToken
         'WorkItemQueryFolders' {
             switch -regex ($Token.Trim())
             {
+                # The namespace root is a bare '$'. AzDoQueryPermission scans every ACL in
+                # the namespace, so it meets this token on any organization - and throwing
+                # here aborted the whole scan, which is what made every AzDoQueryPermission
+                # integration test fail with "Token '$' is not recognized."
+                $LocalizedDataAzACLTokenPatten.QueryRootPermission {
+                    $result.type      = 'QueryRoot'
+                    $useRegexVariable = $false
+                    break
+                }
+
                 $LocalizedDataAzACLTokenPatten.QueryPermission {
                     $result.type      = 'QueryPermission'
                     $result.ProjectId = $matches.ProjectId
@@ -92,7 +102,15 @@ Function Parse-ACLToken
                     $useRegexVariable = $false
                     break
                 }
-                default { throw "Token '$Token' is not recognized." }
+
+                # Non-throwing, matching Project, Process, Build and Library: every
+                # namespace whose resource enumerates org-wide ACLs has to tolerate a token
+                # shape it does not model, or one unexpected entry fails the whole resource.
+                default
+                {
+                    $result.type      = 'QueryUnknown'
+                    $useRegexVariable = $false
+                }
             }
         }
 

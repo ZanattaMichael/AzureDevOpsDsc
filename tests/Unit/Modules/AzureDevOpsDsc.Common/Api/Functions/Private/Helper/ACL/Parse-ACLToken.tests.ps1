@@ -27,6 +27,7 @@ Describe 'Parse-ACLToken' -Tag "Unit", "ACL", "Helper" {
             AreaPathPermission      = '^area:(.+)$'
             # Real patterns: the query branch is shape-sensitive (the project id is a GUID
             # too), so stand-in patterns would not exercise what it actually does.
+            QueryRootPermission     = '^\$$'
             QueryPermission         = '^\$\/(?<ProjectId>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})(?<Remainder>(\/[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})*)$'
             QueryFolderIdentifier   = '\/(?<identifiers>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})'
             BuildPermission         = '^(?<ProjectId>[A-Za-z0-9-]+)(\/(?<PipelineId>[0-9]+))?$'
@@ -144,9 +145,20 @@ Describe 'Parse-ACLToken' -Tag "Unit", "ACL", "Helper" {
         $result.Identifiers.identifier | Should -Not -Contain $projectId
     }
 
-    It 'Should throw for an unrecognized Query token' {
-        $token = 'not-a-query-token'
-        { Parse-ACLToken -Token $token -SecurityNamespace 'WorkItemQueryFolders' } | Should -Throw "Token '$token' is not recognized."
+    It 'Should parse the namespace root token' {
+        # The WorkItemQueryFolders root ACL is a bare '$'. AzDoQueryPermission enumerates
+        # every ACL in the namespace, so it meets this on any organization.
+        $result = Parse-ACLToken -Token '$' -SecurityNamespace 'WorkItemQueryFolders'
+        $result.type | Should -Be 'QueryRoot'
+    }
+
+    It 'Should not throw for an unrecognized Query token' {
+        # This previously asserted a throw, which is what the integration run disproved:
+        # throwing on one unmodelled token aborted the whole ACL scan and failed every
+        # AzDoQueryPermission test. Project, Process, Build and Library all tag the token
+        # '<Namespace>Unknown' instead, and this namespace now matches them.
+        $result = Parse-ACLToken -Token 'not-a-query-token' -SecurityNamespace 'WorkItemQueryFolders'
+        $result.type | Should -Be 'QueryUnknown'
     }
 
     It 'Should parse a Build definition token as a definition' {

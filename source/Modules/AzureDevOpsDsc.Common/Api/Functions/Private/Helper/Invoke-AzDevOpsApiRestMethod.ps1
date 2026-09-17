@@ -66,15 +66,22 @@ function Invoke-AzDevOpsApiRestMethod
         [Alias('Headers','HttpRequestHeader')]
         $HttpHeaders=@{},
 
+        # Deliberately untyped. It was [System.String], which silently broke any endpoint
+        # taking a non-text body: a [byte[]] cannot be transformed to a string, so the call
+        # failed at parameter binding. Callers passing a JSON string are unaffected, and
+        # Invoke-RestMethod accepts a byte array directly.
         [Parameter()]
-        [System.String]
         [Alias('Body')]
         $HttpBody,
 
+        # 'application/octet-stream' is needed by the endpoints that take raw bytes rather
+        # than JSON - uploading a secure file is one. Restricting this set to the two JSON
+        # types made those endpoints unreachable through this wrapper, which is the only
+        # place that applies authentication, retry and rate-limit handling.
         [Parameter()]
         [System.String]
         [Alias('ContentType')]
-        [ValidateSet('application/json','application/json-patch+json')]
+        [ValidateSet('application/json','application/json-patch+json','application/octet-stream')]
         $HttpContentType = 'application/json',
 
         [Parameter()]

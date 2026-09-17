@@ -176,4 +176,53 @@ Describe 'Invoke-AzDevOpsApiRestMethod' -Tag "Unit", "Helper" {
 
         }
     }
+
+    Context 'Binary request bodies' {
+
+        # Regression guard. HttpBody was [System.String] and HttpContentType was restricted to
+        # the two JSON types, which made every raw-byte endpoint unreachable through this
+        # wrapper: the call died at parameter binding. New-DevOpsSecureFile did exactly that,
+        # and because its failure surfaced as a non-terminating Write-Error the DSC Set()
+        # reported no error while creating nothing. Both halves are pinned here.
+
+        It 'accepts application/octet-stream as a content type' {
+            $contentType = (Get-Command Invoke-AzDevOpsApiRestMethod).Parameters['HttpContentType']
+            $validateSet = $contentType.Attributes |
+                Where-Object { $_ -is [System.Management.Automation.ValidateSetAttribute] }
+
+            $validateSet.ValidValues | Should -Contain 'application/octet-stream'
+        }
+
+        It 'does not coerce the body to a string' {
+            # A [byte[]] cannot be transformed to [System.String], so a typed parameter would
+            # fail to bind rather than merely mangle the content.
+            (Get-Command Invoke-AzDevOpsApiRestMethod).Parameters['HttpBody'].ParameterType |
+                Should -Be ([System.Object])
+        }
+
+        It 'passes a byte array through to Invoke-RestMethod unchanged' {
+            $bytes = [System.Text.Encoding]::ASCII.GetBytes('dsc integration test content')
+            $script:capturedBody        = $null
+            $script:capturedContentType = $null
+
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                $script:capturedBody        = $Body
+                $script:capturedContentType = $ContentType
+                return @{ id = 1 }
+            }
+
+            $parameters = $defaultParameters.Clone()
+            $parameters.HttpMethod      = 'Post'
+            $parameters.HttpBody        = $bytes
+            $parameters.HttpContentType = 'application/octet-stream'
+
+            $null = Invoke-AzDevOpsApiRestMethod @parameters
+
+            $script:capturedContentType | Should -Be 'application/octet-stream'
+            $script:capturedBody        | Should -BeOfType [System.Byte]
+            $script:capturedBody.Count  | Should -Be $bytes.Count
+            [System.Text.Encoding]::ASCII.GetString($script:capturedBody) |
+                Should -Be 'dsc integration test content'
+        }
+    }
 }
