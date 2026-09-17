@@ -1,6 +1,19 @@
 <#
 .SYNOPSIS
     DSC resource for managing Azure DevOps team membership.
+.DESCRIPTION
+    This resource manages membership of individual users or groups within a team. The team must
+    already exist — use the AzDoTeam resource to create it first.
+
+.PARAMETER ProjectName
+    The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+
+.PARAMETER TeamName
+    The name of the team. This is a key property.
+
+.PARAMETER MemberName
+    The UPN, display name, or email of the user or group to add as a team member. This is a key property.
+
 #>
 [DscResource()]
 class AzDoTeamMember : AzDevOpsDscResourceBase

@@ -1,6 +1,19 @@
 <#
 .SYNOPSIS
     DSC resource for managing project-level ACL permissions.
+.DESCRIPTION
+    This resource manages project-level permissions in Azure DevOps, controlling what actions
+    groups or users can perform within a specific project.
+
+.PARAMETER ProjectName
+    The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+
+.PARAMETER GroupName
+    The name of the group to grant permissions to. This is a key property. Use the format [ProjectName]\GroupName or [TEAM FOUNDATION]\GroupName for organization-level groups.
+
+.PARAMETER isInherited
+    Whether permissions are inherited from parent objects. Defaults to $true.
+
 #>
 
 [DscResource()]

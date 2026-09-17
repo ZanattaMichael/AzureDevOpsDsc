@@ -15,7 +15,7 @@ Configuration Example
         {
             Ensure           = 'Present'
             ProjectName      = 'MyProject'
-            ResourceName     = 'Production'
+            TargetResourceName     = 'Production'
             ResourceType     = 'environment'
             CheckType        = 'Task Check'
             TimeoutInMinutes = 2880

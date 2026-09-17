@@ -5,6 +5,24 @@
     Allows the iteration paths (default iteration, backlog iteration and the iterations assigned to
     the team) and the area paths (default area path and the team's area paths) to be declared as
     part of how a team is configured.
+.PARAMETER ProjectName
+    The name of the Azure DevOps project. This property is mandatory and serves as the key property for the resource.
+
+.PARAMETER TeamName
+    The name of the team whose settings are managed. This property is mandatory.
+
+.PARAMETER BacklogIterationPath
+    The backlog iteration path for the team.
+
+.PARAMETER DefaultIterationPath
+    The default iteration path for new work items.
+
+.PARAMETER DefaultAreaPath
+    The default area path for the team.
+
+.PARAMETER BugsBehavior
+    How bugs are shown on backlogs and boards. Valid values are asRequirements, asTasks and off.
+
 #>
 [DscResource()]
 class AzDoTeamSettings : AzDevOpsDscResourceBase

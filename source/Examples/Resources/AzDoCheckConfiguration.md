@@ -6,7 +6,7 @@
 AzDoCheckConfiguration [string] #ResourceName
 {
     ProjectName          = [String]$ProjectName
-    ResourceName         = [String]$ResourceName
+    TargetResourceName   = [String]$TargetResourceName
     ResourceType         = [String] {'environment', 'repository', 'endpoint'}
     CheckType            = [String]$CheckType
     [ Settings           = [HashTable]$Settings ]
@@ -21,7 +21,7 @@ AzDoCheckConfiguration [string] #ResourceName
 ### Common Properties
 
 - **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
-- **ResourceName**: The name of the resource to attach the check to (environment name, repository name, or service connection name). This is a key property.
+- **TargetResourceName**: The name of the resource to attach the check to (environment name, repository name, or service connection name). This property is mandatory.
 - **ResourceType**: The type of resource. Valid values are `environment`, `repository`, and `endpoint`. This is a key property.
 - **CheckType**: The type of check to configure (e.g., `Task Check`, `Approval`, `ExclusiveLock`). This is a key property.
 - **Settings**: A hashtable of check-specific configuration settings.
@@ -45,7 +45,7 @@ Configuration ExampleConfig {
         AzDoCheckConfiguration AddExclusiveLock {
             Ensure           = 'Present'
             ProjectName      = 'MyProject'
-            ResourceName     = 'Production'
+            TargetResourceName = 'Production'
             ResourceType     = 'environment'
             CheckType        = 'ExclusiveLock'
             TimeoutInMinutes = 43200
@@ -63,7 +63,7 @@ Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 # Return the current configuration for AzDoCheckConfiguration
 $properties = @{
     ProjectName  = 'MyProject'
-    ResourceName = 'Production'
+    TargetResourceName = 'Production'
     ResourceType = 'environment'
     CheckType    = 'ExclusiveLock'
 }
@@ -88,7 +88,7 @@ resources:
     - AzureDevOpsDscNative/AzDoPipelineEnvironment/Production
   properties:
     ProjectName: $ProjectName
-    ResourceName: $EnvironmentName
+    TargetResourceName: $EnvironmentName
     ResourceType: environment
     CheckType: ExclusiveLock
     TimeoutInMinutes: 43200

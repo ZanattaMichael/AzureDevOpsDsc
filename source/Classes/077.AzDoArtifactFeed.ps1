@@ -1,6 +1,30 @@
 <#
 .SYNOPSIS
     DSC resource for managing Azure Artifacts feeds.
+.DESCRIPTION
+    This resource manages Azure Artifacts feeds. A feed can be project-scoped (set ProjectName) or
+    organization-scoped (omit ProjectName). Artifact feeds allow teams to share packages (NuGet,
+    npm, Maven, Python, Universal Packages).
+
+.PARAMETER FeedName
+    The name of the artifact feed. This property is mandatory and is the key property for the resource.
+
+.PARAMETER ProjectName
+    The name of the Azure DevOps project. Optional — when supplied, the feed is project-scoped; when omitted, the feed is organization-scoped.
+
+.PARAMETER Description
+    An optional description for the feed.
+
+.PARAMETER BadgesEnabled
+    Whether to enable badges for the feed. Defaults to $false.
+
+.PARAMETER UpstreamEnabled
+    Whether to enable upstream sources. Defaults to $true.
+
+.PARAMETER HideDeletedPackageVersions
+    Whether package versions that have been deleted are hidden from feed listings.
+    Defaults to $true.
+
 #>
 
 [DscResource()]

@@ -1,6 +1,33 @@
 <#
 .SYNOPSIS
     DSC resource for managing pipeline check configurations.
+.DESCRIPTION
+    This resource manages pipeline check configurations on Azure DevOps resources such as
+    environments, repositories, and service connections. Checks enforce gates that must pass before
+    a pipeline can access the protected resource.
+
+.PARAMETER ProjectName
+    The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+
+.PARAMETER ResourceType
+    The type of resource. Valid values are environment, repository, and endpoint. This is a key property.
+
+.PARAMETER CheckType
+    The type of check to configure (e.g., Task Check, Approval, ExclusiveLock). This is a key property.
+
+.PARAMETER Settings
+    A hashtable of check-specific configuration settings.
+
+.PARAMETER TimeoutInMinutes
+    How long the check can run before timing out. Defaults to 43200 (30 days).
+
+.PARAMETER Enabled
+    Whether the check is active. Defaults to $true.
+
+.PARAMETER TargetResourceName
+    The name of the resource the check is attached to - an environment name, repository name
+    or service connection name, depending on ResourceType. This property is mandatory.
+
 #>
 
 [DscResource()]

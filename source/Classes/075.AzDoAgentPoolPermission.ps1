@@ -1,6 +1,19 @@
 <#
 .SYNOPSIS
     DSC resource for managing Azure DevOps agent pool permissions.
+.DESCRIPTION
+    This resource manages security permissions on Azure DevOps agent pools, controlling which
+    groups or users can use or administer the pool.
+
+.PARAMETER PoolName
+    The name of the agent pool. This property is mandatory and serves as the key property for the resource.
+
+.PARAMETER GroupName
+    The name of the group to grant permissions to. This is a key property. Use the format [ProjectName]\GroupName or [TEAM FOUNDATION]\GroupName for organization-level groups.
+
+.PARAMETER isInherited
+    Whether permissions are inherited. Defaults to $true.
+
 #>
 
 [DscResource()]

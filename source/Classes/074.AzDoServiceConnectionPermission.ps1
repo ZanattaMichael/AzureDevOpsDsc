@@ -1,6 +1,22 @@
 <#
 .SYNOPSIS
     DSC resource for managing Azure DevOps service connection permissions.
+.DESCRIPTION
+    This resource manages security permissions on Azure DevOps service connections, controlling
+    which groups or users can use or manage specific service connections in pipelines.
+
+.PARAMETER ProjectName
+    The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+
+.PARAMETER ConnectionName
+    The name of the service connection. This is a key property.
+
+.PARAMETER GroupName
+    The name of the group to grant permissions to. This is a key property. Use the format [ProjectName]\GroupName.
+
+.PARAMETER isInherited
+    Whether permissions are inherited. Defaults to $true.
+
 #>
 
 [DscResource()]
