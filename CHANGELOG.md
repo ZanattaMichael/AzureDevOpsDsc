@@ -101,6 +101,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     stable and a rename would otherwise cause a duplicate to be created. The
     endpoint is a preview API; when an organization does not expose it, the lookup
     reports the entitlement as absent rather than failing the configuration.
+  - Added `AzDoPicklist`, a resource managing picklists - the allowed values behind
+    picklist-typed custom fields. Picklists are organization-scoped, so one list
+    backs fields across processes. Items are replaced wholesale because the update
+    endpoint takes the complete list; removing a value does not rewrite work items
+    that already carry it, so they keep a value that then fails validation on the
+    next edit. The list type is fixed at creation and a mismatch is reported rather
+    than silently recreating the list.
+  - Added `AzDoProcessWorkItemType`, managing custom and inherited work item types
+    on an inherited process. Only inherited processes can be customized; naming a
+    system process (Agile, Scrum, Basic, CMMI) is reported with that reason instead
+    of failing against the API. Removal is destructive in two different ways - a
+    custom type takes its work items with it, an inherited type discards this
+    process's customizations - so both require `AllowDestructiveRemove`, with
+    `IsDisabled` offered as the reversible alternative.
+  - Added the helper `Resolve-AzDoProcessWorkItemType`, which resolves a process and
+    work item type and enforces the "system processes are read-only" rule in one
+    place, and the private API functions for picklists and process work item types.
   - Added the private API functions `Get-DevOpsGroupEntitlement`,
     `New-DevOpsGroupEntitlement`, `Update-DevOpsGroupEntitlement`,
     `Remove-DevOpsGroupEntitlement` and their service principal equivalents. Both
