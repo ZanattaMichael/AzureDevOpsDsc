@@ -133,6 +133,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     strand every work item currently in it. Only custom states can be removed, and
     work items in a removed state keep a value that then fails validation.
   - Added the private API functions for process fields and states.
+  - Added `AzDoProcessRule`, managing conditional rules on a work item type.
+    Conditions and actions are passed through as the API models them rather than
+    wrapped, because the vocabulary is large and grows between API versions. Drift
+    detection normalizes both sides first: a configuration supplies hashtables and
+    the API returns objects, and the API fills in keys the configuration omitted, so
+    a raw comparison would report drift on every `Test()`. Inherited rules cannot be
+    deleted, only disabled.
+  - Added `AzDoProcessBehavior`, associating a work item type with a backlog level.
+    This is usually the missing step when a newly created custom work item type
+    appears to do nothing - without a behavior association it shows up on no backlog
+    and no board. A behavior that does not exist on the process is reported as a
+    configuration error rather than as a missing association.
+  - Added the helper `ConvertTo-NormalizedRuleClause` and the private API functions
+    for process rules and behaviors.
   - Added the private API functions `Get-DevOpsGroupEntitlement`,
     `New-DevOpsGroupEntitlement`, `Update-DevOpsGroupEntitlement`,
     `Remove-DevOpsGroupEntitlement` and their service principal equivalents. Both

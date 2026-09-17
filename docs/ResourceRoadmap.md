@@ -327,7 +327,7 @@ Items from #59 checked against the code:
 
 ## 8. Status
 
-Implemented on this branch (12 new resources, classes `101`–`110`):
+Implemented on this branch (18 new resources, classes `101`–`116`):
 
 | Resource | Notes |
 |---|---|
@@ -336,10 +336,11 @@ Implemented on this branch (12 new resources, classes `101`–`110`):
 | `AzDoSecureFile`, `AzDoSecureFilePermission` | §6. Includes the `SecureFile` form of the `Library` ACL token. |
 | `AzDoPipelineFolder`, `AzDoPipelineFolderPermission` | §5.3–5.4. Includes the `Build` folder ACL token, which also closed the shipped `AzDoPipelinePermission` gap recorded in §5.4. |
 | `AzDoGroupEntitlement`, `AzDoServicePrincipalEntitlement` | §6. |
+| `AzDoPicklist`, `AzDoProcessWorkItemType`, `AzDoProcessField`, `AzDoProcessState`, `AzDoProcessRule`, `AzDoProcessBehavior` | §6 process customization. The "system processes are read-only" rule lives in `Resolve-AzDoProcessWorkItemType`. |
 
 Still outstanding, in the order below:
 
-- **Process customization** (§6) — the largest single gap: `AzDoProcessWorkItemType`, `AzDoProcessField`, `AzDoProcessState`, `AzDoProcessRule`, `AzDoProcessBehavior`, `AzDoProcessLayout`, `AzDoPicklist`.
+- **Process customization** (§6) — mostly done. `AzDoPicklist`, `AzDoProcessWorkItemType`, `AzDoProcessField`, `AzDoProcessState`, `AzDoProcessRule` and `AzDoProcessBehavior` have landed (classes `111`–`116`). `AzDoProcessLayout` (form pages, groups and controls) is the remaining piece and is a sub-project of its own: the layout API is a three-level tree with its own ordering and inheritance rules, which does not fit the flat compare-and-patch shape the other five share.
 - **Dashboards, delivery plans and board configuration** (§6) — `AzDoDashboard`, `AzDoDashboardWidget`, `AzDoDashboardPermission`, `AzDoDeliveryPlan`, `AzDoBoardColumn`, `AzDoBoardSettings`, `AzDoCardRule`. The `Dashboards` and `Plan` ACL namespaces are still unimplemented (§2).
 - **Remaining §6 gaps** — `AzDoElasticPool`, `AzDoBuildRetentionSettings`, `AzDoWikiPage`.
 - **Org-scoped pipeline settings** (§7) — extend `AzDoPipelineSettings` rather than adding six resources.

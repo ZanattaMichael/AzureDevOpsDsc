@@ -195,6 +195,8 @@ Each resource links to its example/usage documentation.
 | [AzDoPicklist](source/Examples/Resources/AzDoPicklist.md) | Manages picklists — the allowed values behind picklist-typed custom fields. |
 | [AzDoProcessField](source/Examples/Resources/AzDoProcessField.md) | Manages fields on a work item type, including required, default and read-only settings. |
 | [AzDoProcessState](source/Examples/Resources/AzDoProcessState.md) | Manages custom workflow states on a work item type. |
+| [AzDoProcessRule](source/Examples/Resources/AzDoProcessRule.md) | Manages conditional rules on a work item type. |
+| [AzDoProcessBehavior](source/Examples/Resources/AzDoProcessBehavior.md) | Associates a work item type with a backlog level, which is what puts it on a backlog. |
 | [AzDoNotificationSubscription](source/Examples/Resources/AzDoNotificationSubscription.md) | Manages notification subscriptions. |
 
 ### Artifacts, wiki, extensions and auditing
