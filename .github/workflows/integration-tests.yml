@@ -80,20 +80,106 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  integration-tests:
-    name: Run Integration Tests
-    # Gate the pull_request trigger on the HEAD branch prefix - see the trigger comment
-    # above for why this cannot be a `branches:` filter. Non-PR events have an empty
-    # github.head_ref, so they are admitted by the first clause and keep their existing
-    # dispatch-only behaviour.
-    #
-    # Draft state is deliberately NOT part of this condition. The prefix exists so that a
-    # batch of new resources is exercised against a real organization while it is in
-    # progress, and a PR in progress is normally a draft - excluding drafts meant the
-    # suite never ran for the one case it was enabled for.
+  # Decide which resource test files the change actually needs, so a narrow pull request
+  # does not pay for a two-hour run against a live organization.
+  #
+  # A separate job, on a hosted runner, for two reasons: the AZDO-AGENT runner is a single
+  # shared machine and should not be occupied to compute a diff, and gating the expensive
+  # job on this one's output makes an unaffected pull request report an honest `skipped`
+  # rather than a green run that exercised nothing.
+  #
+  # The selector's own unit tests run in unit-tests.yml, not here - this job has no Pester
+  # and deliberately depends on nothing from PowerShell Gallery.
+  select-tests:
+    name: Select Affected Tests
+    runs-on: ubuntu-latest
     if: >-
       github.event_name != 'pull_request' ||
       startsWith(github.head_ref, 'resource-add/')
+    outputs:
+      should-run: ${{ steps.select.outputs.should-run }}
+      run-all: ${{ steps.select.outputs.run-all }}
+      test-names: ${{ steps.select.outputs.test-names }}
+      reason: ${{ steps.select.outputs.reason }}
+
+    steps:
+      # fetch-depth: 0 because the default shallow clone has no merge base to diff against.
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Select affected test files
+        id: select
+        shell: pwsh
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          . ./tests/Integration/Supporting/Functions/Get-AffectedIntegrationTest.ps1
+
+          if ($env:EVENT_NAME -ne 'pull_request')
+          {
+              # A dispatch or the release gate cannot be narrowed - there is no diff to
+              # narrow against, and a release must be gated on everything.
+              $result = @{ RunAll = $true; Path = @(); Reason = "Event '$($env:EVENT_NAME)' always runs the full suite." }
+          }
+          else
+          {
+              # Three-dot: compare against the merge base, so commits that landed on main
+              # after this branch started are not counted as this PR's changes.
+              $changed = @(git diff --name-only "$($env:BASE_SHA)...$($env:HEAD_SHA)" 2>$null)
+
+              if ($LASTEXITCODE -ne 0 -or $null -eq $changed)
+              {
+                  $result = @{ RunAll = $true; Path = @(); Reason = 'Could not determine the changed files - running the full suite rather than guessing.' }
+              }
+              else
+              {
+                  Write-Host "Changed files ($($changed.Count)):"
+                  $changed | ForEach-Object { Write-Host "  $_" }
+                  $result = Get-AffectedIntegrationTest -ChangedPath $changed -IntegrationTestRoot './tests/Integration'
+              }
+          }
+
+          # Names, not paths: the runner that executes the suite has its own checkout.
+          $names = @($result.Path | ForEach-Object { (Split-Path -Path $_ -Leaf) -replace '\.tests\.ps1$', '' } | Sort-Object)
+          $shouldRun = $result.RunAll -or $names.Count -gt 0
+
+          Write-Host ''
+          Write-Host "Decision : $($result.Reason)"
+          Write-Host "RunAll   : $($result.RunAll)"
+          Write-Host "Selected : $(if ($names.Count) { $names -join ', ' } else { '(none)' })"
+          Write-Host "ShouldRun: $shouldRun"
+
+          "should-run=$($shouldRun.ToString().ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "run-all=$($result.RunAll.ToString().ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "test-names=$($names -join ',')" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "reason=$($result.Reason)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+          "## Integration test selection`n`n$($result.Reason)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+
+  integration-tests:
+    name: Run Integration Tests
+    needs: select-tests
+    # Two gates, both of which must hold:
+    #
+    #   1. The HEAD branch prefix - see the trigger comment above for why this cannot be a
+    #      `branches:` filter. Non-PR events have an empty github.head_ref, so they are
+    #      admitted by the first clause and keep their existing dispatch-only behaviour.
+    #      Draft state is deliberately NOT part of it: the prefix exists so that a batch of
+    #      new resources is exercised against a real organization while it is in progress,
+    #      and a PR in progress is normally a draft - excluding drafts meant the suite never
+    #      ran for the one case it was enabled for.
+    #
+    #   2. select-tests found something worth running. A change that touches no resource
+    #      with integration coverage skips the live run outright, which reports as
+    #      `skipped` - honest - rather than as a pass over an empty selection.
+    if: >-
+      needs.select-tests.outputs.should-run == 'true' &&
+      (github.event_name != 'pull_request' ||
+       startsWith(github.head_ref, 'resource-add/'))
     runs-on: AZDO-AGENT
 
     steps:
@@ -283,12 +369,32 @@ jobs:
           # On the pull_request trigger there are no inputs at all, so this evaluates to
           # 'false' and a failing test fails the run - which is the point of the gate.
           ALLOW_FAILURES: ${{ inputs.allowFailures && 'true' || 'false' }}
+          # Empty when select-tests decided the whole suite is needed (a shared-code change,
+          # a dispatch, or the release gate). Otherwise the comma-separated base names of the
+          # test files the change maps to.
+          RUN_ALL: ${{ needs.select-tests.outputs.run-all }}
+          SELECTED_TESTS: ${{ needs.select-tests.outputs.test-names }}
+          SELECTION_REASON: ${{ needs.select-tests.outputs.reason }}
         run: |
           $params = @{ TestFrameworkConfigurationPath = '.\TestFrameworkConfiguration.json' }
           if ($env:ALLOW_FAILURES -eq 'true') {
               Write-Host 'AllowFailures is enabled - test failures will be reported but will not fail this run.'
               $params['AllowFailures'] = $true
           }
+
+          Write-Host "Selection: $($env:SELECTION_REASON)"
+
+          # Narrow the run only on an explicit 'false'. Anything else - an empty string from
+          # a job that did not set it, an unexpected value - falls through to the full suite,
+          # so a wiring mistake costs time rather than coverage.
+          if ($env:RUN_ALL -eq 'false' -and -not [String]::IsNullOrWhiteSpace($env:SELECTED_TESTS)) {
+              $params['TestName'] = $env:SELECTED_TESTS -split ',' | Where-Object { $_ }
+              Write-Host "Running selected tests only: $($params['TestName'] -join ', ')"
+          }
+          else {
+              Write-Host 'Running the full integration suite.'
+          }
+
           .\Invoke-Tests.ps1 @params
 
       - name: Upload test results
