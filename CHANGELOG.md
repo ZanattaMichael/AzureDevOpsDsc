@@ -90,6 +90,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `List-DevOpsPipelineFolders`, `New-DevOpsPipelineFolder`,
     `Update-DevOpsPipelineFolder`, `Remove-DevOpsPipelineFolder` and
     `Get-DevOpsPipelineDefinitionsInFolder`.
+  - Added `AzDoGroupEntitlement`, a resource managing group licensing rules - the
+    access level applied to every member of a group. `AzDoUserEntitlement` assigns
+    a level one user at a time, which does not scale to an organization. Changing
+    the level re-licenses the group's members; removing the rule removes nobody
+    from the organization, only what the rule granted them.
+  - Added `AzDoServicePrincipalEntitlement`, managing service principals and
+    managed identities as organization members. Identity is matched by Microsoft
+    Entra object id rather than display name, since names are neither unique nor
+    stable and a rename would otherwise cause a duplicate to be created. The
+    endpoint is a preview API; when an organization does not expose it, the lookup
+    reports the entitlement as absent rather than failing the configuration.
+  - Added the private API functions `Get-DevOpsGroupEntitlement`,
+    `New-DevOpsGroupEntitlement`, `Update-DevOpsGroupEntitlement`,
+    `Remove-DevOpsGroupEntitlement` and their service principal equivalents. Both
+    update endpoints take JSON Patch rather than a plain object.
   - Added `docs/ResourceRoadmap.md`, a verified backlog of resources still to be
     added to the module, reconciling the phased plan in issue #59 against the code.
 
