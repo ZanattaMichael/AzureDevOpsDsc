@@ -332,7 +332,11 @@ If `apt-get update` fails on unrelated third-party PPAs, disable the offending f
 
 ## Branch
 
-Active development branch: `claude/affectionate-tesla-citwbm`
+Active development branch: `resource-add/affectionate-tesla-citwbm`
+
+The `resource-add/` prefix is load-bearing: `integration-tests.yml` runs the live-organization
+suite on pull requests from branches with that prefix. Any other prefix leaves the suite
+dispatch-only.
 
 Recent work added 16 resources (classes `101`–`116`) covering work item queries, tag hygiene,
 secure files, pipeline folders, entitlements and inherited-process customization, plus ACL token
