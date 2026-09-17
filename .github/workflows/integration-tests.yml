@@ -116,18 +116,34 @@ jobs:
       # `#Requires -Modules @{ ModuleName="Pester"; ModuleVersion="5.0.0" }`, so without
       # this the script refuses to start and the suite never runs at all. Pinned to the
       # same version the unit test and publish workflows install.
+      #
+      # Saved into a workspace-local folder rather than installed with `-Scope CurrentUser`.
+      # CurrentUser resolves to the runner's profile module directory, which on this
+      # persistent runner also carries a hand-installed DscResource.Common - so Pester
+      # living there forced that whole directory onto PSModulePath, giving DscResource.Common
+      # a second location and tripping the duplicate assertion below. Keeping Pester under
+      # ./output/TestModules lets the profile directory be dropped entirely.
       - name: Install Pester
         shell: pwsh
         run: |
-          Install-Module -Name Pester -RequiredVersion 5.7.1 -Force -SkipPublisherCheck -Scope CurrentUser
-          $pester = Get-Module -Name Pester -ListAvailable |
-              Where-Object Version -ge ([version]'5.0.0') |
-              Sort-Object Version -Descending |
-              Select-Object -First 1
-          if (-not $pester) {
-              throw "Pester 5.x is not available after install - Invoke-Tests.ps1 cannot run."
+          $pesterRoot = Join-Path -Path (Resolve-Path -Path .\output).Path -ChildPath 'TestModules'
+          New-Item -Path $pesterRoot -ItemType Directory -Force | Out-Null
+
+          # PSResourceGet is what build.ps1's bootstrap already uses on this runner; fall
+          # back to Save-Module so this step does not depend on which one is present.
+          if (Get-Command -Name Save-PSResource -ErrorAction SilentlyContinue) {
+              Save-PSResource -Name Pester -Version 5.7.1 -Path $pesterRoot -TrustRepository -SkipDependencyCheck
           }
-          Write-Host "Pester $($pester.Version) available at $($pester.ModuleBase)"
+          else {
+              Save-Module -Name Pester -RequiredVersion 5.7.1 -Path $pesterRoot -Force
+          }
+
+          $manifest = Join-Path -Path $pesterRoot -ChildPath 'Pester\5.7.1\Pester.psd1'
+          if (-not (Test-Path -Path $manifest)) {
+              throw "Pester 5.7.1 was not saved to '$pesterRoot' - Invoke-Tests.ps1 cannot run. Found: $((Get-ChildItem -Path $pesterRoot -Recurse -Filter 'Pester.psd1' | Select-Object -ExpandProperty FullName) -join ' ; ')"
+          }
+          Write-Host "Pester 5.7.1 saved to $pesterRoot"
+          "PESTER_MODULE_ROOT=$pesterRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       # Point PSModulePath at exactly one copy of each module the tests load.
       #
@@ -143,10 +159,19 @@ jobs:
       # inside Invoke-DscResource - which fails every test. Two sources of duplication
       # are removed here rather than merely shadowed by prepending:
       #   - output/RequiredModules also holds DscResource.Common (the built module already
-      #     bundles it under /Modules), so it is left off the path entirely; and
+      #     bundles it under /Modules), so it is left off the path entirely;
       #   - the self-hosted runner carries stale hand-deployed copies under
       #     C:\Temp\DSCModule (including an old 0.0.1 module under the former name), which
-      #     are stripped from the inherited PSModulePath.
+      #     are stripped from the inherited PSModulePath; and
+      #   - the runner's *profile* module directory (<MyDocuments>\PowerShell\Modules) holds
+      #     a hand-installed DscResource.Common 0.24.5, and is also where
+      #     scripts/redeploy-module.ps1 deploys AzureDevOpsDscNative - so it can supply a
+      #     second copy of two of the three modules asserted below. It is dropped as well,
+      #     which is why the step above saves Pester into ./output/TestModules instead of
+      #     installing it there.
+      #
+      # ./output/TestModules is re-added explicitly after the ./output filter, since that
+      # filter would otherwise remove the very directory Pester was just saved to.
       - name: Set PSModulePath to the built module only
         shell: pwsh
         run: |
@@ -157,16 +182,23 @@ jobs:
                   Select-Object -ExpandProperty FullName
           )
 
-          # Keep the runner's default user/system module paths (Pester, base modules) but
-          # drop anything under this repo's ./output and any stale C:\Temp\DSCModule copies,
-          # so nothing outside the freshly built module can provide a second copy.
+          # Where the previous step saved Pester. Resolved from the same expression rather
+          # than $env:PESTER_MODULE_ROOT so this step still works when re-run standalone.
+          $pesterRoot = Join-Path -Path $outputPath -ChildPath 'TestModules'
+
+          # Keep the runner's system module paths (base modules) but drop anything under
+          # this repo's ./output, any stale C:\Temp\DSCModule copies, and the user profile
+          # module directory, so nothing outside the freshly built module can provide a
+          # second copy of the modules asserted below.
+          $profileModuleRoot = Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'PowerShell\Modules'
           $keep = $env:PSModulePath -split ';' | Where-Object {
               $_ -and
               $_ -notlike "$outputPath*" -and
-              $_ -notlike 'C:\Temp\DSCModule*'
+              $_ -notlike 'C:\Temp\DSCModule*' -and
+              $_.TrimEnd('\') -ne $profileModuleRoot.TrimEnd('\')
           }
 
-          $ordered = @($builtModulePath) + $nestedModulePaths + $keep
+          $ordered = @($builtModulePath) + $nestedModulePaths + @($pesterRoot) + $keep
           $env:PSModulePath = ($ordered | Where-Object { $_ } | Select-Object -Unique) -join ';'
 
           # Persist for subsequent steps via $GITHUB_ENV
@@ -188,6 +220,20 @@ jobs:
               }
               Write-Host "Resolved $name -> $($bases[0])"
           }
+
+          # Pester moved off the profile module directory with this path rewrite, so check
+          # it is still reachable here rather than letting Invoke-Tests.ps1 fail its
+          # #Requires later. Not part of the strict loop above: Windows ships Pester 3.4.0
+          # under C:\Program Files\WindowsPowerShell\Modules, so Pester legitimately
+          # resolves from more than one location and the 5.x copy simply has to win.
+          $pester5 = Get-Module -Name Pester -ListAvailable |
+              Where-Object Version -ge ([version]'5.0.0') |
+              Sort-Object Version -Descending |
+              Select-Object -First 1
+          if (-not $pester5) {
+              throw "Pester 5.x is not resolvable on the rewritten PSModulePath - Invoke-Tests.ps1 would refuse to start."
+          }
+          Write-Host "Resolved Pester $($pester5.Version) -> $($pester5.ModuleBase)"
 
       - name: Write test framework configuration
         shell: pwsh
