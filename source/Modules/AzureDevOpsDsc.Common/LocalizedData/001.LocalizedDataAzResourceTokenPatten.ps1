@@ -43,6 +43,10 @@ data LocalizedDataAzResourceTokenPatten
         QueryFolderIdentifier   = '\/(?<identifiers>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})'
         # Build (Pipeline) Token Patterns — ProjectName only, or ProjectName/PipelineName
         BuildPermission         = '^(?<ProjectName>[A-Za-z0-9-_]+)(\/(?<PipelineName>[A-Za-z0-9-_ ]+))?$'
+        # Build folder token — {projectName}/\{folderPath}. The leading backslash on the folder
+        # path is required: BuildPermission matches pipeline NAMES, so without a marker
+        # 'MyProject/Platform' is ambiguous between a folder and a pipeline called 'Platform'.
+        BuildFolderPermission   = '^(?<ProjectName>[A-Za-z0-9-_]+)\/(?<FolderPath>\\.+)$'
         # Library (VariableGroup) Token Patterns
         LibraryPermission       = '^Library\/Project\/(?<ProjectName>[A-Za-z0-9-_]+)(\/VariableGroup\/(?<VariableGroupName>[A-Za-z0-9-_ ]+))?(\/SecureFile\/(?<SecureFileName>[A-Za-z0-9-_. ]+))?$'
         # ServiceEndpoints Token Patterns

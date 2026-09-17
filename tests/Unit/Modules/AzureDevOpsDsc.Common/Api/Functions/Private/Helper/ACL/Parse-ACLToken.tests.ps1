@@ -29,6 +29,8 @@ Describe 'Parse-ACLToken' -Tag "Unit", "ACL", "Helper" {
             # too), so stand-in patterns would not exercise what it actually does.
             QueryPermission         = '^\$\/(?<ProjectId>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})(?<Remainder>(\/[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})*)$'
             QueryFolderIdentifier   = '\/(?<identifiers>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})'
+            BuildPermission         = '^(?<ProjectId>[A-Za-z0-9-]+)(\/(?<PipelineId>[0-9]+))?$'
+            BuildFolderPermission   = '^(?<ProjectId>[A-Za-z0-9-]+)\/(?<FolderPath>(?![0-9]+$).+)$'
         }
 
         # If there were any Mock commands needed, they should be added here using the complete syntax.
@@ -145,6 +147,21 @@ Describe 'Parse-ACLToken' -Tag "Unit", "ACL", "Helper" {
     It 'Should throw for an unrecognized Query token' {
         $token = 'not-a-query-token'
         { Parse-ACLToken -Token $token -SecurityNamespace 'WorkItemQueryFolders' } | Should -Throw "Token '$token' is not recognized."
+    }
+
+    It 'Should parse a Build definition token as a definition' {
+        $result = Parse-ACLToken -Token 'project-id-1/123' -SecurityNamespace 'Build'
+        $result.type | Should -Be 'Build'
+    }
+
+    It 'Should parse a Build folder token as a folder' {
+        $result = Parse-ACLToken -Token 'project-id-1/Platform' -SecurityNamespace 'Build'
+        $result.type | Should -Be 'BuildFolder'
+    }
+
+    It 'Should parse a nested Build folder token as a folder' {
+        $result = Parse-ACLToken -Token 'project-id-1/Platform/Release' -SecurityNamespace 'Build'
+        $result.type | Should -Be 'BuildFolder'
     }
 
     It 'Should throw for unrecognized Identity token' {

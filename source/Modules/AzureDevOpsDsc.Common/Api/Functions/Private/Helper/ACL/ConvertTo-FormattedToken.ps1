@@ -93,6 +93,11 @@ Function ConvertTo-FormattedToken {
                       else                   { $Token.ProjectId }
             break
         }
+        # Build folder permissions — the folder is addressed by path, not by id
+        {$_.type -eq 'BuildFolder'} {
+            $string = '{0}/{1}' -f $Token.ProjectId, $Token.FolderPath
+            break
+        }
         # Library (VariableGroup) permissions
         {$_.type -eq 'Library'} {
             $string = if ($Token.SecureFileId)         { 'Library/Project/{0}/SecureFile/{1}' -f $Token.ProjectId, $Token.SecureFileId }

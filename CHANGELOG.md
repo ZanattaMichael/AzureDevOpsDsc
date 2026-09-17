@@ -74,6 +74,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added the private API functions `List-DevOpsSecureFiles`, `New-DevOpsSecureFile`,
     `Update-DevOpsSecureFile` and `Remove-DevOpsSecureFile`, and a `LiveSecureFiles`
     cache type.
+  - Added `AzDoPipelineFolder`, a resource managing the pipeline (build) folder tree.
+    Paths are backslash-delimited and normalized, so the several ways a folder path
+    can be written are one desired state. Deleting a pipeline folder deletes every
+    definition beneath it, so removal is refused unless `AllowRecursiveDelete` is
+    set - and refused as well when emptiness cannot be established, rather than
+    treating a failed lookup as "empty".
+  - Added `AzDoPipelineFolderPermission`, managing a pipeline folder's ACL in the
+    `Build` security namespace, and added the folder token form
+    (`{projectId}/{folderPath}`) to `New-ACLToken`, `ConvertTo-FormattedToken`,
+    `Parse-ACLToken` and the localized patterns. Previously the `Build` branch
+    understood only the definition token form, so folder-level pipeline permissions
+    could not be expressed at all - including through `AzDoPipelinePermission`.
+  - Added the helper `Format-AzDoPipelineFolderPath` and the private API functions
+    `List-DevOpsPipelineFolders`, `New-DevOpsPipelineFolder`,
+    `Update-DevOpsPipelineFolder`, `Remove-DevOpsPipelineFolder` and
+    `Get-DevOpsPipelineDefinitionsInFolder`.
   - Added `docs/ResourceRoadmap.md`, a verified backlog of resources still to be
     added to the module, reconciling the phased plan in issue #59 against the code.
 

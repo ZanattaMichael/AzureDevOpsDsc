@@ -45,6 +45,9 @@ data LocalizedDataAzACLTokenPatten
         ProcessPermission       = '^\$PROCESS:(?<ParentProcessId>[A-Za-z0-9-]+):(?<ProcessId>[A-Za-z0-9-]+)$'
         # Build (Pipeline) ACL Token Patterns  — ProjectId only, or ProjectId/PipelineId
         BuildPermission         = '^(?<ProjectId>[A-Za-z0-9-]+)(\/(?<PipelineId>[0-9]+))?$'
+        # Build folder ACL token — {projectId}/{folderPath}. The negative lookahead keeps a
+        # definition token ({projectId}/{numericId}) from being read as a folder.
+        BuildFolderPermission   = '^(?<ProjectId>[A-Za-z0-9-]+)\/(?<FolderPath>(?![0-9]+$).+)$'
         # Library (VariableGroup) ACL Token Patterns
         LibraryPermission       = '^Library\/Project\/(?<ProjectId>[A-Za-z0-9-]+)(\/VariableGroup\/(?<VariableGroupId>[0-9]+))?(\/SecureFile\/(?<SecureFileId>[A-Za-z0-9-]+))?$'
         # ServiceEndpoints ACL Token Patterns

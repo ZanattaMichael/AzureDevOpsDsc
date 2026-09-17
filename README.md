@@ -150,6 +150,7 @@ Each resource links to its example/usage documentation.
 | [AzDoAgentPoolPermission](source/Examples/Resources/AzDoAgentPoolPermission.md) | Manages agent pool permissions. |
 | [AzDoEnvironmentPermission](source/Examples/Resources/AzDoEnvironmentPermission.md) | Manages pipeline environment permissions. |
 | [AzDoPipelinePermission](source/Examples/Resources/AzDoPipelinePermission.md) | Manages build/pipeline permissions. |
+| [AzDoPipelineFolderPermission](source/Examples/Resources/AzDoPipelineFolderPermission.md) | Manages permissions on pipeline folders, which definitions inherit. |
 | [AzDoServiceConnectionPermission](source/Examples/Resources/AzDoServiceConnectionPermission.md) | Manages service connection (endpoint) permissions. |
 | [AzDoVariableGroupPermission](source/Examples/Resources/AzDoVariableGroupPermission.md) | Manages variable group (library) permissions. |
 | [AzDoSecureFilePermission](source/Examples/Resources/AzDoSecureFilePermission.md) | Manages secure file (library) permissions. |
@@ -164,6 +165,7 @@ Each resource links to its example/usage documentation.
 | Resource | Description |
 |---|---|
 | [AzDoPipeline](source/Examples/Resources/AzDoPipeline.md) | Creates and manages YAML pipeline definitions. |
+| [AzDoPipelineFolder](source/Examples/Resources/AzDoPipelineFolder.md) | Manages the pipeline (build) folder tree. |
 | [AzDoPipelineEnvironment](source/Examples/Resources/AzDoPipelineEnvironment.md) | Creates and manages pipeline environments. |
 | [AzDoEnvironmentApproval](source/Examples/Resources/AzDoEnvironmentApproval.md) | Manages approval checks on a pipeline environment. |
 | [AzDoCheckConfiguration](source/Examples/Resources/AzDoCheckConfiguration.md) | Manages pipeline checks (e.g. Approval) on a protected resource. |

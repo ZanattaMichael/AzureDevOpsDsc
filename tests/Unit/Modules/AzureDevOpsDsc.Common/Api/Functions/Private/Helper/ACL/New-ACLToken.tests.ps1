@@ -208,6 +208,50 @@ Describe 'New-ACLToken Function Tests' -Tag "Unit", "ACL", "Helper" {
         }
     }
 
+    Context 'Build SecurityNamespace - folder tokens' {
+
+        BeforeAll {
+            . (Get-FunctionItem 'Format-AzDoPipelineFolderPath.ps1').FullName
+            Mock -CommandName Resolve-AzDoProjectIdForToken -MockWith { return 'project-id-1' }
+        }
+
+        It 'Treats a numeric tail as a pipeline definition' {
+            $result = New-ACLToken -SecurityNamespace 'Build' -TokenName 'MyProject/123'
+            $result.type | Should -Be 'Build'
+        }
+
+        It 'Treats an unmarked name as a pipeline, not a folder' {
+            # A pipeline can legitimately be called 'Platform', so the bare form stays a pipeline.
+            $result = New-ACLToken -SecurityNamespace 'Build' -TokenName 'MyProject/Platform'
+            $result.type | Should -Be 'Build'
+        }
+
+        It 'Treats a path marked with a leading separator as a folder' {
+            $result = New-ACLToken -SecurityNamespace 'Build' -TokenName 'MyProject/\Platform'
+            $result.type | Should -Be 'BuildFolder'
+            $result.FolderPath | Should -Be 'Platform'
+        }
+
+        It 'Handles a nested folder path' {
+            $result = New-ACLToken -SecurityNamespace 'Build' -TokenName 'MyProject/\Platform\Release'
+            $result.type | Should -Be 'BuildFolder'
+            $result.FolderPath | Should -Be 'Platform\Release'
+        }
+
+        It 'Normalizes forward slashes in a folder path' {
+            $result = New-ACLToken -SecurityNamespace 'Build' -TokenName 'MyProject/\Platform/Release'
+            $result.FolderPath | Should -Be 'Platform\Release'
+        }
+
+        It 'Round-trips a folder token into the API token form' {
+            . (Get-FunctionItem 'ConvertTo-FormattedToken.ps1').FullName
+
+            $structured = New-ACLToken -SecurityNamespace 'Build' -TokenName 'MyProject/\Platform'
+            # The API token carries the resolved project id and the path without its marker.
+            ConvertTo-FormattedToken -Token $structured | Should -Be 'project-id-1/Platform'
+        }
+    }
+
     Context 'Unknown SecurityNamespace' {
 
         It 'Should return Generic type for unrecognized security namespace (pass-through)' {

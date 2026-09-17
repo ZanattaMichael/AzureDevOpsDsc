@@ -116,8 +116,9 @@ Function Parse-ACLToken
         'Build' {
             switch -regex ($Token.Trim())
             {
-                $LocalizedDataAzACLTokenPatten.BuildPermission { $result.type = 'Build';        break }
-                default                                        { $result.type = 'BuildUnknown'        }
+                $LocalizedDataAzACLTokenPatten.BuildPermission       { $result.type = 'Build';       break }
+                $LocalizedDataAzACLTokenPatten.BuildFolderPermission { $result.type = 'BuildFolder'; break }
+                default                                              { $result.type = 'BuildUnknown'       }
             }
         }
 

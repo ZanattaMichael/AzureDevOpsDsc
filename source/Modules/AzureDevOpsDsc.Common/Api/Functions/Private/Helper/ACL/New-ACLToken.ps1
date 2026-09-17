@@ -233,7 +233,18 @@ Function New-ACLToken
 
         # Build / Pipeline permissions — resolve pipeline name to numeric ID for the API token.
         'Build' {
-            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.BuildPermission)
+            # Folder first: the definition pattern matches pipeline names, so it would otherwise
+            # claim a folder path before the folder pattern was reached.
+            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.BuildFolderPermission)
+            {
+                # Folder tokens address the folder by path rather than by id, so there is nothing
+                # to resolve through the cache. The leading separator is a marker for this parse
+                # only - the API token carries the path without it.
+                $result.type       = 'BuildFolder'
+                $result.ProjectId  = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
+                $result.FolderPath = (Format-AzDoPipelineFolderPath -Path $matches.FolderPath).TrimStart('\')
+            }
+            elseif ($TokenName -match $LocalizedDataAzResourceTokenPatten.BuildPermission)
             {
                 $result.type      = 'Build'
                 $result.ProjectId = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
