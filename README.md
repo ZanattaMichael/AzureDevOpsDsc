@@ -158,7 +158,6 @@ Each resource links to its example/usage documentation.
 | [AzDoSecureFilePermission](source/Examples/Resources/AzDoSecureFilePermission.md) | Manages secure file (library) permissions. |
 | [AzDoArtifactFeedPermission](source/Examples/Resources/AzDoArtifactFeedPermission.md) | Manages artifact feed permissions. |
 | [AzDoSecurityNamespacePermission](source/Examples/Resources/AzDoSecurityNamespacePermission.md) | Manages permissions for an arbitrary security namespace and token. |
-| [AzDoProcessPermission](source/Examples/Resources/AzDoProcessPermission.md) | Manages Process security namespace permissions, e.g. who can create inherited (child) processes. |
 | [AzDoGroupPermission](source/Examples/Resources/AzDoGroupPermission.md) | *(Not currently supported)* Manages group-level identity permissions. |
 | [AzDoQueryPermission](source/Examples/Resources/AzDoQueryPermission.md) | Manages permissions on work item query folders. |
 
@@ -190,14 +189,24 @@ Each resource links to its example/usage documentation.
 | [AzDoWIPTagHygiene](source/Examples/Resources/AzDoWIPTagHygiene.md) | Detects and corrects misaligned work item tags (typos, case and punctuation drift) against a canonical vocabulary. |
 | [AzDoQueryFolder](source/Examples/Resources/AzDoQueryFolder.md) | Manages folders in the shared work item query tree. |
 | [AzDoWorkItemQuery](source/Examples/Resources/AzDoWorkItemQuery.md) | Manages shared work item queries, including WIQL, columns and sort order. |
+| [AzDoNotificationSubscription](source/Examples/Resources/AzDoNotificationSubscription.md) | Manages notification subscriptions. |
+
+### Process customization
+
+Customizing an inherited process is a layered job, and the resources are usually declared in this
+order. Only **inherited** processes can be customized — the system processes (Agile, Scrum, Basic,
+CMMI) are read-only, so start by creating an inherited process with `AzDoProcess`.
+
+| Resource | Description |
+|---|---|
 | [AzDoProcess](source/Examples/Resources/AzDoProcess.md) | Creates and manages inherited processes (process templates). |
+| [AzDoPicklist](source/Examples/Resources/AzDoPicklist.md) | Manages picklists — the allowed values behind picklist-typed custom fields. Organization-scoped, so one list backs fields across processes. |
 | [AzDoProcessWorkItemType](source/Examples/Resources/AzDoProcessWorkItemType.md) | Manages custom and inherited work item types on an inherited process. |
-| [AzDoPicklist](source/Examples/Resources/AzDoPicklist.md) | Manages picklists — the allowed values behind picklist-typed custom fields. |
-| [AzDoProcessField](source/Examples/Resources/AzDoProcessField.md) | Manages fields on a work item type, including required, default and read-only settings. |
+| [AzDoProcessField](source/Examples/Resources/AzDoProcessField.md) | Manages fields on a work item type, including the required, default and read-only settings. |
 | [AzDoProcessState](source/Examples/Resources/AzDoProcessState.md) | Manages custom workflow states on a work item type. |
 | [AzDoProcessRule](source/Examples/Resources/AzDoProcessRule.md) | Manages conditional rules on a work item type. |
-| [AzDoProcessBehavior](source/Examples/Resources/AzDoProcessBehavior.md) | Associates a work item type with a backlog level, which is what puts it on a backlog. |
-| [AzDoNotificationSubscription](source/Examples/Resources/AzDoNotificationSubscription.md) | Manages notification subscriptions. |
+| [AzDoProcessBehavior](source/Examples/Resources/AzDoProcessBehavior.md) | Associates a work item type with a backlog level. **A custom work item type appears on no backlog and no board until this is declared.** |
+| [AzDoProcessPermission](source/Examples/Resources/AzDoProcessPermission.md) | Manages Process security namespace permissions, e.g. who can create inherited processes. |
 
 ### Artifacts, wiki, extensions and auditing
 
@@ -213,13 +222,21 @@ Each resource links to its example/usage documentation.
 
 ## Documentation
 
-The documentation can be found in the [AzureDevOpsDsc Wiki](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki).
-The DSC Resource`s schema files are used to automatically update the
-documentation on each PR merge.
+Each resource has a page under [`source/Examples/Resources`](source/Examples/Resources) covering its
+properties, the behaviour worth knowing before using it, and three worked examples (a DSC
+configuration, `Invoke-DscResource`, and `Dsc.PipelineRunner`). The tables above link to them
+directly.
+
+The same documentation is published to the
+[AzureDevOpsDscNative Wiki](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki), which is updated
+automatically on each PR merge.
+
+[`docs/ResourceRoadmap.md`](docs/ResourceRoadmap.md) is the plan of record for what the module
+covers and what is still outstanding, with the reasoning behind the priority order. Start there
+before adding a resource.
 
 ### Examples
 
-You can review the [Examples](/source/Examples) directory in the AzureDevOpsDsc module
-for some general use scenarios for all of the resources that are in the module.
-
-The resource examples are also available in the [AzureDevOpsDsc Wiki](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki).
+The [Examples](source/Examples) directory holds runnable configurations for every resource. They
+are also available in the
+[AzureDevOpsDscNative Wiki](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki).

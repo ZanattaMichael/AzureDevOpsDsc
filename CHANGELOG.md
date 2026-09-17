@@ -157,6 +157,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - AzureDevOpsDscNative
+  - Reorganized the resource tables in `README.md`: process customization now has its
+    own section with the resources in declaration order, since seven of them had
+    accumulated inside "Boards and work items". Corrected the documentation section,
+    which still referred to the module by its pre-rename name, and linked
+    `docs/ResourceRoadmap.md` as the plan of record.
+  - Updated the resource documentation for behaviour that changed:
+    `AzDoPipelinePermission` now records that it targets definitions and points at
+    `AzDoPipelineFolderPermission` for folders (which previously could not be
+    expressed at all), and `AzDoVariableGroupPermission` documents that the `Library`
+    namespace is shared with secure files and how the project-root token is
+    distinguished from both.
+  - Added cross-references where a resource is half of a pair: `AzDoWIPTags` to
+    `AzDoWIPTagHygiene`, `AzDoProcess` to the six process customization resources,
+    `AzDoUserEntitlement` to the group and service principal equivalents, and
+    `AzDoSecurityNamespacePermission` to a table of the namespaces that now have
+    dedicated resources.
+  - Added runnable examples for `AzDoProcess`, `AzDoProcessPermission`,
+    `AzDoUserEntitlement`, `AzDoServiceHook` and `AzDoPipelineSettings`, which had
+    documentation pages but no `source/Examples/Resources/<Name>/` folder. Every
+    resource now has one.
+  - Corrected `CLAUDE.md`, which had drifted: three of the five enum tables were wrong
+    (`DSCGetSummaryState` was missing `Renamed` and `Missing` and had `Error` at the
+    wrong value, `RequiredAction` listed a `NoChange` member that does not exist, and
+    `TokenType` listed two of its six values), `AzDoIterationPermission` and
+    `AzDoPipelinePermission` were labelled as using the `CSS` namespace when they use
+    `Iteration` and `Build`, and the deployed module path and expected test counts
+    predated the rename. Added the resource conventions, the Linux test baseline and
+    the gotchas this work surfaced.
+
+
+- AzureDevOpsDscNative
   - Updated the `Dsc.PipelineRunner` documentation in `USAGE.md` and the
     "Pipeline runner initialization" example in every resource doc under
     `source/Examples/Resources` (published to the GitHub wiki on release) to
