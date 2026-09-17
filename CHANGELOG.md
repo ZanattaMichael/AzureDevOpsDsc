@@ -43,6 +43,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     into one canonical form, and `Resolve-AzDoQueryPath`, which walks a query path
     and collects the id of each segment - the ids that a `WorkItemQueryFolders` ACL
     token is built from.
+  - Added `AzDoWIPTagHygiene`, a companion to `AzDoWIPTags` that detects work item
+    tags misaligned against a canonical vocabulary (`Bugfix` beside `Bug`,
+    `frontend` beside `Frontend`, `Tech-Debt` beside `Tech Debt`) and corrects them
+    by renaming the tag - Azure DevOps merges a tag into an existing one on rename
+    and re-tags every affected work item, so a correction costs one API call per
+    tag rather than one per work item. Because a merge is irreversible and
+    project-wide, the resource defaults to `RemediationAction = 'Report'`, where
+    `Test()` reports drift and `Set()` lists the misalignments without changing
+    anything. Tags differing only in digits (`Sprint1`/`Sprint2`, `FY24`/`FY25`)
+    are never merged at any threshold, tags already in the vocabulary are never
+    touched, and `MaxAutoCorrections` caps how much a misconfigured vocabulary can
+    rewrite in one run.
+  - Added the private API function `Update-WITTags` (tag rename/merge) and the
+    helper `Get-AzDoTagMisalignment`, the pure matching logic behind the resource.
   - Added `docs/ResourceRoadmap.md`, a verified backlog of resources still to be
     added to the module, reconciling the phased plan in issue #59 against the code.
 
