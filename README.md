@@ -193,6 +193,8 @@ Each resource links to its example/usage documentation.
 | [AzDoProcess](source/Examples/Resources/AzDoProcess.md) | Creates and manages inherited processes (process templates). |
 | [AzDoProcessWorkItemType](source/Examples/Resources/AzDoProcessWorkItemType.md) | Manages custom and inherited work item types on an inherited process. |
 | [AzDoPicklist](source/Examples/Resources/AzDoPicklist.md) | Manages picklists — the allowed values behind picklist-typed custom fields. |
+| [AzDoProcessField](source/Examples/Resources/AzDoProcessField.md) | Manages fields on a work item type, including required, default and read-only settings. |
+| [AzDoProcessState](source/Examples/Resources/AzDoProcessState.md) | Manages custom workflow states on a work item type. |
 | [AzDoNotificationSubscription](source/Examples/Resources/AzDoNotificationSubscription.md) | Manages notification subscriptions. |
 
 ### Artifacts, wiki, extensions and auditing

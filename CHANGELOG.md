@@ -118,6 +118,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added the helper `Resolve-AzDoProcessWorkItemType`, which resolves a process and
     work item type and enforces the "system processes are read-only" rule in one
     place, and the private API functions for picklists and process work item types.
+  - Added `AzDoProcessField`, managing fields on a work item type. A field exists at
+    two levels and the resource manages the second: the definition (name and type)
+    is organization-scoped and shared by every work item type using the field, so
+    changing it would change the field everywhere; what is per-type is required,
+    default value and read-only. A new custom field's reference name is assigned by
+    Azure DevOps and cannot be chosen, so fields are matched by display name and the
+    reference name is read back. Removing a field detaches it rather than deleting
+    it - the data on existing work items is retained.
+  - Added `AzDoProcessState`, managing custom workflow states. A state's category
+    (`Proposed`, `InProgress`, `Resolved`, `Completed`, `Removed`) is what boards and
+    Analytics reason about, and it cannot be changed after creation: a mismatch is
+    reported as an error rather than as drift, since recreating the state would
+    strand every work item currently in it. Only custom states can be removed, and
+    work items in a removed state keep a value that then fails validation.
+  - Added the private API functions for process fields and states.
   - Added the private API functions `Get-DevOpsGroupEntitlement`,
     `New-DevOpsGroupEntitlement`, `Update-DevOpsGroupEntitlement`,
     `Remove-DevOpsGroupEntitlement` and their service principal equivalents. Both
