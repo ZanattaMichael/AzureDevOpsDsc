@@ -44,6 +44,10 @@ Describe 'Get-AzDoGitPermission Tests' -Tag "Unit", "GitPermission" {
             }
         }
 
+        # Get-DevOpsACL returns the API's RAW ACL objects, whose token is a plain wire-format
+        # string - the parsed .Token shape only exists after ConvertTo-FormattedACL. Get- filters
+        # on the raw token before formatting, so the fixture has to carry it. An ACL for another
+        # repository is included so that filter is actually exercised.
         Function Mock-Get-DevOpsACL {
             param (
                 [Parameter(Mandatory = $true)]
@@ -51,7 +55,10 @@ Describe 'Get-AzDoGitPermission Tests' -Tag "Unit", "GitPermission" {
                 [Parameter(Mandatory = $true)]
                 [string]$SecurityDescriptorId
             )
-            return @( @{ Token = @{ Type = 'GitRepository'; RepoId = 123 }; Permission = 'Allow' } )
+            return @(
+                @{ token = 'repoV2/123/123'; Permission = 'Allow' }
+                @{ token = 'repoV2/123/999'; Permission = 'Allow' }
+            )
         }
 
         Function Mock-ConvertTo-FormattedACL {
@@ -80,11 +87,13 @@ Describe 'Get-AzDoGitPermission Tests' -Tag "Unit", "GitPermission" {
             return @( @{ Token = @{ Type = 'GitRepository'; RepoId = 123 }; Permission = 'Deny' } )
         }
 
+        # Not Mandatory, matching the real Test-ACLListforChanges: an empty difference list is a
+        # valid input meaning "no ACL exists for this token", not a missing argument.
         Function Mock-Test-ACLListforChanges {
             param (
-                [Parameter(Mandatory = $true)]
+                [Parameter()]
                 $ReferenceACLs,
-                [Parameter(Mandatory = $true)]
+                [Parameter()]
                 $DifferenceACLs
             )
             return @{
@@ -200,9 +209,11 @@ Describe 'Get-AzDoGitPermission Tests' -Tag "Unit", "GitPermission" {
 
     }
 
-    It "Should return 'NotFound' if ConvertTo-FormattedACL is null" {
+    It "Should compare an empty ACL list rather than short-circuiting to 'NotFound'" {
+        # An empty formatted list means the token has no explicit ACL - the state a repository is in
+        # once its permissions revert to inherited. Returning NotFound here would tell the base class
+        # Ensure is Absent and skip Set, so the empty list has to reach Test-ACLListforChanges.
         Mock -CommandName ConvertTo-FormattedACL -MockWith { return $null }
-        Mock -CommandName Write-Warning -Verifiable
 
         $ProjectName = 'TestProject'
         $RepositoryName = 'TestRepository'
@@ -212,8 +223,25 @@ Describe 'Get-AzDoGitPermission Tests' -Tag "Unit", "GitPermission" {
         $result = Get-AzDoGitPermission -ProjectName $ProjectName -RepositoryName $RepositoryName -isInherited $isInherited -Permissions $Permissions
 
         $result | Should -Not -BeNullOrEmpty
-        $result.status | Should -Be 'NotFound'
-        Assert-VerifiableMock
+        $result.status | Should -Be 'Changed'
+        Assert-MockCalled -CommandName Test-ACLListforChanges -Times 1 -Exactly -Scope It
+    }
+
+    It 'Should drop other repositories ACLs before the expensive formatting' {
+        # ConvertTo-FormattedACL resolves every ACE through Find-Identity, an API round trip per
+        # uncached descriptor, so only this repository's ACL may reach it.
+        # ConvertTo-FormattedACL binds one ACL per pipeline item, so the mock records each -ACL it
+        # is handed.
+        $script:formattedTokens = [System.Collections.Generic.List[string]]::new()
+        Mock -CommandName ConvertTo-FormattedACL -MockWith {
+            $script:formattedTokens.Add($ACL.token)
+            return @( @{ Token = @{ Type = 'GitRepository'; RepoId = 123 }; Permission = 'Allow' } )
+        }
+
+        $null = Get-AzDoGitPermission -ProjectName 'TestProject' -RepositoryName 'TestRepository' -isInherited $true -Permissions @(@{ 'Permission' = 'Allow' })
+
+        $script:formattedTokens.Count | Should -Be 1
+        $script:formattedTokens[0] | Should -Be 'repoV2/123/123'
     }
 
 }

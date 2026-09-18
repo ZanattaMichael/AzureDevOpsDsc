@@ -183,14 +183,31 @@ Function Get-AzDoQueryPermission
         return $results
     }
 
-    $DifferenceACLs = $DevOpsACLs | ConvertTo-FormattedACL -SecurityNamespace $SecurityNamespace -OrganizationName $OrganizationName
+    # Drop the ACLs this lookup cannot be interested in BEFORE formatting them, exactly as
+    # Get-AzDoProjectPermission and Get-AzDoProcessPermission already do. Formatting resolves every
+    # ACE through Find-Identity, which costs an API round trip for each descriptor that is not
+    # already cached, so formatting a whole namespace only to keep one token is where the time goes.
+    # The fallback above fires whenever the query folder has no explicit ACL - the normal state
+    # once permissions revert to inherited - so the full namespace is the common path, not a rare
+    # one. The folder ids are matched unordered here, a superset of the ordered filter
+    # below, which still decides what is kept. With no ids (the project query root) there is nothing
+    # to narrow on, so the list is left as it is.
+    $DevOpsACLs = @($DevOpsACLs | Where-Object {
+        $rawToken = $_.token
+        if ([String]::IsNullOrEmpty($rawToken)) { return $false }
+        foreach ($identifier in $identifierArr)
+        {
+            if ($rawToken -notlike ('*{0}*' -f $identifier)) { return $false }
+        }
+        return $true
+    })
 
-    if ($null -eq $DifferenceACLs)
-    {
-        Write-Warning "[Get-AzDoQueryPermission] No ACLs found for the query folder."
-        $results.status = [DSCGetSummaryState]::NotFound
-        return $results
-    }
+    $DifferenceACLs = @($DevOpsACLs | ConvertTo-FormattedACL -SecurityNamespace $SecurityNamespace -OrganizationName $OrganizationName)
+
+    # No ACL for this token is a valid state, not a missing resource - it is what the API returns
+    # once permissions revert to inherited. NotFound here would tell the base class Ensure is Absent
+    # and skip Set, so the empty list goes to Test-ACLListforChanges instead, which reads "none
+    # desired, none present" as Unchanged and "some desired, none present" as Changed.
 
     # Keep only the ACL for this exact folder. The comparison is order-sensitive: the token is a
     # path, so the same ids in a different order describe a different folder.

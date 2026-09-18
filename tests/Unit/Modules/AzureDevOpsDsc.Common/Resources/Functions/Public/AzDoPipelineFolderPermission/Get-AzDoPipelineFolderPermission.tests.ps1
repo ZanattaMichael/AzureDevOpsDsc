@@ -25,7 +25,17 @@ Describe "Get-AzDoPipelineFolderPermission" -Tag "Unit", "PipelineFolder", "Perm
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
         Mock -CommandName Resolve-AzDoProject -MockWith { return @{ id = $script:projectId } }
         Mock -CommandName Get-CacheItem -MockWith { return @{ namespaceId = 'build-ns'; name = 'Build' } }
-        Mock -CommandName Get-DevOpsACL -MockWith { return @(@{ token = 'acl' }) }
+        # Get-DevOpsACL returns the API's RAW ACL objects: token is a plain wire-format string,
+        # and the parsed .Token shape only exists after ConvertTo-FormattedACL. Get- filters on the
+        # raw token before formatting - formatting resolves every ACE through Find-Identity - so the
+        # fixture carries real tokens, with a decoy for another object to exercise that filter.
+        Mock -CommandName Get-DevOpsACL -MockWith {
+            return @(
+                @{ token = $script:projectId }
+                @{ token = ('{0}/Platform' -f $script:projectId) }
+                @{ token = ('{0}/123' -f $script:projectId) }
+            )
+        }
         Mock -CommandName ConvertTo-ACL -MockWith { return @(@{ token = @{ _token = 'ref' } }) }
         Mock -CommandName Test-ACLListforChanges -MockWith { return @{ status = 'Unchanged'; propertiesChanged = @(); reason = $null } }
     }
@@ -53,6 +63,13 @@ Describe "Get-AzDoPipelineFolderPermission" -Tag "Unit", "PipelineFolder", "Perm
             Assert-MockCalled -CommandName Test-ACLListforChanges -Exactly -Times 1 -ParameterFilter {
                 $DifferenceACLs.Count -eq 1 -and $DifferenceACLs[0].Token.Type -eq 'BuildFolder'
             }
+        }
+
+        It "formats only this object's ACL, not every ACL in the namespace" {
+            # ConvertTo-FormattedACL resolves every ACE through Find-Identity, an API round trip per
+            # uncached descriptor, so it is bound once per surviving raw ACL - one, not three.
+            Get-AzDoPipelineFolderPermission -ProjectName 'TestProject' -FolderPath '\Platform' -isInherited $true
+            Assert-MockCalled -CommandName ConvertTo-FormattedACL -Exactly -Times 1 -Scope It
         }
 
         It "passes the marked path to ConvertTo-ACL so a folder is not read as a pipeline" {

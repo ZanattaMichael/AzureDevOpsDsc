@@ -164,6 +164,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - AzureDevOpsDscNative
+  - The ten permission resources that still formatted a whole security namespace
+    before narrowing to one token now discard the ACLs they cannot be interested in
+    first, matching what `Get-AzDoProjectPermission` and `Get-AzDoProcessPermission`
+    already did. `ConvertTo-FormattedACL` resolves every ACE through `Find-Identity`,
+    which costs an API round trip for each descriptor that is not already cached, so
+    formatting an entire namespace only to keep a single token was where the time
+    went. The resources changed are `AzDoGitPermission`, `AzDoAreaPermission`,
+    `AzDoPipelinePermission`, `AzDoEnvironmentPermission`,
+    `AzDoServiceConnectionPermission`, `AzDoVariableGroupPermission`,
+    `AzDoAgentPoolPermission`, `AzDoQueryPermission`, `AzDoSecureFilePermission` and
+    `AzDoPipelineFolderPermission`.
+
+    This is not a rare path. Each of these lookups asks the API for one token first
+    and falls back to the full namespace when that returns nothing - and nothing is
+    exactly what the API returns once a resource's permissions revert to inherited,
+    which is the steady state. In the integration suite three `Test()` calls in that
+    state accounted for 3900 of the 6749 seconds Pester spent, 58% of the run.
+
+    Where a namespace's token pattern is anchored the filter is an exact token match,
+    so it can only drop what the existing parsed filter would have dropped anyway.
+    The `CSS` area paths, work item query folders and pipeline folder paths are not
+    addressed by an anchored exact token, so those three filter conservatively - on
+    the identifiers, or through the same `Format-AzDoPipelineFolderPath`
+    normalization the parsed filter applies - and leave the parsed filter as the
+    authority on what is kept.
+  - `Get-AzDoGitPermission`, `Get-AzDoAreaPermission` and `Get-AzDoQueryPermission`
+    no longer return `NotFound` when no ACL exists for the token they asked about.
+    An absent ACL is a valid state, not a missing resource - it is what the API
+    returns once permissions revert to inherited - and `NotFound` tells the base
+    class `Ensure` is `Absent`, which skips `Set` and leaves the resource unable to
+    apply permissions to an object that has none yet. The empty list now reaches
+    `Test-ACLListforChanges`, which reads "none desired, none present" as
+    `Unchanged` and "some desired, none present" as `Changed`.
   - `AzDoAPI_7_IdentitySubjectDescriptors` now resolves every group, user and service
     principal descriptor in one batched pass instead of one API call per identity.
     This was the most expensive cache initializer in the module by a wide margin: an

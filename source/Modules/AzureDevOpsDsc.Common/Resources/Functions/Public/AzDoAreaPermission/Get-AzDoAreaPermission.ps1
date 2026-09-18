@@ -173,16 +173,32 @@ Function Get-AzDoAreaPermission
         return $results
     }
 
-    # Convert the ACLs to a formatted ACL
-    $DifferenceACLs = $DevOpsACLs | ConvertTo-FormattedACL -SecurityNamespace $SecurityNamespace -OrganizationName $OrganizationName
+    # Drop the ACLs this lookup cannot be interested in BEFORE formatting them, exactly as
+    # Get-AzDoProjectPermission and Get-AzDoProcessPermission already do. Formatting resolves every
+    # ACE through Find-Identity, which costs an API round trip for each descriptor that is not
+    # already cached, so formatting a whole namespace only to keep one token is where the time goes.
+    # The fallback above fires whenever the area path has no explicit ACL - the normal state
+    # once permissions revert to inherited - so the full namespace is the common path, not a rare
+    # one. The classification-node pattern is not anchored, so match conservatively:
+    # require every identifier the parsed filter below requires and leave that filter to enforce the
+    # exact count.
+    $DevOpsACLs = @($DevOpsACLs | Where-Object {
+        $rawToken = $_.token
+        if ([String]::IsNullOrEmpty($rawToken)) { return $false }
+        foreach ($identifier in $identifierArr)
+        {
+            if ($rawToken -notlike ('*{0}*' -f $identifier)) { return $false }
+        }
+        return $true
+    })
 
-    # Test if the ACLs were found
-    if ($DifferenceACLs -eq $null)
-    {
-        Write-Warning "[Get-AzDoAreaPermission] No ACLs found for the AreaPath."
-        $results.status = [DSCGetSummaryState]::NotFound
-        return $results
-    }
+    # Convert the ACLs to a formatted ACL
+    $DifferenceACLs = @($DevOpsACLs | ConvertTo-FormattedACL -SecurityNamespace $SecurityNamespace -OrganizationName $OrganizationName)
+
+    # No ACL for this token is a valid state, not a missing resource - it is what the API returns
+    # once permissions revert to inherited. NotFound here would tell the base class Ensure is Absent
+    # and skip Set, so the empty list goes to Test-ACLListforChanges instead, which reads "none
+    # desired, none present" as Unchanged and "some desired, none present" as Changed.
 
     # Filter the ACLs to only those matching the specific area path token (always applied).
     $DifferenceACLs = $DifferenceACLs | Where-Object { $_.Token.Type -eq 'AreaPathPermission' } | Where-Object {
