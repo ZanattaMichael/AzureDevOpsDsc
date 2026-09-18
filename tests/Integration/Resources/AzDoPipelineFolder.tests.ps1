@@ -5,6 +5,12 @@ Describe "AzDoPipelineFolder Integration Tests" -Tag "Integration", "PipelineFol
         $PROJECTNAME = 'TEST_PIPELINEFOLDER'
         $FOLDERPATH  = '\DSC_TEST_FOLDER'
 
+        # build/folders is preview-only: a plain '7.1' is answered with "The requested version
+        # \"7.1\" of the resource is under preview. The -preview flag must be supplied", which the
+        # catch below turned into an empty collection. That made this helper useless in both
+        # directions - the existence check failed (it saw nothing), and the absence check passed
+        # for the wrong reason (it also saw nothing, so it would have passed against a folder that
+        # was never deleted).
         function Get-TestPipelineFolders {
             param([string]$ProjectName, [string]$Path = '\')
 
@@ -13,10 +19,17 @@ Describe "AzDoPipelineFolder Integration Tests" -Tag "Integration", "PipelineFol
 
             try {
                 return (Invoke-RestMethod -Headers $hdr -Method Get -Uri (
-                    'https://dev.azure.com/{0}/{1}/_apis/build/folders?path={2}&api-version=7.1' -f
+                    'https://dev.azure.com/{0}/{1}/_apis/build/folders?path={2}&api-version=7.1-preview' -f
                         $org, $ProjectName, [System.Uri]::EscapeDataString($Path))).value
             } catch {
-                return @()
+                # A path that does not exist is a legitimate empty answer - that is what the
+                # absence assertion is asking about. Anything else is a broken helper, and must
+                # not be reported as "no folders": that is what hid this bug.
+                if ($_ -match '404' -or $_ -match 'does not exist' -or $_ -match 'was not found') {
+                    return @()
+                }
+
+                throw "[Get-TestPipelineFolders] Failed to list folders for '$ProjectName' at '$Path'. Error: $_"
             }
         }
 
