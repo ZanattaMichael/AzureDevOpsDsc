@@ -50,6 +50,19 @@ Function List-DevOpsPipelineFolders
     }
     catch
     {
+        # Get-AzDoPipelineFolder calls this scoped to one folder's own path and reads an empty
+        # result as "does not exist". Whether Azure DevOps answers that with an empty list or a
+        # 404 is not something the old code could tell us - it swallowed every error into $null,
+        # so both looked identical. Treat a not-found explicitly, the same way Get-DevOpsQuery
+        # does, so the absent case is correct either way.
+        if ($_ -match '404' -or $_ -match 'does not exist' -or $_ -match 'was not found')
+        {
+            Write-Verbose "[List-DevOpsPipelineFolders] No pipeline folder at '$normalizedPath' in project '$ProjectName'."
+            return $null
+        }
+
+        # Anything else is a real failure. It must not read as "no folders": that would report an
+        # existing folder as absent and invite a duplicate create.
         throw "[List-DevOpsPipelineFolders] Failed to list pipeline folders for project '$ProjectName'. Error: $_"
     }
 }
