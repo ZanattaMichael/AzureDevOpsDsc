@@ -163,6 +163,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Documentation
+  - `docs/ResourceRoadmap.md` brought back in line with `main`. The 16 resources
+    merged in #62 (classes `101`-`116`) were still written up as unbuilt work, and
+    the coverage counts in section 1 predated them. Shipped sections are now marked
+    as such and kept as the design record, with the points where the implementation
+    diverged from the plan called out; the ACL token table records the shapes
+    actually produced by `ConvertTo-FormattedToken`; and the order of work is
+    rewritten around what is genuinely left.
+
 - AzureDevOpsDscNative
   - The ten permission resources that still formatted a whole security namespace
     before narrowing to one token now discard the ACLs they cannot be interested in
