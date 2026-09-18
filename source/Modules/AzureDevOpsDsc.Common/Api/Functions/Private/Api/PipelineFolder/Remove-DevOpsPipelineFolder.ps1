@@ -49,7 +49,6 @@ Function Remove-DevOpsPipelineFolder
     }
     catch
     {
-        Write-Error "[Remove-DevOpsPipelineFolder] Failed to delete pipeline folder '$normalizedPath' in project '$ProjectName'. Error: $_"
-        return $null
+        throw "[Remove-DevOpsPipelineFolder] Failed to delete pipeline folder '$normalizedPath' in project '$ProjectName'. Error: $_"
     }
 }

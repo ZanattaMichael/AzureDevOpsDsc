@@ -86,7 +86,6 @@ Function Get-DevOpsQuery
             return $null
         }
 
-        Write-Error "[Get-DevOpsQuery] Failed to retrieve query '$normalizedPath' in project '$ProjectName'. Error: $_"
-        return $null
+        throw "[Get-DevOpsQuery] Failed to retrieve query '$normalizedPath' in project '$ProjectName'. Error: $_"
     }
 }

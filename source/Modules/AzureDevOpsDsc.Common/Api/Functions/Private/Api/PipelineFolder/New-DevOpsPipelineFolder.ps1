@@ -58,7 +58,6 @@ Function New-DevOpsPipelineFolder
     }
     catch
     {
-        Write-Error "[New-DevOpsPipelineFolder] Failed to create pipeline folder '$normalizedPath' in project '$ProjectName'. Error: $_"
-        return $null
+        throw "[New-DevOpsPipelineFolder] Failed to create pipeline folder '$normalizedPath' in project '$ProjectName'. Error: $_"
     }
 }

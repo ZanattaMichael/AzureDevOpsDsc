@@ -64,7 +64,6 @@ Function Update-DevOpsPipelineFolder
     }
     catch
     {
-        Write-Error "[Update-DevOpsPipelineFolder] Failed to update pipeline folder '$normalizedPath' in project '$ProjectName'. Error: $_"
-        return $null
+        throw "[Update-DevOpsPipelineFolder] Failed to update pipeline folder '$normalizedPath' in project '$ProjectName'. Error: $_"
     }
 }

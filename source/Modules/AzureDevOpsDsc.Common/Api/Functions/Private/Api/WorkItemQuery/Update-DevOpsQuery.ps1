@@ -126,7 +126,6 @@ Function Update-DevOpsQuery
     }
     catch
     {
-        Write-Error "[Update-DevOpsQuery] Failed to update query '$normalizedPath' in project '$ProjectName'. Error: $_"
-        return $null
+        throw "[Update-DevOpsQuery] Failed to update query '$normalizedPath' in project '$ProjectName'. Error: $_"
     }
 }

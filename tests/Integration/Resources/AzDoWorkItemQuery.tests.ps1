@@ -127,7 +127,17 @@ select [System.Id], [System.Title]
     Context "Changing the WIQL" {
 
         BeforeAll {
-            $script:changedWiql = "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] = @project AND [System.State] = 'Closed'"
+            # Selects the same two columns the configuration declares below. It previously
+            # selected only [System.Id] while Columns still declared System.Title, and Azure
+            # DevOps derives a query's stored columns from its SELECT clause - so the query was
+            # updated correctly and then compared as drifted forever, on Columns rather than on
+            # WIQL. That is what failed on the first live run: 'Should detect the change',
+            # 'Should apply the change' and 'Should have updated the query in place' all passed,
+            # and only the Test afterwards disagreed.
+            #
+            # The predicate is still what changes (Active -> Closed), so the context tests what
+            # it was written to test.
+            $script:changedWiql = "SELECT [System.Id], [System.Title] FROM WorkItems WHERE [System.TeamProject] = @project AND [System.State] = 'Closed'"
 
             $parameters.Method   = 'Test'
             $parameters.property = @{

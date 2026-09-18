@@ -115,7 +115,6 @@ Function New-DevOpsQuery
     }
     catch
     {
-        Write-Error "[New-DevOpsQuery] Failed to create '$Name' under '$normalizedParent' in project '$ProjectName'. Error: $_"
-        return $null
+        throw "[New-DevOpsQuery] Failed to create '$Name' under '$normalizedParent' in project '$ProjectName'. Error: $_"
     }
 }

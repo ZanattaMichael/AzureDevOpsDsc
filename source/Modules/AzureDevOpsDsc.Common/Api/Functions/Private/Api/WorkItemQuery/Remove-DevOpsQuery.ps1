@@ -53,7 +53,6 @@ Function Remove-DevOpsQuery
     }
     catch
     {
-        Write-Error "[Remove-DevOpsQuery] Failed to delete query '$normalizedPath' in project '$ProjectName'. Error: $_"
-        return $null
+        throw "[Remove-DevOpsQuery] Failed to delete query '$normalizedPath' in project '$ProjectName'. Error: $_"
     }
 }

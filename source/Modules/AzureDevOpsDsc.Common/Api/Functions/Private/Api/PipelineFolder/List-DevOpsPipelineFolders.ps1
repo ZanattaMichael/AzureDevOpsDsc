@@ -50,7 +50,6 @@ Function List-DevOpsPipelineFolders
     }
     catch
     {
-        Write-Error "[List-DevOpsPipelineFolders] Failed to list pipeline folders for project '$ProjectName'. Error: $_"
-        return $null
+        throw "[List-DevOpsPipelineFolders] Failed to list pipeline folders for project '$ProjectName'. Error: $_"
     }
 }

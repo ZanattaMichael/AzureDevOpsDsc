@@ -20,15 +20,26 @@ Describe "AzDoWIPTagHygiene Integration Tests" -Tag "Integration", "WIPTags" {
 
         New-TestProject -ProjectName $PROJECTNAME
 
-        # Seed the project with a correct tag and a mis-cased duplicate of it. AzDoWIPTags creates
+        # Seed 'dscbug' in the WRONG case, and nothing in the right case. AzDoWIPTags creates
         # tags as a side effect of a temporary work item, which is the only way the API allows it.
+        #
+        # This previously seeded both 'DscBug' and 'dscbug', expecting the pair to coexist as a
+        # mis-cased duplicate. Azure DevOps work item tags are case-insensitive, so the second
+        # never becomes a separate tag - the project ends up with one tag, already canonical, and
+        # the resource correctly reported no drift. That is what failed on the first live run, and
+        # it was the test's premise that was wrong rather than the resource.
+        #
+        # Seeding only the wrong case is the reachable version of the same scenario: a project
+        # stores whatever casing was used first, so an organization really can hold 'dscbug' while
+        # the configuration declares 'DscBug'. Get-AzDoTagMisalignment reports that as
+        # From=dscbug To=DscBug Score=100 Reason=Exact.
         $seedParameters = @{
             Name       = 'AzDoWIPTags'
             ModuleName = 'AzureDevOpsDscNative'
             Method     = 'Set'
             property   = @{
                 ProjectName             = $PROJECTNAME
-                WorkItemTrackingTagList = @('DscBug', 'dscbug', 'DscSprint1', 'DscSprint2')
+                WorkItemTrackingTagList = @('dscbug', 'DscSprint1', 'DscSprint2')
             }
         }
         Invoke-DscResource @seedParameters
@@ -52,7 +63,7 @@ Describe "AzDoWIPTagHygiene Integration Tests" -Tag "Integration", "WIPTags" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should return False, because 'dscbug' is a mis-cased duplicate of 'DscBug'" {
+        It "Should return False, because the project stores 'dscbug' but 'DscBug' is canonical" {
             (Invoke-DscResource @parameters).InDesiredState | Should -BeFalse
         }
     }
@@ -66,8 +77,11 @@ Describe "AzDoWIPTagHygiene Integration Tests" -Tag "Integration", "WIPTags" {
         }
 
         It "Should leave the misaligned tag in place under RemediationAction = 'Report'" {
+            # -ccontains, not Should -Contain: the whole point is the casing, and
+            # Should -Contain is case-insensitive, so it would pass against 'DscBug' too and
+            # could never detect a Report action that had wrongly corrected the tag.
             $tags = Get-TestTags -ProjectName $PROJECTNAME
-            @($tags.name) | Should -Contain 'dscbug'
+            @($tags.name) -ccontains 'dscbug' | Should -BeTrue
         }
 
         It "Should still report drift afterwards, since nothing was corrected" {
