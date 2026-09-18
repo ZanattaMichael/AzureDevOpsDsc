@@ -482,6 +482,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - AzureDevOpsDscNative
+  - Fixed the DSC v3 integration workflow failing its own duplicate-module
+    assertion before any test ran, with `Module 'DscResource.Common' resolves
+    from 2 locations`. The workflow installed Pester with `-Scope CurrentUser`,
+    which puts it in the self-hosted runner's profile module directory - and that
+    directory also carries a hand-installed `DscResource.Common`, so keeping it on
+    `PSModulePath` for Pester's sake handed `DscResource.Common` a second location
+    alongside the copy bundled in the built module. `integration-tests.yml` already
+    solved this by saving Pester to `./output/TestModules` and dropping the profile
+    directory from the path; `integration-tests-v3.yml` now does the same, and
+    checks Pester 5 is still resolvable on the rewritten path rather than letting
+    `Invoke-V3Tests.ps1` fail its `#Requires` later.
   - Fixed `Find-Identity` throwing `You cannot call a method on a null-valued
     expression` when a cached organization group has a null or empty
     `principalName`. The principalName group filter called `.replace()` on the
