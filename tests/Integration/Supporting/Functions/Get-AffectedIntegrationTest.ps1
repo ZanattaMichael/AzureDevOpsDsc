@@ -52,6 +52,20 @@ Path to tests\Integration. Its Resources folder is enumerated to resolve resourc
 to real files, so a resource with no integration coverage yields no files rather than a
 guess.
 
+.PARAMETER NarrowSharedChanges
+Do not let a shared-code change widen the run to the whole suite; select only the
+resources the change attributes to.
+
+This is for pull requests, where the point is fast feedback on what changed. A release is
+gated differently: a tag push runs publish.yml, which calls this workflow with a non
+pull_request event, and every non pull_request event runs the full suite regardless of
+what changed. So anything a narrowed pull request run skips is still covered before
+anything ships.
+
+Narrowing is refused - RunAll comes back - when the change attributes to no resource at
+all, because "just the affected resources" would then be nothing, and a run that tests
+nothing must not report success.
+
 .OUTPUTS
 A hashtable with:
   RunAll  - [bool]     whether the whole suite should run.
@@ -79,7 +93,11 @@ function Get-AffectedIntegrationTest
 
         [Parameter(Mandatory = $true)]
         [String]
-        $IntegrationTestRoot
+        $IntegrationTestRoot,
+
+        [Parameter()]
+        [Switch]
+        $NarrowSharedChanges
     )
 
     $resourcesRoot = Join-Path -Path $IntegrationTestRoot -ChildPath 'Resources'
@@ -187,18 +205,6 @@ function Get-AffectedIntegrationTest
         }
     }
 
-    if ($shared.Count -gt 0)
-    {
-        $sample = @($shared | Select-Object -Unique -First 5)
-        $suffix = if ($shared.Count -gt $sample.Count) { " (+$($shared.Count - $sample.Count) more)" } else { '' }
-
-        return @{
-            RunAll = $true
-            Path   = @()
-            Reason = "Shared code or the test harness changed, so any resource could be affected: $($sample -join ', ')$suffix"
-        }
-    }
-
     foreach ($name in ($resources | Select-Object -Unique))
     {
         # Not named $matches: that is PowerShell's automatic variable for the last -match
@@ -212,6 +218,34 @@ function Get-AffectedIntegrationTest
     }
 
     $unique = @($selected | Select-Object -Unique)
+
+    if ($shared.Count -gt 0)
+    {
+        $sample = @($shared | Select-Object -Unique -First 5)
+        $suffix = if ($shared.Count -gt $sample.Count) { " (+$($shared.Count - $sample.Count) more)" } else { '' }
+
+        # Narrowing is refused when there is nothing to narrow to. A change that touches only
+        # shared code attributes to no resource, so selecting "just the affected resources"
+        # would select nothing and pass having tested nothing.
+        if (-not $NarrowSharedChanges -or $unique.Count -eq 0)
+        {
+            return @{
+                RunAll = $true
+                Path   = @()
+                Reason = "Shared code or the test harness changed, so any resource could be affected: $($sample -join ', ')$suffix"
+            }
+        }
+
+        $names = @($unique | ForEach-Object { (Split-Path -Path $_ -Leaf) -replace '\.tests\.ps1$', '' } | Sort-Object)
+
+        return @{
+            RunAll = $false
+            Path   = $unique
+            Reason = ("Narrowed to the $($unique.Count) changed resource(s) of $($testFiles.Count): $($names -join ', '). " +
+                      "Shared code also changed ($($sample -join ', ')$suffix); on a pull request that does not widen the " +
+                      'run, and the release gate gives it full coverage.')
+        }
+    }
 
     if ($unique.Count -eq 0)
     {

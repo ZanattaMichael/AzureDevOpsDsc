@@ -116,13 +116,61 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           EVENT_NAME: ${{ github.event_name }}
+          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
           . ./tests/Integration/Supporting/Functions/Get-AffectedIntegrationTest.ps1
 
-          if ($env:EVENT_NAME -ne 'pull_request')
+          # An explicit scope declared in the pull request body wins over the diff:
+          #
+          #   Integration-Tests: AzDoWorkItemQuery, AzDoSecureFile
+          #
+          # This exists because the diff cannot always be narrowed usefully. Adding
+          # comment-based help to a class file is indistinguishable from changing its
+          # behaviour when all you have is the path - the .PARAMETER blocks added across 28
+          # existing resources selected all 28, none of which could behave differently. Rather
+          # than guess by parsing comments out of the diff and risk dropping a test that
+          # mattered, the author states the scope and it is visible in the pull request.
+          #
+          # Only ever honoured for a pull request, so it cannot weaken the release gate. A name
+          # that does not resolve fails this job rather than quietly shrinking the run.
+          $declared = @()
+          if ($env:EVENT_NAME -eq 'pull_request' -and -not [String]::IsNullOrWhiteSpace($env:PR_BODY))
+          {
+              $match = [regex]::Match($env:PR_BODY, '(?im)^[ \t]*Integration-Tests:[ \t]*(?<names>.+?)[ \t]*$')
+              if ($match.Success)
+              {
+                  $declared = @($match.Groups['names'].Value -split '[,\s]+' | Where-Object { $_ })
+              }
+          }
+
+          if ($declared.Count -gt 0)
+          {
+              $available = @(Get-ChildItem -Path './tests/Integration/Resources' -Filter '*.tests.ps1' -File |
+                  ForEach-Object { $_.Name -replace '\.tests\.ps1$', '' })
+
+              $unknown = @($declared | Where-Object { $_ -notin $available })
+              if ($unknown.Count -gt 0)
+              {
+                  Write-Error ("The pull request body declares Integration-Tests names that do not resolve to a test file: {0}. Known: {1}" -f
+                      ($unknown -join ', '), ($available -join ', '))
+                  exit 1
+              }
+
+              $result = @{
+                  RunAll = $false
+                  Path   = @($declared | ForEach-Object { "tests/Integration/Resources/$_.tests.ps1" })
+                  Reason = "Scope declared in the pull request body: $($declared -join ', '). The release gate still runs all $($available.Count) files."
+              }
+          }
+          elseif ($env:EVENT_NAME -ne 'pull_request')
           {
               # A dispatch or the release gate cannot be narrowed - there is no diff to
               # narrow against, and a release must be gated on everything.
+              #
+              # This is what makes narrowing a pull request safe. publish.yml fires on a v*
+              # tag push and calls this workflow, so github.event_name there is 'push', not
+              # 'pull_request' - the release gate lands here and runs all 63 files whatever
+              # the diff says.
               $result = @{ RunAll = $true; Path = @(); Reason = "Event '$($env:EVENT_NAME)' always runs the full suite." }
           }
           else
@@ -139,7 +187,15 @@ jobs:
               {
                   Write-Host "Changed files ($($changed.Count)):"
                   $changed | ForEach-Object { Write-Host "  $_" }
-                  $result = Get-AffectedIntegrationTest -ChangedPath $changed -IntegrationTestRoot './tests/Integration'
+
+                  # -NarrowSharedChanges: on a pull request, run only the resources the change
+                  # attributes to, even when it also touches shared code. Without it a change
+                  # to the REST wrapper, the ACL token layer or a cache helper widens the run
+                  # to all 63 files - correct in principle, but it costs ~100 minutes against a
+                  # live organization for feedback on a handful of resources. The full suite is
+                  # not skipped, only deferred to the release gate: a v* tag push runs it in
+                  # its entirety via the branch above.
+                  $result = Get-AffectedIntegrationTest -ChangedPath $changed -IntegrationTestRoot './tests/Integration' -NarrowSharedChanges
               }
           }
 
