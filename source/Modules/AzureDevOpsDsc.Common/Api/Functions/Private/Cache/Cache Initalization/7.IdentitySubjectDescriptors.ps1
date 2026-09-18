@@ -7,6 +7,17 @@
     It uses the provided organization name or a global variable if no organization name is provided. The function enumerates the live groups, users, and service principals
     from the cache, queries their identities, and updates the cache with the retrieved identity information.
 
+    Every descriptor across all three caches is resolved in one batched pass before any of
+    them are written back. This used to be one '_apis/identities' call per identity, which
+    made this the most expensive initializer in the module by a wide margin - an organization
+    with a few hundred identities paid a few hundred sequential round trips every time the
+    cache was refreshed in full. Get-DevOpsDescriptorIdentityBatch asks for as many
+    descriptors per request as the URI will carry, so the same work is a handful of calls.
+
+    Resolving all three caches together rather than one cache at a time matters: a batch is
+    bounded by URI length, and packing groups, users and service principals into the same
+    batches avoids three part-full final requests.
+
 .PARAMETER OrganizationName
     The name of the Azure DevOps organization. If not provided, the function uses the global variable $Global:DSCAZDO_OrganizationName.
 
@@ -32,11 +43,11 @@ function AzDoAPI_7_IdentitySubjectDescriptors
     #
     # Use a verbose statement to indicate the start of the function.
 
-    Write-Verbose "[AzDoAPI_5_PermissionsCache] Started."
+    Write-Verbose "[AzDoAPI_7_IdentitySubjectDescriptors] Started."
 
     if (-not $OrganizationName)
     {
-        Write-Verbose "[AzDoAPI_5_PermissionsCache] No organization name provided as parameter; using global variable."
+        Write-Verbose "[AzDoAPI_7_IdentitySubjectDescriptors] No organization name provided as parameter; using global variable."
         $OrganizationName = $Global:DSCAZDO_OrganizationName
     }
 
@@ -50,150 +61,87 @@ function AzDoAPI_7_IdentitySubjectDescriptors
     # Enumerate the live service principals cache
     $AzDoLiveServicePrinciples = Get-CacheObject -CacheType 'LiveServicePrinciples'
 
-    #
-    # Iterate through each of the groups and query the Identity and add to the cache
-
-    $params = @{
-        OrganizationName = $OrganizationName
+    $caches = [ordered]@{
+        'LiveGroups'            = $AzDoLiveGroups
+        'LiveUsers'             = $AzDoLiveUsers
+        'LiveServicePrinciples' = $AzDoLiveServicePrinciples
     }
-
-    # Iterate through each of the groups and query the Identity and add to the cache
-    ForEach ($AzDoLiveGroup in $AzDoLiveGroups)
-    {
-        # An identity with no descriptor cannot be resolved. Get-DevOpsDescriptorIdentity
-        # declares -SubjectDescriptor as a mandatory [String], so passing an empty value
-        # throws "Cannot bind argument to parameter 'SubjectDescriptor'" and aborts the
-        # whole cache refresh (and the DSC operation that triggered it). Skip it instead.
-        if ([string]::IsNullOrEmpty($AzDoLiveGroup.value.descriptor))
-        {
-            Write-Verbose "[AzDoAPI_7_IdentitySubjectDescriptors] Skipping group with no descriptor: $($AzDoLiveGroup.Key)"
-            continue
-        }
-
-        $identity = Get-DevOpsDescriptorIdentity @params -SubjectDescriptor $AzDoLiveGroup.value.descriptor
-        $ACLIdentity = [PSCustomObject]@{
-            id = $identity.id
-            descriptor = $identity.descriptor
-            subjectDescriptor = $identity.subjectDescriptor
-            providerDisplayName = $identity.providerDisplayName
-            isActive = $identity.isActive
-            isContainer = $identity.isContainer
-        }
-
-        $AzDoLiveGroup.value | Add-Member -MemberType NoteProperty -Name 'ACLIdentity' -Value $ACLIdentity
-
-        $cacheParams = @{
-            Key = $AzDoLiveGroup.Key
-            Value = $AzDoLiveGroup
-            Type = 'LiveGroups'
-            SuppressWarning = $true
-        }
-
-        # Add to the cache
-        Add-CacheItem @cacheParams
-
-        # Populate the flat descriptor index from the clean in-scope data (avoids the nested/double-wrapped
-        # shape the List cache stores). Persist once after the loop, not per item.
-        Add-IdentityDescriptorIndexItem -AclDescriptor $ACLIdentity.descriptor -PrincipalName $AzDoLiveGroup.value.principalName `
-            -OriginId $AzDoLiveGroup.value.originId -GraphDescriptor $AzDoLiveGroup.value.descriptor -AclId $ACLIdentity.id `
-            -SubjectDescriptor $ACLIdentity.subjectDescriptor
-
-    }
-
-    # Update the cache
-    Export-CacheObject -CacheType 'LiveGroups' -Content $AzDoLiveGroups
 
     #
-    # Iterate through each of the users and query the Identity and add to the cache
+    # Collect every descriptor that needs resolving, then resolve them all in one batched pass.
 
-    ForEach ($AzDoLiveUser in $AzDoLiveUsers)
+    $descriptors = [System.Collections.Generic.List[String]]::new()
+
+    foreach ($cacheType in $caches.Keys)
     {
-        # See the note in the groups loop: skip identities with no descriptor rather than
-        # letting the mandatory-parameter bind throw and abort the cache refresh.
-        if ([string]::IsNullOrEmpty($AzDoLiveUser.value.descriptor))
+        foreach ($cacheItem in $caches[$cacheType])
         {
-            Write-Verbose "[AzDoAPI_7_IdentitySubjectDescriptors] Skipping user with no descriptor: $($AzDoLiveUser.Key)"
-            continue
+            # An identity with no descriptor cannot be resolved, and previously this was worse
+            # than useless: Get-DevOpsDescriptorIdentity declares -SubjectDescriptor as a
+            # mandatory [String], so an empty value threw "Cannot bind argument to parameter
+            # 'SubjectDescriptor'" and aborted the whole cache refresh (and the DSC operation
+            # that triggered it). Skip it instead.
+            if ([String]::IsNullOrEmpty($cacheItem.value.descriptor))
+            {
+                Write-Verbose "[AzDoAPI_7_IdentitySubjectDescriptors] Skipping $cacheType entry with no descriptor: $($cacheItem.Key)"
+                continue
+            }
+
+            $descriptors.Add($cacheItem.value.descriptor)
         }
-
-        $identity = Get-DevOpsDescriptorIdentity @params -SubjectDescriptor $AzDoLiveUser.value.descriptor
-
-        $ACLIdentity = [PSCustomObject]@{
-            id = $identity.id
-            descriptor = $identity.descriptor
-            subjectDescriptor = $identity.subjectDescriptor
-            providerDisplayName = $identity.providerDisplayName
-            isActive = $identity.isActive
-            isContainer = $identity.isContainer
-        }
-
-        $AzDoLiveUser.value | Add-Member -MemberType NoteProperty -Name 'ACLIdentity' -Value $ACLIdentity
-
-        $cacheParams = @{
-            Key = $AzDoLiveUser.Key
-            Value = $AzDoLiveUser
-            Type = 'LiveUsers'
-            SuppressWarning = $true
-        }
-
-        # Add to the cache
-        Add-CacheItem @cacheParams
-
-        # Populate the flat descriptor index from the clean in-scope data.
-        Add-IdentityDescriptorIndexItem -AclDescriptor $ACLIdentity.descriptor -PrincipalName $AzDoLiveUser.value.principalName `
-            -OriginId $AzDoLiveUser.value.originId -GraphDescriptor $AzDoLiveUser.value.descriptor -AclId $ACLIdentity.id `
-            -SubjectDescriptor $ACLIdentity.subjectDescriptor
-
     }
 
-    # Update the cache
-    Export-CacheObject -CacheType 'LiveUsers' -Content $AzDoLiveUsers
+    $resolved = Get-DevOpsDescriptorIdentityBatch -OrganizationName $OrganizationName -SubjectDescriptor $descriptors
 
     #
-    # Iterate through each of the service principals and query the Identity and add to the cache
+    # Stamp the resolved identities back onto each cache and rebuild the flat descriptor index.
 
-    ForEach ($AzDoLiveServicePrinciple in $AzDoLiveServicePrinciples)
+    foreach ($cacheType in $caches.Keys)
     {
-        # See the note in the groups loop: skip identities with no descriptor rather than
-        # letting the mandatory-parameter bind throw and abort the cache refresh.
-        if ([string]::IsNullOrEmpty($AzDoLiveServicePrinciple.value.descriptor))
+        foreach ($cacheItem in $caches[$cacheType])
         {
-            Write-Verbose "[AzDoAPI_7_IdentitySubjectDescriptors] Skipping service principal with no descriptor: $($AzDoLiveServicePrinciple.Key)"
-            continue
+            if ([String]::IsNullOrEmpty($cacheItem.value.descriptor))
+            {
+                continue
+            }
+
+            # A descriptor the API did not answer for leaves an all-null ACLIdentity, which is
+            # what the one-call-per-identity version produced when it returned $null. Callers
+            # already cope with that, and Find-Identity lazily backfills the identity on first
+            # use, so a miss here is recoverable rather than fatal.
+            $identity = $resolved[$cacheItem.value.descriptor]
+
+            $ACLIdentity = [PSCustomObject]@{
+                id = $identity.id
+                descriptor = $identity.descriptor
+                subjectDescriptor = $identity.subjectDescriptor
+                providerDisplayName = $identity.providerDisplayName
+                isActive = $identity.isActive
+                isContainer = $identity.isContainer
+            }
+
+            $cacheItem.value | Add-Member -MemberType NoteProperty -Name 'ACLIdentity' -Value $ACLIdentity -Force
+
+            $cacheParams = @{
+                Key = $cacheItem.Key
+                Value = $cacheItem
+                Type = $cacheType
+                SuppressWarning = $true
+            }
+
+            # Add to the cache
+            Add-CacheItem @cacheParams
+
+            # Populate the flat descriptor index from the clean in-scope data (avoids the nested/double-wrapped
+            # shape the List cache stores). Persist once after the loops, not per item.
+            Add-IdentityDescriptorIndexItem -AclDescriptor $ACLIdentity.descriptor -PrincipalName $cacheItem.value.principalName `
+                -OriginId $cacheItem.value.originId -GraphDescriptor $cacheItem.value.descriptor -AclId $ACLIdentity.id `
+                -SubjectDescriptor $ACLIdentity.subjectDescriptor
         }
 
-        $identity = Get-DevOpsDescriptorIdentity @params -SubjectDescriptor $AzDoLiveServicePrinciple.value.descriptor
-
-        $ACLIdentity = [PSCustomObject]@{
-            id = $identity.id
-            descriptor = $identity.descriptor
-            subjectDescriptor = $identity.subjectDescriptor
-            providerDisplayName = $identity.providerDisplayName
-            isActive = $identity.isActive
-            isContainer = $identity.isContainer
-        }
-
-        $AzDoLiveServicePrinciple.value | Add-Member -MemberType NoteProperty -Name 'ACLIdentity' -Value $ACLIdentity
-
-        $cacheParams = @{
-            Key = $AzDoLiveServicePrinciple.Key
-            Value = $AzDoLiveServicePrinciple
-            Type = 'LiveServicePrinciples'
-            SuppressWarning = $true
-        }
-
-        # Add to the cache
-        Add-CacheItem @cacheParams
-
-        # Populate the flat descriptor index from the clean in-scope data.
-        Add-IdentityDescriptorIndexItem -AclDescriptor $ACLIdentity.descriptor -PrincipalName $AzDoLiveServicePrinciple.value.principalName `
-            -OriginId $AzDoLiveServicePrinciple.value.originId -GraphDescriptor $AzDoLiveServicePrinciple.value.descriptor -AclId $ACLIdentity.id `
-            -SubjectDescriptor $ACLIdentity.subjectDescriptor
-
+        # Update the cache
+        Export-CacheObject -CacheType $cacheType -Content $caches[$cacheType]
     }
-
-    # Update the cache
-    Export-CacheObject -CacheType 'LiveServicePrinciples' -Content $AzDoLiveServicePrinciples
 
     # Persist the freshly-built descriptor index once, now that all identities have been added.
     Save-IdentityDescriptorIndex

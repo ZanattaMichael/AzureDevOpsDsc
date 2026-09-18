@@ -153,10 +153,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     update endpoints take JSON Patch rather than a plain object.
   - Added `docs/ResourceRoadmap.md`, a verified backlog of resources still to be
     added to the module, reconciling the phased plan in issue #59 against the code.
+  - Added `Get-DevOpsDescriptorIdentityBatch`, which resolves many subject
+    descriptors to their ACL identities in as few `_apis/identities` calls as the
+    URI will carry. Batches are packed by URI length rather than by a fixed count,
+    since a subject descriptor ranges from around forty characters for a built-in
+    group to well over a hundred for an AAD-backed user. A batch that fails is
+    retried one descriptor at a time, so a single unresolvable identity no longer
+    costs the whole batch.
 
 ### Changed
 
 - AzureDevOpsDscNative
+  - `AzDoAPI_7_IdentitySubjectDescriptors` now resolves every group, user and service
+    principal descriptor in one batched pass instead of one API call per identity.
+    This was the most expensive cache initializer in the module by a wide margin: an
+    organization with a few hundred identities paid a few hundred sequential round
+    trips on every full cache refresh, and the round trip, not the work, was the cost.
+    All three caches are resolved together rather than one at a time, so groups, users
+    and service principals share batches instead of each leaving a part-full final
+    request. A descriptor the API does not answer for now leaves an empty `ACLIdentity`
+    rather than aborting the refresh - `Find-Identity` backfills it lazily on first use.
   - Reorganized the resource tables in `README.md`: process customization now has its
     own section with the resources in declaration order, since seven of them had
     accumulated inside "Boards and work items". Corrected the documentation section,
