@@ -153,10 +153,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     update endpoints take JSON Patch rather than a plain object.
   - Added `docs/ResourceRoadmap.md`, a verified backlog of resources still to be
     added to the module, reconciling the phased plan in issue #59 against the code.
+  - Added `Get-DevOpsDescriptorIdentityBatch`, which resolves many subject
+    descriptors to their ACL identities in as few `_apis/identities` calls as the
+    URI will carry. Batches are packed by URI length rather than by a fixed count,
+    since a subject descriptor ranges from around forty characters for a built-in
+    group to well over a hundred for an AAD-backed user. A batch that fails is
+    retried one descriptor at a time, so a single unresolvable identity no longer
+    costs the whole batch.
 
 ### Changed
 
 - AzureDevOpsDscNative
+  - The ten permission resources that still formatted a whole security namespace
+    before narrowing to one token now discard the ACLs they cannot be interested in
+    first, matching what `Get-AzDoProjectPermission` and `Get-AzDoProcessPermission`
+    already did. `ConvertTo-FormattedACL` resolves every ACE through `Find-Identity`,
+    which costs an API round trip for each descriptor that is not already cached, so
+    formatting an entire namespace only to keep a single token was where the time
+    went. The resources changed are `AzDoGitPermission`, `AzDoAreaPermission`,
+    `AzDoPipelinePermission`, `AzDoEnvironmentPermission`,
+    `AzDoServiceConnectionPermission`, `AzDoVariableGroupPermission`,
+    `AzDoAgentPoolPermission`, `AzDoQueryPermission`, `AzDoSecureFilePermission` and
+    `AzDoPipelineFolderPermission`.
+
+    This is not a rare path. Each of these lookups asks the API for one token first
+    and falls back to the full namespace when that returns nothing - and nothing is
+    exactly what the API returns once a resource's permissions revert to inherited,
+    which is the steady state. In the integration suite three `Test()` calls in that
+    state accounted for 3900 of the 6749 seconds Pester spent, 58% of the run.
+
+    Where a namespace's token pattern is anchored the filter is an exact token match,
+    so it can only drop what the existing parsed filter would have dropped anyway.
+    The `CSS` area paths, work item query folders and pipeline folder paths are not
+    addressed by an anchored exact token, so those three filter conservatively - on
+    the identifiers, or through the same `Format-AzDoPipelineFolderPath`
+    normalization the parsed filter applies - and leave the parsed filter as the
+    authority on what is kept.
+  - `Get-AzDoGitPermission`, `Get-AzDoAreaPermission` and `Get-AzDoQueryPermission`
+    no longer return `NotFound` when no ACL exists for the token they asked about.
+    An absent ACL is a valid state, not a missing resource - it is what the API
+    returns once permissions revert to inherited - and `NotFound` tells the base
+    class `Ensure` is `Absent`, which skips `Set` and leaves the resource unable to
+    apply permissions to an object that has none yet. The empty list now reaches
+    `Test-ACLListforChanges`, which reads "none desired, none present" as
+    `Unchanged` and "some desired, none present" as `Changed`.
+  - `AzDoAPI_7_IdentitySubjectDescriptors` now resolves every group, user and service
+    principal descriptor in one batched pass instead of one API call per identity.
+    This was the most expensive cache initializer in the module by a wide margin: an
+    organization with a few hundred identities paid a few hundred sequential round
+    trips on every full cache refresh, and the round trip, not the work, was the cost.
+    All three caches are resolved together rather than one at a time, so groups, users
+    and service principals share batches instead of each leaving a part-full final
+    request. A descriptor the API does not answer for now leaves an empty `ACLIdentity`
+    rather than aborting the refresh - `Find-Identity` backfills it lazily on first use.
   - Reorganized the resource tables in `README.md`: process customization now has its
     own section with the resources in declaration order, since seven of them had
     accumulated inside "Boards and work items". Corrected the documentation section,

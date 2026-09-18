@@ -59,15 +59,24 @@ Describe "AzDoAPI_7_IdentitySubjectDescriptors" -Tag "Unit", "Cache Initalizatio
             }
         }
 
-        Mock -CommandName Get-DevOpsDescriptorIdentity -MockWith {
-            @{
-                id = 'mockId'
-                descriptor = 'mockDescriptor'
-                subjectDescriptor = 'mockSubjectDescriptor'
-                providerDisplayName = 'mockProvider'
-                isActive = $true
-                isContainer = $false
+        # The initializer resolves every descriptor in one batched pass, so what it calls is
+        # the batch function and what it gets back is a descriptor-keyed lookup.
+        Mock -CommandName Get-DevOpsDescriptorIdentityBatch -MockWith {
+            $lookup = @{}
+
+            foreach ($descriptor in $SubjectDescriptor)
+            {
+                $lookup[$descriptor] = @{
+                    id = 'mockId'
+                    descriptor = 'mockDescriptor'
+                    subjectDescriptor = 'mockSubjectDescriptor'
+                    providerDisplayName = 'mockProvider'
+                    isActive = $true
+                    isContainer = $false
+                }
             }
+
+            return $lookup
         }
 
         Mock -CommandName Add-CacheItem
@@ -90,7 +99,7 @@ Describe "AzDoAPI_7_IdentitySubjectDescriptors" -Tag "Unit", "Cache Initalizatio
         $result = AzDoAPI_7_IdentitySubjectDescriptors
 
         Assert-MockCalled -CommandName Get-CacheObject
-        Assert-MockCalled -CommandName Get-DevOpsDescriptorIdentity
+        Assert-MockCalled -CommandName Get-DevOpsDescriptorIdentityBatch
         Assert-MockCalled -CommandName Add-CacheItem
         Assert-MockCalled -CommandName Export-CacheObject
     }
@@ -99,7 +108,7 @@ Describe "AzDoAPI_7_IdentitySubjectDescriptors" -Tag "Unit", "Cache Initalizatio
         $result = AzDoAPI_7_IdentitySubjectDescriptors -OrganizationName 'testOrg'
 
         Assert-MockCalled -CommandName Get-CacheObject
-        Assert-MockCalled -CommandName Get-DevOpsDescriptorIdentity
+        Assert-MockCalled -CommandName Get-DevOpsDescriptorIdentityBatch
         Assert-MockCalled -CommandName Add-CacheItem
         Assert-MockCalled -CommandName Export-CacheObject
     }
@@ -109,18 +118,29 @@ Describe "AzDoAPI_7_IdentitySubjectDescriptors" -Tag "Unit", "Cache Initalizatio
         Assert-MockCalled -CommandName Get-CacheObject -Times 3
     }
 
-    It "should add members to each cache object" {
+    It "should resolve every descriptor in a single batched request" {
+        $result = AzDoAPI_7_IdentitySubjectDescriptors -OrganizationName 'testOrg'
 
-        Mock -CommandName Get-DevOpsDescriptorIdentity -MockWith {
-            @{
-                id = 'mockId'
-                descriptor = 'mockDescriptor'
-                subjectDescriptor = 'mockSubjectDescriptor'
-                providerDisplayName = 'mockProvider'
-                isActive = $true
-                isContainer = $false
-            }
+        # The point of batching: one call covering all three caches, not one call per identity.
+        Assert-MockCalled -CommandName Get-DevOpsDescriptorIdentityBatch -Exactly -Times 1 -ParameterFilter {
+            ($SubjectDescriptor -contains 'mockDescriptorGroup') -and
+            ($SubjectDescriptor -contains 'mockDescriptorUser') -and
+            ($SubjectDescriptor -contains 'mockDescriptorServicePrinciple')
         }
+    }
+
+    It "should leave an empty identity for a descriptor the API did not answer for" {
+        Mock -CommandName Get-DevOpsDescriptorIdentityBatch -MockWith { @{} }
+
+        # An unresolved descriptor must not abort the refresh - Find-Identity backfills it
+        # lazily on first use, so the cache is still written.
+        { AzDoAPI_7_IdentitySubjectDescriptors -OrganizationName 'testOrg' } | Should -Not -Throw
+
+        Assert-MockCalled -CommandName Add-CacheItem
+        Assert-MockCalled -CommandName Export-CacheObject
+    }
+
+    It "should add members to each cache object" {
 
         $mockGroup = @{
             Key = 'mockKey'
@@ -131,8 +151,8 @@ Describe "AzDoAPI_7_IdentitySubjectDescriptors" -Tag "Unit", "Cache Initalizatio
 
         $result = AzDoAPI_7_IdentitySubjectDescriptors -OrganizationName 'testOrg'
 
-        Assert-MockCalled -CommandName Get-DevOpsDescriptorIdentity -ParameterFilter {
-            $SubjectDescriptor -eq 'mockDescriptorGroup'
+        Assert-MockCalled -CommandName Get-DevOpsDescriptorIdentityBatch -ParameterFilter {
+            $SubjectDescriptor -contains 'mockDescriptorGroup'
         }
 
         $cacheItemArgs = @{

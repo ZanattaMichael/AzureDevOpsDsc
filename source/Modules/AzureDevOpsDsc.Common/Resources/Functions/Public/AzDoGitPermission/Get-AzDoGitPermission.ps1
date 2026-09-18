@@ -189,16 +189,24 @@ Function Get-AzDoGitPermission
         return $getGroupResult
     }
 
-    # Convert the ACLs to a formatted ACL
-    $DifferenceACLs = $DevOpsACLs | ConvertTo-FormattedACL -SecurityNamespace $SecurityNamespace -OrganizationName $OrganizationName
+    # Drop the ACLs this lookup cannot be interested in BEFORE formatting them, exactly as
+    # Get-AzDoProjectPermission and Get-AzDoProcessPermission already do. Formatting resolves every
+    # ACE through Find-Identity, which costs an API round trip for each descriptor that is not
+    # already cached, so formatting a whole namespace only to keep one token is where the time goes.
+    # The fallback above fires whenever the repository has no explicit ACL - the normal state
+    # once permissions revert to inherited - so the full namespace is the common path, not a rare
+    # one. Both the GitProject and GitRepository patterns are anchored, so the
+    # parsed filter below can only keep a token equal to $aclToken: this drops exactly what that
+    # filter would have dropped.
+    $DevOpsACLs = @($DevOpsACLs | Where-Object { $_.token -eq $aclToken })
 
-    # Test if the ACLs were found
-    if ($DifferenceACLs -eq $null)
-    {
-        Write-Warning "[Get-AzDoGitPermission] No ACLs found for the repository."
-        $getGroupResult.status = [DSCGetSummaryState]::NotFound
-        return $getGroupResult
-    }
+    # Convert the ACLs to a formatted ACL
+    $DifferenceACLs = @($DevOpsACLs | ConvertTo-FormattedACL -SecurityNamespace $SecurityNamespace -OrganizationName $OrganizationName)
+
+    # No ACL for this token is a valid state, not a missing resource - it is what the API returns
+    # once permissions revert to inherited. NotFound here would tell the base class Ensure is Absent
+    # and skip Set, so the empty list goes to Test-ACLListforChanges instead, which reads "none
+    # desired, none present" as Unchanged and "some desired, none present" as Changed.
 
     # Filter the ACLs for the Repository
     # If the Repository is not specified, return the GitProject ACLs

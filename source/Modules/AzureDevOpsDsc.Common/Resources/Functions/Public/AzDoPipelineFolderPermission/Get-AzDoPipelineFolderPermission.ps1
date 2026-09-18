@@ -121,6 +121,24 @@ Function Get-AzDoPipelineFolderPermission
     $DevOpsACLs = Get-DevOpsACL -OrganizationName $OrganizationName -SecurityDescriptorId $namespace.namespaceId -Token $aclToken
     if (-not $DevOpsACLs) { $DevOpsACLs = Get-DevOpsACL -OrganizationName $OrganizationName -SecurityDescriptorId $namespace.namespaceId }
 
+    # Drop the ACLs this lookup cannot be interested in BEFORE formatting them, exactly as
+    # Get-AzDoProjectPermission and Get-AzDoProcessPermission already do. Formatting resolves every
+    # ACE through Find-Identity, which costs an API round trip for each descriptor that is not
+    # already cached, so formatting a whole namespace only to keep one token is where the time goes.
+    # The fallback above fires whenever the folder has no explicit ACL - the normal state
+    # once permissions revert to inherited - so the full namespace is the common path, not a rare
+    # one. The root case is an anchored exact token. The folder case re-uses the same
+    # Format-AzDoPipelineFolderPath normalisation the parsed filter below applies, so both keep the
+    # same set: the API spells the folder path several ways and a raw -eq would drop valid ACLs.
+    $DevOpsACLs = @($DevOpsACLs | Where-Object {
+        $rawToken = $_.token
+        if ([String]::IsNullOrEmpty($rawToken)) { return $false }
+        if ($isRoot) { return ($rawToken -eq $aclToken) }
+        $prefix = '{0}/' -f $projectCache.id
+        if (-not $rawToken.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) { return $false }
+        (Format-AzDoPipelineFolderPath -Path $rawToken.Substring($prefix.Length)) -eq $normalizedPath
+    })
+
     $DifferenceACLs = $DevOpsACLs | ConvertTo-FormattedACL -SecurityNamespace $SecurityNamespace -OrganizationName $OrganizationName
 
     if ($isRoot)

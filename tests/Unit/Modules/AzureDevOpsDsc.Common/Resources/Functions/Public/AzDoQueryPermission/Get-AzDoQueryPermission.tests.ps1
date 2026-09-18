@@ -26,7 +26,16 @@ Describe "Get-AzDoQueryPermission" -Tag "Unit", "WorkItemQuery", "Permission" {
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
         Mock -CommandName Resolve-AzDoProject -MockWith { return @{ id = $script:projectId; name = 'TestProject' } }
         Mock -CommandName Get-CacheItem -MockWith { return @{ namespaceId = 'ns-id-001'; name = 'WorkItemQueryFolders' } }
-        Mock -CommandName Get-DevOpsACL -MockWith { return @(@{ token = 'acl' }) }
+        # Get-DevOpsACL returns the API's RAW ACL objects: token is a plain wire-format string,
+        # and the parsed .Token shape only exists after ConvertTo-FormattedACL. Get- filters on the
+        # raw token before formatting - formatting resolves every ACE through Find-Identity - so the
+        # fixture carries real tokens, with a decoy for another object to exercise that filter.
+        Mock -CommandName Get-DevOpsACL -MockWith {
+            return @(
+                @{ token = ('$/{0}/{1}' -f $script:projectId, $script:folderId) }
+                @{ token = ('$/{0}/33333333-3333-3333-3333-333333333333' -f $script:projectId) }
+            )
+        }
         Mock -CommandName Test-ACLListforChanges -MockWith { return @{ status = 'Unchanged'; propertiesChanged = @(); reason = $null } }
         Mock -CommandName ConvertTo-ACL -MockWith { return @(@{ token = @{ _token = 'ref' } }) }
     }
@@ -194,6 +203,13 @@ Describe "Get-AzDoQueryPermission" -Tag "Unit", "WorkItemQuery", "Permission" {
                 $DifferenceACLs.Count -eq 1 -and
                 $DifferenceACLs[0].Token.Identifiers[0].identifier -eq $script:folderId
             }
+        }
+
+        It "formats only this object's ACL, not every ACL in the namespace" {
+            # ConvertTo-FormattedACL resolves every ACE through Find-Identity, an API round trip per
+            # uncached descriptor, so it is bound once per surviving raw ACL - one, not three.
+            Get-AzDoQueryPermission -ProjectName 'TestProject' -QueryPath 'Shared Queries/Platform' -isInherited $true
+            Assert-MockCalled -CommandName ConvertTo-FormattedACL -Exactly -Times 1 -Scope It
         }
     }
 }
