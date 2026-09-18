@@ -45,7 +45,12 @@ Function Update-DevOpsPipelineFolder
         [System.String]$Description,
 
         [Parameter()]
-        [String]$ApiVersion = '7.1'
+        # The build/folders endpoint is preview-only. With a plain '7.1' Azure DevOps answers:
+        #   "The requested version \"7.1\" of the resource is under preview. The -preview flag
+        #    must be supplied in the api-version for such requests. For example: \"7.1-preview\""
+        # That failure was invisible until the API-layer catches stopped swallowing it: the list
+        # call returned $null, which Get read as "the folder does not exist".
+        [String]$ApiVersion = '7.1-preview'
     )
 
     $normalizedPath = Format-AzDoPipelineFolderPath -Path $Path
