@@ -162,6 +162,40 @@ Function New-ACLToken
 
         }
 
+        # Work item queries ($/{projectId}/{folderId}/{subfolderId})
+        'WorkItemQueryFolders' {
+
+            if ($TokenName -notmatch $LocalizedDataAzResourceTokenPatten.QueryPermission)
+            {
+                $result.type = 'QueryUnknown'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known Query ACL Token Patterns."
+                break
+            }
+
+            $result.type      = 'Query'
+            $result.ProjectId = $matches.ProjectId
+
+            # The project id is itself a GUID, so the folder ids are extracted from the remainder
+            # of the token rather than from the whole string - otherwise the project would be
+            # picked up as the first folder in the chain.
+            $remainder = $matches.Remainder
+            $result.Identifiers = @()
+
+            if (-not [String]::IsNullOrEmpty($remainder))
+            {
+                $folderMatches = [regex]::Matches($remainder, $LocalizedDataAzResourceTokenPatten.QueryFolderIdentifier)
+
+                foreach ($match in $folderMatches)
+                {
+                    $result.Identifiers += @{
+                        identifier = $match.Groups['identifiers'].Value
+                    }
+                }
+            }
+
+            break;
+        }
+
         # Project-level permissions  ($PROJECT:vstfs:///Classification/TeamProject/{id})
         'Project' {
             if ($TokenName -match $LocalizedDataAzACLTokenPatten.ProjectPermission)
@@ -199,7 +233,18 @@ Function New-ACLToken
 
         # Build / Pipeline permissions — resolve pipeline name to numeric ID for the API token.
         'Build' {
-            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.BuildPermission)
+            # Folder first: the definition pattern matches pipeline names, so it would otherwise
+            # claim a folder path before the folder pattern was reached.
+            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.BuildFolderPermission)
+            {
+                # Folder tokens address the folder by path rather than by id, so there is nothing
+                # to resolve through the cache. The leading separator is a marker for this parse
+                # only - the API token carries the path without it.
+                $result.type       = 'BuildFolder'
+                $result.ProjectId  = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
+                $result.FolderPath = (Format-AzDoPipelineFolderPath -Path $matches.FolderPath).TrimStart('\')
+            }
+            elseif ($TokenName -match $LocalizedDataAzResourceTokenPatten.BuildPermission)
             {
                 $result.type      = 'Build'
                 $result.ProjectId = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
@@ -227,6 +272,13 @@ Function New-ACLToken
                     $vgCacheKey             = '{0}\{1}' -f $matches.ProjectName.Trim(), $matches.VariableGroupName.Trim()
                     $vgEntry                = Get-CacheItem -Key $vgCacheKey -Type 'LiveVariableGroups'
                     $result.VariableGroupId = if ($vgEntry) { $vgEntry.id.ToString() } else { $matches.VariableGroupName.Trim() }
+                }
+                # Secure files share the Library namespace with variable groups but carry their
+                # own token segment, so they are resolved the same way.
+                if ($matches.SecureFileName) {
+                    $sfCacheKey           = '{0}\{1}' -f $matches.ProjectName.Trim(), $matches.SecureFileName.Trim()
+                    $sfEntry              = Get-CacheItem -Key $sfCacheKey -Type 'LiveSecureFiles'
+                    $result.SecureFileId  = if ($sfEntry) { $sfEntry.id.ToString() } else { $matches.SecureFileName.Trim() }
                 }
             }
             else

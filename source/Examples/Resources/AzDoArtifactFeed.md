@@ -22,6 +22,7 @@ AzDoArtifactFeed [string] #ResourceName
 - **ProjectName**: The name of the Azure DevOps project. **Optional** — when supplied, the feed is **project-scoped**; when omitted, the feed is **organization-scoped**.
 - **Description**: An optional description for the feed.
 - **BadgesEnabled**: Whether to enable badges for the feed. Defaults to `$false`.
+- **HideDeletedPackageVersions**: Whether package versions that have been deleted are hidden from feed listings. Defaults to `$true`.
 - **UpstreamEnabled**: Whether to enable upstream sources. Defaults to `$true`.
 - **Ensure**: Specifies whether the feed should exist. Valid values are `Present` and `Absent`.
 

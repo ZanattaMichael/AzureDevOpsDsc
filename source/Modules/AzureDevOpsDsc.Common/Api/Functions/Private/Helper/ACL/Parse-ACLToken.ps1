@@ -71,6 +71,49 @@ Function Parse-ACLToken
             }
         }
 
+        'WorkItemQueryFolders' {
+            switch -regex ($Token.Trim())
+            {
+                # The namespace root is a bare '$'. AzDoQueryPermission scans every ACL in
+                # the namespace, so it meets this token on any organization - and throwing
+                # here aborted the whole scan, which is what made every AzDoQueryPermission
+                # integration test fail with "Token '$' is not recognized."
+                $LocalizedDataAzACLTokenPatten.QueryRootPermission {
+                    $result.type      = 'QueryRoot'
+                    $useRegexVariable = $false
+                    break
+                }
+
+                $LocalizedDataAzACLTokenPatten.QueryPermission {
+                    $result.type      = 'QueryPermission'
+                    $result.ProjectId = $matches.ProjectId
+
+                    # As in New-ACLToken: the folder ids come from the remainder, because the
+                    # project id is a GUID too and would otherwise be read as the first folder.
+                    $remainder = $matches.Remainder
+                    $result.Identifiers = @()
+
+                    if (-not [String]::IsNullOrEmpty($remainder))
+                    {
+                        $folderMatches = [regex]::Matches($remainder, $LocalizedDataAzACLTokenPatten.QueryFolderIdentifier)
+                        $result.Identifiers = @($folderMatches | ForEach-Object { @{ identifier = $_.Groups['identifiers'].Value } })
+                    }
+
+                    $useRegexVariable = $false
+                    break
+                }
+
+                # Non-throwing, matching Project, Process, Build and Library: every
+                # namespace whose resource enumerates org-wide ACLs has to tolerate a token
+                # shape it does not model, or one unexpected entry fails the whole resource.
+                default
+                {
+                    $result.type      = 'QueryUnknown'
+                    $useRegexVariable = $false
+                }
+            }
+        }
+
         'Project' {
             switch -regex ($Token.Trim())
             {
@@ -91,8 +134,9 @@ Function Parse-ACLToken
         'Build' {
             switch -regex ($Token.Trim())
             {
-                $LocalizedDataAzACLTokenPatten.BuildPermission { $result.type = 'Build';        break }
-                default                                        { $result.type = 'BuildUnknown'        }
+                $LocalizedDataAzACLTokenPatten.BuildPermission       { $result.type = 'Build';       break }
+                $LocalizedDataAzACLTokenPatten.BuildFolderPermission { $result.type = 'BuildFolder'; break }
+                default                                              { $result.type = 'BuildUnknown'       }
             }
         }
 

@@ -1,6 +1,31 @@
 <#
 .SYNOPSIS
     DSC resource for managing Azure DevOps service connections.
+.DESCRIPTION
+    This resource manages service connections in Azure DevOps, enabling pipelines to connect to
+    external services such as Azure subscriptions, GitHub repositories, or Kubernetes clusters.
+
+.PARAMETER ProjectName
+    The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+
+.PARAMETER ConnectionName
+    The name of the service connection. This is a key property.
+
+.PARAMETER ConnectionType
+    The type of service connection (e.g., AzureRM, GitHub, Kubernetes). This is a mandatory property.
+
+.PARAMETER Description
+    An optional description for the service connection.
+
+.PARAMETER AllowAllPipelines
+    Whether all pipelines can use this service connection. Defaults to $false.
+
+.PARAMETER Authorization
+    A hashtable of authorization parameters specific to the connection type.
+
+.PARAMETER Data
+    A hashtable of additional data parameters specific to the connection type.
+
 #>
 
 [DscResource()]

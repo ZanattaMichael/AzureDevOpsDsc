@@ -1,6 +1,23 @@
 <#
 .SYNOPSIS
     DSC resource for managing Azure DevOps reusable task groups.
+.DESCRIPTION
+    This resource manages task groups in Azure DevOps, which are reusable collections of pipeline
+    tasks that can be shared across multiple pipelines. Task groups help enforce consistent build
+    and deployment processes.
+
+.PARAMETER ProjectName
+    The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+
+.PARAMETER TaskGroupName
+    The name of the task group. This is a key property.
+
+.PARAMETER Description
+    An optional description for the task group.
+
+.PARAMETER Category
+    The category of the task group (e.g., Build, Deploy, Test).
+
 #>
 
 [DscResource()]

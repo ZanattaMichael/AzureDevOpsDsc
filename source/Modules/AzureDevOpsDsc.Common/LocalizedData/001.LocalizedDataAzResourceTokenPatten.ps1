@@ -37,10 +37,20 @@ data LocalizedDataAzResourceTokenPatten
         # AreaPath and IterationPath ACL Token Patterns
         AreaPathPermission      = '(vstfs:\/{3}Classification\/Node\/)(?<identifiers>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})'
         IterationPathPermission = '(vstfs:\/{3}Classification\/Node\/)(?<identifiers>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})'
+        # Work item query ACL Token Patterns — the namespace root is a bare '$', then
+        # $/{projectId} for a project's query root, then one folder GUID per level:
+        # $/{projectId}/{folderId}/{subfolderId}
+        QueryRootPermission     = '^\$$'
+        QueryPermission         = '^\$\/(?<ProjectId>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})(?<Remainder>(\/[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})*)$'
+        QueryFolderIdentifier   = '\/(?<identifiers>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})'
         # Build (Pipeline) Token Patterns — ProjectName only, or ProjectName/PipelineName
         BuildPermission         = '^(?<ProjectName>[A-Za-z0-9-_]+)(\/(?<PipelineName>[A-Za-z0-9-_ ]+))?$'
+        # Build folder token — {projectName}/\{folderPath}. The leading backslash on the folder
+        # path is required: BuildPermission matches pipeline NAMES, so without a marker
+        # 'MyProject/Platform' is ambiguous between a folder and a pipeline called 'Platform'.
+        BuildFolderPermission   = '^(?<ProjectName>[A-Za-z0-9-_]+)\/(?<FolderPath>\\.+)$'
         # Library (VariableGroup) Token Patterns
-        LibraryPermission       = '^Library\/Project\/(?<ProjectName>[A-Za-z0-9-_]+)(\/VariableGroup\/(?<VariableGroupName>[A-Za-z0-9-_ ]+))?$'
+        LibraryPermission       = '^Library\/Project\/(?<ProjectName>[A-Za-z0-9-_]+)(\/VariableGroup\/(?<VariableGroupName>[A-Za-z0-9-_ ]+))?(\/SecureFile\/(?<SecureFileName>[A-Za-z0-9-_. ]+))?$'
         # ServiceEndpoints Token Patterns
         ServiceEndpointPermission = '^endpoints\/Project\/(?<ProjectName>[A-Za-z0-9-_]+)(\/endpoint\/(?<EndpointName>[A-Za-z0-9-_ ]+))?$'
         # DistributedTask — AgentPool Token

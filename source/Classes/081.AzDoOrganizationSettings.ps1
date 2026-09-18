@@ -1,6 +1,29 @@
 <#
 .SYNOPSIS
     DSC resource for managing Azure DevOps organisation-level settings (singleton).
+.DESCRIPTION
+    This resource manages organization-level security and access settings in Azure DevOps. These
+    settings affect the entire organization and should be managed carefully. Only one instance of
+    this resource should be configured per organization.
+
+.PARAMETER OrganizationName
+    The name of the Azure DevOps organization. This property is mandatory and serves as the key property for the resource. It is not configurable after initial setup.
+
+.PARAMETER AllowPublicProjects
+    Whether users can create public (anonymous-access) projects.
+
+.PARAMETER AllowExternalGuestAccess
+    Whether external guest users (Azure AD guests) can be added to the organization.
+
+.PARAMETER EnableOAuthAuthentication
+    Whether OAuth authentication is enabled for third-party applications.
+
+.PARAMETER EnableSSHAuthentication
+    Whether SSH authentication is enabled for Git operations.
+
+.PARAMETER DisallowAadGuestUserPolicy
+    Whether the Azure AD guest user policy is disallowed.
+
 #>
 
 [DscResource()]

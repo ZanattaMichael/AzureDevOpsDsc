@@ -34,6 +34,12 @@ data LocalizedDataAzACLTokenPatten
         # AreaPath and IterationPath ACL Token Patterns
         AreaPathPermission      = '(vstfs:\/{3}Classification\/Node\/)(?<identifiers>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})'
         IterationPathPermission = '(vstfs:\/{3}Classification\/Node\/)(?<identifiers>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})'
+        # Work item query ACL Token Patterns — the namespace root is a bare '$', then
+        # $/{projectId} for a project's query root, then one folder GUID per level:
+        # $/{projectId}/{folderId}/{subfolderId}
+        QueryRootPermission     = '^\$$'
+        QueryPermission         = '^\$\/(?<ProjectId>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})(?<Remainder>(\/[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})*)$'
+        QueryFolderIdentifier   = '\/(?<identifiers>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})'
         # Project-level ACL Token Patterns
         ProjectPermission       = '^\$PROJECT:vstfs:\/{3}Classification\/TeamProject\/(?<ProjectId>[A-Za-z0-9-]+)$'
         # Process ACL Token Patterns — org-wide root ($PROCESS), or $PROCESS:{parentProcessId}:{processId}
@@ -41,8 +47,11 @@ data LocalizedDataAzACLTokenPatten
         ProcessPermission       = '^\$PROCESS:(?<ParentProcessId>[A-Za-z0-9-]+):(?<ProcessId>[A-Za-z0-9-]+)$'
         # Build (Pipeline) ACL Token Patterns  — ProjectId only, or ProjectId/PipelineId
         BuildPermission         = '^(?<ProjectId>[A-Za-z0-9-]+)(\/(?<PipelineId>[0-9]+))?$'
+        # Build folder ACL token — {projectId}/{folderPath}. The negative lookahead keeps a
+        # definition token ({projectId}/{numericId}) from being read as a folder.
+        BuildFolderPermission   = '^(?<ProjectId>[A-Za-z0-9-]+)\/(?<FolderPath>(?![0-9]+$).+)$'
         # Library (VariableGroup) ACL Token Patterns
-        LibraryPermission       = '^Library\/Project\/(?<ProjectId>[A-Za-z0-9-]+)(\/VariableGroup\/(?<VariableGroupId>[0-9]+))?$'
+        LibraryPermission       = '^Library\/Project\/(?<ProjectId>[A-Za-z0-9-]+)(\/VariableGroup\/(?<VariableGroupId>[0-9]+))?(\/SecureFile\/(?<SecureFileId>[A-Za-z0-9-]+))?$'
         # ServiceEndpoints ACL Token Patterns
         ServiceEndpointPermission = '^endpoints\/Project\/(?<ProjectId>[A-Za-z0-9-]+)(\/endpoint\/(?<EndpointId>[A-Za-z0-9-]+))?$'
         # DistributedTask — Agent Pool ACL Token Patterns

@@ -63,6 +63,15 @@ Function ConvertTo-FormattedToken {
             $string = $(($Token.Identifiers | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_.identifier }) -join ':')
             break
         }
+        # Work item queries — $/{projectId}, plus one folder id per level beneath it
+        {$_.type -eq 'Query'} {
+            $string = '$/{0}' -f $Token.ProjectId
+            if ($Token.Identifiers)
+            {
+                $string += ($Token.Identifiers | ForEach-Object { '/{0}' -f $_.identifier }) -join ''
+            }
+            break
+        }
         # Project-level permissions
         {$_.type -eq 'Project'} {
             $string = '$PROJECT:vstfs:///Classification/TeamProject/{0}' -f $Token.ProjectId
@@ -84,10 +93,16 @@ Function ConvertTo-FormattedToken {
                       else                   { $Token.ProjectId }
             break
         }
+        # Build folder permissions — the folder is addressed by path, not by id
+        {$_.type -eq 'BuildFolder'} {
+            $string = '{0}/{1}' -f $Token.ProjectId, $Token.FolderPath
+            break
+        }
         # Library (VariableGroup) permissions
         {$_.type -eq 'Library'} {
-            $string = if ($Token.VariableGroupId) { 'Library/Project/{0}/VariableGroup/{1}' -f $Token.ProjectId, $Token.VariableGroupId }
-                      else                        { 'Library/Project/{0}' -f $Token.ProjectId }
+            $string = if ($Token.SecureFileId)         { 'Library/Project/{0}/SecureFile/{1}' -f $Token.ProjectId, $Token.SecureFileId }
+                      elseif ($Token.VariableGroupId)  { 'Library/Project/{0}/VariableGroup/{1}' -f $Token.ProjectId, $Token.VariableGroupId }
+                      else                             { 'Library/Project/{0}' -f $Token.ProjectId }
             break
         }
         # ServiceEndpoints permissions

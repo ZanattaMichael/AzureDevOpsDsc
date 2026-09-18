@@ -15,7 +15,7 @@ Configuration Example
         {
             Ensure       = 'Absent'
             ProjectName  = 'MyProject'
-            ResourceName = 'Production'
+            TargetResourceName = 'Production'
             ResourceType = 'environment'
             CheckType    = 'Task Check'
         }

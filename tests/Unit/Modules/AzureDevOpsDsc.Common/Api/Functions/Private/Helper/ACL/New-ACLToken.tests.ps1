@@ -134,6 +134,124 @@ Describe 'New-ACLToken Function Tests' -Tag "Unit", "ACL", "Helper" {
 
     }
 
+    Context 'WorkItemQueryFolders SecurityNamespace' {
+
+        It 'Returns the project id for a project-root query token' {
+            $projectId = [guid]::NewGuid().ToString()
+            $result = New-ACLToken -SecurityNamespace 'WorkItemQueryFolders' -TokenName "`$/$projectId"
+
+            $result.type | Should -Be 'Query'
+            $result.ProjectId | Should -Be $projectId
+            $result.Identifiers.Count | Should -Be 0
+        }
+
+        It 'Returns the folder id for a single-folder query token' {
+            $projectId = [guid]::NewGuid().ToString()
+            $folderId  = [guid]::NewGuid().ToString()
+            $result = New-ACLToken -SecurityNamespace 'WorkItemQueryFolders' -TokenName "`$/$projectId/$folderId"
+
+            $result.type | Should -Be 'Query'
+            $result.ProjectId | Should -Be $projectId
+            $result.Identifiers.Count | Should -Be 1
+            $result.Identifiers[0].identifier | Should -Be $folderId
+        }
+
+        It 'Returns the full folder chain, in order, for a nested query token' {
+            $projectId = [guid]::NewGuid().ToString()
+            $folderId1 = [guid]::NewGuid().ToString()
+            $folderId2 = [guid]::NewGuid().ToString()
+            $result = New-ACLToken -SecurityNamespace 'WorkItemQueryFolders' -TokenName "`$/$projectId/$folderId1/$folderId2"
+
+            $result.Identifiers.Count | Should -Be 2
+            $result.Identifiers[0].identifier | Should -Be $folderId1
+            $result.Identifiers[1].identifier | Should -Be $folderId2
+        }
+
+        It 'Does not mistake the project id for the first folder in the chain' {
+            # The project id is a GUID too, so a naive extraction over the whole token would
+            # read it as folder number one and shift the entire chain.
+            $projectId = [guid]::NewGuid().ToString()
+            $folderId  = [guid]::NewGuid().ToString()
+            $result = New-ACLToken -SecurityNamespace 'WorkItemQueryFolders' -TokenName "`$/$projectId/$folderId"
+
+            $result.Identifiers.identifier | Should -Not -Contain $projectId
+        }
+
+        It 'Round-trips a query token back to its original string' {
+            # New-ACLToken and ConvertTo-FormattedToken have to agree: if they disagree, a
+            # permission written by Set() would never match the ACL read back by Get() and the
+            # resource would report drift forever.
+            . (Get-FunctionItem 'ConvertTo-FormattedToken.ps1').FullName
+
+            $projectId = [guid]::NewGuid().ToString()
+            $folderId1 = [guid]::NewGuid().ToString()
+            $folderId2 = [guid]::NewGuid().ToString()
+            $original  = "`$/$projectId/$folderId1/$folderId2"
+
+            $structured = New-ACLToken -SecurityNamespace 'WorkItemQueryFolders' -TokenName $original
+            ConvertTo-FormattedToken -Token $structured | Should -Be $original
+        }
+
+        It 'Round-trips a project-root query token back to its original string' {
+            . (Get-FunctionItem 'ConvertTo-FormattedToken.ps1').FullName
+
+            $projectId = [guid]::NewGuid().ToString()
+            $original  = "`$/$projectId"
+
+            $structured = New-ACLToken -SecurityNamespace 'WorkItemQueryFolders' -TokenName $original
+            ConvertTo-FormattedToken -Token $structured | Should -Be $original
+        }
+
+        It 'Returns QueryUnknown for a token that is not a query token' {
+            $result = New-ACLToken -SecurityNamespace 'WorkItemQueryFolders' -TokenName 'not-a-query-token'
+            $result.type | Should -Be 'QueryUnknown'
+        }
+    }
+
+    Context 'Build SecurityNamespace - folder tokens' {
+
+        BeforeAll {
+            . (Get-FunctionItem 'Format-AzDoPipelineFolderPath.ps1').FullName
+            Mock -CommandName Resolve-AzDoProjectIdForToken -MockWith { return 'project-id-1' }
+        }
+
+        It 'Treats a numeric tail as a pipeline definition' {
+            $result = New-ACLToken -SecurityNamespace 'Build' -TokenName 'MyProject/123'
+            $result.type | Should -Be 'Build'
+        }
+
+        It 'Treats an unmarked name as a pipeline, not a folder' {
+            # A pipeline can legitimately be called 'Platform', so the bare form stays a pipeline.
+            $result = New-ACLToken -SecurityNamespace 'Build' -TokenName 'MyProject/Platform'
+            $result.type | Should -Be 'Build'
+        }
+
+        It 'Treats a path marked with a leading separator as a folder' {
+            $result = New-ACLToken -SecurityNamespace 'Build' -TokenName 'MyProject/\Platform'
+            $result.type | Should -Be 'BuildFolder'
+            $result.FolderPath | Should -Be 'Platform'
+        }
+
+        It 'Handles a nested folder path' {
+            $result = New-ACLToken -SecurityNamespace 'Build' -TokenName 'MyProject/\Platform\Release'
+            $result.type | Should -Be 'BuildFolder'
+            $result.FolderPath | Should -Be 'Platform\Release'
+        }
+
+        It 'Normalizes forward slashes in a folder path' {
+            $result = New-ACLToken -SecurityNamespace 'Build' -TokenName 'MyProject/\Platform/Release'
+            $result.FolderPath | Should -Be 'Platform\Release'
+        }
+
+        It 'Round-trips a folder token into the API token form' {
+            . (Get-FunctionItem 'ConvertTo-FormattedToken.ps1').FullName
+
+            $structured = New-ACLToken -SecurityNamespace 'Build' -TokenName 'MyProject/\Platform'
+            # The API token carries the resolved project id and the path without its marker.
+            ConvertTo-FormattedToken -Token $structured | Should -Be 'project-id-1/Platform'
+        }
+    }
+
     Context 'Unknown SecurityNamespace' {
 
         It 'Should return Generic type for unrecognized security namespace (pass-through)' {

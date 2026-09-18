@@ -1,6 +1,28 @@
 <#
 .SYNOPSIS
     DSC resource for managing Azure DevOps pipeline variable groups.
+.DESCRIPTION
+    This resource manages variable groups in Azure DevOps, allowing shared variables and secrets to
+    be used across multiple pipelines within a project.
+
+.PARAMETER ProjectName
+    The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+
+.PARAMETER VariableGroupName
+    The name of the variable group. This is a key property.
+
+.PARAMETER Description
+    An optional description for the variable group.
+
+.PARAMETER VariableGroupType
+    The type of variable group. Valid values are Vsts (standard) and AzureKeyVault. Defaults to Vsts.
+
+.PARAMETER Variables
+    A hashtable of key-value pairs representing the variables.
+
+.PARAMETER AllowAccess
+    Whether all pipelines can access this variable group. Defaults to $false.
+
 #>
 
 [DscResource()]

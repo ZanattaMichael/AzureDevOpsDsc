@@ -5,7 +5,187 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- AzureDevOpsDscNative
+  - Added `AzDoQueryFolder`, a resource managing folders in a project's shared work
+    item query tree. Folders are declared in their own right so that queries can
+    depend on them, rather than each query creating its own ancestry - which would
+    let two queries in the same folder race to create it and make `Test()` results
+    depend on apply order. Deleting a query folder in Azure DevOps deletes its whole
+    subtree, so removal of a folder that still has children is refused unless
+    `AllowRecursiveDelete` is set.
+  - Added `AzDoWorkItemQuery`, a resource managing shared work item queries,
+    including the WIQL statement, query type, display columns and sort order.
+    Changes are applied in place with PATCH rather than by delete-and-recreate,
+    because recreating a query changes its id and would silently break any
+    dashboard widget, delivery plan or ACL token referencing it. Queries deleted
+    earlier are restored from the query recycle bin instead of failing with a name
+    conflict.
+  - Added the private Queries API functions `Get-DevOpsQuery`, `New-DevOpsQuery`,
+    `Update-DevOpsQuery` and `Remove-DevOpsQuery`.
+  - Added `AzDoQueryPermission`, a resource managing the ACL on a work item query
+    folder via the `WorkItemQueryFolders` security namespace. Permissions are set
+    on folders and inherited by the queries beneath them; omitting `QueryPath`
+    targets the project's query root. Removing the ACL on the query root is
+    refused, since that token has no parent to inherit from.
+  - Added `WorkItemQueryFolders` support to `New-ACLToken`, `ConvertTo-FormattedToken`
+    and `Parse-ACLToken`, with the token patterns in the localized data files. The
+    token addresses folders by GUID (`$/{projectId}/{folderId}/...`); because the
+    project id is a GUID too, the folder chain is extracted from the remainder of
+    the token so the project is not read as the first folder.
+  - Added the helper `ConvertTo-NormalizedWiql`, which makes WIQL drift detection
+    work. The Queries API does not return the WIQL it was given - it re-indents,
+    re-wraps, re-cases and appends a semicolon - so comparing the raw strings would
+    report drift on every `Test()`, forever, even when nothing had changed.
+  - Added the helpers `Format-AzDoQueryPath`, which normalizes the several ways a
+    query path can be written (backslashes, leading/trailing and doubled separators)
+    into one canonical form, and `Resolve-AzDoQueryPath`, which walks a query path
+    and collects the id of each segment - the ids that a `WorkItemQueryFolders` ACL
+    token is built from.
+  - Added `AzDoWIPTagHygiene`, a companion to `AzDoWIPTags` that detects work item
+    tags misaligned against a canonical vocabulary (`Bugfix` beside `Bug`,
+    `frontend` beside `Frontend`, `Tech-Debt` beside `Tech Debt`) and corrects them
+    by renaming the tag - Azure DevOps merges a tag into an existing one on rename
+    and re-tags every affected work item, so a correction costs one API call per
+    tag rather than one per work item. Because a merge is irreversible and
+    project-wide, the resource defaults to `RemediationAction = 'Report'`, where
+    `Test()` reports drift and `Set()` lists the misalignments without changing
+    anything. Tags differing only in digits (`Sprint1`/`Sprint2`, `FY24`/`FY25`)
+    are never merged at any threshold, tags already in the vocabulary are never
+    touched, and `MaxAutoCorrections` caps how much a misconfigured vocabulary can
+    rewrite in one run.
+  - Added the private API function `Update-WITTags` (tag rename/merge) and the
+    helper `Get-AzDoTagMisalignment`, the pure matching logic behind the resource.
+  - Added `AzDoSecureFile`, a resource managing the secure files a project makes
+    available to its pipelines (certificates, keystores, provisioning profiles).
+    Azure DevOps never returns a secure file's content, so `Test()` confirms the
+    file exists and its properties match but cannot detect content drift; set
+    `ForceUpload` to replace the content on every run. Since the API cannot update
+    content in place, `ForceUpload` deletes and re-uploads, which changes the
+    file's id - so any permission granted against the old id has to be re-applied.
+  - Added `AzDoSecureFilePermission`, managing a secure file's ACL in the `Library`
+    security namespace, and extended the `Library` ACL token with the
+    `SecureFile/{id}` segment across `New-ACLToken`, `ConvertTo-FormattedToken` and
+    the localized token patterns.
+  - Fixed `Get-AzDoVariableGroupPermission`: its project-root Library filter matched
+    any token without a variable group segment, which now also matches a secure
+    file's token. The filter excludes secure file tokens explicitly.
+  - Added the private API functions `List-DevOpsSecureFiles`, `New-DevOpsSecureFile`,
+    `Update-DevOpsSecureFile` and `Remove-DevOpsSecureFile`, and a `LiveSecureFiles`
+    cache type.
+  - Added `AzDoPipelineFolder`, a resource managing the pipeline (build) folder tree.
+    Paths are backslash-delimited and normalized, so the several ways a folder path
+    can be written are one desired state. Deleting a pipeline folder deletes every
+    definition beneath it, so removal is refused unless `AllowRecursiveDelete` is
+    set - and refused as well when emptiness cannot be established, rather than
+    treating a failed lookup as "empty".
+  - Added `AzDoPipelineFolderPermission`, managing a pipeline folder's ACL in the
+    `Build` security namespace, and added the folder token form
+    (`{projectId}/{folderPath}`) to `New-ACLToken`, `ConvertTo-FormattedToken`,
+    `Parse-ACLToken` and the localized patterns. Previously the `Build` branch
+    understood only the definition token form, so folder-level pipeline permissions
+    could not be expressed at all - including through `AzDoPipelinePermission`.
+  - Added the helper `Format-AzDoPipelineFolderPath` and the private API functions
+    `List-DevOpsPipelineFolders`, `New-DevOpsPipelineFolder`,
+    `Update-DevOpsPipelineFolder`, `Remove-DevOpsPipelineFolder` and
+    `Get-DevOpsPipelineDefinitionsInFolder`.
+  - Added `AzDoGroupEntitlement`, a resource managing group licensing rules - the
+    access level applied to every member of a group. `AzDoUserEntitlement` assigns
+    a level one user at a time, which does not scale to an organization. Changing
+    the level re-licenses the group's members; removing the rule removes nobody
+    from the organization, only what the rule granted them.
+  - Added `AzDoServicePrincipalEntitlement`, managing service principals and
+    managed identities as organization members. Identity is matched by Microsoft
+    Entra object id rather than display name, since names are neither unique nor
+    stable and a rename would otherwise cause a duplicate to be created. The
+    endpoint is a preview API; when an organization does not expose it, the lookup
+    reports the entitlement as absent rather than failing the configuration.
+  - Added `AzDoPicklist`, a resource managing picklists - the allowed values behind
+    picklist-typed custom fields. Picklists are organization-scoped, so one list
+    backs fields across processes. Items are replaced wholesale because the update
+    endpoint takes the complete list; removing a value does not rewrite work items
+    that already carry it, so they keep a value that then fails validation on the
+    next edit. The list type is fixed at creation and a mismatch is reported rather
+    than silently recreating the list.
+  - Added `AzDoProcessWorkItemType`, managing custom and inherited work item types
+    on an inherited process. Only inherited processes can be customized; naming a
+    system process (Agile, Scrum, Basic, CMMI) is reported with that reason instead
+    of failing against the API. Removal is destructive in two different ways - a
+    custom type takes its work items with it, an inherited type discards this
+    process's customizations - so both require `AllowDestructiveRemove`, with
+    `IsDisabled` offered as the reversible alternative.
+  - Added the helper `Resolve-AzDoProcessWorkItemType`, which resolves a process and
+    work item type and enforces the "system processes are read-only" rule in one
+    place, and the private API functions for picklists and process work item types.
+  - Added `AzDoProcessField`, managing fields on a work item type. A field exists at
+    two levels and the resource manages the second: the definition (name and type)
+    is organization-scoped and shared by every work item type using the field, so
+    changing it would change the field everywhere; what is per-type is required,
+    default value and read-only. A new custom field's reference name is assigned by
+    Azure DevOps and cannot be chosen, so fields are matched by display name and the
+    reference name is read back. Removing a field detaches it rather than deleting
+    it - the data on existing work items is retained.
+  - Added `AzDoProcessState`, managing custom workflow states. A state's category
+    (`Proposed`, `InProgress`, `Resolved`, `Completed`, `Removed`) is what boards and
+    Analytics reason about, and it cannot be changed after creation: a mismatch is
+    reported as an error rather than as drift, since recreating the state would
+    strand every work item currently in it. Only custom states can be removed, and
+    work items in a removed state keep a value that then fails validation.
+  - Added the private API functions for process fields and states.
+  - Added `AzDoProcessRule`, managing conditional rules on a work item type.
+    Conditions and actions are passed through as the API models them rather than
+    wrapped, because the vocabulary is large and grows between API versions. Drift
+    detection normalizes both sides first: a configuration supplies hashtables and
+    the API returns objects, and the API fills in keys the configuration omitted, so
+    a raw comparison would report drift on every `Test()`. Inherited rules cannot be
+    deleted, only disabled.
+  - Added `AzDoProcessBehavior`, associating a work item type with a backlog level.
+    This is usually the missing step when a newly created custom work item type
+    appears to do nothing - without a behavior association it shows up on no backlog
+    and no board. A behavior that does not exist on the process is reported as a
+    configuration error rather than as a missing association.
+  - Added the helper `ConvertTo-NormalizedRuleClause` and the private API functions
+    for process rules and behaviors.
+  - Added the private API functions `Get-DevOpsGroupEntitlement`,
+    `New-DevOpsGroupEntitlement`, `Update-DevOpsGroupEntitlement`,
+    `Remove-DevOpsGroupEntitlement` and their service principal equivalents. Both
+    update endpoints take JSON Patch rather than a plain object.
+  - Added `docs/ResourceRoadmap.md`, a verified backlog of resources still to be
+    added to the module, reconciling the phased plan in issue #59 against the code.
+
 ### Changed
+
+- AzureDevOpsDscNative
+  - Reorganized the resource tables in `README.md`: process customization now has its
+    own section with the resources in declaration order, since seven of them had
+    accumulated inside "Boards and work items". Corrected the documentation section,
+    which still referred to the module by its pre-rename name, and linked
+    `docs/ResourceRoadmap.md` as the plan of record.
+  - Updated the resource documentation for behaviour that changed:
+    `AzDoPipelinePermission` now records that it targets definitions and points at
+    `AzDoPipelineFolderPermission` for folders (which previously could not be
+    expressed at all), and `AzDoVariableGroupPermission` documents that the `Library`
+    namespace is shared with secure files and how the project-root token is
+    distinguished from both.
+  - Added cross-references where a resource is half of a pair: `AzDoWIPTags` to
+    `AzDoWIPTagHygiene`, `AzDoProcess` to the six process customization resources,
+    `AzDoUserEntitlement` to the group and service principal equivalents, and
+    `AzDoSecurityNamespacePermission` to a table of the namespaces that now have
+    dedicated resources.
+  - Added runnable examples for `AzDoProcess`, `AzDoProcessPermission`,
+    `AzDoUserEntitlement`, `AzDoServiceHook` and `AzDoPipelineSettings`, which had
+    documentation pages but no `source/Examples/Resources/<Name>/` folder. Every
+    resource now has one.
+  - Corrected `CLAUDE.md`, which had drifted: three of the five enum tables were wrong
+    (`DSCGetSummaryState` was missing `Renamed` and `Missing` and had `Error` at the
+    wrong value, `RequiredAction` listed a `NoChange` member that does not exist, and
+    `TokenType` listed two of its six values), `AzDoIterationPermission` and
+    `AzDoPipelinePermission` were labelled as using the `CSS` namespace when they use
+    `Iteration` and `Build`, and the deployed module path and expected test counts
+    predated the rename. Added the resource conventions, the Linux test baseline and
+    the gotchas this work surfaced.
+
 
 - AzureDevOpsDscNative
   - Updated the `Dsc.PipelineRunner` documentation in `USAGE.md` and the

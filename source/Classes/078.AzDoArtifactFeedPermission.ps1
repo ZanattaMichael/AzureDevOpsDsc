@@ -1,6 +1,18 @@
 <#
 .SYNOPSIS
     DSC resource for managing role-based permissions on Azure Artifacts feeds.
+.DESCRIPTION
+    This resource manages role-based permissions on Azure Artifacts feeds, controlling which users
+    or groups can read, publish, or administer packages. Unlike other permission resources,
+    Artifact Feed permissions use a role model (Reader, Contributor, Collaborator, Administrator)
+    rather than individual permission bits.
+
+.PARAMETER ProjectName
+    The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+
+.PARAMETER FeedName
+    The name of the artifact feed. This is a key property.
+
 #>
 
 [DscResource()]

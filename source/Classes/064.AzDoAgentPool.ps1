@@ -1,6 +1,27 @@
 <#
 .SYNOPSIS
     DSC resource for managing Azure DevOps agent pools.
+.DESCRIPTION
+    This resource manages Azure DevOps agent pools at the organization level. Agent pools provide
+    the infrastructure for running pipeline jobs. Pools can be shared across multiple projects.
+
+.PARAMETER PoolName
+    The name of the agent pool. This property is mandatory and serves as the key property for the resource.
+
+.PARAMETER PoolType
+    The type of agent pool. Valid values are automation and deployment. Defaults to automation.
+
+.PARAMETER AutoProvision
+    Whether to automatically provision the agent pool to new projects. Defaults to $false.
+
+.PARAMETER AutoUpdate
+    Whether to automatically update agents in the pool. Defaults to $true.
+
+.PARAMETER IsHosted
+    Whether the pool is a Microsoft-hosted pool. Microsoft-hosted pools cannot be created or
+    removed through this resource, so this is only meaningful when reading existing pools.
+    Defaults to $false.
+
 #>
 [DscResource()]
 class AzDoAgentPool : AzDevOpsDscResourceBase

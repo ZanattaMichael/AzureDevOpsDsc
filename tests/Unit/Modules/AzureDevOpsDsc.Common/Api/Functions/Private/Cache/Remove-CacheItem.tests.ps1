@@ -72,4 +72,66 @@ Describe 'Remove-CacheItem' -Tag "Unit", "Cache" {
         { Remove-CacheItem -Key "sampleKey" -Type "InvalidType" } | Should -Throw
     }
 
+    Context 'A cache that is absent, empty, or has more than one item' {
+
+        # The tests above only ever exercise the Count -eq 1 fast path, which is why three bugs
+        # in the removal loop survived. All three surfaced on the live integration run as
+        # "Cannot index into a null array" from AzDoSecureFile's Remove.
+
+        BeforeEach {
+            $script:testList  = [System.Collections.Generic.List[CacheItem]]::New()
+            $script:persisted = $null
+
+            Mock -CommandName Get-CacheObject -MockWith { return $script:testList }
+
+            # Assert on what gets written back, not on the list handed in. Remove-CacheItem
+            # assigns through a [List[CacheItem]] cast, and PowerShell builds a NEW list from
+            # the enumerable rather than aliasing it - so the removals land on a copy that only
+            # reaches the caller via Set-Variable.
+            Mock -CommandName Set-Variable -MockWith { $script:persisted = $Value }
+        }
+
+
+        It 'Does not throw when the cache is absent' {
+            # $cache.Count on $null is $null, and '0 .. $null' is 0..0 - so the old loop indexed
+            # into a null array.
+            Mock -CommandName Get-CacheObject -MockWith { return $null }
+            { Remove-CacheItem -Key 'anything' -Type 'Project' } | Should -Not -Throw
+        }
+
+        It 'Does not throw when the cache is empty' {
+            { Remove-CacheItem -Key 'anything' -Type 'Project' } | Should -Not -Throw
+        }
+
+        It 'Removes the last item of several without indexing past the end' {
+            # '0 .. $cache.Count' is inclusive, so it addressed one element beyond the list.
+            'a', 'b', 'c' | ForEach-Object { $script:testList.Add([CacheItem]::New($_, $_)) }
+
+            { Remove-CacheItem -Key 'c' -Type 'Project' } | Should -Not -Throw
+            @($script:persisted | ForEach-Object { $_.Key }) | Should -Be @('a', 'b')
+        }
+
+        It 'Removes an item from the middle and leaves the rest intact' {
+            'a', 'b', 'c' | ForEach-Object { $script:testList.Add([CacheItem]::New($_, $_)) }
+
+            Remove-CacheItem -Key 'b' -Type 'Project'
+            @($script:persisted | ForEach-Object { $_.Key }) | Should -Be @('a', 'c')
+        }
+
+        It 'Removes every matching entry when a key appears more than once' {
+            # Removing by ascending index shifted the entries still to be examined, so a second
+            # match was missed or the wrong element was dropped.
+            'a', 'dup', 'dup', 'b' | ForEach-Object { $script:testList.Add([CacheItem]::New($_, $_)) }
+
+            Remove-CacheItem -Key 'dup' -Type 'Project'
+            @($script:persisted | ForEach-Object { $_.Key }) | Should -Be @('a', 'b')
+        }
+
+        It 'Leaves the cache untouched when no key matches' {
+            'a', 'b' | ForEach-Object { $script:testList.Add([CacheItem]::New($_, $_)) }
+
+            Remove-CacheItem -Key 'absent' -Type 'Project'
+            @($script:persisted | ForEach-Object { $_.Key }) | Should -Be @('a', 'b')
+        }
+    }
 }

@@ -19,6 +19,7 @@ AzDoAgentQueue [string] #ResourceName
 - **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
 - **QueueName**: The name of the agent queue within the project. This is a key property.
 - **PoolName**: The name of the agent pool that backs this queue. This is a mandatory property.
+- **AuthorizeAllPipelines**: Whether every pipeline in the project is granted access to the queue without an explicit authorization prompt. Defaults to `$false`.
 - **Ensure**: Specifies whether the agent queue should exist. Valid values are `Present` and `Absent`.
 
 ## Additional Information

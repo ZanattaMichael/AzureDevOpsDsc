@@ -1,6 +1,8 @@
-# AzureDevOpsDsc — LLM Context File
+# AzureDevOpsDscNative — LLM Context File
 
-PowerShell DSC module providing class-based DSC resources for managing Azure DevOps objects (projects, repos, permissions, pipelines, etc.) via the Azure DevOps REST API.
+PowerShell DSC module providing class-based DSC resources for managing Azure DevOps objects (projects, repos, permissions, pipelines, boards, process customization, etc.) via the Azure DevOps REST API.
+
+The module is named **AzureDevOpsDscNative** (see `source/AzureDevOpsDscNative.psd1`). Older notes and paths referring to `AzureDevOpsDsc` predate the rename; the *inner* helper module is still `AzureDevOpsDsc.Common`.
 
 ---
 
@@ -9,7 +11,7 @@ PowerShell DSC module providing class-based DSC resources for managing Azure Dev
 ```
 C:\Git\AzureDevOpsDsc\
 ├── source\
-│   ├── Classes\                          # DSC resource classes (numbered 001–092)
+│   ├── Classes\                          # DSC resource classes (numbered 001–116)
 │   ├── Enum\                             # PowerShell enums used across the module
 │   └── Modules\
 │       └── AzureDevOpsDsc.Common\
@@ -51,13 +53,22 @@ All DSC resources live in `source\Classes\` with numeric prefixes controlling lo
 | `001.AuthenticationToken.ps1` | `AuthenticationToken` | Base token class |
 | `002.PersonalAccessToken.ps1` | `PersonalAccessToken` | PAT; `.Get()` has call-stack guard |
 | `003.ManagedIdentityToken.ps1` | `ManagedIdentityToken` | MI token |
+| `003b`–`003e` | `ServicePrincipalToken`, `CertificateToken`, `AzureCliToken`, `WorkloadIdentityFederationToken` | The other auth types |
 | `004.DscResourceBase.ps1` | `DscResourceBase` | Root base class |
 | `006.AzDevOpsDscResourceBase.ps1` | `AzDevOpsDscResourceBase` | All resources inherit this |
 | `020.AzDoProject.ps1` | `AzDoProject` | Projects |
-| `042.AzDoAreaPermission.ps1` | `AzDoAreaPermission` | CSS Security Namespace |
-| `043.AzDoIterationPermission.ps1` | `AzDoIterationPermission` | CSS Security Namespace |
-| `069.AzDoPipelinePermission.ps1` | `AzDoPipelinePermission` | CSS Security Namespace |
+| `042.AzDoAreaPermission.ps1` | `AzDoAreaPermission` | `CSS` namespace |
+| `043.AzDoIterationPermission.ps1` | `AzDoIterationPermission` | `Iteration` namespace |
+| `069.AzDoPipelinePermission.ps1` | `AzDoPipelinePermission` | `Build` namespace |
 | `092.AzDoCheckConfiguration.ps1` | `AzDoCheckConfiguration` | Approval checks on environments |
+| `101`–`103` | `AzDoQueryFolder`, `AzDoWorkItemQuery`, `AzDoQueryPermission` | Shared work item queries; `WorkItemQueryFolders` namespace |
+| `104.AzDoWIPTagHygiene.ps1` | `AzDoWIPTagHygiene` | Detects/merges misaligned work item tags |
+| `105`–`106` | `AzDoSecureFile`, `AzDoSecureFilePermission` | Secure files; `Library` namespace |
+| `107`–`108` | `AzDoPipelineFolder`, `AzDoPipelineFolderPermission` | Pipeline folder tree; `Build` namespace (folder token form) |
+| `109`–`110` | `AzDoGroupEntitlement`, `AzDoServicePrincipalEntitlement` | Licensing at scale |
+| `111`–`116` | `AzDoPicklist`, `AzDoProcessWorkItemType`, `AzDoProcessField`, `AzDoProcessState`, `AzDoProcessRule`, `AzDoProcessBehavior` | Inherited-process customization |
+
+There are currently **65** `[DscResource()]` classes. `docs/ResourceRoadmap.md` is the plan of record for what is implemented and what is still outstanding.
 
 The `Construct()` method (in `AzDevOpsDscResourceBase`) runs at `new()` time, reads `ModuleSettings.clixml`, and sets `$Global:DSCAZDO_AuthenticationToken` and `$Global:DSCAZDO_OrganizationName`.
 
@@ -111,6 +122,38 @@ Public resource functions are in `source\Modules\AzureDevOpsDsc.Common\Resources
 ### 5. CSS Security Namespace performance
 `AzDoAreaPermission`, `AzDoIterationPermission`, and `AzDoPipelinePermission` scan all org-level ACLs. Each test for these resources takes 200–400 seconds.
 
+### 6. ACL tokens are built and parsed by separate functions
+A security token passes through three functions, and they have to agree:
+`New-ACLToken` parses a resource-side token name into a structured token, `ConvertTo-FormattedToken`
+builds the API token string from it, and `Parse-ACLToken` reads what the API returns back into the
+same structure. If the build and parse directions disagree, a permission written by `Set()` never
+matches the ACL read by `Get()` and the resource reports drift forever. Add a round-trip test
+whenever a namespace is added.
+
+Namespace patterns live in `LocalizedData/000.LocalizedDataAzACLTokenPatten.ps1` (API-side token
+shapes) and `001.LocalizedDataAzResourceTokenPatten.ps1` (resource-side names). They are *not*
+interchangeable: the API addresses objects by id, the resource side by name.
+
+### 7. PowerShell unrolls a single-element array on return
+A function returning a one-element array hands the caller the bare element, so `.Count` on a lone
+hashtable result gives its **key count**, not `1`. No cast avoids this. The convention here is that
+the function returns naturally and callers wrap the call in `@()` — `@(Get-AzDoTagMisalignment ...)`.
+Returning `,@($results)` to dodge it makes every element an array instead, which is worse.
+
+### 8. Only inherited processes can be customized
+The system processes (Agile, Scrum, Basic, CMMI) are read-only. `Resolve-AzDoProcessWorkItemType`
+enforces this for every process customization resource, and has to read the `work/processes` view
+to do it: the `LiveProcesses` cache is built from the classic `_apis/process/processes` endpoint,
+which does not return `customizationType` or `parentProcessTypeId`.
+
+### 9. Compare normalized, store what the user wrote
+Several APIs return a reformatted version of what they were given — WIQL is re-indented and
+re-cased, rule conditions come back as objects with omitted keys filled in as nulls, and paths are
+written several ways. Comparing raw reports drift on every `Test()`. Each case has a pure
+normalizer (`ConvertTo-NormalizedWiql`, `ConvertTo-NormalizedRuleClause`, `Format-AzDoQueryPath`,
+`Format-AzDoPipelineFolderPath`) used **only for comparison** — what gets written back is always
+what the configuration supplied.
+
 ---
 
 ## Auth Helper Pattern for Integration Tests
@@ -153,7 +196,8 @@ $config.Run.Path = '.\tests\Unit\Modules'
 $config.Output.Verbosity = 'Detailed'
 Invoke-Pester -Configuration $config
 
-# Expected: 1611 Passed, 0 Failed, 10 Skipped (as of branch fix/tests-and-code)
+# Current baseline (Windows CI): 2015 Passed, 0 Failed, 10 Skipped.
+# On Linux 31 of those fail for environment reasons - see 'Testing Locally on Linux'.
 ```
 
 ---
@@ -203,7 +247,9 @@ Invoke-Pester -Configuration $config
 ```
 
 The deployed module lands at:
-`C:\Users\<user>\Documents\PowerShell\Modules\AzureDevOpsDsc\0.0.2\`
+`<MyDocuments>\PowerShell\Modules\AzureDevOpsDscNative\<version>\`
+
+`scripts\redeploy-module.ps1` resolves the version from `output\builtModule\AzureDevOpsDscNative\` rather than assuming one.
 
 After editing source files, always rebuild and redeploy before running integration tests — integration tests exercise the **deployed** module, not the source files.
 
@@ -213,18 +259,86 @@ After editing source files, always rebuild and redeploy before running integrati
 
 | File | Enum | Values |
 |------|------|--------|
-| `DSCGetSummaryState.ps1` | `DSCGetSummaryState` | `Changed=0`, `Unchanged=1`, `NotFound=2`, `Error=3` |
+| `DSCGetSummaryState.ps1` | `DSCGetSummaryState` | `Changed=0`, `Unchanged=1`, `NotFound=2`, `Renamed=3`, `Missing=4`, `Error=5` |
 | `Ensure.ps1` | `Ensure` | `Present`, `Absent` |
-| `TokenType.ps1` | `TokenType` | `ManagedIdentity=0`, `PersonalAccessToken=1` |
-| `RequiredAction.ps1` | `RequiredAction` | `None`, `New`, `Set`, `Remove`, `NoChange` |
+| `TokenType.ps1` | `TokenType` | `ManagedIdentity`, `PersonalAccessToken`, `Certificate`, `ServicePrincipal`, `AzureCLI`, `WorkloadIdentityFederation` |
+| `RequiredAction.ps1` | `RequiredAction` | `None`, `Get`, `New`, `Set`, `Remove`, `Test`, `Error` |
 | `DescriptorType.ps1` | `DescriptorType` | Various ACL descriptor types |
+
+### How `Get` status maps to the action taken
+
+`AzDevOpsDscResourceBase.GetDscRequiredAction()` turns the `status` a `Get-AzDo*` function returns into the function that runs next. Worth knowing before choosing a status:
+
+| `Get` returns `status` | With `Ensure = Present` |
+|---|---|
+| `NotFound` | `New-AzDo*` |
+| `Changed` / `Renamed` | `Set-AzDo*` |
+| `Missing` | `Remove-AzDo*` |
+| `Unchanged` | nothing |
+| `Error` | **`Set-AzDo*`** — an error state does *not* stop the pipeline |
+
+That last row matters: returning `Error` from `Get` still calls `Set`. Any refusal a `Get` decides on has to be repeated in `Set` (usually by checking `$LookupResult.reason`), or it will not hold. `Set-AzDoWIPTagHygiene` and `Set-AzDoPicklist` both do this.
+
+---
+
+## Resource Conventions
+
+Each resource is four public functions in
+`source\Modules\AzureDevOpsDsc.Common\Resources\Functions\Public\<ResourceName>\`, named
+`Get-`, `New-`, `Set-` and `Remove-<ResourceName>`. The base class resolves them by that naming
+convention, so a missing one fails at apply time rather than at author time.
+
+`Get-` returns a hashtable carrying at least `Ensure`, `status` and `propertiesChanged`. Anything
+else it puts there is handed to `New`/`Set`/`Remove` as `$LookupResult`, which is the normal way to
+avoid a second lookup — resolved ids, ACL tokens and reference names are all passed this way.
+
+A few conventions that are easy to get wrong:
+
+- **`Force` is reserved.** `GetDesiredStateParameters()` injects `Force = $true` into every
+  `New`/`Set` parameter set, so a DSC property named `Force` is always true by the time the
+  function sees it. A guard property needs another name — `AllowRecursiveDelete`,
+  `AllowDestructiveRemove`.
+- **Exactly one `[DscProperty(Key)]`.** More than one throws at runtime. Other identifying
+  properties are `[DscProperty(Mandatory)]`.
+- **Only compare what the configuration states.** Use `$PSBoundParameters.ContainsKey(...)` rather
+  than testing for an empty value, so an unspecified property is not read as "must be empty" and
+  does not blank something set in the UI.
+
+---
+
+## Testing Locally on Linux
+
+`.claude/skills/run-azuredevopsdscnative/` drives the suites headless. It installs PowerShell 7 and
+side-loads Pester from nuget.org (PSGallery is proxy-blocked):
+
+```bash
+.claude/skills/run-azuredevopsdscnative/driver.sh              # full Common suite
+.claude/skills/run-azuredevopsdscnative/driver.sh --load-only  # parse/smoke check only
+.claude/skills/run-azuredevopsdscnative/driver.sh <path>       # one file or subtree
+```
+
+**Baseline: 31 failures is correct on Linux.** They are environment-specific — DPAPI SecureStrings,
+cache clixml round-trips and Windows-only namespace fixtures — and all pass on the `windows-latest`
+CI runner. Treat a *delta* from 31 as a regression, not the number itself.
+
+The Classes suite (`azuredevopsdsc.tests.ps1`) and `build.ps1` cannot run in that container: the
+first resolves types via `using module` against the built module, and the second needs Sampler and
+ModuleBuilder from PSGallery. Push and let CI run them.
+
+If `apt-get update` fails on unrelated third-party PPAs, disable the offending files under
+`/etc/apt/sources.list.d/` and retry — the driver's PowerShell install needs a clean `apt update`.
 
 ---
 
 ## Branch
 
-Active development branch: `fix/tests-and-code`
+Active development branch: `resource-add/affectionate-tesla-citwbm`
 
-The commit `a7b538d` on this branch resolved all unit test failures and most integration test failures (53 files changed, 569 insertions, 255 deletions). Key fixes included:
-- `AzDoAreaPermission`: fixed null AreaPath early-return and token construction
-- `AzDoGroupPermission`, `AzDoOrganizationSettings`, `AzDoCheckConfiguration`, `AzDoWiki`: replaced `Invoke-AzDevOpsApiRestMethod` calls with `New-RestAuthHeader` + `Invoke-RestMethod` and switched org-name source from global to clixml read
+The `resource-add/` prefix is load-bearing: `integration-tests.yml` runs the live-organization
+suite on pull requests from branches with that prefix. Any other prefix leaves the suite
+dispatch-only.
+
+Recent work added 16 resources (classes `101`–`116`) covering work item queries, tag hygiene,
+secure files, pipeline folders, entitlements and inherited-process customization, plus ACL token
+support for the `WorkItemQueryFolders` namespace, the `SecureFile` form of `Library` and the folder
+form of `Build`. See `CHANGELOG.md` for the detail and `docs/ResourceRoadmap.md` for what is left.

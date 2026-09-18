@@ -1,6 +1,20 @@
 <#
 .SYNOPSIS
     DSC resource for managing Azure DevOps deployment groups.
+.DESCRIPTION
+    This resource manages Azure DevOps deployment groups, which are collections of physical or
+    virtual machines used as deployment targets for classic release pipelines. Agents installed on
+    these machines register with the deployment group to receive deployments.
+
+.PARAMETER ProjectName
+    The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+
+.PARAMETER DeploymentGroupName
+    The name of the deployment group. This is a key property.
+
+.PARAMETER Description
+    An optional description for the deployment group.
+
 #>
 
 [DscResource()]
