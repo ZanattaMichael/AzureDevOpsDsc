@@ -163,6 +163,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Documentation
+  - `docs/ResourceRoadmap.md` brought back in line with `main`. The 16 resources
+    merged in #62 (classes `101`-`116`) were still written up as unbuilt work, and
+    the coverage counts in section 1 predated them. Shipped sections are now marked
+    as such and kept as the design record, with the points where the implementation
+    diverged from the plan called out; the ACL token table records the shapes
+    actually produced by `ConvertTo-FormattedToken`; and the order of work is
+    rewritten around what is genuinely left.
+
 - AzureDevOpsDscNative
   - The ten permission resources that still formatted a whole security namespace
     before narrowing to one token now discard the ACLs they cannot be interested in
@@ -482,6 +491,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - AzureDevOpsDscNative
+  - Fixed every live `dsc resource get/set/test` call in the DSC v3 integration
+    suite failing with `Cannot convert the "System.Object[]" value ... to type
+    "System.Management.Automation.PSModuleInfo"` - 25 failures across the
+    `AzDoGitRepository`, `AzDoProject` and `AzDoProjectGroup` suites, while
+    discovery (`dsc resource list`) stayed green. `dsc.exe` runs the PowerShell
+    adapter in a child `pwsh` it launches itself, and a `pwsh` started from a
+    parent that is not PowerShell prepends the default module directories to
+    whatever `PSModulePath` it inherited. The runner's profile directory - which
+    holds a hand-installed `DscResource.Common` and whatever
+    `scripts/redeploy-module.ps1` last deployed - therefore came back inside the
+    adapter's session, ahead of the built module, no matter what the workflow set
+    `PSModulePath` to. The adapter imports the built module by `.psm1` path, and
+    the first command only the other copy exports auto-loads it as a second module
+    of the same name; `Invoke-DscCacheRefresh`'s fast path then hands
+    `Get-Module -Name`'s array to a `[PSModuleInfo]` parameter and throws. Listing
+    survived because the slow path it takes de-duplicates by version. The workflow
+    now moves conflicting profile-scope and machine-scope copies aside for the
+    duration of the job and restores them in an `always()` step, and re-asks the
+    single-copy question in a `pwsh` launched through `cmd.exe` - a native parent,
+    as `dsc.exe` is - so the assertion checks the path the adapter actually sees
+    rather than the one this job controls.
   - Fixed the DSC v3 integration workflow failing its own duplicate-module
     assertion before any test ran, with `Module 'DscResource.Common' resolves
     from 2 locations`. The workflow installed Pester with `-Scope CurrentUser`,
