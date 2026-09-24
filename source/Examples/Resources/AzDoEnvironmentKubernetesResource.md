@@ -33,7 +33,7 @@ AzDoEnvironmentKubernetesResource [string] #ResourceName
 
 Unlike VM and deployment group targets, an environment Kubernetes resource is fully creatable through the REST API — it addresses a namespace via a service connection rather than requiring an agent to register itself.
 
-The Kubernetes provider API (`_apis/distributedtask/environments/{id}/providers/kubernetes`) only supports Create, Get/List and Delete — there is no Update. Any drift, including a Tags-only change, is resolved by deleting the existing resource and creating a new one rather than by patching it in place:
+The Kubernetes provider API (`_apis/distributedtask/environments/{id}/providers/kubernetes`) only supports Create, Get (by id) and Delete — there is no List and no Update. The resource finds existing Kubernetes resources by reading the environment with `expands=resourceReferences` and then reading each Kubernetes reference from the provider by id. Any drift, including a Tags-only change, is resolved by deleting the existing resource and creating a new one rather than by patching it in place:
 
 - The resource's id changes on every drift correction. Anything that referred to the old id (approvals, checks scoped to the resource) must be re-applied afterwards.
 - Tag drift is never silently ignored: `Get` reports it as `Changed` and `Set` recreates the resource with the desired tags.

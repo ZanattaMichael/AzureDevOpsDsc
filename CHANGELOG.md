@@ -28,7 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `List-/Set-/Remove-DevOpsEnvironmentVMResource(s)` and
     `List-/Set-/Remove-DevOpsDeploymentGroupTarget(s)`, plus the
     `LiveEnvironmentKubernetesResources`, `LiveEnvironmentVMResources` and
-    `LiveDeploymentGroupTargets` cache types.
+    `LiveDeploymentGroupTargets` cache types. The Kubernetes provider has no list
+    operation, so `List-DevOpsEnvironmentKubernetesResources` reads the
+    environment's resource references and then each Kubernetes resource by id.
   - Added `AzDoQueryFolder`, a resource managing folders in a project's shared work
     item query tree. Folders are declared in their own right so that queries can
     depend on them, rather than each query creating its own ancestry - which would

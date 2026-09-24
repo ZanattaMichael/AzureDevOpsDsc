@@ -3,8 +3,12 @@
 Lists the Kubernetes resources registered against an Azure DevOps pipeline environment.
 
 .DESCRIPTION
-Calls the Kubernetes provider of the distributed task environments API. The provider only
-supports Create, List/Get and Delete - there is no Update.
+The Kubernetes provider of the distributed task environments API has Add, Get (by id) and Delete
+operations only - it has no list operation and no Update. A GET on the provider without an id does
+not list anything, so the resources are found through the environment instead: the environment is
+read with 'expands=resourceReferences', its references of type 'kubernetes' are selected, and each
+one is then read from the provider by id so the caller gets the namespace, cluster name and service
+endpoint that the reference alone does not carry.
 
 .PARAMETER Organization
 The name of the Azure DevOps organization.
@@ -38,12 +42,23 @@ Function List-DevOpsEnvironmentKubernetesResources
         [String]$ApiVersion = '7.1-preview.1'
     )
 
-    $uri = 'https://dev.azure.com/{0}/{1}/_apis/distributedtask/environments/{2}/providers/kubernetes?api-version={3}' -f
-        $Organization, [System.Uri]::EscapeDataString($ProjectName), $EnvironmentId, $ApiVersion
+    $baseUri = 'https://dev.azure.com/{0}/{1}/_apis/distributedtask/environments/{2}' -f
+        $Organization, [System.Uri]::EscapeDataString($ProjectName), $EnvironmentId
 
     try
     {
-        return (Invoke-AzDevOpsApiRestMethod -Uri $uri -Method 'GET').value
+        $environment = Invoke-AzDevOpsApiRestMethod -Uri ('{0}?expands=resourceReferences&api-version={1}' -f $baseUri, $ApiVersion) -Method 'GET'
+
+        # EnvironmentResourceType serializes as a name; 4 is its numeric value, accepted in case a
+        # caller or older server returns the number.
+        $references = @($environment.resources | Where-Object { "$($_.type)" -in @('kubernetes', '4') })
+
+        $resources = foreach ($reference in $references)
+        {
+            Invoke-AzDevOpsApiRestMethod -Uri ('{0}/providers/kubernetes/{1}?api-version={2}' -f $baseUri, $reference.id, $ApiVersion) -Method 'GET'
+        }
+
+        return $resources
     }
     catch
     {
