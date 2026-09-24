@@ -31,13 +31,17 @@ Describe "AzDoOrganizationSettings Policies Integration Tests" -Tag "Integration
             'Policy.ArtifactsExternalPackageProtectionToken'
         )
 
-        # The policy API has no GET route (_apis/OrganizationPolicy/Policies/{name} answers 405),
-        # so read the policies the way the resource does: through the policy page's data
-        # provider, falling back to the page's own data route. Independent of the module's
-        # private functions, which are not loaded in this scope.
+        # The dev.azure.com policy route has no GET (_apis/OrganizationPolicy/Policies/{name}
+        # answers 405), so read the policies the way the resource does: through the policy page's
+        # data provider, then the page's own data route, then per policy from the SPS host.
+        # Independent of the module's private functions, which are not loaded in this scope.
+        # Each route that comes back empty says why, so a failure names the cause.
         function Get-LivePolicies {
+            param([string[]]$PolicyName = $script:ManagedPolicyNames)
+
             $providerId = 'ms.vss-org-web.collection-admin-policy-data-provider'
             $groups     = $null
+            $failures   = @()
             $body = @{
                 contributionIds     = @($providerId)
                 dataProviderContext = @{
@@ -56,30 +60,66 @@ Describe "AzDoOrganizationSettings Policies Integration Tests" -Tag "Integration
                 $response = Invoke-RestMethod -Uri "https://dev.azure.com/$ORGNAME/_apis/Contribution/HierarchyQuery?api-version=5.0-preview.1" `
                     -Method Post -Headers (New-RestAuthHeader) -ContentType 'application/json' -Body $body
                 $groups = $response.dataProviders.$providerId.policies
+                if ($null -eq $groups)
+                {
+                    $exception = $response.dataProviderExceptions.$providerId
+                    $failures += if ($null -ne $exception) { "HierarchyQuery: the data provider failed: $($exception.message)" }
+                                 else { "HierarchyQuery: no policy data (data providers returned: $(@($response.dataProviders.PSObject.Properties.Name) -join ', '))" }
+                }
             }
             catch
             {
-                Write-Warning "[AzDoOrganizationSettings.Policies] HierarchyQuery read failed, trying the page data route: $_"
+                $failures += "HierarchyQuery: $_"
             }
 
             if ($null -eq $groups)
             {
-                $response = Invoke-RestMethod -Uri "https://dev.azure.com/$ORGNAME/_settings/organizationPolicy?__rt=fps&__ver=2" `
-                    -Method Get -Headers (New-RestAuthHeader)
-                $groups = $response.fps.dataProviders.data.$providerId.policies
+                try
+                {
+                    $response = Invoke-RestMethod -Uri "https://dev.azure.com/$ORGNAME/_settings/organizationPolicy?__rt=fps&__ver=2" `
+                        -Method Get -Headers (New-RestAuthHeader)
+                    $groups = $response.fps.dataProviders.data.$providerId.policies
+                    if ($null -eq $groups)
+                    {
+                        $failures += if ($response -is [string]) { 'settings page data: a non-JSON response' }
+                                     else { "settings page data: no policy data (response carried: $(@($response.PSObject.Properties.Name) -join ', '))" }
+                    }
+                }
+                catch
+                {
+                    $failures += "settings page data: $_"
+                }
             }
 
-            if ($null -eq $groups) { throw 'No organization policy data returned by either route.' }
-
-            foreach ($group in $groups.PSObject.Properties)
+            if ($null -ne $groups)
             {
-                foreach ($entry in @($group.Value)) { if ($null -ne $entry.policy) { $entry.policy } }
+                foreach ($group in $groups.PSObject.Properties)
+                {
+                    foreach ($entry in @($group.Value)) { if ($null -ne $entry.policy) { $entry.policy } }
+                }
+                return
+            }
+
+            Write-Warning "[AzDoOrganizationSettings.Policies] Page routes returned no policy data, reading per policy from the SPS host: $($failures -join '; ')"
+            foreach ($name in $PolicyName)
+            {
+                try
+                {
+                    $policy = Invoke-RestMethod -Uri "https://vssps.dev.azure.com/$ORGNAME/_apis/OrganizationPolicy/Policies/$($name)?api-version=5.0-preview.1" `
+                        -Method Get -Headers (New-RestAuthHeader)
+                }
+                catch
+                {
+                    throw "No organization policy data from any route: $($failures -join '; '); SPS policy read ($name): $_"
+                }
+                if ($null -eq $policy.PSObject.Properties['name']) { $policy | Add-Member -NotePropertyName name -NotePropertyValue $name }
+                $policy
             }
         }
 
         function Get-LivePolicyValue {
             param([Parameter(Mandatory)][string]$PolicyName)
-            $policy = Get-LivePolicies | Where-Object { $_.name -eq $PolicyName } | Select-Object -First 1
+            $policy = Get-LivePolicies -PolicyName $PolicyName | Where-Object { $_.name -eq $PolicyName } | Select-Object -First 1
             if ($null -eq $policy) { throw "Policy '$PolicyName' was not returned." }
             $raw = if ($null -ne $policy.PSObject.Properties['effectiveValue'] -and $null -ne $policy.effectiveValue) { $policy.effectiveValue } else { $policy.value }
             if ("$raw" -eq 'true') { 'true' } else { 'false' }

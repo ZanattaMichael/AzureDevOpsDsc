@@ -5,7 +5,7 @@ Azure DevOps `OrganizationPolicy` policy names.
 
 .DESCRIPTION
 Each entry describes one property that is backed by the organization policy API (written via
-`_apis/OrganizationPolicy/Policies/{policyName}`, read via the policy page's data provider) rather
+`_apis/OrganizationPolicy/Policies/{policyName}`, read via the policy page's data provider, or per policy from the SPS host) rather
 than the `_apis/settings/entries/host` mechanism used by the resource's original five properties. The policy names are unverified
 candidates (see issue #84); the integration test reads them from a live organization and fails
 loudly if a name or route is wrong.

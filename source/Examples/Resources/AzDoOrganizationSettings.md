@@ -56,8 +56,15 @@ Policies* page:
 - **Read**: that route has no GET (it answers `405 Method Not Allowed`). The policies are read from the
   page's data provider, `ms.vss-org-web.collection-admin-policy-data-provider`, through
   `_apis/Contribution/HierarchyQuery`, falling back to the page's own data route
-  (`_settings/organizationPolicy?__rt=fps&__ver=2`). All policies come back in one call. The value
-  compared is the policy's `effectiveValue` (what is in force), falling back to `value`.
+  (`_settings/organizationPolicy?__rt=fps&__ver=2`). All policies come back in one call. Both are the web
+  page's routes and can return no policy data to a service principal or managed identity; when they do,
+  each policy is read on its own from the organization's SPS host
+  (`GET https://vssps.dev.azure.com/{org}/_apis/OrganizationPolicy/Policies/{policyName}`). If every
+  route fails, the error says what each one returned. The value compared is the policy's
+  `effectiveValue` (what is in force), falling back to `value`.
+- **Read failures**: a failed policy read is an error only when the configuration sets a policy property
+  (or `RequestAccessUrl`). A configuration that manages only the host settings above gets a warning
+  instead, and its host settings are still compared, so it never depends on the policy read.
 
 ### Tri-state policy properties
 

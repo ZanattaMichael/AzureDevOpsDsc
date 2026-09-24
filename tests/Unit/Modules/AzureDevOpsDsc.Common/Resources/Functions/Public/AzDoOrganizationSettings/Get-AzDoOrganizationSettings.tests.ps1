@@ -204,9 +204,48 @@ Describe "Get-AzDoOrganizationSettings" -Tag "Unit", "OrganizationSettings" {
             Mock -CommandName Get-DevOpsOrganizationPolicy -MockWith {
                 New-LivePolicyList | Where-Object { $_.name -ne 'Policy.ArtifactsExternalPackageProtectionToken' }
             }
-            $result = Get-AzDoOrganizationSettings -OrganizationName 'TestOrganization'
+            $result = Get-AzDoOrganizationSettings -OrganizationName 'TestOrganization' -EnableArtifactsFeedUpstreamProtection 'true'
             $result.status | Should -Be 'Error'
             Assert-MockCalled -CommandName Write-Warning -ParameterFilter { $Message -like '*Policy.ArtifactsExternalPackageProtectionToken*' }
+        }
+    }
+
+    Context "when the organization policies cannot be read" {
+        BeforeEach {
+            Mock -CommandName Get-DevOpsOrganizationSettings -MockWith {
+                return @{ 'Microsoft.VisualStudio.Services.EnablePublicProjects' = 'false' }
+            }
+            Mock -CommandName Get-DevOpsOrganizationPolicy -MockWith { throw 'policy read boom' }
+        }
+
+        It "asks for exactly the mapped policies, so the per-policy route can be used" {
+            $null = Get-AzDoOrganizationSettings -OrganizationName 'TestOrganization'
+            Assert-MockCalled -CommandName Get-DevOpsOrganizationPolicy -Times 1 -Exactly -ParameterFilter {
+                ($PolicyName -join ',') -eq 'Policy.EnforceAADConditionalAccess,Policy.LogAuditEvents,Policy.AllowTeamAdminsInvitationsAccessToken,Policy.AllowRequestAccessToken,Policy.ArtifactsExternalPackageProtectionToken'
+            }
+        }
+
+        It "still compares the host settings, with a warning, when no policy is configured" {
+            $result = Get-AzDoOrganizationSettings -OrganizationName 'TestOrganization' -AllowPublicProjects $false
+            $result.status | Should -Be 'Unchanged'
+            Assert-MockCalled -CommandName Write-Warning -ParameterFilter { $Message -like '*none is configured*policy read boom*' }
+        }
+
+        It "reports a host setting change when no policy is configured" {
+            $result = Get-AzDoOrganizationSettings -OrganizationName 'TestOrganization' -AllowPublicProjects $true
+            $result.status | Should -Be 'Changed'
+            $result.propertiesChanged | Should -Contain 'AllowPublicProjects'
+        }
+
+        It "returns status Error when a policy is configured" {
+            $result = Get-AzDoOrganizationSettings -OrganizationName 'TestOrganization' -LogAuditEvents 'true'
+            $result.status | Should -Be 'Error'
+            Assert-MockCalled -CommandName Write-Warning -ParameterFilter { $Message -like '*Could not retrieve settings*policy read boom*' }
+        }
+
+        It "returns status Error when only RequestAccessUrl is configured" {
+            $result = Get-AzDoOrganizationSettings -OrganizationName 'TestOrganization' -RequestAccessUrl 'https://contoso.example/request'
+            $result.status | Should -Be 'Error'
         }
     }
 }

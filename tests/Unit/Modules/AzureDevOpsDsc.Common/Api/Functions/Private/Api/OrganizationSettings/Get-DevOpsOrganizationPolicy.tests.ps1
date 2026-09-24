@@ -97,15 +97,86 @@ Describe 'Get-DevOpsOrganizationPolicy' -Tag "Unit", "OrganizationSettings", "AP
         }
     }
 
-    Context 'when neither route returns policy data' {
+    Context 'when neither page route returns policy data' {
         BeforeEach {
             Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { throw 'hierarchy boom' } -ParameterFilter { $Method -eq 'POST' }
             Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { '<html>sign in</html>' } -ParameterFilter { $Method -eq 'GET' }
         }
 
-        It 'throws, naming what failed' {
+        It 'throws, naming what each route returned' {
             { Get-DevOpsOrganizationPolicy -ApiUri 'https://dev.azure.com/myorg/' } |
-                Should -Throw '*Failed to retrieve organization policies*hierarchy boom*'
+                Should -Throw '*Failed to retrieve organization policies*hierarchy boom*non-JSON response*'
+        }
+
+        It 'does not try the per-policy route when no policy name is given' {
+            { Get-DevOpsOrganizationPolicy -ApiUri 'https://dev.azure.com/myorg/' } | Should -Throw
+            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 0 -Exactly -ParameterFilter {
+                $ApiUri -like '*_apis/OrganizationPolicy/Policies*'
+            }
+        }
+    }
+
+    Context 'when the data provider reports an exception' {
+        BeforeEach {
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith {
+                ConvertFrom-Json -InputObject '{ "dataProviders": {}, "dataProviderExceptions": { "ms.vss-org-web.collection-admin-policy-data-provider": { "message": "provider says no" } } }'
+            } -ParameterFilter { $Method -eq 'POST' }
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { ConvertFrom-Json -InputObject '{ "fps": {} }' } -ParameterFilter { $Method -eq 'GET' }
+        }
+
+        It 'names the data provider exception and what the page route carried' {
+            { Get-DevOpsOrganizationPolicy -ApiUri 'https://dev.azure.com/myorg/' } |
+                Should -Throw '*the data provider failed: provider says no*settings page data: no policy data (response carried: fps)*'
+        }
+    }
+
+    Context 'when neither page route returns policy data and policy names are given' {
+        BeforeEach {
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { throw 'hierarchy boom' } -ParameterFilter { $Method -eq 'POST' }
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { '<html>sign in</html>' } -ParameterFilter {
+                $Method -eq 'GET' -and $ApiUri -like '*_settings/organizationPolicy*'
+            }
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith {
+                [PSCustomObject]@{ value = $true; effectiveValue = $true }
+            } -ParameterFilter { $Method -eq 'GET' -and $ApiUri -like 'https://vssps.dev.azure.com/myorg/_apis/OrganizationPolicy/Policies/*' }
+        }
+
+        It 'reads each named policy from the SPS host' {
+            $result = @(Get-DevOpsOrganizationPolicy -ApiUri 'https://dev.azure.com/myorg/' -PolicyName 'Policy.LogAuditEvents', 'Policy.AllowRequestAccessToken')
+            $result.Count | Should -Be 2
+            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -Exactly -ParameterFilter {
+                $ApiUri -eq 'https://vssps.dev.azure.com/myorg/_apis/OrganizationPolicy/Policies/Policy.LogAuditEvents?api-version=5.0-preview.1' -and $Method -eq 'GET'
+            }
+        }
+
+        It 'names each policy after the one it asked for when the response carries no name' {
+            $result = @(Get-DevOpsOrganizationPolicy -ApiUri 'https://dev.azure.com/myorg/' -PolicyName 'Policy.LogAuditEvents')
+            $result[0].name | Should -Be 'Policy.LogAuditEvents'
+            $result[0].value | Should -BeTrue
+        }
+
+        It 'never GETs the PATCH-only dev.azure.com policy route' {
+            $null = Get-DevOpsOrganizationPolicy -ApiUri 'https://dev.azure.com/myorg/' -PolicyName 'Policy.LogAuditEvents'
+            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 0 -Exactly -ParameterFilter {
+                $ApiUri -like 'https://dev.azure.com/*_apis/OrganizationPolicy/Policies*'
+            }
+        }
+    }
+
+    Context 'when every route fails' {
+        BeforeEach {
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { throw 'hierarchy boom' } -ParameterFilter { $Method -eq 'POST' }
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { '<html>sign in</html>' } -ParameterFilter {
+                $Method -eq 'GET' -and $ApiUri -like '*_settings/organizationPolicy*'
+            }
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { throw 'sps boom' } -ParameterFilter {
+                $Method -eq 'GET' -and $ApiUri -like '*vssps.dev.azure.com*'
+            }
+        }
+
+        It 'throws, keeping every route''s reason' {
+            { Get-DevOpsOrganizationPolicy -ApiUri 'https://dev.azure.com/myorg/' -PolicyName 'Policy.LogAuditEvents' } |
+                Should -Throw '*hierarchy boom*non-JSON response*SPS policy read (Policy.LogAuditEvents): sps boom*'
         }
     }
 }
