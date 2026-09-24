@@ -113,6 +113,30 @@ Function Get-AzDoBranchPolicy
 
     $policy = Get-CacheItem -Key $cacheKey -Type 'LiveBranchPolicies'
 
+    if ($policy)
+    {
+        # A cache hit only proves the policy existed as of some earlier lookup or Set() - it says
+        # nothing about whether it has since drifted via a change made outside of DSC (directly
+        # through the API, the portal, etc.). Re-fetch by id and prefer the live copy so Test()
+        # can still see that drift; a stale-but-present policy is a materially better fallback
+        # than treating a transient API failure here as "not found", so any error here is logged
+        # and the cached value is kept rather than propagated.
+        try
+        {
+            $OrgName = Get-AzDoOrganizationName
+            $refreshed = Get-DevOpsBranchPolicy -ApiUri "https://dev.azure.com/$OrgName" -ProjectName $ProjectName -PolicyId $policy.id
+            if ($refreshed)
+            {
+                $policy = $refreshed
+                Add-CacheItem -Key $cacheKey -Value $policy -Type 'LiveBranchPolicies'
+            }
+        }
+        catch
+        {
+            Write-Verbose "[Get-AzDoBranchPolicy] Live refresh of cached policy '$($policy.id)' failed, using cached value: $_"
+        }
+    }
+
     if (-not $policy)
     {
         Write-Verbose "[Get-AzDoBranchPolicy] Policy not in cache — falling back to live API lookup."

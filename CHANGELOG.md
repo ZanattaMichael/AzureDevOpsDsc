@@ -181,6 +181,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     written back is always the configuration's own value), so an int the API reads
     back as a double, or a nested settings object read back as a `PSCustomObject`,
     is not read as drift ([issue #74](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/74)).
+  - Fixed `Get-AzDoBranchPolicy` reporting `Unchanged` for a policy mutated outside
+    of DSC (directly via the REST API or the portal) as long as that policy stayed
+    in the `LiveBranchPolicies` cache. A cache hit was used for comparison as-is,
+    with no re-check against the API; a live refresh is now stale only until some
+    unrelated `Set()`/`New()`/`Remove()` happened to touch that cache entry. `Get-`
+    now re-fetches a cached policy by id through the new `Get-DevOpsBranchPolicy`
+    and prefers that live copy for comparison, falling back to the cached value if
+    the refresh call fails so a transient API error does not turn into a false
+    "not found".
   - `AzDoBranchPolicy` now supports several policies of the same `PolicyType` on
     one branch (two build validation policies pointing at different pipelines,
     several status checks) via the new optional `PolicyIdentifier` property, which

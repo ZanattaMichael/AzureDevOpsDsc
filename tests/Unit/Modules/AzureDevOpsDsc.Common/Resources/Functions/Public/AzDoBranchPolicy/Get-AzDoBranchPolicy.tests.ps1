@@ -28,8 +28,18 @@ Describe "Get-AzDoBranchPolicy" -Tag "Unit", "BranchPolicy" {
         . (Get-FunctionItem 'ConvertTo-NormalizedPolicySettingValue.ps1').FullName
         . (Get-FunctionItem 'Test-AzDoBranchPolicyScopeMatch.ps1').FullName
         . (Get-FunctionItem 'Test-AzDoBranchPolicyIdentifierMatch.ps1').FullName
+        . (Get-FunctionItem 'Get-DevOpsBranchPolicy.ps1').FullName
         # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
         Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
+    }
+
+    BeforeEach {
+        # Default: no live refresh available for a cache hit, so a Context that only mocks
+        # Get-CacheItem (and does not care about drift made outside of DSC) keeps behaving
+        # exactly as it did before the refresh-on-cache-hit lookup was added - $policy falls
+        # back to the cached value untouched. Contexts that exercise the refresh itself
+        # override this per-It.
+        Mock -CommandName Get-DevOpsBranchPolicy -MockWith { return $null }
     }
 
     Context "when the branch policy exists in cache" {
@@ -63,6 +73,84 @@ Describe "Get-AzDoBranchPolicy" -Tag "Unit", "BranchPolicy" {
             $result = Get-AzDoBranchPolicy -ProjectName 'TestProject' -RepositoryName 'TestRepo' `
                 -BranchName 'main' -PolicyType 'RequiredReviewers'
             $result.liveCache | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "when a cached policy is refreshed against the live API before comparison" {
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                return @{
+                    id       = 'mock-policy-id'
+                    isEnabled  = $true
+                    isBlocking = $true
+                    settings   = @{ minimumApproverCount = 1 }
+                }
+            }
+            Mock -CommandName Add-CacheItem -MockWith { }
+        }
+
+        It "reports drift detected only by the live refresh, not visible in the stale cached value" {
+            Mock -CommandName Get-DevOpsBranchPolicy -MockWith {
+                return @{
+                    id         = 'mock-policy-id'
+                    isEnabled  = $true
+                    isBlocking = $true
+                    settings   = @{ minimumApproverCount = 3 }
+                }
+            }
+
+            $result = Get-AzDoBranchPolicy -ProjectName 'TestProject' -RepositoryName 'TestRepo' `
+                -BranchName 'main' -PolicyType 'MinimumReviewerCount' `
+                -PolicySettings @{ minimumApproverCount = 1 }
+
+            $result.status | Should -Be 'Changed'
+            $result.propertiesChanged | Should -Contain 'PolicySettings.minimumApproverCount'
+            $result.liveCache.settings.minimumApproverCount | Should -Be 3
+        }
+
+        It "writes the refreshed policy back to the cache" {
+            Mock -CommandName Get-DevOpsBranchPolicy -MockWith {
+                return @{
+                    id         = 'mock-policy-id'
+                    isEnabled  = $true
+                    isBlocking = $true
+                    settings   = @{ minimumApproverCount = 3 }
+                }
+            }
+
+            $null = Get-AzDoBranchPolicy -ProjectName 'TestProject' -RepositoryName 'TestRepo' `
+                -BranchName 'main' -PolicyType 'MinimumReviewerCount'
+
+            Should -Invoke -CommandName Add-CacheItem -Times 1 -Exactly
+        }
+
+        It "falls back to the cached policy when the live refresh throws" {
+            Mock -CommandName Get-DevOpsBranchPolicy -MockWith { throw 'simulated API failure' }
+
+            $result = $null
+            $caught = $null
+            try
+            {
+                $result = Get-AzDoBranchPolicy -ProjectName 'TestProject' -RepositoryName 'TestRepo' `
+                    -BranchName 'main' -PolicyType 'MinimumReviewerCount' `
+                    -PolicySettings @{ minimumApproverCount = 1 }
+            }
+            catch { $caught = $_ }
+
+            $caught | Should -BeNullOrEmpty
+            $result.status | Should -Be 'Unchanged'
+            $result.liveCache.id | Should -Be 'mock-policy-id'
+        }
+
+        It "falls back to the cached policy when the live refresh returns nothing" {
+            Mock -CommandName Get-DevOpsBranchPolicy -MockWith { return $null }
+
+            $result = Get-AzDoBranchPolicy -ProjectName 'TestProject' -RepositoryName 'TestRepo' `
+                -BranchName 'main' -PolicyType 'MinimumReviewerCount' `
+                -PolicySettings @{ minimumApproverCount = 1 }
+
+            $result.status | Should -Be 'Unchanged'
+            $result.liveCache.id | Should -Be 'mock-policy-id'
         }
     }
 
