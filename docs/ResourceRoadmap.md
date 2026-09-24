@@ -351,7 +351,7 @@ Items from #59 checked against the code:
 | `AzDoWikiPage`, `AzDoElasticPool`, `AzDoDeploymentGroupAgent`, dashboards, delivery plans, analytics | Confirmed gaps, still outstanding. |
 | Classic Release Management (Phase 2 in #59) | Confirmed gap, but **recommend demoting** below Boards/Queries and Process customization. It is a legacy subsystem in maintenance mode, and it is the largest surface on the list (`AzDoReleaseDefinition` alone is comparable in size to `AzDoPipeline`). Value per unit of effort is the lowest of anything proposed. |
 | Test Management (Phase 3 in #59) | Confirmed gap. Genuinely unrepresented, but demand is narrower than queries/dashboards; keep after the §6 gaps. |
-| `AzDoBillingSettings`, `AzDoPatPolicy`, `AzDoExtensionPolicy`, `AzDoAuditLogAlert` | Confirmed gaps, tenant-scoped. Note that several of these APIs are undocumented/preview and may not be stable enough to build a resource on — spike each before committing. |
+| `AzDoBillingSettings`, `AzDoPatPolicy`, `AzDoExtensionPolicy`, `AzDoAuditLogAlert` | **Spiked in [#85](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/85), see [`docs/Spikes/TenantScopedPolicies.md`](Spikes/TenantScopedPolicies.md).** All four verdicts are **unsupported / not built**: `AzDoPatPolicy` and an org-creation-restriction candidate have no documented REST route and the tenant-level halves need a Microsoft Entra tenant-admin identity this module cannot model; `AzDoBillingSettings` is excluded outright because every write is a billing/purchase change; `AzDoExtensionPolicy` has no documented route for the policy toggles (role constraint alone would pass); `AzDoAuditLogAlert` is not a distinct feature and folds into the shipped `AzDoAuditStream` (#69). The org-level "restrict PAT creation" allow-list is a follow-up property for `AzDoOrganizationSettings` once #84 lands, not a tenant policy. |
 
 ---
 
@@ -388,9 +388,9 @@ Still outstanding, in the order below:
   six resources.
 - **Test management** (§7), then **classic release management** (§7) with
   `AzDoReleaseFolder` (§5.5).
-- **Tenant-scoped items** (§7) — `AzDoBillingSettings`, `AzDoPatPolicy`,
-  `AzDoExtensionPolicy`, `AzDoAuditLogAlert`. Spike each first; several of these APIs are
-  undocumented or preview.
+- **Tenant-scoped items** (§7) — **spiked and closed as unsupported/not-built**, see
+  [`docs/Spikes/TenantScopedPolicies.md`](Spikes/TenantScopedPolicies.md) (#85). No
+  resources were built; class prefixes `130`–`131` reserved for the spike are unused.
 
 ---
 
@@ -411,7 +411,8 @@ remains:
 5. **`AzDoWikiPage`** (§6).
 6. **Org-scoped pipeline settings** (§7) — extend `AzDoPipelineSettings`.
 7. Test management, then classic release management, with `AzDoReleaseFolder` (§5.5).
-8. **Tenant-scoped items** (§7), each spiked before it is committed to.
+8. **Tenant-scoped items** (§7) — done: spiked in #85 and closed as unsupported/not-built,
+   see [`docs/Spikes/TenantScopedPolicies.md`](Spikes/TenantScopedPolicies.md).
 
 Per-resource checklist (from `CLAUDE.md`): class in `source/Classes/` with the next numeric
 prefix (continue from `117`), public functions under
