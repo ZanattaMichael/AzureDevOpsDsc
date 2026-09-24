@@ -7,6 +7,12 @@ Fetches the project's live pipeline general settings and compares only the setti
 specified (via PSBoundParameters) against the live values, reporting drift. Unspecified settings are left
 untouched.
 
+Also reads the organization-level pipeline settings (managed by AzDoOrgPipelineSettings). When an
+org-level policy forces one of these switches ON, Azure DevOps locks it in every project and rejects
+or ignores a project-level PATCH turning it back off. A managed setting that is desired 'false' while
+the org forces it 'true' is excluded from drift (it can never converge) and listed in LockedProperties,
+with a warning naming it.
+
 .PARAMETER ProjectName
 The name of the Azure DevOps project.
 
@@ -66,23 +72,13 @@ function Get-AzDoPipelineSettings
     Write-Verbose "[Get-AzDoPipelineSettings] Started."
 
     $OrganizationName = (Get-AzDoOrganizationName)
-
-    # Map DSC property names to the API's camelCase field names.
-    $settingMap = [ordered]@{
-        EnforceJobAuthScope              = 'enforceJobAuthScope'
-        EnforceJobAuthScopeForReleases   = 'enforceJobAuthScopeForReleases'
-        EnforceReferencedRepoScopedToken = 'enforceReferencedRepoScopedToken'
-        EnforceSettableVar               = 'enforceSettableVar'
-        PublishPipelineMetadata          = 'publishPipelineMetadata'
-        StatusBadgesArePrivate           = 'statusBadgesArePrivate'
-        DisableClassicPipelineCreation   = 'disableClassicPipelineCreation'
-        DisableImpliedYAMLCiTrigger      = 'disableImpliedYAMLCiTrigger'
-    }
+    $settingMap       = Get-AzDoPipelineSettingsMap
 
     $result = @{
         Ensure            = [Ensure]::Present
         ProjectName       = $ProjectName
         propertiesChanged = @()
+        LockedProperties  = @()
         status            = $null
     }
 
@@ -94,30 +90,31 @@ function Get-AzDoPipelineSettings
         return $result
     }
 
-    $changed = @()
-    foreach ($dscName in $settingMap.Keys)
-    {
-        $apiName    = $settingMap[$dscName]
-        $liveString = if ($dscName -eq 'DisableClassicPipelineCreation')
-        {
-            # 'disableClassicPipelineCreation' can't actually be set (see Set-AzDoPipelineSettings), so
-            # compare against the two fields that really drive it - true only when both are true.
-            if ([bool]$live.disableClassicBuildPipelineCreation -and [bool]$live.disableClassicReleasePipelineCreation) { 'true' } else { 'false' }
-        }
-        else
-        {
-            if ([bool]$live.$apiName) { 'true' } else { 'false' }
-        }
-        $result[$dscName] = $liveString
+    $liveState = ConvertTo-AzDoPipelineSettingsLiveState -Live $live -SettingMap $settingMap
+    foreach ($dscName in $settingMap.Keys) { $result[$dscName] = $liveState[$dscName] }
 
-        # Only compare settings the caller is managing (set to 'true'/'false'); '' means unmanaged.
-        $desired = [string]$PSBoundParameters[$dscName]
-        if (($desired -ne '') -and ($liveString -ne $desired))
+    # Detect settings that an organization-level policy forces on and locks, so they are never
+    # compared as drift a project-level Set() cannot fix (see AzDoOrgPipelineSettings).
+    $locked  = @()
+    $orgLive = Get-DevOpsOrgPipelineSettings -Organization $OrganizationName
+    if ($null -ne $orgLive)
+    {
+        $orgLiveState = ConvertTo-AzDoPipelineSettingsLiveState -Live $orgLive -SettingMap $settingMap
+        $locked = @(Get-AzDoLockedPipelineSettings -OrgLiveState $orgLiveState -BoundParameters $PSBoundParameters -SettingNames @($settingMap.Keys))
+        foreach ($name in $locked)
         {
-            $changed += $dscName
+            Write-Warning "[Get-AzDoPipelineSettings] '$name' is locked ON at organization level and cannot be turned off for project '$ProjectName'. Manage it with AzDoOrgPipelineSettings."
         }
     }
+    else
+    {
+        Write-Verbose "[Get-AzDoPipelineSettings] Could not retrieve organization pipeline settings; skipping org-lock detection."
+    }
 
+    $comparable = @($settingMap.Keys | Where-Object { $locked -notcontains $_ })
+    $changed    = @(Compare-AzDoPipelineSettingsDrift -LiveState $liveState -BoundParameters $PSBoundParameters -SettingNames $comparable)
+
+    $result.LockedProperties  = $locked
     $result.propertiesChanged = $changed
     $result.status = if ($changed.Count -eq 0) { [DSCGetSummaryState]::Unchanged } else { [DSCGetSummaryState]::Changed }
 

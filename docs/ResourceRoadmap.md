@@ -28,7 +28,7 @@ auth and base classes). By subsystem:
 | Work item queries | `AzDoQueryFolder`, `AzDoWorkItemQuery`, `AzDoQueryPermission` |
 | Process customization | `AzDoPicklist`, `AzDoProcessWorkItemType`, `AzDoProcessField`, `AzDoProcessState`, `AzDoProcessRule`, `AzDoProcessBehavior` |
 | Teams | `AzDoTeam`, `AzDoTeamMember`, `AzDoTeamSettings` |
-| Pipelines | `AzDoPipeline`, `AzDoPipelinePermission`, `AzDoPipelineSettings`, `AzDoPipelineEnvironment`, `AzDoEnvironmentApproval`, `AzDoEnvironmentPermission`, `AzDoCheckConfiguration`, `AzDoTaskGroup`, `AzDoAgentPool`, `AzDoAgentPoolPermission`, `AzDoAgentQueue`, `AzDoDeploymentGroup`, `AzDoPipelineFolder`, `AzDoPipelineFolderPermission` |
+| Pipelines | `AzDoPipeline`, `AzDoPipelinePermission`, `AzDoPipelineSettings`, `AzDoOrgPipelineSettings`, `AzDoPipelineEnvironment`, `AzDoEnvironmentApproval`, `AzDoEnvironmentPermission`, `AzDoCheckConfiguration`, `AzDoTaskGroup`, `AzDoAgentPool`, `AzDoAgentPoolPermission`, `AzDoAgentQueue`, `AzDoDeploymentGroup`, `AzDoPipelineFolder`, `AzDoPipelineFolderPermission` |
 | Library / connections | `AzDoVariableGroup`, `AzDoVariableGroupPermission`, `AzDoServiceConnection`, `AzDoServiceConnectionPermission`, `AzDoSecureFile`, `AzDoSecureFilePermission` |
 | Artifacts | `AzDoArtifactFeed`, `AzDoArtifactFeedPermission`, `AzDoArtifactFeedSettings`, `AzDoArtifactFeedView` |
 | Wiki | `AzDoWiki` |
@@ -338,7 +338,7 @@ Items from #59 checked against the code:
 
 | #59 item | Finding |
 |---|---|
-| `AzDoOrgPipelineSettings`, `...JobAuthorizationScope`, `...ArtifactsRetention` | **Partially covered.** `AzDoPipelineSettings` already exposes `EnforceJobAuthScope`, `EnforceJobAuthScopeForReleases`, `EnforceReferencedRepoScopedToken`, `EnforceSettableVar`, `PublishPipelineMetadata`, `StatusBadgesArePrivate`, `DisableClassicPipelineCreation`, `DisableImpliedYAMLCiTrigger` — but scoped to `ProjectName`. The gap is the **org-scoped** equivalent, not the settings themselves. Extend the existing resource with an org scope, or add one `AzDoOrgPipelineSettings`; do not add six separate resources. |
+| `AzDoOrgPipelineSettings`, `...JobAuthorizationScope`, `...ArtifactsRetention` | **Closed** (#83). Shipped as class `128`, `AzDoOrgPipelineSettings`, keyed by `OrganizationName` against `_apis/build/generalsettings` with no project segment. **Option B** was chosen over extending `AzDoPipelineSettings` with an optional org scope: a separate class, modeled on `AzDoOrganizationSettings`'s org-Key convention, keeps each resource to exactly one Key property and keeps `LockedProperties` semantics (below) unambiguous — an org-scoped `Get` never needs to know whether it is also being asked to act like a project. The two resources share their compare/patch logic through new private helpers rather than duplicating it. `AzDoPipelineSettings` gained an organization-lock check: a switch forced on at org level is excluded from the project's drift, listed in `LockedProperties`, warned about, and never PATCHed by `Set`. Three org-only switches from #83 — disabling classic release pipeline creation, marketplace tasks and built-in/in-box tasks — are **deferred**: this work was done without access to a live organization to confirm their exact `generalsettings` JSON keys, and CLAUDE.md's "do not invent keys" rule applies. Confirm the keys against a live org before adding them. |
 | `AzDoOrganizationPolicy` | **Overlaps** `AzDoOrganizationSettings` (`AllowPublicProjects`, `AllowExternalGuestAccess`, `EnableOAuthAuthentication`, `EnableSSHAuthentication`, `DisallowAadGuestUserPolicy`). Extend it rather than adding a resource. |
 | `AzDoRepositoryDefaultBranch`, `AzDoForkPolicy` | **Already covered** by `AzDoRepositorySettings` (`DefaultBranch`, `DisableForking`, `AllowSquashMerge`, `AllowRebaseMerge`, `AllowNoFastForward`). Drop both. |
 | `AzDoCommitStatusPolicy`, `AzDoPullRequestPolicySettings` | **Verify against `AzDoBranchPolicy`** before starting — likely expressible as policy types there rather than as new resources. |
@@ -384,8 +384,10 @@ Still outstanding, in the order below:
   `AzDoBoardSettings`, `AzDoCardRule`. The `Dashboards` and `Plan` ACL namespaces are
   still unimplemented (§2).
 - **Remaining §6 gaps** — `AzDoElasticPool`, `AzDoBuildRetentionSettings`, `AzDoWikiPage`.
-- **Org-scoped pipeline settings** (§7) — extend `AzDoPipelineSettings` rather than adding
-  six resources.
+- **Org-scoped pipeline settings** (§7) — **closed** (#83) as `AzDoOrgPipelineSettings`
+  (class `128`). Three org-only switches (classic release pipeline creation, marketplace
+  tasks, built-in/in-box tasks) remain deferred pending a live-org spike to confirm their
+  JSON keys.
 - **Test management** (§7), then **classic release management** (§7) with
   `AzDoReleaseFolder` (§5.5).
 - **Tenant-scoped items** (§7) — `AzDoBillingSettings`, `AzDoPatPolicy`,
@@ -409,7 +411,7 @@ remains:
    `AzDoDeliveryPlan`.
 4. **Board configuration** (§6) — `AzDoBoardColumn`, `AzDoBoardSettings`, `AzDoCardRule`.
 5. **`AzDoWikiPage`** (§6).
-6. **Org-scoped pipeline settings** (§7) — extend `AzDoPipelineSettings`.
+6. **Org-scoped pipeline settings** (§7) — **closed** (#83) as `AzDoOrgPipelineSettings`.
 7. Test management, then classic release management, with `AzDoReleaseFolder` (§5.5).
 8. **Tenant-scoped items** (§7), each spiked before it is committed to.
 

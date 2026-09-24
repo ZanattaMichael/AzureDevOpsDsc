@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - AzureDevOpsDscNative
+  - Added `AzDoOrgPipelineSettings` (#83), a resource managing the organization-scoped
+    pipeline settings at `_apis/build/generalsettings` (no project segment), keyed by
+    `OrganizationName`. It exposes the same eight tri-state switches as the
+    project-scoped `AzDoPipelineSettings`, sharing their comparison and PATCH logic
+    through new private helpers (`Get-AzDoPipelineSettingsMap`,
+    `ConvertTo-AzDoPipelineSettingsLiveState`, `Compare-AzDoPipelineSettingsDrift`,
+    `ConvertTo-AzDoPipelineSettingsPatch`, `Get-AzDoLockedPipelineSettings`) rather
+    than duplicating them (Option B from the design discussion on #83: a separate
+    class modeled on `AzDoOrganizationSettings`'s org-Key convention, instead of
+    overloading `AzDoPipelineSettings` with an optional `ProjectName`, so the two
+    resources keep one Key property each and their own `LockedProperties` semantics
+    stay unambiguous). The three org-only switches named in #83 - disabling classic
+    release pipeline creation, disabling marketplace tasks and disabling built-in/
+    in-box tasks - are deferred: this container cannot reach a live organization to
+    confirm their exact `generalsettings` JSON keys, and inventing them would risk
+    silently PATCHing the wrong field. See `docs/ResourceRoadmap.md` for the plan to
+    add them once confirmed against a live org.
+  - Added an organization-lock check to `AzDoPipelineSettings`: when a switch is
+    forced on by the organization-level settings, the project-scoped `Get` now
+    excludes it from drift, lists it in a new `LockedProperties` result field and
+    emits a `Write-Warning`, and `Set` never PATCHes a property listed there. Without this, a project desiring the switch off would
+    report drift forever and `Set` would fail every apply against an org that has
+    already locked it on.
   - Added `AzDoQueryFolder`, a resource managing folders in a project's shared work
     item query tree. Folders are declared in their own right so that queries can
     depend on them, rather than each query creating its own ancestry - which would

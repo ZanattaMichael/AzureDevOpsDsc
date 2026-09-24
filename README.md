@@ -178,6 +178,7 @@ Each resource links to its example/usage documentation.
 | [AzDoSecureFile](source/Examples/Resources/AzDoSecureFile.md) | Manages secure files (certificates, keystores) available to pipelines. |
 | [AzDoServiceConnection](source/Examples/Resources/AzDoServiceConnection.md) | Creates and manages service connections (service endpoints). |
 | [AzDoPipelineSettings](source/Examples/Resources/AzDoPipelineSettings.md) | Manages a project's pipeline general settings (job auth scope, settable variables, etc.). |
+| [AzDoOrgPipelineSettings](source/Examples/Resources/AzDoOrgPipelineSettings.md) | Manages the same pipeline general settings at organization scope; a switch forced on here locks the matching `AzDoPipelineSettings` property at project scope. |
 
 ### Boards and work items
 
