@@ -1,13 +1,4 @@
-# Test if the class is defined
-if ($null -eq $Global:ClassesLoaded)
-{
-    # Attempt to find the root of the repository
-    $RepositoryRoot = (Get-Item -Path $PSScriptRoot).Parent.Parent.Parent.Parent.FullName
-    # Load the Dependencies
-    . "$RepositoryRoot\azuredevopsdsc.tests.ps1" -LoadModulesOnly
-}
 using module AzureDevOpsDscNative
-
 
 Describe "[AzDevOpsDscResourceBase]::ExportDscResourceInstances() Tests" -Tag "Unit", "AzDevOpsDscResourceBase", "Export" {
 
@@ -27,12 +18,20 @@ Describe "[AzDevOpsDscResourceBase]::ExportDscResourceInstances() Tests" -Tag "U
             }
         }
 
-        function Export-ExportDscResourceInstancesExampleA
-        {
-            return @(
-                @{ Ensure = 'Present'; Name = 'One'; Description = 'First' },
-                @{ Ensure = 'Present'; Name = 'Two'; Description = 'Second' }
-            )
+        # The exporter is resolved from the class module's scope, which sees global functions but
+        # not this file's - and code directly in a Context body runs only during discovery.
+        BeforeAll {
+            function global:Export-ExportDscResourceInstancesExampleA
+            {
+                return @(
+                    @{ Ensure = 'Present'; Name = 'One'; Description = 'First' },
+                    @{ Ensure = 'Present'; Name = 'Two'; Description = 'Second' }
+                )
+            }
+        }
+
+        AfterAll {
+            Remove-Item -Path 'Function:\Export-ExportDscResourceInstancesExampleA' -ErrorAction SilentlyContinue
         }
 
         It 'Should not throw' {
@@ -58,7 +57,7 @@ Describe "[AzDevOpsDscResourceBase]::ExportDscResourceInstances() Tests" -Tag "U
         }
 
         It 'Should ignore a key on the returned hashtable that is not a property of the class' {
-            function Export-ExportDscResourceInstancesExampleA
+            function global:Export-ExportDscResourceInstancesExampleA
             {
                 return @(
                     @{ Ensure = 'Present'; Name = 'One'; Description = 'First'; NotARealProperty = 'ignored' }
@@ -82,9 +81,15 @@ Describe "[AzDevOpsDscResourceBase]::ExportDscResourceInstances() Tests" -Tag "U
             }
         }
 
-        function Export-ExportDscResourceInstancesExampleEmpty
-        {
-            return @()
+        BeforeAll {
+            function global:Export-ExportDscResourceInstancesExampleEmpty
+            {
+                return @()
+            }
+        }
+
+        AfterAll {
+            Remove-Item -Path 'Function:\Export-ExportDscResourceInstancesExampleEmpty' -ErrorAction SilentlyContinue
         }
 
         It 'Should return an empty array without throwing' {
@@ -133,11 +138,17 @@ Describe "[AzDevOpsDscResourceBase]::ExportDscResourceInstances() Tests" -Tag "U
             }
         }
 
-        function Export-ExportDscResourceInstancesExampleSecret
-        {
-            return @(
-                @{ Ensure = 'Present'; Name = 'One'; ApiToken = 'the-real-secret-value' }
-            )
+        BeforeAll {
+            function global:Export-ExportDscResourceInstancesExampleSecret
+            {
+                return @(
+                    @{ Ensure = 'Present'; Name = 'One'; ApiToken = 'the-real-secret-value' }
+                )
+            }
+        }
+
+        AfterAll {
+            Remove-Item -Path 'Function:\Export-ExportDscResourceInstancesExampleSecret' -ErrorAction SilentlyContinue
         }
 
         It 'Should redact the secret property rather than returning its real value' {
