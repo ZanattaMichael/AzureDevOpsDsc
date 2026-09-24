@@ -15,8 +15,12 @@ Describe "AzDoReleaseDefinitionPermission Integration Tests" -Tag "Integration",
         {
             param([string]$ProjectName, [string]$DefinitionName)
 
+            # A stage must have at least one deployment phase. An agentless ("runOnServer") phase
+            # with no tasks is the smallest valid one: it needs no agent queue. The server assigns
+            # the stage's deployStep id itself.
             $body = @{
                 name              = $DefinitionName
+                path              = '\'
                 releaseNameFormat = 'Release-$(rev:r)'
                 artifacts         = @()
                 triggers          = @()
@@ -27,14 +31,35 @@ Describe "AzDoReleaseDefinitionPermission Integration Tests" -Tag "Integration",
                         retentionPolicy     = @{ daysToKeep = 30; releasesToKeep = 3; retainBuild = $true }
                         preDeployApprovals  = @{ approvals = @(@{ rank = 1; isAutomated = $true; isNotificationOn = $false }) }
                         postDeployApprovals = @{ approvals = @(@{ rank = 1; isAutomated = $true; isNotificationOn = $false }) }
-                        deployStep          = @{ id = 1 }
-                        deployPhases        = @()
+                        deployPhases        = @(
+                            @{
+                                name            = 'Agentless job'
+                                rank            = 1
+                                phaseType       = 'runOnServer'
+                                workflowTasks   = @()
+                                deploymentInput = @{
+                                    parallelExecution         = @{ parallelExecutionType = 'none' }
+                                    timeoutInMinutes          = 0
+                                    jobCancelTimeoutInMinutes = 1
+                                    condition                 = 'succeeded()'
+                                    overrideInputs            = @{}
+                                }
+                            }
+                        )
                     }
                 )
             } | ConvertTo-Json -Depth 10
 
-            return Invoke-RestMethod -Headers $hdr -Method Post -ContentType 'application/json' -Body $body -Uri (
-                'https://vsrm.dev.azure.com/{0}/{1}/_apis/release/definitions?api-version=7.1' -f $org, $ProjectName)
+            try
+            {
+                return Invoke-RestMethod -Headers $hdr -Method Post -ContentType 'application/json' -Body $body -Uri (
+                    'https://vsrm.dev.azure.com/{0}/{1}/_apis/release/definitions?api-version=7.1' -f $org, $ProjectName)
+            }
+            catch
+            {
+                # Invoke-RestMethod's own message is only the status line; the reason is in the body.
+                throw "[New-TestReleaseDefinition] Failed to create release definition '$DefinitionName' in '$ProjectName': $($_.Exception.Message) $($_.ErrorDetails.Message)"
+            }
         }
 
         function Remove-TestReleaseDefinition
