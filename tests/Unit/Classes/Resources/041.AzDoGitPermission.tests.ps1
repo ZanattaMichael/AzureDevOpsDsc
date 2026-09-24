@@ -98,20 +98,6 @@ Describe 'AzDoGitPermission' -Tag "Unit", "Resources" {
 
             $gitPermission.TagName | Should -Be 'v1.0'
         }
-
-        It 'Should accept BranchName via its Branch alias' {
-            $gitPermission = [AzDoGitPermission]::new()
-            $gitPermission.Branch = 'release/1.0'
-
-            $gitPermission.BranchName | Should -Be 'release/1.0'
-        }
-
-        It 'Should accept TagName via its Tag alias' {
-            $gitPermission = [AzDoGitPermission]::new()
-            $gitPermission.Tag = 'v2.0'
-
-            $gitPermission.TagName | Should -Be 'v2.0'
-        }
     }
 
     Context 'When getting the current state of a branch-scoped Git permission' {

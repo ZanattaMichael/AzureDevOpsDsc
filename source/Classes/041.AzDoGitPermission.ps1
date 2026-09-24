@@ -68,11 +68,9 @@ class AzDoGitPermission : AzDevOpsDscResourceBase
     [System.Boolean]$isInherited=$true
 
     [DscProperty()]
-    [Alias('Branch')]
     [System.String]$BranchName = $null
 
     [DscProperty()]
-    [Alias('Tag')]
     [System.String]$TagName = $null
 
     [DscProperty()]
