@@ -24,6 +24,7 @@ Describe 'New-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
 
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
         Mock -CommandName New-DevOpsVariableGroup   -MockWith { return @{ id = 'new-vg-id'; name = 'TestVG' } }
+        Mock -CommandName Set-DevOpsVariableGroupProjectReferences
         Mock -CommandName Add-CacheItem
         Mock -CommandName Export-CacheObject
         Mock -CommandName Refresh-CacheObject
@@ -102,6 +103,12 @@ Describe 'New-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
             Assert-MockCalled -CommandName Resolve-AzDoSharedProjectReferences -Exactly 0
         }
 
+        It 'Should not attempt to share the group' {
+            New-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG'
+
+            Assert-MockCalled -CommandName Set-DevOpsVariableGroupProjectReferences -Exactly 0
+        }
+
     }
 
     Context 'When SharedWithProjects is specified' {
@@ -125,11 +132,19 @@ Describe 'New-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
             }
         }
 
-        It 'Should pass the resolved references to New-DevOpsVariableGroup' {
+        It 'Should never pass more than the owning reference to New-DevOpsVariableGroup - the create endpoint rejects extra references ("Sharing of variable group is not allowed")' {
             New-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @('Fabrikam')
 
             Assert-MockCalled -CommandName New-DevOpsVariableGroup -Exactly 1 -ParameterFilter {
-                $ProjectReferences.Count -eq 2
+                $null -eq $ProjectReferences
+            }
+        }
+
+        It 'Should share the newly created group with the resolved references via the dedicated share call' {
+            New-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @('Fabrikam')
+
+            Assert-MockCalled -CommandName Set-DevOpsVariableGroupProjectReferences -Exactly 1 -ParameterFilter {
+                $VariableGroupId -eq 'new-vg-id' -and $ProjectReferences.Count -eq 2
             }
         }
 
@@ -140,6 +155,22 @@ Describe 'New-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
 
             Assert-MockCalled -CommandName Write-Error -Exactly 1
             Assert-MockCalled -CommandName New-DevOpsVariableGroup -Exactly 0
+        }
+
+    }
+
+    Context 'When SharedWithProjects resolves to only the owning project' {
+
+        BeforeEach {
+            Mock -CommandName Resolve-AzDoSharedProjectReferences -MockWith {
+                @( @{ projectReference = @{ id = 'p1'; name = 'TestProject' }; name = 'TestVG' } )
+            }
+        }
+
+        It 'Should not call the share endpoint when there is nothing extra to share' {
+            New-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @()
+
+            Assert-MockCalled -CommandName Set-DevOpsVariableGroupProjectReferences -Exactly 0
         }
 
     }

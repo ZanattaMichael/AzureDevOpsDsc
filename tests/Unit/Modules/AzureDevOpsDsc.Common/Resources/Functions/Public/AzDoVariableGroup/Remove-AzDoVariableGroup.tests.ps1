@@ -140,4 +140,33 @@ Describe 'Remove-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
 
     }
 
+    Context 'When SharedWithProjects and SharedNameOverrides are supplied' {
+
+        # Regression test: Invoke-DscResource's GetDesiredStateParameters() splats every DSC
+        # property onto Remove-, including these two - a Remove- that does not declare them
+        # fails at call time with "A parameter cannot be found that matches parameter name
+        # 'SharedNameOverrides'" (or 'SharedWithProjects'), even though this function never acts
+        # on their values beyond the sharing warning above.
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                if ($Type -eq 'LiveProjects') { return @{ id = 'proj-id'; name = 'TestProject' } }
+                return @{ id = 'vg-id'; name = 'TestVG' }
+            }
+        }
+
+        It 'Should not throw when both parameters are populated' {
+            { Remove-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @('Fabrikam') -SharedNameOverrides @{ Fabrikam = 'shared-settings' } } | Should -Not -Throw
+        }
+
+        It 'Should still remove the group normally' {
+            Remove-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @('Fabrikam') -SharedNameOverrides @{ Fabrikam = 'shared-settings' }
+
+            Assert-MockCalled -CommandName Remove-DevOpsVariableGroup -Exactly 1 -ParameterFilter {
+                $VariableGroupId -eq 'vg-id' -and $ProjectId -eq 'proj-id'
+            }
+        }
+
+    }
+
 }

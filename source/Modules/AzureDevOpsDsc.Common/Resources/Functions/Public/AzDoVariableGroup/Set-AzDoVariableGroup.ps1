@@ -37,21 +37,10 @@ Function Set-AzDoVariableGroup
         Variables         = if ($Variables) { $Variables } else { @{} }
     }
 
-    $projectReferences = $null
-    if ($PSBoundParameters.ContainsKey('SharedWithProjects'))
-    {
-        try
-        {
-            $projectReferences = @(Resolve-AzDoSharedProjectReferences -ProjectName $ProjectName -SharedWithProjects $SharedWithProjects -SharedNameOverrides $SharedNameOverrides -DefaultName $VariableGroupName -Description $Description)
-        }
-        catch
-        {
-            Write-Error "[Set-AzDoVariableGroup] $_"
-            return
-        }
-        $params.ProjectReferences = $projectReferences
-    }
-
+    # The update (PUT) call, like create, only manages name/description/type/variables - it
+    # rejects extra project references with 500 "Sharing of variable group is not allowed."
+    # Sharing is applied separately below via the dedicated share call, which replaces the
+    # group's whole reference list (both additions and removals) in a single request.
     $value = Set-DevOpsVariableGroup @params
 
     if ($null -eq $value)
@@ -60,26 +49,22 @@ Function Set-AzDoVariableGroup
         return
     }
 
-    if ($null -ne $projectReferences)
+    # Checked by value, not $PSBoundParameters.ContainsKey(...): Invoke-DscResource always binds
+    # every DSC property (including SharedWithProjects), so ContainsKey is always true through
+    # that path. The class property has no default initializer, so $null reliably means "not
+    # configured" while @() means "configured empty" - in every call path, DSC-splatted or direct.
+    if ($null -ne $SharedWithProjects)
     {
-        # PUT adds/renames project references but does not remove any - projects dropped from
-        # SharedWithProjects need the separate DELETE-with-projectIds call to actually unshare.
-        $desiredIds = @($projectReferences | ForEach-Object { $_.projectReference.id } | Where-Object { $_ })
-        $removedRefs = @($vg.variableGroupProjectReferences | Where-Object { $_.projectReference.id -and $_.projectReference.id -notin $desiredIds })
-        foreach ($removedRef in $removedRefs)
+        try
         {
-            Write-Verbose "[Set-AzDoVariableGroup] Unsharing variable group '$VariableGroupName' from project '$($removedRef.projectReference.name)'."
-            try
-            {
-                Remove-DevOpsVariableGroup -ApiUri $orgApiUri -ProjectId $removedRef.projectReference.id -VariableGroupId $vg.id
-            }
-            catch
-            {
-                Write-Error "[Set-AzDoVariableGroup] Failed to unshare from project '$($removedRef.projectReference.name)': $_"
-            }
+            $projectReferences = @(Resolve-AzDoSharedProjectReferences -ProjectName $ProjectName -SharedWithProjects $SharedWithProjects -SharedNameOverrides $SharedNameOverrides -DefaultName $VariableGroupName -Description $Description)
+            Set-DevOpsVariableGroupProjectReferences -ApiUri $orgApiUri -VariableGroupId $vg.id -ProjectReferences $projectReferences
+            $value.variableGroupProjectReferences = $projectReferences
         }
-
-        $value.variableGroupProjectReferences = $projectReferences
+        catch
+        {
+            Write-Error "[Set-AzDoVariableGroup] $_"
+        }
     }
 
     Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $VariableGroupName) -Value $value -Type 'LiveVariableGroups'

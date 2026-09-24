@@ -51,8 +51,12 @@ Function Get-AzDoServiceConnection
     $propertiesChanged = @()
 
     # Only compare sharing when the configuration states it - a connection shared by hand outside
-    # this resource (or one this resource never touches sharing on) is left alone.
-    if ($PSBoundParameters.ContainsKey('SharedWithProjects'))
+    # this resource (or one this resource never touches sharing on) is left alone. Checked by
+    # value, not $PSBoundParameters.ContainsKey(...): Invoke-DscResource always binds every DSC
+    # property (including SharedWithProjects), so ContainsKey is always true through that path.
+    # The class property has no default initializer, so $null reliably means "not configured"
+    # while @() means "configured empty" - in every call path, DSC-splatted or direct.
+    if ($null -ne $SharedWithProjects)
     {
         $desiredProjects = @($ProjectName) + @($SharedWithProjects | Where-Object { $_ })
         $desiredProjects = @($desiredProjects | Select-Object -Unique)

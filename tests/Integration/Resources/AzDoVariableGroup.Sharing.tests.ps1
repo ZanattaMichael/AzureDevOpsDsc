@@ -17,10 +17,16 @@ Describe "AzDoVariableGroup Sharing Integration Tests" -Tag "Integration", "Vari
             Invoke-RestMethod -Uri "https://dev.azure.com/$ORG/$ProjectName/_apis/distributedtask/variablegroups?api-version=7.1" -Headers $AuthHeader
         }
 
-        $parameters = @{
-            Name       = 'AzDoVariableGroup'
-            ModuleName = 'AzureDevOpsDscNative'
-            property   = @{
+        # Every context below builds its own full property set from this baseline (plus whatever
+        # that context needs to add on top) instead of mutating one shared hashtable across
+        # contexts. Each Invoke-DscResource call constructs a fresh class instance and validates
+        # every [DscProperty(Mandatory)] property against exactly what it is handed that call, so
+        # every context must supply the full mandatory set on its own rather than relying on what
+        # an earlier context left behind (see the matching fix in AzDoServiceConnection.Sharing).
+        function New-VGProperty
+        {
+            param([HashTable]$Extra = @{})
+            $base = @{
                 ProjectName       = $PROJECTNAME
                 VariableGroupName = $VGNAME
                 Description       = 'Shared variable group test'
@@ -28,6 +34,8 @@ Describe "AzDoVariableGroup Sharing Integration Tests" -Tag "Integration", "Vari
                     SharedVar = @{ value = 'SharedValue'; isSecret = $false }
                 }
             }
+            foreach ($key in $Extra.Keys) { $base[$key] = $Extra[$key] }
+            return $base
         }
 
         New-TestProject -ProjectName $PROJECTNAME
@@ -38,7 +46,12 @@ Describe "AzDoVariableGroup Sharing Integration Tests" -Tag "Integration", "Vari
     Context "Creating the variable group unshared" {
 
         BeforeAll {
-            $parameters.Method = 'Set'
+            $parameters = @{
+                Name       = 'AzDoVariableGroup'
+                ModuleName = 'AzureDevOpsDscNative'
+                Method     = 'Set'
+                property   = New-VGProperty
+            }
         }
 
         It "Should not throw any exceptions" {
@@ -60,9 +73,15 @@ Describe "AzDoVariableGroup Sharing Integration Tests" -Tag "Integration", "Vari
     Context "Sharing the variable group with the second project" {
 
         BeforeAll {
-            $parameters.Method                       = 'Set'
-            $parameters.property.SharedWithProjects   = @($PROJECTNAME2)
-            $parameters.property.SharedNameOverrides  = @{ $PROJECTNAME2 = $SHAREDNAME }
+            $parameters = @{
+                Name       = 'AzDoVariableGroup'
+                ModuleName = 'AzureDevOpsDscNative'
+                Method     = 'Set'
+                property   = New-VGProperty -Extra @{
+                    SharedWithProjects  = @($PROJECTNAME2)
+                    SharedNameOverrides = @{ $PROJECTNAME2 = $SHAREDNAME }
+                }
+            }
         }
 
         It "Should not throw any exceptions" {
@@ -121,8 +140,14 @@ Describe "AzDoVariableGroup Sharing Integration Tests" -Tag "Integration", "Vari
     Context "Unsharing the variable group from the second project" {
 
         BeforeAll {
-            $parameters.Method                     = 'Set'
-            $parameters.property.SharedWithProjects = @()
+            $parameters = @{
+                Name       = 'AzDoVariableGroup'
+                ModuleName = 'AzureDevOpsDscNative'
+                Method     = 'Set'
+                property   = New-VGProperty -Extra @{
+                    SharedWithProjects = @()
+                }
+            }
         }
 
         It "Should not throw any exceptions" {
@@ -144,11 +169,15 @@ Describe "AzDoVariableGroup Sharing Integration Tests" -Tag "Integration", "Vari
     Context "Removing the variable group" {
 
         BeforeAll {
-            $parameters.Method = 'Set'
-            $parameters.property = @{
-                ProjectName       = $PROJECTNAME
-                VariableGroupName = $VGNAME
-                Ensure            = 'Absent'
+            $parameters = @{
+                Name       = 'AzDoVariableGroup'
+                ModuleName = 'AzureDevOpsDscNative'
+                Method     = 'Set'
+                property   = @{
+                    ProjectName       = $PROJECTNAME
+                    VariableGroupName = $VGNAME
+                    Ensure            = 'Absent'
+                }
             }
         }
 

@@ -9,6 +9,12 @@ Function Remove-AzDoServiceConnection
         [Parameter()][bool]$AllowAllPipelines = $false,
         [Parameter()][HashTable]$Authorization,
         [Parameter()][HashTable]$Data,
+        # Declared (but unused beyond the sharing warning below, which reads the live
+        # serviceEndpointProjectReferences directly) because GetDesiredStateParameters() splats
+        # every DSC property onto Remove-, including this one - omitting it throws "a parameter
+        # cannot be found that matches parameter name 'SharedNameOverrides'".
+        [Parameter()][string[]]$SharedWithProjects,
+        [Parameter()][HashTable]$SharedNameOverrides,
         [Parameter()][HashTable]$LookupResult,
         [Parameter()][Ensure]$Ensure,
         [Parameter()][System.Management.Automation.SwitchParameter]$Force

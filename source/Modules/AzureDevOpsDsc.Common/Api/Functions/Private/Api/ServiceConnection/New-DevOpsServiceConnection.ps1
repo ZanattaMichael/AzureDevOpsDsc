@@ -39,6 +39,19 @@ Function New-DevOpsServiceConnection
         $Authorization = @{ scheme = $scheme; parameters = $parameters }
     }
 
+    # NOTE: the if/else is wrapped in @(...) because PowerShell unrolls a one-element array
+    # emitted from an if/else expression the same way it unrolls a one-element array returned
+    # from a function (CLAUDE.md gotcha #7). Without the outer @(), a single project reference
+    # collapses to a bare hashtable and ConvertTo-Json writes a JSON object instead of an array,
+    # which the API rejects ("At least one project reference required to create an endpoint").
+    $serviceEndpointProjectReferences = @(if ($ProjectReferences) { $ProjectReferences } else {
+        @{
+            projectReference = @{ id = $ProjectId; name = $ProjectName }
+            name             = $ServiceConnectionName
+            description      = $Description
+        }
+    })
+
     $params = @{
         Uri         = '{0}/{1}/_apis/serviceendpoint/endpoints?api-version={2}' -f $ApiUri.TrimEnd('/'), $ProjectName, $ApiVersion
         Method      = 'POST'
@@ -52,15 +65,7 @@ Function New-DevOpsServiceConnection
             isReady       = $IsReady
             authorization = $Authorization
             data          = $Data
-            serviceEndpointProjectReferences = if ($ProjectReferences) { $ProjectReferences } else {
-                @(
-                    @{
-                        projectReference = @{ id = $ProjectId; name = $ProjectName }
-                        name             = $ServiceConnectionName
-                        description      = $Description
-                    }
-                )
-            }
+            serviceEndpointProjectReferences = $serviceEndpointProjectReferences
         } | ConvertTo-Json -Depth 10
     }
     try   { return Invoke-AzDevOpsApiRestMethod @params }

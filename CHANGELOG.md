@@ -12,21 +12,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     manage with other projects (#79), via two new properties: `SharedWithProjects`
     (the project names to share with, in addition to the owning `ProjectName`) and
     `SharedNameOverrides` (a per-project display name, for when the shared copy
-    should not carry the same name as the original). `New-` and `Set-` resolve the
-    full `variableGroupProjectReferences`/`serviceEndpointProjectReferences` array
-    through the new helper `Resolve-AzDoSharedProjectReferences` and write it back
-    with the same PUT/PATCH used for every other update, so sharing is applied
-    alongside any other change rather than as a separate call. Dropping a project
-    from `SharedWithProjects` unshares it individually (`DELETE
+    should not carry the same name as the original). Both resolve the full
+    `variableGroupProjectReferences`/`serviceEndpointProjectReferences` array
+    through the new helper `Resolve-AzDoSharedProjectReferences`, but apply it
+    differently: a service connection's create/update call accepts the whole
+    reference array directly, so `New-`/`Set-AzDoServiceConnection` send it with
+    the same POST/PUT used for every other change. A variable group's create and
+    update endpoints reject more than one reference with 500 "Sharing of variable
+    group is not allowed", so `New-`/`Set-AzDoVariableGroup` create or update the
+    group with only its owning reference and then share it, when
+    `SharedWithProjects` resolves to more than the owning project, through the new
+    `Set-DevOpsVariableGroupProjectReferences`, calling the documented `PATCH
+    .../distributedtask/variablegroups?variableGroupId={id}` with the full desired
+    reference array. Dropping a project from a service connection's
+    `SharedWithProjects` unshares it individually (`DELETE
     .../{id}?projectIds=...`) rather than deleting and recreating the object, which
-    would have changed its id and broken any ACL token or pipeline reference to it.
-    Comparison only happens when `SharedWithProjects` is bound, so a configuration
-    that never mentions sharing leaves whatever sharing exists (however it got
-    there) alone. Removing the object from its owning project still removes it
-    everywhere it is shared - Azure DevOps has no "orphan and promote" operation for
-    this - so `Remove-` now warns, naming the other projects, before doing so rather
-    than deleting silently. ACL tokens for both resources are anchored to the owning
-    project and the object's own id, so permissions are unaffected by sharing.
+    would have changed its id and broken any ACL token or pipeline reference to it;
+    a variable group's unshare goes back through the same PATCH call with the
+    narrowed reference array. Comparison only happens when `SharedWithProjects` is
+    bound (checked by value, not `$PSBoundParameters.ContainsKey(...)`, since
+    `Invoke-DscResource` always binds every DSC property and the class properties
+    have no default initializer, so `$null` is what "not configured" looks like),
+    so a configuration that never mentions sharing leaves whatever sharing exists
+    (however it got there) alone. Removing the object from its owning project still
+    removes it everywhere it is shared - Azure DevOps has no "orphan and promote"
+    operation for this - so `Remove-` now warns, naming the other projects, before
+    doing so rather than deleting silently; both `Remove-` functions declare
+    `SharedWithProjects`/`SharedNameOverrides` so the base class's blanket property
+    splat onto `Remove-` does not fail with an unknown-parameter error. ACL tokens
+    for both resources are anchored to the owning project and the object's own id,
+    so permissions are unaffected by sharing.
   - Added the private helper `Resolve-AzDoSharedProjectReferences`, shared by
     `AzDoVariableGroup` and `AzDoServiceConnection`, which turns `ProjectName` +
     `SharedWithProjects` + `SharedNameOverrides` into the project-reference array
@@ -185,6 +200,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     group to well over a hundred for an AAD-backed user. A batch that fails is
     retried one descriptor at a time, so a single unresolvable identity no longer
     costs the whole batch.
+
+### Fixed
+
+- AzureDevOpsDscNative
+  - Fixed `New-`/`Set-DevOpsVariableGroup` and `New-`/`Set-DevOpsServiceConnection`
+    unrolling a single-element project-reference array into a bare object before
+    handing it to `ConvertTo-Json`, so an *unshared* create or update sent an
+    object where the API requires an array - `400`/`500 "At least one project
+    reference required..."`. The whole `if/else` that builds the reference array
+    is now wrapped in an outer `@(...)`, the fix PowerShell's single-element-array
+    unroll needs at the point the array is produced, not just where it is
+    returned.
+  - Fixed `Remove-AzDoServiceConnection` and `Remove-AzDoVariableGroup` failing
+    with `A parameter cannot be found that matches parameter name
+    'SharedNameOverrides'` whenever a configuration set `SharedWithProjects` or
+    `SharedNameOverrides`, because `Invoke-DscResource` splats every DSC property
+    onto every call, including `Remove-`, and neither function declared them.
+    Both now declare both parameters.
+  - Fixed variable group creation and sharing failing outright against a live
+    organization: the create (POST) and update (PUT) endpoints reject more than
+    one project reference with `500 "Sharing of variable group is not allowed"`,
+    so passing the resolved multi-project reference array to either (as the
+    initial #79 implementation did) never worked. See the `Added` entry above for
+    the corrected two-step create-then-share design.
 
 ### Changed
 

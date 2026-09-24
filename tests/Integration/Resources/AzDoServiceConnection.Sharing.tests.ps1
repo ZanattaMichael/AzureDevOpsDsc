@@ -17,10 +17,17 @@ Describe "AzDoServiceConnection Sharing Integration Tests" -Tag "Integration", "
             Invoke-RestMethod -Uri "https://dev.azure.com/$ORG/$ProjectName/_apis/serviceendpoint/endpoints?api-version=7.1-preview.4" -Headers $AuthHeader
         }
 
-        $parameters = @{
-            Name       = 'AzDoServiceConnection'
-            ModuleName = 'AzureDevOpsDscNative'
-            property   = @{
+        # Every context below builds its own full property set from this baseline (plus whatever
+        # that context needs to add on top) instead of mutating one shared hashtable across
+        # contexts. Each Invoke-DscResource call constructs a fresh class instance and validates
+        # every [DscProperty(Mandatory)] property against exactly what it is handed that call - a
+        # property set missing ConnectionType (or any other mandatory property) fails immediately
+        # with "missing mandatory parameters: ConnectionType", so every context must supply the
+        # full mandatory set on its own rather than relying on what an earlier context left behind.
+        function New-SCProperty
+        {
+            param([HashTable]$Extra = @{})
+            $base = @{
                 ProjectName    = $PROJECTNAME
                 ConnectionName = $SCNAME
                 ConnectionType = 'Generic'
@@ -34,6 +41,8 @@ Describe "AzDoServiceConnection Sharing Integration Tests" -Tag "Integration", "
                     url = 'https://test.example.com'
                 }
             }
+            foreach ($key in $Extra.Keys) { $base[$key] = $Extra[$key] }
+            return $base
         }
 
         New-TestProject -ProjectName $PROJECTNAME
@@ -44,7 +53,12 @@ Describe "AzDoServiceConnection Sharing Integration Tests" -Tag "Integration", "
     Context "Creating the service connection unshared" {
 
         BeforeAll {
-            $parameters.Method = 'Set'
+            $parameters = @{
+                Name       = 'AzDoServiceConnection'
+                ModuleName = 'AzureDevOpsDscNative'
+                Method     = 'Set'
+                property   = New-SCProperty
+            }
         }
 
         It "Should not throw any exceptions" {
@@ -66,9 +80,15 @@ Describe "AzDoServiceConnection Sharing Integration Tests" -Tag "Integration", "
     Context "Sharing the service connection with the second project" {
 
         BeforeAll {
-            $parameters.Method                      = 'Set'
-            $parameters.property.SharedWithProjects  = @($PROJECTNAME2)
-            $parameters.property.SharedNameOverrides = @{ $PROJECTNAME2 = $SHAREDNAME }
+            $parameters = @{
+                Name       = 'AzDoServiceConnection'
+                ModuleName = 'AzureDevOpsDscNative'
+                Method     = 'Set'
+                property   = New-SCProperty -Extra @{
+                    SharedWithProjects  = @($PROJECTNAME2)
+                    SharedNameOverrides = @{ $PROJECTNAME2 = $SHAREDNAME }
+                }
+            }
         }
 
         It "Should not throw any exceptions" {
@@ -127,8 +147,14 @@ Describe "AzDoServiceConnection Sharing Integration Tests" -Tag "Integration", "
     Context "Unsharing the service connection from the second project" {
 
         BeforeAll {
-            $parameters.Method                     = 'Set'
-            $parameters.property.SharedWithProjects = @()
+            $parameters = @{
+                Name       = 'AzDoServiceConnection'
+                ModuleName = 'AzureDevOpsDscNative'
+                Method     = 'Set'
+                property   = New-SCProperty -Extra @{
+                    SharedWithProjects = @()
+                }
+            }
         }
 
         It "Should not throw any exceptions" {
@@ -150,12 +176,16 @@ Describe "AzDoServiceConnection Sharing Integration Tests" -Tag "Integration", "
     Context "Removing the service connection" {
 
         BeforeAll {
-            $parameters.Method = 'Set'
-            $parameters.property = @{
-                ProjectName    = $PROJECTNAME
-                ConnectionName = $SCNAME
-                ConnectionType = 'Generic'
-                Ensure         = 'Absent'
+            $parameters = @{
+                Name       = 'AzDoServiceConnection'
+                ModuleName = 'AzureDevOpsDscNative'
+                Method     = 'Set'
+                property   = @{
+                    ProjectName    = $PROJECTNAME
+                    ConnectionName = $SCNAME
+                    ConnectionType = 'Generic'
+                    Ensure         = 'Absent'
+                }
             }
         }
 

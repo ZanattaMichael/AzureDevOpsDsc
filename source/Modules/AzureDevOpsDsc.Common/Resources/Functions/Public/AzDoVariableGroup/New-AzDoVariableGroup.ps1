@@ -17,8 +17,10 @@ Function New-AzDoVariableGroup
 
     Write-Verbose "[New-AzDoVariableGroup] Creating variable group '$VariableGroupName'."
 
+    $orgApiUri = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
+
     $params = @{
-        ApiUri            = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
+        ApiUri            = $orgApiUri
         ProjectName       = $ProjectName
         VariableGroupName = $VariableGroupName
         Description       = $Description
@@ -27,11 +29,19 @@ Function New-AzDoVariableGroup
         AllowAccess       = $AllowAccess
     }
 
-    if ($PSBoundParameters.ContainsKey('SharedWithProjects'))
+    # The variable group create endpoint only accepts the single owning-project reference -
+    # passing more than one fails with 500 "Sharing of variable group is not allowed." Sharing
+    # with additional projects, when SharedWithProjects is actually configured (checked by value,
+    # not $PSBoundParameters.ContainsKey(...): Invoke-DscResource always binds every DSC property,
+    # so ContainsKey is always true through that path; the class property has no default
+    # initializer, so $null reliably means "not configured"), is resolved here but only applied
+    # afterwards, via the dedicated share call, once the group actually exists.
+    $projectReferences = $null
+    if ($null -ne $SharedWithProjects)
     {
         try
         {
-            $params.ProjectReferences = @(Resolve-AzDoSharedProjectReferences -ProjectName $ProjectName -SharedWithProjects $SharedWithProjects -SharedNameOverrides $SharedNameOverrides -DefaultName $VariableGroupName -Description $Description)
+            $projectReferences = @(Resolve-AzDoSharedProjectReferences -ProjectName $ProjectName -SharedWithProjects $SharedWithProjects -SharedNameOverrides $SharedNameOverrides -DefaultName $VariableGroupName -Description $Description)
         }
         catch
         {
@@ -46,6 +56,20 @@ Function New-AzDoVariableGroup
     {
         Write-Error "[New-AzDoVariableGroup] New-DevOpsVariableGroup returned null. Check authentication token and organization settings."
         return
+    }
+
+    if ($projectReferences -and $projectReferences.Count -gt 1)
+    {
+        Write-Verbose "[New-AzDoVariableGroup] Sharing variable group '$VariableGroupName' with $($projectReferences.Count - 1) additional project(s)."
+        try
+        {
+            Set-DevOpsVariableGroupProjectReferences -ApiUri $orgApiUri -VariableGroupId $value.id -ProjectReferences $projectReferences
+            $value.variableGroupProjectReferences = $projectReferences
+        }
+        catch
+        {
+            Write-Error "[New-AzDoVariableGroup] Variable group '$VariableGroupName' was created but could not be shared: $_"
+        }
     }
 
     Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $VariableGroupName) -Value $value -Type 'LiveVariableGroups'

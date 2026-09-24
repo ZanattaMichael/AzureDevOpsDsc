@@ -16,9 +16,14 @@ Function New-DevOpsVariableGroup
         [Parameter()][Object[]]$ProjectReferences,
         [Parameter()][string]$ApiVersion = '7.1-preview.2'
     )
-    $variableGroupProjectReferences = if ($ProjectReferences) { $ProjectReferences } else {
-        @( @{ projectReference = @{ name = $ProjectName }; name = $VariableGroupName } )
-    }
+    # NOTE: the if/else below is wrapped in @(...) because PowerShell unrolls a one-element
+    # array emitted from an if/else expression the same way it unrolls a one-element array
+    # returned from a function (CLAUDE.md gotcha #7). Without the outer @(), a single project
+    # reference collapses to a bare hashtable and ConvertTo-Json writes a JSON object instead
+    # of an array, which the API rejects ("At least one project reference required").
+    $variableGroupProjectReferences = @(if ($ProjectReferences) { $ProjectReferences } else {
+        @{ projectReference = @{ name = $ProjectName }; name = $VariableGroupName }
+    })
     $params = @{
         Uri         = '{0}/{1}/_apis/distributedtask/variablegroups?api-version={2}' -f $ApiUri.TrimEnd('/'), $ProjectName, $ApiVersion
         Method      = 'POST'

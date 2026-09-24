@@ -140,4 +140,33 @@ Describe 'Remove-AzDoServiceConnection Tests' -Tag "Unit", "ServiceConnection" {
 
     }
 
+    Context 'When SharedWithProjects and SharedNameOverrides are supplied' {
+
+        # Regression test for the exact reported failure: Invoke-DscResource's
+        # GetDesiredStateParameters() splats every DSC property onto Remove-, including these two
+        # - a Remove- that does not declare them fails at call time with "A parameter cannot be
+        # found that matches parameter name 'SharedNameOverrides'", even though this function
+        # never acts on their values beyond the sharing warning above.
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                if ($Type -eq 'LiveProjects') { return @{ id = 'proj-id'; name = 'TestProject' } }
+                return @{ id = 'sc-id'; name = 'TestSC' }
+            }
+        }
+
+        It 'Should not throw when both parameters are populated' {
+            { Remove-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic' -SharedWithProjects @('Fabrikam') -SharedNameOverrides @{ Fabrikam = 'shared-conn' } } | Should -Not -Throw
+        }
+
+        It 'Should still remove the connection normally' {
+            Remove-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic' -SharedWithProjects @('Fabrikam') -SharedNameOverrides @{ Fabrikam = 'shared-conn' }
+
+            Assert-MockCalled -CommandName Remove-DevOpsServiceConnection -Exactly 1 -ParameterFilter {
+                $ServiceConnectionId -eq 'sc-id' -and $ProjectId -eq 'proj-id'
+            }
+        }
+
+    }
+
 }

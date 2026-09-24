@@ -14,9 +14,12 @@ Function Set-DevOpsVariableGroup
         [Parameter()][Object[]]$ProjectReferences,
         [Parameter()][string]$ApiVersion = '7.1-preview.2'
     )
-    $variableGroupProjectReferences = if ($ProjectReferences) { $ProjectReferences } else {
-        @( @{ projectReference = @{ name = $ProjectName }; name = $VariableGroupName } )
-    }
+    # NOTE: wrapped in @(...) - see New-DevOpsVariableGroup for why (CLAUDE.md gotcha #7:
+    # a one-element array emitted from an if/else expression unrolls to a bare hashtable,
+    # which ConvertTo-Json then serializes as an object instead of an array).
+    $variableGroupProjectReferences = @(if ($ProjectReferences) { $ProjectReferences } else {
+        @{ projectReference = @{ name = $ProjectName }; name = $VariableGroupName }
+    })
     $params = @{
         Uri         = '{0}/{1}/_apis/distributedtask/variablegroups/{2}?api-version={3}' -f $ApiUri.TrimEnd('/'), $ProjectName, $VariableGroupId, $ApiVersion
         Method      = 'PUT'

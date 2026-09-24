@@ -30,6 +30,7 @@ Describe 'Set-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
         Mock -CommandName Write-Error
         Mock -CommandName Resolve-AzDoSharedProjectReferences
         Mock -CommandName Remove-DevOpsVariableGroup
+        Mock -CommandName Set-DevOpsVariableGroupProjectReferences
 
     }
 
@@ -114,19 +115,25 @@ Describe 'Set-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
             }
         }
 
-        It 'Should call Remove-DevOpsVariableGroup to unshare the dropped project' {
-            Set-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @()
-
-            Assert-MockCalled -CommandName Remove-DevOpsVariableGroup -Exactly 1 -ParameterFilter {
-                $ProjectId -eq 'fab-id' -and $VariableGroupId -eq 'vg-id'
-            }
-        }
-
-        It 'Should pass the resolved project references to Set-DevOpsVariableGroup' {
+        It 'Should not pass ProjectReferences to Set-DevOpsVariableGroup - the update endpoint rejects extra references ("Sharing of variable group is not allowed")' {
             Set-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @()
 
             Assert-MockCalled -CommandName Set-DevOpsVariableGroup -Exactly 1 -ParameterFilter {
-                $ProjectReferences.Count -eq 1
+                $null -eq $ProjectReferences
+            }
+        }
+
+        It 'Should not use the DELETE-based unshare call - sharing is applied via the dedicated share endpoint instead' {
+            Set-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @()
+
+            Assert-MockCalled -CommandName Remove-DevOpsVariableGroup -Exactly 0
+        }
+
+        It 'Should call the dedicated share endpoint with the full resolved reference list (including the drop of Fabrikam)' {
+            Set-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @()
+
+            Assert-MockCalled -CommandName Set-DevOpsVariableGroupProjectReferences -Exactly 1 -ParameterFilter {
+                $VariableGroupId -eq 'vg-id' -and $ProjectReferences.Count -eq 1
             }
         }
 
@@ -152,6 +159,7 @@ Describe 'Set-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
 
             Assert-MockCalled -CommandName Resolve-AzDoSharedProjectReferences -Exactly 0
             Assert-MockCalled -CommandName Remove-DevOpsVariableGroup -Exactly 0
+            Assert-MockCalled -CommandName Set-DevOpsVariableGroupProjectReferences -Exactly 0
         }
 
     }

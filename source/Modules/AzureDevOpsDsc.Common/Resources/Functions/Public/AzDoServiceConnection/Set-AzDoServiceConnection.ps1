@@ -51,8 +51,12 @@ Function Set-AzDoServiceConnection
         Data                  = if ($Data)          { $Data }          else { @{} }
     }
 
+    # Checked by value, not $PSBoundParameters.ContainsKey(...): Invoke-DscResource always binds
+    # every DSC property (including SharedWithProjects), so ContainsKey is always true through
+    # that path. The class property has no default initializer, so $null reliably means "not
+    # configured" while @() means "configured empty" - in every call path, DSC-splatted or direct.
     $projectReferences = $null
-    if ($PSBoundParameters.ContainsKey('SharedWithProjects'))
+    if ($null -ne $SharedWithProjects)
     {
         try
         {
