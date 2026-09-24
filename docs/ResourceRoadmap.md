@@ -420,3 +420,42 @@ class resolves them by that convention, so a missing one fails at apply time), e
 `[DscProperty(Key)]`, no DSC property named `Force`, unit tests mirroring the public
 function path, an integration test using the `New-RestAuthHeader` pattern, and a rebuild +
 redeploy before running integration tests.
+
+## 10. Team administration and backlog visibility (#80) — **shipped**
+
+Two properties added to existing Teams resources rather than new classes, since both are
+facets of objects those resources already own:
+
+- **`AzDoTeamMember.IsTeamAdmin`** (`Boolean`, optional, default `$false`) — grants or
+  revokes the "Manage membership" bit on the team's own token (`{ProjectId}\{TeamId}`) in
+  the `Identity` security namespace. The bit is never hardcoded: `Get-DevOpsTeamAdministrator`
+  and `Set-DevOpsTeamAdministrator` both resolve it from the `Identity` namespace's
+  `actions` (the `SecurityNamespaces` cache) by name each time, so a namespace revision
+  cannot silently target the wrong permission. Because an `accesscontrollists` write with
+  `merge=false` replaces the *entire* ACL for the submitted token, `Set-DevOpsTeamAdministrator`
+  reads the team's whole live ACL first and rewrites only the target member's ACE, carrying
+  every other identity's entry through unchanged; an ACE that becomes zero-permission after a
+  revoke is removed entirely rather than left as an empty entry. `Remove-AzDoTeamMember`
+  always attempts the revoke on removal, regardless of the `IsTeamAdmin` value supplied, so a
+  removed member cannot retain admin rights it no longer appears to hold in the team's own
+  membership UI; a failure to revoke is logged as a warning and does not block the membership
+  removal itself.
+- **`AzDoTeamSettings.BacklogVisibilities`** (`Hashtable`, optional) — a map of backlog
+  category reference name (for example `Microsoft.EpicCategory`, `Microsoft.FeatureCategory`,
+  `Microsoft.RequirementCategory`) to a boolean, applied through
+  `PATCH .../_apis/work/teamsettings`'s `backlogVisibilities` dictionary. Drift is reported
+  only for the categories the configuration states, per the "only compare what the
+  configuration states" convention (§`CLAUDE.md`) — a category the live team has hidden but
+  the configuration never mentions is left alone, and a category absent from the live
+  dictionary is treated as hidden (`$false`) by default when the configuration states it
+  should be visible.
+
+**Deferred**: accepting a backlog *behavior* name (as shown in the Backlogs configuration
+page in the Azure DevOps UI, e.g. "Epics", "Features", "Stories/Requirements") as an
+alternative to the category reference name it maps to. There is no reliable mapping table in
+this codebase or in the classic `_apis/process/processes` cache between a process's backlog
+behavior names and the fixed `Microsoft.*Category` reference names `backlogVisibilities`
+actually keys on — the mapping is process-specific for inherited processes with renamed or
+added backlog levels, and building it correctly would need the same `work/processes` view
+that `Resolve-AzDoProcessWorkItemType` already reads for a different reason (§6). Configurations
+target `BacklogVisibilities` by category reference name for now.

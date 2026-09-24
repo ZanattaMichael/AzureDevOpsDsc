@@ -34,6 +34,11 @@ Describe "Get-AzDoTeamSettings" -Tag "Unit", "TeamSettings" {
             AreaPaths            = @('TestProject\Frontend')
             WorkingDays          = @('monday', 'tuesday')
             BugsBehavior         = 'asRequirements'
+            BacklogVisibilities  = @{
+                'Microsoft.EpicCategory'        = $true
+                'Microsoft.FeatureCategory'     = $false
+                'Microsoft.RequirementCategory' = $true
+            }
         }
 
         Mock -CommandName Write-Verbose
@@ -126,6 +131,48 @@ Describe "Get-AzDoTeamSettings" -Tag "Unit", "TeamSettings" {
         It "detects drift on the team area paths" {
             $result = Get-AzDoTeamSettings -ProjectName 'TestProject' -TeamName 'TestTeam' -AreaPaths @('TestProject\Backend', 'TestProject\Api')
             $result.propertiesChanged | Should -Contain 'AreaPaths'
+        }
+    }
+
+    Context "when BacklogVisibilities is compared" {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -ParameterFilter { $Type -eq 'LiveProjects' } -MockWith { return $mockProject }
+            Mock -CommandName Get-CacheItem -ParameterFilter { $Type -eq 'LiveTeams' }    -MockWith { return $mockTeam }
+        }
+
+        It "returns Unchanged when every stated category matches the live value" {
+            $result = Get-AzDoTeamSettings -ProjectName 'TestProject' -TeamName 'TestTeam' `
+                -BacklogVisibilities @{ 'Microsoft.EpicCategory' = $true }
+            $result.status | Should -Be 'Unchanged'
+            $result.propertiesChanged | Should -Not -Contain 'BacklogVisibilities'
+        }
+
+        It "returns Changed and reports BacklogVisibilities when a stated category differs" {
+            $result = Get-AzDoTeamSettings -ProjectName 'TestProject' -TeamName 'TestTeam' `
+                -BacklogVisibilities @{ 'Microsoft.FeatureCategory' = $true }
+            $result.status | Should -Be 'Changed'
+            $result.propertiesChanged | Should -Contain 'BacklogVisibilities'
+        }
+
+        It "ignores categories the configuration does not mention" {
+            # 'Microsoft.RequirementCategory' is $true live but is not stated here, so it must not
+            # be read as drift even though the configuration is otherwise silent on it.
+            $result = Get-AzDoTeamSettings -ProjectName 'TestProject' -TeamName 'TestTeam' `
+                -BacklogVisibilities @{ 'Microsoft.EpicCategory' = $true; 'Microsoft.FeatureCategory' = $false }
+            $result.status | Should -Be 'Unchanged'
+            $result.propertiesChanged | Should -Not -Contain 'BacklogVisibilities'
+        }
+
+        It "treats a category absent from the live dictionary as hidden (false) by default" {
+            $result = Get-AzDoTeamSettings -ProjectName 'TestProject' -TeamName 'TestTeam' `
+                -BacklogVisibilities @{ 'Microsoft.UnknownCategory' = $true }
+            $result.propertiesChanged | Should -Contain 'BacklogVisibilities'
+        }
+
+        It "does not flag drift when BacklogVisibilities is not supplied" {
+            $result = Get-AzDoTeamSettings -ProjectName 'TestProject' -TeamName 'TestTeam' -BugsBehavior 'asRequirements'
+            $result.propertiesChanged | Should -Not -Contain 'BacklogVisibilities'
         }
     }
 
