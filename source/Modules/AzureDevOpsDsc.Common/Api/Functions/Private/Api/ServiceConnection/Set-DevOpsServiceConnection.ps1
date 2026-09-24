@@ -16,8 +16,26 @@ Function Set-DevOpsServiceConnection
         # Full project reference array for an endpoint shared across projects (issue #79). See
         # New-DevOpsServiceConnection for the shape and the single-project default.
         [Parameter()][Object[]]$ProjectReferences,
+        # The endpoint's existing top-level url, used when Data carries no 'url' key. The update
+        # call rejects a body without one ("Value cannot be null. Parameter name: endpoint.Url").
+        [Parameter()][string]$Url,
         [Parameter()][string]$ApiVersion = '7.1-preview.4'
     )
+    $endpointUrl = if ($Data.url) { $Data.url } elseif ($Data.Url) { $Data.Url } elseif ($Url) { $Url } else { '' }
+
+    # Same reshaping as New-DevOpsServiceConnection: the API wants credential values nested
+    # under authorization.parameters, with only 'scheme' at the top level.
+    if ($Authorization.Count -gt 0 -and -not $Authorization.ContainsKey('parameters'))
+    {
+        $scheme     = $Authorization['scheme']
+        $parameters = @{}
+        foreach ($key in $Authorization.Keys)
+        {
+            if ($key -ne 'scheme') { $parameters[$key] = $Authorization[$key] }
+        }
+        $Authorization = @{ scheme = $scheme; parameters = $parameters }
+    }
+
     # NOTE: wrapped in @(...) - see New-DevOpsServiceConnection for why (CLAUDE.md gotcha #7:
     # a one-element array emitted from an if/else expression unrolls to a bare hashtable,
     # which ConvertTo-Json then serializes as an object instead of an array).
@@ -37,6 +55,7 @@ Function Set-DevOpsServiceConnection
             id            = $ServiceConnectionId
             name          = $ServiceConnectionName
             type          = $ServiceConnectionType
+            url           = $endpointUrl
             description   = $Description
             isShared      = $IsShared
             isReady       = $IsReady

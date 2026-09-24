@@ -28,6 +28,8 @@
     only when the configuration states it, so a variable group shared by hand outside this
     resource is left alone. Add and remove drift against the live
     'variableGroupProjectReferences' is detected and corrected by Set.
+    Known limitation: Azure DevOps Services currently refuses the share call with
+    "Sharing of variable group is not allowed.", in which case Set throws that error.
 
 .PARAMETER SharedNameOverrides
     Optional hashtable of ProjectName -> the name the variable group is shown under in that

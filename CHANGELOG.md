@@ -15,16 +15,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     should not carry the same name as the original). Both resolve the full
     `variableGroupProjectReferences`/`serviceEndpointProjectReferences` array
     through the new helper `Resolve-AzDoSharedProjectReferences`, but apply it
-    differently: a service connection's create/update call accepts the whole
-    reference array directly, so `New-`/`Set-AzDoServiceConnection` send it with
-    the same POST/PUT used for every other change. A variable group's create and
+    differently: `New-AzDoServiceConnection` sends the whole array with the create
+    (POST) call. `Set-AzDoServiceConnection` sends the update (PUT) only the
+    references the connection already has, because the update call edits existing
+    references but does not share with a new project, and shares with each added
+    project through the new `Add-DevOpsServiceConnectionProjectReferences`, which
+    calls the documented share endpoint (`PATCH
+    .../serviceendpoint/endpoints/{id}`) with the added references and their
+    `SharedNameOverrides` names. A variable group's create and
     update endpoints reject more than one reference with 500 "Sharing of variable
     group is not allowed", so `New-`/`Set-AzDoVariableGroup` create or update the
     group with only its owning reference and then share it, when
     `SharedWithProjects` resolves to more than the owning project, through the new
     `Set-DevOpsVariableGroupProjectReferences`, calling the documented `PATCH
     .../distributedtask/variablegroups?variableGroupId={id}` with the full desired
-    reference array. Dropping a project from a service connection's
+    reference array. **Known limitation:** Azure DevOps Services refuses that share
+    call too - the CI organization answers `400 "Sharing of variable group is not
+    allowed."` to the POST, PUT and PATCH alike - so sharing a variable group
+    currently fails with that error. `Set()` throws it rather than reporting
+    success, and service connection sharing is unaffected. Dropping a project from a
+    service connection's
     `SharedWithProjects` unshares it individually (`DELETE
     .../{id}?projectIds=...`) rather than deleting and recreating the object, which
     would have changed its id and broken any ACL token or pipeline reference to it;
@@ -229,6 +239,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     resource method never passes back to the caller, so `Set()` returned cleanly
     while every later `Test()` reported drift with no reason. A share failure now
     throws, carrying the API's error, after the group itself has been cached (#79).
+  - Fixed `Set-DevOpsServiceConnection` failing every service connection update
+    with `400 "Value cannot be null. Parameter name: endpoint.Url"`. The update
+    body carried no top-level `url` and sent a flat `Authorization` hashtable
+    as-is, where `New-DevOpsServiceConnection` already did both. It now sends
+    `Data.url`, falling back to the existing connection's `url`, and nests
+    credential values under `authorization.parameters` the same way `New-` does.
+    `Set-AzDoServiceConnection` also throws, after caching the update, when sharing
+    with or unsharing from a project fails, instead of writing an error the DSC
+    caller never sees; and when `SharedWithProjects` is not configured it keeps the
+    projects the connection is already shared with in the update (#79).
   - Fixed `Set-AzDoServiceConnection` failing every update with a missing
     mandatory `ConnectionType` parameter. `ConnectionType` is one of the class's
     no-Set-support properties, so the base class removes it before calling `Set-`,

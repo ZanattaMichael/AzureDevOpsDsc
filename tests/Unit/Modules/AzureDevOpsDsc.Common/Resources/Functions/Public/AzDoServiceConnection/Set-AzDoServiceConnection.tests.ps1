@@ -30,6 +30,7 @@ Describe 'Set-AzDoServiceConnection Tests' -Tag "Unit", "ServiceConnection" {
         Mock -CommandName Write-Error
         Mock -CommandName Resolve-AzDoSharedProjectReferences
         Mock -CommandName Remove-DevOpsServiceConnection
+        Mock -CommandName Add-DevOpsServiceConnectionProjectReferences
 
         # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
         Mock -CommandName Resolve-AzDoProject -MockWith { Get-CacheItem -Key $ProjectName -Type 'LiveProjects' }
@@ -216,6 +217,167 @@ Describe 'Set-AzDoServiceConnection Tests' -Tag "Unit", "ServiceConnection" {
 
             Assert-MockCalled -CommandName Resolve-AzDoSharedProjectReferences -Exactly 0
             Assert-MockCalled -CommandName Remove-DevOpsServiceConnection -Exactly 0
+            Assert-MockCalled -CommandName Add-DevOpsServiceConnectionProjectReferences -Exactly 0
+        }
+
+        It 'Should keep the projects the connection is already shared with in the update' {
+            Set-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic'
+
+            Assert-MockCalled -CommandName Set-DevOpsServiceConnection -Exactly 1 -ParameterFilter {
+                $ProjectReferences.Count -eq 2 -and
+                ($ProjectReferences.projectReference.id -contains 'fab-id') -and
+                ($ProjectReferences.projectReference.id -contains 'proj-id')
+            }
+        }
+
+    }
+
+    Context 'When SharedWithProjects is not specified and the connection is not shared' {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                param($Key, $Type)
+                if ($Type -eq 'LiveProjects') { return @{ id = 'proj-id'; name = 'TestProject' } }
+                return @{
+                    id                                = 'sc-id'
+                    name                               = 'TestSC'
+                    serviceEndpointProjectReferences = @(
+                        @{ projectReference = @{ id = 'proj-id'; name = 'TestProject' }; name = 'TestSC' }
+                    )
+                }
+            }
+        }
+
+        It 'Should leave the project references to the default owning reference' {
+            Set-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic'
+
+            Assert-MockCalled -CommandName Set-DevOpsServiceConnection -Exactly 1 -ParameterFilter {
+                $null -eq $ProjectReferences
+            }
+        }
+
+    }
+
+    Context 'When the existing connection has a url (issue #79)' {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                param($Key, $Type)
+                if ($Type -eq 'LiveProjects') { return @{ id = 'proj-id'; name = 'TestProject' } }
+                return @{ id = 'sc-id'; name = 'TestSC'; type = 'generic'; url = 'https://existing.example.com' }
+            }
+        }
+
+        It 'Should pass the existing url so the update body carries one' {
+            Set-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC'
+
+            Assert-MockCalled -CommandName Set-DevOpsServiceConnection -Exactly 1 -ParameterFilter {
+                $Url -eq 'https://existing.example.com'
+            }
+        }
+
+    }
+
+    Context 'When SharedWithProjects adds a project the connection is not shared with' {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                param($Key, $Type)
+                if ($Type -eq 'LiveProjects') { return @{ id = 'proj-id'; name = 'TestProject' } }
+                return @{
+                    id                                = 'sc-id'
+                    name                               = 'TestSC'
+                    serviceEndpointProjectReferences = @(
+                        @{ projectReference = @{ id = 'proj-id'; name = 'TestProject' }; name = 'TestSC' }
+                    )
+                }
+            }
+            Mock -CommandName Resolve-AzDoSharedProjectReferences -MockWith {
+                @(
+                    @{ projectReference = @{ id = 'proj-id'; name = 'TestProject' }; name = 'TestSC' },
+                    @{ projectReference = @{ id = 'fab-id'; name = 'Fabrikam' }; name = 'shared-alias' }
+                )
+            }
+        }
+
+        It 'Should send only the references the connection already has in the update' {
+            Set-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic' -SharedWithProjects @('Fabrikam')
+
+            Assert-MockCalled -CommandName Set-DevOpsServiceConnection -Exactly 1 -ParameterFilter {
+                $ProjectReferences.Count -eq 1 -and $ProjectReferences[0].projectReference.id -eq 'proj-id'
+            }
+        }
+
+        It 'Should share with the new project through the dedicated share call, keeping its name override' {
+            Set-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic' -SharedWithProjects @('Fabrikam')
+
+            Assert-MockCalled -CommandName Add-DevOpsServiceConnectionProjectReferences -Exactly 1 -ParameterFilter {
+                $ServiceConnectionId -eq 'sc-id' -and
+                $ProjectReferences.Count -eq 1 -and
+                $ProjectReferences[0].projectReference.id -eq 'fab-id' -and
+                $ProjectReferences[0].name -eq 'shared-alias'
+            }
+        }
+
+        It 'Should not unshare anything' {
+            Set-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic' -SharedWithProjects @('Fabrikam')
+
+            Assert-MockCalled -CommandName Remove-DevOpsServiceConnection -Exactly 0
+        }
+
+        It 'Should cache the full desired reference list' {
+            Set-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic' -SharedWithProjects @('Fabrikam')
+
+            Assert-MockCalled -CommandName Add-CacheItem -Exactly 1 -ParameterFilter {
+                $Type -eq 'LiveServiceConnections' -and @($Value.serviceEndpointProjectReferences).Count -eq 2
+            }
+        }
+
+        It 'Should throw when the share call fails, so a DSC Set() reports the failure instead of silently succeeding' {
+            Mock -CommandName Add-DevOpsServiceConnectionProjectReferences -MockWith { throw 'share rejected' }
+
+            { Set-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic' -SharedWithProjects @('Fabrikam') } |
+                Should -Throw "*was updated but could not be shared/unshared*share rejected*"
+        }
+
+        It 'Should still cache the update that did succeed when the share call fails' {
+            Mock -CommandName Add-DevOpsServiceConnectionProjectReferences -MockWith { throw 'share rejected' }
+
+            { Set-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic' -SharedWithProjects @('Fabrikam') } |
+                Should -Throw
+
+            Assert-MockCalled -CommandName Add-CacheItem -Exactly 1 -ParameterFilter {
+                $Key -eq 'TestProject\TestSC' -and $Type -eq 'LiveServiceConnections'
+            }
+            Assert-MockCalled -CommandName Export-CacheObject -Exactly 1
+        }
+
+    }
+
+    Context 'When the unshare call fails' {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                param($Key, $Type)
+                if ($Type -eq 'LiveProjects') { return @{ id = 'proj-id'; name = 'TestProject' } }
+                return @{
+                    id                                = 'sc-id'
+                    name                               = 'TestSC'
+                    serviceEndpointProjectReferences = @(
+                        @{ projectReference = @{ id = 'proj-id'; name = 'TestProject' }; name = 'TestSC' },
+                        @{ projectReference = @{ id = 'fab-id'; name = 'Fabrikam' }; name = 'TestSC' }
+                    )
+                }
+            }
+            Mock -CommandName Resolve-AzDoSharedProjectReferences -MockWith {
+                @( @{ projectReference = @{ id = 'proj-id'; name = 'TestProject' }; name = 'TestSC' } )
+            }
+            Mock -CommandName Remove-DevOpsServiceConnection -MockWith { throw 'unshare rejected' }
+        }
+
+        It 'Should throw naming the project it could not unshare from' {
+            { Set-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic' -SharedWithProjects @() } |
+                Should -Throw "*unsharing from project 'Fabrikam' failed*unshare rejected*"
         }
 
     }
