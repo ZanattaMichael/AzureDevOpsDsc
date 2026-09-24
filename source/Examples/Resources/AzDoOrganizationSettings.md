@@ -11,6 +11,12 @@ AzDoOrganizationSettings [string] #ResourceName
     [ EnableOAuthAuthentication    = [Boolean]$EnableOAuthAuthentication ]
     [ EnableSSHAuthentication      = [Boolean]$EnableSSHAuthentication ]
     [ DisallowAadGuestUserPolicy   = [Boolean]$DisallowAadGuestUserPolicy ]
+    [ EnableIPConditionalAccessPolicyValidation = [Boolean]$EnableIPConditionalAccessPolicyValidation ]
+    [ LogAuditEvents               = [Boolean]$LogAuditEvents ]
+    [ AllowTeamAdminsToInviteUsers = [Boolean]$AllowTeamAdminsToInviteUsers ]
+    [ EnableRequestAccess          = [Boolean]$EnableRequestAccess ]
+    [ RequestAccessUrl             = [String]$RequestAccessUrl ]
+    [ EnableArtifactsFeedUpstreamProtection = [Boolean]$EnableArtifactsFeedUpstreamProtection ]
     [ Ensure                       = [String] {'Present', 'Absent'} ]
 }
 ```
@@ -25,11 +31,26 @@ AzDoOrganizationSettings [string] #ResourceName
 - **EnableOAuthAuthentication**: Whether OAuth authentication is enabled for third-party applications.
 - **EnableSSHAuthentication**: Whether SSH authentication is enabled for Git operations.
 - **DisallowAadGuestUserPolicy**: Whether the Azure AD guest user policy is disallowed.
+- **EnableIPConditionalAccessPolicyValidation**: Whether IP Conditional Access policy validation is enforced for this organization (*Organization settings -> Policies -> Security -> "Enable IP Conditional Access policy validation"*).
+- **LogAuditEvents**: Whether organization audit events are logged (*Organization settings -> Policies -> Security -> "Log audit events"*). Setting this to `$false` warns that any `AzDoAuditStream` on the organization will receive no events while auditing is off.
+- **AllowTeamAdminsToInviteUsers**: Whether team and project administrators can invite new users (*Organization settings -> Policies -> User -> "Allow team and project administrators to invite new users"*).
+- **EnableRequestAccess**: Whether the "Request access" link is shown to users without access (*Organization settings -> Policies -> User -> "Request access"*).
+- **RequestAccessUrl**: The URL shown alongside the request-access prompt. Only compared and written when `EnableRequestAccess` is `$true`.
+- **EnableArtifactsFeedUpstreamProtection**: Whether additional protections are applied when Artifacts feeds use public package registries as an upstream source (*Organization settings -> Policies -> Security -> "Additional protections when using public package registries"*).
 - **Ensure**: Specifies whether the settings should be applied. Valid values are `Present` and `Absent`.
 
 ## Additional Information
 
 This resource manages organization-level security and access settings in Azure DevOps. These settings affect the entire organization and should be managed carefully. Only one instance of this resource should be configured per organization.
+
+`AllowPublicProjects`, `AllowExternalGuestAccess`, `EnableOAuthAuthentication`, `EnableSSHAuthentication` and
+`DisallowAadGuestUserPolicy` are read/written via `_apis/settings/entries/host`. The policy properties added
+after them (`EnableIPConditionalAccessPolicyValidation`, `LogAuditEvents`, `AllowTeamAdminsToInviteUsers`,
+`EnableRequestAccess`/`RequestAccessUrl` and `EnableArtifactsFeedUpstreamProtection`) are a separate
+mechanism, `_apis/OrganizationPolicy/Policies/{policyName}`, matching the *Organization settings -> Policies*
+page. A `LimitUserVisibility` property was considered but left out: it verified as a preview-feature flag
+rather than a confirmed organization policy. Microsoft Entra tenant-level policies (PAT restrictions,
+organization-creation restrictions) are a different scope, tracked separately.
 
 ## Examples
 
@@ -48,6 +69,10 @@ Configuration ExampleConfig {
             EnableOAuthAuthentication  = $true
             EnableSSHAuthentication    = $true
             DisallowAadGuestUserPolicy = $false
+            LogAuditEvents             = $true
+            AllowTeamAdminsToInviteUsers = $false
+            EnableRequestAccess        = $true
+            RequestAccessUrl           = 'https://contoso.example/request-access'
         }
     }
 }
