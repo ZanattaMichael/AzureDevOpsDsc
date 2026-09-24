@@ -160,6 +160,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     group to well over a hundred for an AAD-backed user. A batch that fails is
     retried one descriptor at a time, so a single unresolvable identity no longer
     costs the whole batch.
+  - Added `BranchName` and `TagName` to `AzDoGitPermission` (#76), letting a
+    permission target a single branch's or tag's own ACL
+    (`refs/heads/{BranchName}` / `refs/tags/{TagName}`) instead of the
+    repository's. The two properties are mutually exclusive and both require
+    `RepositoryName`. Added the `GitBranch`/`GitTag` token forms to
+    `New-ACLToken`, `ConvertTo-FormattedToken` and `Parse-ACLToken` for the
+    `Git Repositories` namespace, addressed by hex/UTF-16LE-encoding each
+    `/`-delimited ref segment - the same encoding Azure DevOps itself uses on
+    the wire. Fixed the `GitBranch` localized token pattern, which was
+    unanchored and matched only a single ref segment, so it silently matched
+    unrelated tokens and could not address a branch folder (`release/1.0`).
+    Added the shared helpers `Format-AzDoGitRefName` (strips a leading
+    `refs/heads/`/`refs/tags/` prefix for comparison) and
+    `ConvertTo-GitRefToken` (the encode/decode round trip), with unit tests
+    covering non-ASCII branch and tag names.
 
 ### Changed
 

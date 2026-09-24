@@ -46,7 +46,10 @@ before (or with) the first of them.
 `ServiceEndpoints`, `AgentPool`, `DistributedTask`, `WorkItemQueryFolders`.
 `Parse-ACLToken.ps1` mirrors that set and falls through to a `Generic` type for anything
 else. `Build` now covers both the definition and the folder token form, and `Library` both
-the variable group and the secure file form.
+the variable group and the secure file form. `Git Repositories` now covers the branch
+(`refs/heads/{encoded}`) and tag (`refs/tags/{encoded}`) token forms in addition to the
+project and repository forms — see `AzDoGitPermission`'s `BranchName`/`TagName` properties
+below.
 
 `AzDoSecurityNamespacePermission` is the escape hatch — it takes a caller-supplied `Token`
 string — but it gives the user no help constructing that token, which is the hard and
@@ -55,6 +58,7 @@ error-prone part. Every permission resource below needs a matching `New-ACLToken
 
 | New resource | Namespace | Token shape | Status |
 |---|---|---|---|
+| `AzDoGitPermission` (`BranchName`/`TagName`) | `Git Repositories` | `repoV2/{projectId}/{repoId}/refs/heads\|tags/{hex(UTF-16LE(segment))}` per `/`-delimited ref segment | **Shipped** — see [#76](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/76) |
 | `AzDoQueryPermission` | `WorkItemQueryFolders` | `$/{projectId}/{queryFolderId}[/{childFolderId}...]` | **Shipped** |
 | `AzDoSecureFilePermission` | `Library` | `Library/Project/{projectId}/SecureFile/{secureFileId}` | **Shipped** |
 | `AzDoPipelineFolderPermission` | `Build` | `{projectId}/{folderPath}` | **Shipped** — see §5.4 |

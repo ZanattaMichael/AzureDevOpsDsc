@@ -75,4 +75,75 @@ Describe 'AzDoGitPermission' -Tag "Unit", "Resources" {
             $currentState.LookupResult.Permissions | Should -Be @('Read', 'Contribute')
         }
     }
+
+    Context 'BranchName and TagName properties' {
+
+        It 'Should default BranchName and TagName to null' {
+            $gitPermission = [AzDoGitPermission]::new()
+
+            $gitPermission.BranchName | Should -BeNullOrEmpty
+            $gitPermission.TagName | Should -BeNullOrEmpty
+        }
+
+        It 'Should accept a BranchName value' {
+            $gitPermission = [AzDoGitPermission]::new()
+            $gitPermission.BranchName = 'main'
+
+            $gitPermission.BranchName | Should -Be 'main'
+        }
+
+        It 'Should accept a TagName value' {
+            $gitPermission = [AzDoGitPermission]::new()
+            $gitPermission.TagName = 'v1.0'
+
+            $gitPermission.TagName | Should -Be 'v1.0'
+        }
+
+        It 'Should accept BranchName via its Branch alias' {
+            $gitPermission = [AzDoGitPermission]::new()
+            $gitPermission.Branch = 'release/1.0'
+
+            $gitPermission.BranchName | Should -Be 'release/1.0'
+        }
+
+        It 'Should accept TagName via its Tag alias' {
+            $gitPermission = [AzDoGitPermission]::new()
+            $gitPermission.Tag = 'v2.0'
+
+            $gitPermission.TagName | Should -Be 'v2.0'
+        }
+    }
+
+    Context 'When getting the current state of a branch-scoped Git permission' {
+
+        # GetDscCurrentStateObject() (AzDevOpsDscResourceBase) copies desired-state property
+        # values - including BranchName/TagName - from $this; only LookupResult/Ensure come from
+        # the Get-AzDo* function's return. So BranchName here is expected to reflect what was set
+        # on the resource object, while LookupResult carries the mock's own return values.
+        BeforeAll {
+            Mock -CommandName Get-AzDoGitPermission -ModuleName AzureDevOpsDscNative -MockWith {
+                return @{
+                    Ensure = [Ensure]::Absent
+                    propertiesChanged = @()
+                    ProjectName = "MyProject"
+                    RepositoryName = "MyRepository"
+                    isInherited = $true
+                    Permissions = @('Force Push')
+                }
+            }
+        }
+
+        It 'Should carry the desired-state BranchName through to the current state properties' {
+            $gitPermission = [AzDoGitPermission]::new()
+            $gitPermission.ProjectName = "MyProject"
+            $gitPermission.RepositoryName = "MyRepository"
+            $gitPermission.BranchName = "main"
+
+            $currentState = $gitPermission.Get()
+
+            $currentState.BranchName | Should -Be "main"
+            $currentState.TagName | Should -BeNullOrEmpty
+            $currentState.LookupResult.Permissions | Should -Be @('Force Push')
+        }
+    }
 }
