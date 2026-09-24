@@ -13,8 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Added the `RepositoryType` property (`TfsGit` default, `GitHub`, `GitHubEnterprise`,
       `Bitbucket`) and the `ServiceConnectionName` property, required for the three
       non-`TfsGit` types and resolved to a connection id via the new helper
-      `Resolve-AzDoServiceConnection`. Added `Convert-AzDoPipelineRepositoryType` to bridge
-      the classic Build Definitions API's repository type strings and the Pipelines API's.
+      `Resolve-AzDoServiceConnection`. Added `Convert-AzDoPipelineRepositoryType`, which
+      translates the resource's repository type names (the Build Definitions API's) into the
+      Pipelines API's for the create call, and `Get-AzDoPipelineRepositoryUrl`, which gives the
+      clone URL the build definition records when the repository changes.
     - Added the `Variables` property (an array of `@{ Name; Value; IsSecret; AllowOverride }`
       hashtables) and the private API function `Set-DevOpsPipelineVariables`, which reads the
       build definition, replaces only the named variables in its `variables` map, and writes
@@ -528,6 +530,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     copies for the duration of the job and restores them in an `always()` step, in
     the same way (and with the same record format) as `integration-tests-v3.yml`,
     and repeats the single-copy assertion in the test step itself.
+  - Fixed `AzDoPipeline` never being able to update a pipeline
+    ([#81](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/81)). `Set-DevOpsPipeline`
+    sent a `PATCH` to `_apis/pipelines/{id}`, which the Pipelines API refuses with
+    `405 Method Not Allowed` - it has no update verb. This was masked because `Get` compared
+    nothing and always reported `Unchanged`, so `Set` was never reached. A YAML pipeline is a
+    build definition underneath, so `Set-DevOpsPipeline` now reads that definition, changes
+    the name, folder, YAML path, default branch and (only when its type, name or service
+    connection differs) the repository, and writes the whole definition back with a `PUT`;
+    everything else on the definition is sent back as it was read. It throws on a failed
+    read or write rather than returning nothing.
+  - Fixed a newly created `AzDoPipeline` reporting drift on the first `Test()`. The Pipelines
+    API create call takes no default branch, so `New-AzDoPipeline` now applies the configured
+    name, folder, YAML path and default branch through `Set-DevOpsPipeline` straight after the
+    create, having cached the new pipeline first so a failure there is retried as an update
+    rather than a second create. `Set-AzDoPipeline` likewise caches the updated pipeline in
+    the shape the Pipelines API lists (which the pipeline permission resources read) before
+    writing any `Variables`.
   - Fixed every live `dsc resource get/set/test` call in the DSC v3 integration
     suite failing with `Cannot convert the "System.Object[]" value ... to type
     "System.Management.Automation.PSModuleInfo"` - 25 failures across the

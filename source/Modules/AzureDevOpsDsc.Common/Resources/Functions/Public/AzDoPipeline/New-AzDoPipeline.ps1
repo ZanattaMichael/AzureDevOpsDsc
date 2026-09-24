@@ -4,9 +4,13 @@ Creates an Azure DevOps YAML pipeline.
 
 .DESCRIPTION
 Creates a pipeline backed by an Azure Repos ('TfsGit') repository, or by an external
-(GitHub/GitHub Enterprise/Bitbucket) repository reached through a service connection. Any
-'Variables' supplied are then written onto the resulting build definition, since the Pipelines
-API used to create the pipeline has no concept of variables at all.
+(GitHub/GitHub Enterprise/Bitbucket) repository reached through a service connection.
+
+The Pipelines API used to create the pipeline does not apply a default branch (the pipeline takes
+the repository's, which an empty repository does not have) and has no concept of variables at all.
+Both are applied afterwards by writing the new pipeline's build definition back through
+'Set-DevOpsPipeline' and 'Set-DevOpsPipelineVariables'. The created pipeline is cached first, so a
+failure in either follow-up call is thrown with the pipeline still known to the next 'Get'.
 
 .PARAMETER ProjectName
 The Azure DevOps project name.
@@ -92,6 +96,8 @@ Function New-AzDoPipeline
 
     $repositoryId        = $null
     $serviceConnectionId = $null
+    $repository          = $null
+    $connection          = $null
 
     if ($RepositoryType -eq 'TfsGit')
     {
@@ -137,14 +143,32 @@ Function New-AzDoPipeline
         return
     }
 
+    Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $PipelineName) -Value $value -Type 'LivePipelines'
+    Export-CacheObject -CacheType 'LivePipelines' -Content $AzDoLivePipelines
+    Refresh-CacheObject -CacheType 'LivePipelines'
+
+    Write-Verbose "[New-AzDoPipeline] Applying the default branch '$DefaultBranch' to pipeline '$PipelineName'."
+    $setParams = @{
+        ApiUri              = $ApiUri
+        ProjectName         = $ProjectName
+        PipelineId          = $value.id
+        PipelineName        = $PipelineName
+        FolderPath          = $FolderPath
+        YamlFilePath        = $YamlPath
+        RepositoryId        = $repositoryId
+        RepositoryName      = $RepositoryName
+        RepositoryType      = $RepositoryType
+        RepositoryUrl       = Get-AzDoPipelineRepositoryUrl -RepositoryType $RepositoryType -RepositoryName $RepositoryName -Repository $repository -ServiceConnection $connection
+        ServiceConnectionId = $serviceConnectionId
+        DefaultBranch       = 'refs/heads/{0}' -f $DefaultBranch
+    }
+    Set-DevOpsPipeline @setParams | Out-Null
+
     if ($Variables -and $Variables.Count -gt 0)
     {
         Write-Verbose "[New-AzDoPipeline] Writing $($Variables.Count) variable(s) onto pipeline '$PipelineName'."
         Set-DevOpsPipelineVariables -ApiUri $ApiUri -ProjectName $ProjectName -DefinitionId $value.id -Variables $Variables | Out-Null
     }
 
-    Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $PipelineName) -Value $value -Type 'LivePipelines'
-    Export-CacheObject -CacheType 'LivePipelines' -Content $AzDoLivePipelines
-    Refresh-CacheObject -CacheType 'LivePipelines'
     Write-Verbose "[New-AzDoPipeline] Pipeline '$PipelineName' created."
 }

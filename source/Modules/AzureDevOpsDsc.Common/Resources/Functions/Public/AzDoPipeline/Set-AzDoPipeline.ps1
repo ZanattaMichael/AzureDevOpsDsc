@@ -3,8 +3,13 @@
 Updates an Azure DevOps YAML pipeline.
 
 .DESCRIPTION
-Updates the pipeline's repository (Azure Repos, or an external repository reached through a
-service connection) and writes any 'Variables' supplied onto the underlying build definition.
+Updates the pipeline's name, folder, YAML path, default branch and repository (Azure Repos, or an
+external repository reached through a service connection), then writes any 'Variables' supplied.
+
+The Pipelines API has no update verb, so both steps write the underlying build definition back
+through 'Set-DevOpsPipeline' and 'Set-DevOpsPipelineVariables'. A failed API call is thrown rather
+than written: 'Write-Error' inside a class-based DSC method never reaches the Invoke-DscResource
+caller, so 'Set()' would report success while 'Test()' kept failing.
 
 .PARAMETER ProjectName
 The Azure DevOps project name.
@@ -90,6 +95,8 @@ Function Set-AzDoPipeline
 
     $repositoryId        = $null
     $serviceConnectionId = $null
+    $repository          = $null
+    $connection          = $null
 
     if ($RepositoryType -eq 'TfsGit')
     {
@@ -113,6 +120,7 @@ Function Set-AzDoPipeline
         $serviceConnectionId = $connection.id
     }
 
+    # The build definition API takes the resource-side repository type names as they are.
     $params = @{
         ApiUri              = $ApiUri
         ProjectName         = $ProjectName
@@ -122,7 +130,8 @@ Function Set-AzDoPipeline
         YamlFilePath        = $YamlPath
         RepositoryId        = $repositoryId
         RepositoryName      = $RepositoryName
-        RepositoryType      = Convert-AzDoPipelineRepositoryType -RepositoryType $RepositoryType
+        RepositoryType      = $RepositoryType
+        RepositoryUrl       = Get-AzDoPipelineRepositoryUrl -RepositoryType $RepositoryType -RepositoryName $RepositoryName -Repository $repository -ServiceConnection $connection
         ServiceConnectionId = $serviceConnectionId
         DefaultBranch       = 'refs/heads/{0}' -f $DefaultBranch
     }
@@ -135,14 +144,25 @@ Function Set-AzDoPipeline
         return
     }
 
+    # Cached in the shape the Pipelines API lists, which is what 'Get-AzDoPipeline' and the
+    # pipeline permission resources read. Cached before the variables are written so a failure
+    # there does not lose the update that did go through.
+    $cachedPipeline = [PSCustomObject]@{
+        id       = $pipeline.id
+        revision = $value.revision
+        name     = $PipelineName
+        folder   = $FolderPath
+        url      = $pipeline.url
+    }
+    Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $PipelineName) -Value $cachedPipeline -Type 'LivePipelines'
+    Export-CacheObject -CacheType 'LivePipelines' -Content $AzDoLivePipelines
+    Refresh-CacheObject -CacheType 'LivePipelines'
+
     if ($Variables -and $Variables.Count -gt 0)
     {
         Write-Verbose "[Set-AzDoPipeline] Writing $($Variables.Count) variable(s) onto pipeline '$PipelineName'."
         Set-DevOpsPipelineVariables -ApiUri $ApiUri -ProjectName $ProjectName -DefinitionId $pipeline.id -Variables $Variables | Out-Null
     }
 
-    Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $PipelineName) -Value $value -Type 'LivePipelines'
-    Export-CacheObject -CacheType 'LivePipelines' -Content $AzDoLivePipelines
-    Refresh-CacheObject -CacheType 'LivePipelines'
     Write-Verbose "[Set-AzDoPipeline] Pipeline '$PipelineName' updated."
 }

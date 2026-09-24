@@ -16,8 +16,8 @@ Describe "Set-AzDoPipeline" -Tag "Unit", "Pipeline" {
         $files = Get-FunctionItem (Find-MockedFunctions -TestFilePath $currentFile)
         ForEach ($file in $files) { . $file.FullName }
 
-        # Not mocked below — the real translation is exercised directly.
-        . (Get-FunctionItem 'Convert-AzDoPipelineRepositoryType.ps1').FullName
+        # Not mocked below — the real URL construction is exercised directly.
+        . (Get-FunctionItem 'Get-AzDoPipelineRepositoryUrl.ps1').FullName
 
         . (Get-ClassFilePath 'DSCGetSummaryState')
         . (Get-ClassFilePath '000.CacheItem')
@@ -25,7 +25,7 @@ Describe "Set-AzDoPipeline" -Tag "Unit", "Pipeline" {
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
-        Mock -CommandName Set-DevOpsPipeline -MockWith { return @{ id = 1 } }
+        Mock -CommandName Set-DevOpsPipeline -MockWith { return @{ id = 1; revision = 4 } }
         Mock -CommandName Add-CacheItem
         Mock -CommandName Export-CacheObject
         Mock -CommandName Refresh-CacheObject
@@ -53,26 +53,49 @@ Describe "Set-AzDoPipeline" -Tag "Unit", "Pipeline" {
             Mock -CommandName Get-CacheItem -MockWith {
                 param ($Key, $Type)
                 switch ($Type) {
-                    'LivePipelines'    { return @{ id = 1; name = 'TestPipeline' } }
-                    'LiveRepositories' { return @{ id = 'mock-repo-id' } }
+                    'LivePipelines'    { return @{ id = 1; name = 'TestPipeline'; url = 'https://dev.azure.com/TestOrganization/TestProject/_apis/pipelines/1' } }
+                    'LiveRepositories' { return @{ id = 'mock-repo-id'; remoteUrl = 'https://dev.azure.com/TestOrganization/TestProject/_git/TestRepo' } }
                     default            { return $null }
                 }
             }
         }
 
-        It "calls Set-DevOpsPipeline with the Azure Repos shape" {
+        It "calls Set-DevOpsPipeline with the build definition's Azure Repos shape" {
             Set-AzDoPipeline -ProjectName 'TestProject' -PipelineName 'TestPipeline' `
-                -RepositoryName 'TestRepo' -YamlPath 'azure-pipelines.yml'
+                -RepositoryName 'TestRepo' -YamlPath 'azure-pipelines.yml' -FolderPath '\Team' -DefaultBranch 'develop'
             Assert-MockCalled -CommandName Set-DevOpsPipeline -Exactly -Times 1 -ParameterFilter {
-                $RepositoryType -eq 'azureReposGit' -and $RepositoryId -eq 'mock-repo-id' -and -not $ServiceConnectionId
+                $RepositoryType -eq 'TfsGit' -and
+                $RepositoryId -eq 'mock-repo-id' -and
+                $RepositoryUrl -eq 'https://dev.azure.com/TestOrganization/TestProject/_git/TestRepo' -and
+                $FolderPath -eq '\Team' -and
+                $DefaultBranch -eq 'refs/heads/develop' -and
+                -not $ServiceConnectionId
             }
         }
 
-        It "updates the cache" {
+        It "updates the cache with the pipeline, not the build definition" {
             Set-AzDoPipeline -ProjectName 'TestProject' -PipelineName 'TestPipeline' `
                 -RepositoryName 'TestRepo' -YamlPath 'azure-pipelines.yml'
-            Assert-MockCalled -CommandName Add-CacheItem -Times 1
+            Assert-MockCalled -CommandName Add-CacheItem -Exactly -Times 1 -ParameterFilter {
+                $Key -eq 'TestProject\TestPipeline' -and
+                $Type -eq 'LivePipelines' -and
+                $Value.id -eq 1 -and
+                $Value.name -eq 'TestPipeline' -and
+                $Value.revision -eq 4 -and
+                $Value.url -eq 'https://dev.azure.com/TestOrganization/TestProject/_apis/pipelines/1'
+            }
             Assert-MockCalled -CommandName Export-CacheObject -Times 1
+        }
+
+        It "throws when the update is refused, without writing the variables" {
+            Mock -CommandName Set-DevOpsPipeline -MockWith { throw "[Set-DevOpsPipeline] Failed to update pipeline '1': 405" }
+            {
+                Set-AzDoPipeline -ProjectName 'TestProject' -PipelineName 'TestPipeline' `
+                    -RepositoryName 'TestRepo' -YamlPath 'azure-pipelines.yml' `
+                    -Variables @(@{ Name = 'Environment'; Value = 'Prod' })
+            } | Should -Throw "*Failed to update pipeline '1'*"
+            Assert-MockCalled -CommandName Add-CacheItem -Times 0
+            Assert-MockCalled -CommandName Set-DevOpsPipelineVariables -Times 0
         }
 
         It "does not call Set-DevOpsPipelineVariables when no Variables are supplied" {
@@ -122,7 +145,11 @@ Describe "Set-AzDoPipeline" -Tag "Unit", "Pipeline" {
                 -RepositoryName 'owner/repo' -YamlPath 'azure-pipelines.yml' -RepositoryType 'Bitbucket' `
                 -ServiceConnectionName 'Bitbucket-org'
             Assert-MockCalled -CommandName Set-DevOpsPipeline -Exactly -Times 1 -ParameterFilter {
-                $RepositoryType -eq 'bitbucket' -and $ServiceConnectionId -eq 'conn-id-2' -and -not $RepositoryId
+                $RepositoryType -eq 'Bitbucket' -and
+                $RepositoryName -eq 'owner/repo' -and
+                $RepositoryUrl -eq 'https://bitbucket.org/owner/repo.git' -and
+                $ServiceConnectionId -eq 'conn-id-2' -and
+                -not $RepositoryId
             }
         }
     }

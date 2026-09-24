@@ -429,12 +429,14 @@ redeploy before running integration tests.
 existing resource already owned the pipeline/build-definition object these extend:
 
 - **`RepositoryType`** (`TfsGit` default, `GitHub`, `GitHubEnterprise`, `Bitbucket`). The
-  classic Build Definitions API (what this resource already reads and writes) and the
-  Pipelines create/update API disagree on the string for each type
+  classic Build Definitions API (what this resource reads, compares and updates) and the
+  Pipelines create API disagree on the string for each type
   (`TfsGit`/`GitHub`/`GitHubEnterprise`/`Bitbucket` vs.
   `azureReposGit`/`gitHub`/`gitHubEnterprise`/`bitbucket`); `Convert-AzDoPipelineRepositoryType`
-  bridges the two. `TfsGit` addresses the repository by `id`/`name`; the other three address
-  it by `fullName` (`owner/repo`) plus a service connection `id`.
+  translates for the create call only. `TfsGit` addresses the repository by `id`/`name`; the
+  other three address it by `owner/repo` (as both `id` and `name` on the build definition)
+  plus a service connection `id`, and `Get-AzDoPipelineRepositoryUrl` supplies the clone URL
+  the definition records.
 - **`ServiceConnectionName`**, resolved to a connection id by the new helper
   `Resolve-AzDoServiceConnection` (cache-first, live-fallback — the same pattern
   `AzDoServiceConnection` itself uses). Mandatory only when `RepositoryType` is not `TfsGit`;
@@ -449,6 +451,14 @@ existing resource already owned the pipeline/build-definition object these exten
   listed in the configuration are managed; pre-existing variables not named there are left
   alone.
 
+**Updates go through the build definition.** The Pipelines API (`_apis/pipelines`) creates
+and lists pipelines but has no update verb — a `PATCH` or `PUT` to `_apis/pipelines/{id}` is
+refused with `405`. `Set-DevOpsPipeline` therefore reads the pipeline's build definition,
+changes the managed fields (name, folder, YAML path, default branch, and the repository only
+when its type, name or service connection differs) and writes the whole definition back with a
+`PUT`. The create call takes no default branch either, so `New-AzDoPipeline` follows the create
+with the same update.
+
 **Secret variables are write-only.** Azure DevOps never returns a secret variable's value in
 any API response, so `Get-AzDoPipeline` cannot compare one and must not report drift based on
 a value it can never see: drift detection for a secret variable is limited to its presence and
@@ -460,7 +470,8 @@ way from this side to tell.
 configured, so `GitHub`, `GitHubEnterprise` and `Bitbucket` — and the
 `Resolve-AzDoServiceConnection` resolution path they exercise — are covered by unit tests only
 (`tests/Unit/Modules/AzureDevOpsDsc.Common/Api/Functions/Private/Helper/Resolve-AzDoServiceConnection.tests.ps1`,
-`Convert-AzDoPipelineRepositoryType.tests.ps1`, and the `AzDoPipeline` Get/New/Set unit tests).
+`Convert-AzDoPipelineRepositoryType.tests.ps1`, `Get-AzDoPipelineRepositoryUrl.tests.ps1`,
+`Set-DevOpsPipeline.tests.ps1`, and the `AzDoPipeline` Get/New/Set unit tests).
 The integration suite exercises `Variables` (create, update, secret rotation, no-drift `Test`)
 only against a `TfsGit` pipeline, in
 `tests/Integration/Resources/AzDoPipeline.Variables.tests.ps1`. Adding a GitHub/Bitbucket
