@@ -12,8 +12,9 @@ status = Error with reason = 'AgentNotRegistered' so Set-AzDoEnvironmentVMResour
 clear "install the agent first" error (an Error status is still routed to Set by the base class).
 
 When Ensure is Absent and no agent is registered under MachineName, that already is the desired
-state: this returns Ensure = Absent with status = Unchanged, so Test() reports true and nothing
-is called.
+state: this returns Ensure = Absent with status = NotFound, which is the only status the base
+class maps to "nothing to do" for an Absent configuration, so Test() reports true and nothing is
+called. The same applies when the parent environment does not exist.
 
 .PARAMETER ProjectName
 The name of the Azure DevOps project.
@@ -91,6 +92,14 @@ Function Get-AzDoEnvironmentVMResource
     if ($null -eq $environment)
     {
         Write-Verbose "[Get-AzDoEnvironmentVMResource] Environment '$EnvironmentName' was not found in project '$ProjectName'."
+        # Nothing can be registered under a parent that does not exist, so Absent already holds.
+        # The base class treats only 'NotFound' as "nothing to do" for Absent.
+        if ($Ensure -eq [Ensure]::Absent)
+        {
+            $result.status = [DSCGetSummaryState]::NotFound
+            return $result
+        }
+
         $result.status = [DSCGetSummaryState]::Error
         $result.reason = 'EnvironmentNotFound'
         return $result
@@ -106,7 +115,7 @@ Function Get-AzDoEnvironmentVMResource
         if ($Ensure -eq [Ensure]::Absent)
         {
             Write-Verbose "[Get-AzDoEnvironmentVMResource] No agent registered as '$MachineName'. This is already the desired (Absent) state."
-            $result.status = [DSCGetSummaryState]::Unchanged
+            $result.status = [DSCGetSummaryState]::NotFound
             return $result
         }
 

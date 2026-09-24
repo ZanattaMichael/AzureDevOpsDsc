@@ -37,6 +37,11 @@ Describe "Get-AzDoEnvironmentKubernetesResource" -Tag "Unit", "EnvironmentKubern
             $result.status | Should -Be 'Error'
             $result.reason | Should -Be 'EnvironmentNotFound'
         }
+
+        It "returns status NotFound when Ensure is Absent - nothing can exist under a missing environment" {
+            $result = Get-AzDoEnvironmentKubernetesResource -ProjectName 'TestProject' -EnvironmentName 'Missing' -KubernetesResourceName 'aks' -Namespace 'default' -ServiceConnectionName 'sc1' -Ensure Absent
+            $result.status | Should -Be 'NotFound'
+        }
     }
 
     Context "when the service connection cannot be resolved" {

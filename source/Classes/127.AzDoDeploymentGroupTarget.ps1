@@ -20,7 +20,7 @@
         by the runspace `Invoke-DscResource` runs DSC methods in. The message tells the operator
         to install the agent against this deployment group first.
       - `Ensure = 'Absent'` with no agent registered under `MachineName`: this already is the
-        desired state. `Get()` reports `Unchanged`/absent and `Test()` returns `$true` with no
+        desired state. `Get()` reports `NotFound`/absent and `Test()` returns `$true` with no
         error - only a *registered* target that should not be is something `Remove()` acts on.
 
     Tags are compared case-insensitively as a set, and only when the configuration specifies the

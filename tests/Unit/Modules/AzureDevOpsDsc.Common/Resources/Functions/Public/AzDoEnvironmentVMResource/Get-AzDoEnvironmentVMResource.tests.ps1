@@ -42,6 +42,11 @@ Describe "Get-AzDoEnvironmentVMResource" -Tag "Unit", "EnvironmentVMResource" {
             $result.status | Should -Be 'Error'
             $result.reason | Should -Be 'EnvironmentNotFound'
         }
+
+        It "returns status NotFound when Ensure is Absent - nothing can exist under a missing parent" {
+            $result = Get-AzDoEnvironmentVMResource -ProjectName 'TestProject' -EnvironmentName 'Missing' -MachineName 'vm1' -Ensure Absent
+            $result.status | Should -Be 'NotFound'
+        }
     }
 
     Context "when Ensure is Present and no agent is registered" {
@@ -61,9 +66,9 @@ Describe "Get-AzDoEnvironmentVMResource" -Tag "Unit", "EnvironmentVMResource" {
             Mock -CommandName List-DevOpsEnvironmentVMResources -MockWith { return @() }
         }
 
-        It "returns status Unchanged - this is the desired state" {
+        It "returns status NotFound - the only status the base class treats as already Absent" {
             $result = Get-AzDoEnvironmentVMResource -ProjectName 'TestProject' -EnvironmentName 'Production' -MachineName 'vm1' -Ensure Absent
-            $result.status | Should -Be 'Unchanged'
+            $result.status | Should -Be 'NotFound'
             $result.Ensure | Should -Be 'Absent'
         }
     }

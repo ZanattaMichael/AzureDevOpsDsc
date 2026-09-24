@@ -103,6 +103,14 @@ Function Get-AzDoEnvironmentKubernetesResource
     if ($null -eq $environment)
     {
         Write-Verbose "[Get-AzDoEnvironmentKubernetesResource] Environment '$EnvironmentName' was not found in project '$ProjectName'."
+        # Nothing can be registered under a parent that does not exist, so Absent already holds.
+        # The base class treats only 'NotFound' as "nothing to do" for Absent.
+        if ($Ensure -eq [Ensure]::Absent)
+        {
+            $result.status = [DSCGetSummaryState]::NotFound
+            return $result
+        }
+
         $result.status = [DSCGetSummaryState]::Error
         $result.reason = 'EnvironmentNotFound'
         return $result

@@ -52,8 +52,11 @@ Describe "AzDoEnvironmentKubernetesResource Integration Tests" -Tag "Integration
                         clusterContext        = 'placeholder'
                     }
                 }
+                # The endpoint API rejects a connection with no 'url' ("Value cannot be null.
+                # Parameter name: endpoint.Url"); New-DevOpsServiceConnection lifts Data.url to it.
                 Data           = @{
-                    authorizationType = 'Kubeconfig'
+                    url                  = 'https://placeholder.example.com'
+                    authorizationType    = 'Kubeconfig'
                     acceptUntrustedCerts = 'true'
                 }
             }
