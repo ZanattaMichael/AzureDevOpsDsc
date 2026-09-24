@@ -169,8 +169,11 @@ Each resource links to its example/usage documentation.
 | [AzDoPipelineFolder](source/Examples/Resources/AzDoPipelineFolder.md) | Manages the pipeline (build) folder tree. |
 | [AzDoPipelineEnvironment](source/Examples/Resources/AzDoPipelineEnvironment.md) | Creates and manages pipeline environments. |
 | [AzDoEnvironmentApproval](source/Examples/Resources/AzDoEnvironmentApproval.md) | Manages approval checks on a pipeline environment. |
+| [AzDoEnvironmentKubernetesResource](source/Examples/Resources/AzDoEnvironmentKubernetesResource.md) | Creates and manages Kubernetes namespace resources on a pipeline environment. |
+| [AzDoEnvironmentVMResource](source/Examples/Resources/AzDoEnvironmentVMResource.md) | Manages tags and removal of a virtual machine resource on a pipeline environment; registration is agent-install-only. |
 | [AzDoCheckConfiguration](source/Examples/Resources/AzDoCheckConfiguration.md) | Manages pipeline checks (e.g. Approval) on a protected resource. |
 | [AzDoDeploymentGroup](source/Examples/Resources/AzDoDeploymentGroup.md) | Creates and manages deployment groups. |
+| [AzDoDeploymentGroupTarget](source/Examples/Resources/AzDoDeploymentGroupTarget.md) | Manages tags and removal of a deployment group target; registration is agent-install-only. |
 | [AzDoAgentPool](source/Examples/Resources/AzDoAgentPool.md) | Creates and manages organization agent pools. |
 | [AzDoAgentQueue](source/Examples/Resources/AzDoAgentQueue.md) | Creates and manages project agent queues. |
 | [AzDoTaskGroup](source/Examples/Resources/AzDoTaskGroup.md) | Creates and manages task groups. |

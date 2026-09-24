@@ -8,6 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - AzureDevOpsDscNative
+  - Added `AzDoEnvironmentKubernetesResource`, `AzDoEnvironmentVMResource` and
+    `AzDoDeploymentGroupTarget` (classes `125`-`127`), closing the deployment-target
+    gap tracked as `AzDoDeploymentGroupAgent` in the resource roadmap (#82).
+    `AzDoEnvironmentKubernetesResource` creates and manages a Kubernetes namespace
+    resource on a pipeline environment via a service connection; because its
+    provider API has no Update call, any drift - including Tags - is corrected by
+    deleting and recreating the resource, which changes its id, rather than by
+    silently ignoring it. The property the issue named `ResourceName` is exposed as
+    `KubernetesResourceName` instead, since `ResourceName` is reserved elsewhere in
+    this module. `AzDoEnvironmentVMResource` and `AzDoDeploymentGroupTarget` manage
+    tags and removal of an already-registered VM resource or deployment group
+    target; both are agent-install-only by design (there is no REST call that
+    registers one), so `Present` against a machine with no agent registered makes
+    `Get` return an `Error` status and `Set` **throw** a clear install-the-agent
+    message rather than silently doing nothing, while `Absent` against the same
+    unregistered machine is treated as the desired state.
+  - Added the private API helpers `New-/List-/Remove-DevOpsEnvironmentKubernetesResource(s)`,
+    `List-/Set-/Remove-DevOpsEnvironmentVMResource(s)` and
+    `List-/Set-/Remove-DevOpsDeploymentGroupTarget(s)`, plus the
+    `LiveEnvironmentKubernetesResources`, `LiveEnvironmentVMResources` and
+    `LiveDeploymentGroupTargets` cache types.
   - Added `AzDoQueryFolder`, a resource managing folders in a project's shared work
     item query tree. Folders are declared in their own right so that queries can
     depend on them, rather than each query creating its own ancestry - which would
