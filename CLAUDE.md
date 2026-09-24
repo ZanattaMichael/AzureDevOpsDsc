@@ -69,7 +69,7 @@ All DSC resources live in `source\Classes\` with numeric prefixes controlling lo
 | `111`–`116` | `AzDoPicklist`, `AzDoProcessWorkItemType`, `AzDoProcessField`, `AzDoProcessState`, `AzDoProcessRule`, `AzDoProcessBehavior` | Inherited-process customization |
 | `138`–`141` | `AzDoTestVariable`, `AzDoTestConfiguration`, `AzDoTestPlan`, `AzDoTestSuite` | Test management (test plan REST API 7.1); no test-plan security namespace exists, so there is no `AzDoTestPlanPermission` |
 
-There are currently **69** `[DscResource()]` classes (classes `117`–`137` add other, unrelated resources not covered by this table). `docs/ResourceRoadmap.md` is the plan of record for what is implemented and what is still outstanding.
+There are currently **69** `[DscResource()]` classes. `docs/ResourceRoadmap.md` is the plan of record for what is implemented and what is still outstanding.
 
 The `Construct()` method (in `AzDevOpsDscResourceBase`) runs at `new()` time, reads `ModuleSettings.clixml`, and sets `$Global:DSCAZDO_AuthenticationToken` and `$Global:DSCAZDO_OrganizationName`.
 
