@@ -297,7 +297,7 @@ code beyond conventions. Both landed **before** their permission counterparts, a
 | `AzDoDashboard` / `AzDoDashboardWidget` / `AzDoDashboardPermission` | Team and project dashboards. `Dashboards` namespace needs adding. | Medium | Outstanding |
 | `AzDoDeliveryPlan` | Cross-team roadmap plans; `Plan` namespace. | Medium | Outstanding |
 | `AzDoElasticPool` | VMSS-backed agent pools — increasingly the default for self-hosted compute. Complements the existing `AzDoAgentPool`. | Medium | Outstanding |
-| `AzDoBuildRetentionSettings` | Project-level run/artifact retention (`_apis/build/retention`). | Low | Outstanding |
+| `AzDoBuildRetentionSettings` | Project-level run/artifact retention (`_apis/build/retention`). | Low | **Shipped** (`143`) |
 | `AzDoBoardColumn` / `AzDoBoardSettings` / `AzDoCardRule` | Board columns, swimlanes, card fields and styling. `AzDoTeamSettings` covers backlog/iteration/area defaults and working days, but not the board itself. | Medium | Outstanding |
 | `AzDoWikiPage` | `AzDoWiki` manages the wiki, not its pages or their ordering. | Medium | Outstanding |
 
@@ -344,7 +344,7 @@ Items from #59 checked against the code:
 | `AzDoCommitStatusPolicy`, `AzDoPullRequestPolicySettings` | **Verify against `AzDoBranchPolicy`** before starting — likely expressible as policy types there rather than as new resources. |
 | `AzDoTeamFieldValues` | **Likely covered** by `AzDoTeamSettings` (`DefaultAreaPath`, `AreaPaths`). Verify, then drop. |
 | `AzDoWorkItemQuery`, `AzDoQueryFolderPermission` | **Closed.** Split into `AzDoQueryFolder` / `AzDoWorkItemQuery` / `AzDoQueryPermission` and shipped (§3). |
-| `AzDoPipelineRetentionPolicy` | Confirmed gap; listed above as `AzDoBuildRetentionSettings`. |
+| `AzDoPipelineRetentionPolicy` | **Closed.** Shipped as `AzDoBuildRetentionSettings`, class `143` (§6). Out of scope: the classic-era `maximumRetentionPolicy`/`defaultRetentionPolicy` values at `_apis/build/settings`, tied to classic release management (#86). |
 | `AzDoResourceAuthorization` | **Partially covered** by `AzDoCheckConfiguration` and the per-resource permission resources. Scope it precisely before starting. |
 | `AzDoGroupEntitlement` | **Closed.** Shipped as class `109` (§6). |
 | `AzDoPipelineFolder` | **Closed.** Shipped as classes `107`–`108`, together with the `Build` folder ACL token (§5.3–5.4). |
@@ -383,7 +383,8 @@ Still outstanding, in the order below:
   `AzDoDashboardWidget`, `AzDoDashboardPermission`, `AzDoDeliveryPlan`, `AzDoBoardColumn`,
   `AzDoBoardSettings`, `AzDoCardRule`. The `Dashboards` and `Plan` ACL namespaces are
   still unimplemented (§2).
-- **Remaining §6 gaps** — `AzDoElasticPool`, `AzDoBuildRetentionSettings`, `AzDoWikiPage`.
+- **Remaining §6 gaps** — `AzDoElasticPool`, `AzDoWikiPage`. `AzDoBuildRetentionSettings` shipped
+  as class `143` (issue #88).
 - **Org-scoped pipeline settings** (§7) — extend `AzDoPipelineSettings` rather than adding
   six resources.
 - **Test management** (§7), then **classic release management** (§7) with
@@ -402,8 +403,8 @@ resources) are done, as is all of process customization except the layout API. W
 remains:
 
 1. **`AzDoProcessLayout`** (§6) — finishes the process customization sub-project.
-2. **`AzDoElasticPool`**, **`AzDoBuildRetentionSettings`** (§6) — low effort each, no ACL
-   dependency.
+2. **`AzDoElasticPool`** (§6) — low effort, no ACL dependency.
+   `AzDoBuildRetentionSettings` shipped as class `143` (issue #88).
 3. **Dashboards and delivery plans** (§6) — `Dashboards` and `Plan` ACL namespaces first
    (§2), then `AzDoDashboard` → `AzDoDashboardWidget` → `AzDoDashboardPermission`, and
    `AzDoDeliveryPlan`.
