@@ -252,6 +252,74 @@ Describe 'New-ACLToken Function Tests' -Tag "Unit", "ACL", "Helper" {
         }
     }
 
+    Context 'ReleaseManagement SecurityNamespace' {
+
+        BeforeAll {
+            . (Get-FunctionItem 'Format-AzDoPipelineFolderPath.ps1').FullName
+            . (Get-FunctionItem 'ConvertTo-FormattedToken.ps1').FullName
+            Mock -CommandName Resolve-AzDoProjectIdForToken -MockWith { return 'project-id-1' }
+            Mock -CommandName Get-CacheItem -MockWith { return [PSCustomObject]@{ id = '456' } }
+        }
+
+        It 'Treats a bare project name as the project root' {
+            $result = New-ACLToken -SecurityNamespace 'ReleaseManagement' -TokenName 'MyProject'
+            $result.type | Should -Be 'ReleaseRoot'
+            $result.ProjectId | Should -Be 'project-id-1'
+        }
+
+        It 'Round-trips a project-root token' {
+            $structured = New-ACLToken -SecurityNamespace 'ReleaseManagement' -TokenName 'MyProject'
+            ConvertTo-FormattedToken -Token $structured | Should -Be 'project-id-1'
+        }
+
+        It 'Treats a path marked with a leading separator as a folder' {
+            $result = New-ACLToken -SecurityNamespace 'ReleaseManagement' -TokenName 'MyProject/\Platform'
+            $result.type | Should -Be 'ReleaseFolder'
+            $result.FolderPath | Should -Be 'Platform'
+        }
+
+        It 'Handles a nested folder path' {
+            $result = New-ACLToken -SecurityNamespace 'ReleaseManagement' -TokenName 'MyProject/\Platform\Release'
+            $result.type | Should -Be 'ReleaseFolder'
+            $result.FolderPath | Should -Be 'Platform\Release'
+        }
+
+        It 'Round-trips a folder token into the API token form' {
+            $structured = New-ACLToken -SecurityNamespace 'ReleaseManagement' -TokenName 'MyProject/\Platform'
+            ConvertTo-FormattedToken -Token $structured | Should -Be 'project-id-1/Platform'
+        }
+
+        It 'Resolves a definition name at the root, marked with a leading @' {
+            $result = New-ACLToken -SecurityNamespace 'ReleaseManagement' -TokenName 'MyProject/@MyRelease'
+            $result.type | Should -Be 'ReleaseDefinition'
+            $result.FolderPath | Should -BeNullOrEmpty
+            $result.DefinitionId | Should -Be '456'
+        }
+
+        It 'Round-trips a root definition token into the API token form' {
+            $structured = New-ACLToken -SecurityNamespace 'ReleaseManagement' -TokenName 'MyProject/@MyRelease'
+            ConvertTo-FormattedToken -Token $structured | Should -Be 'project-id-1/456'
+        }
+
+        It 'Resolves a definition name inside a folder' {
+            $result = New-ACLToken -SecurityNamespace 'ReleaseManagement' -TokenName 'MyProject/\Platform\@MyRelease'
+            $result.type | Should -Be 'ReleaseDefinition'
+            $result.FolderPath | Should -Be 'Platform'
+            $result.DefinitionId | Should -Be '456'
+        }
+
+        It 'Round-trips a definition-in-folder token into the API token form, root folder omitted' {
+            $structured = New-ACLToken -SecurityNamespace 'ReleaseManagement' -TokenName 'MyProject/\Platform\@MyRelease'
+            ConvertTo-FormattedToken -Token $structured | Should -Be 'project-id-1/Platform/456'
+        }
+
+        It 'Falls back to the definition name when it is not cached' {
+            Mock -CommandName Get-CacheItem -MockWith { return $null }
+            $result = New-ACLToken -SecurityNamespace 'ReleaseManagement' -TokenName 'MyProject/@MyRelease'
+            $result.DefinitionId | Should -Be 'MyRelease'
+        }
+    }
+
     Context 'Unknown SecurityNamespace' {
 
         It 'Should return Generic type for unrecognized security namespace (pass-through)' {

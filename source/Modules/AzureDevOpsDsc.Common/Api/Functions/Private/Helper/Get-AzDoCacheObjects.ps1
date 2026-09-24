@@ -45,6 +45,7 @@ function Get-AzDoCacheObjects
         'LivePolicyTypes',
         'LiveProcesses',
         'LiveProjects',
+        'LiveReleaseDefinitions',
         'LiveRepositories',
         'LiveSecureFiles',
         'LiveServiceConnections',

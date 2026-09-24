@@ -50,6 +50,16 @@ data LocalizedDataAzACLTokenPatten
         # Build folder ACL token — {projectId}/{folderPath}. The negative lookahead keeps a
         # definition token ({projectId}/{numericId}) from being read as a folder.
         BuildFolderPermission   = '^(?<ProjectId>[A-Za-z0-9-]+)\/(?<FolderPath>(?![0-9]+$).+)$'
+        # Release (classic Release Management) ACL Token Patterns. The namespace addresses a
+        # project root ({projectId}), a definition ({projectId}/{definitionId}, or
+        # {projectId}/{folderPath}/{definitionId} when the definition lives in a folder - the
+        # root folder is omitted rather than written out), or a folder on its own
+        # ({projectId}/{folderPath}). A definition token always ends in a numeric id; a folder
+        # path never does, which is what tells the two apart, the same trick BuildFolderPermission
+        # uses.
+        ReleaseDefinitionPermission = '^(?<ProjectId>[A-Za-z0-9-]+)(\/(?<FolderPath>.+?))?\/(?<DefinitionId>[0-9]+)$'
+        ReleaseFolderPermission     = '^(?<ProjectId>[A-Za-z0-9-]+)\/(?<FolderPath>(?![0-9]+$).+)$'
+        ReleaseRootPermission       = '^(?<ProjectId>[A-Za-z0-9-]+)$'
         # Library (VariableGroup) ACL Token Patterns
         LibraryPermission       = '^Library\/Project\/(?<ProjectId>[A-Za-z0-9-]+)(\/VariableGroup\/(?<VariableGroupId>[0-9]+))?(\/SecureFile\/(?<SecureFileId>[A-Za-z0-9-]+))?$'
         # ServiceEndpoints ACL Token Patterns

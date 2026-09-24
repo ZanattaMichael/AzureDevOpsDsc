@@ -148,6 +148,16 @@ Function Parse-ACLToken
             }
         }
 
+        'ReleaseManagement' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.ReleaseDefinitionPermission { $result.type = 'ReleaseDefinition'; break }
+                $LocalizedDataAzACLTokenPatten.ReleaseFolderPermission     { $result.type = 'ReleaseFolder';     break }
+                $LocalizedDataAzACLTokenPatten.ReleaseRootPermission       { $result.type = 'ReleaseRoot';       break }
+                default                                                    { $result.type = 'ReleaseUnknown'          }
+            }
+        }
+
         'ServiceEndpoints' {
             switch -regex ($Token.Trim())
             {

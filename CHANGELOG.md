@@ -160,6 +160,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     group to well over a hundred for an AAD-backed user. A batch that fails is
     retried one descriptor at a time, so a single unresolvable identity no longer
     costs the whole batch.
+  - Added `ReleaseManagement` support to `New-ACLToken`, `ConvertTo-FormattedToken`
+    and `Parse-ACLToken`, with the token patterns in the localized data files
+    (#86). The namespace addresses a project's release root by project id alone,
+    a folder by path, and a definition by numeric id - with the folder segment
+    omitted from a definition's token when the definition lives at the root
+    rather than written out as a literal empty segment.
+  - Added `AzDoReleaseFolder`, a resource managing folders in a project's classic
+    Release folder tree, on the `vsrm.dev.azure.com` host (#86). Reuses
+    `Format-AzDoPipelineFolderPath` for path normalization, since Release folder
+    paths follow the identical backslash-rooted convention as pipeline folders.
+    The release root cannot be managed as a folder in its own right. Deleting a
+    folder that still has sub-folders or release definitions is refused unless
+    `AllowRecursiveDelete` is set. Creation fails with a clear error naming the
+    org setting when classic Release Management creation has been disabled,
+    rather than surfacing a raw 403/400.
+  - Added the private Release Folder API functions `List-DevOpsReleaseFolders`,
+    `New-DevOpsReleaseFolder`, `Update-DevOpsReleaseFolder`,
+    `Remove-DevOpsReleaseFolder` and `Get-DevOpsReleaseDefinitionsInFolder`.
+  - Added `AzDoReleaseFolderPermission`, a resource managing the ACL on a classic
+    Release folder via the `ReleaseManagement` security namespace (#86).
+    Permissions are set on folders and inherited by the definitions beneath them;
+    omitting `FolderPath` targets the project's release root. Removing the ACL on
+    the release root is refused, since that token has no parent to inherit from.
+  - Added `AzDoReleaseDefinitionPermission`, a resource managing the ACL on a
+    single classic Release definition via the `ReleaseManagement` security
+    namespace (#86). The definition is resolved by name - optionally
+    disambiguated by the folder it lives in - through the live
+    `release/definitions` search endpoint, since `AzDoReleaseDefinition` itself
+    (issue #86's remaining scope) does not yet populate a `LiveReleaseDefinitions`
+    cache entry for it to reuse.
+  - Added the private API function `Find-DevOpsReleaseDefinition`, resolving a
+    Release definition name (and optional folder) to its numeric id and path via
+    the `release/definitions` exact-name-match search.
 
 ### Changed
 

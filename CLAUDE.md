@@ -67,8 +67,9 @@ All DSC resources live in `source\Classes\` with numeric prefixes controlling lo
 | `107`–`108` | `AzDoPipelineFolder`, `AzDoPipelineFolderPermission` | Pipeline folder tree; `Build` namespace (folder token form) |
 | `109`–`110` | `AzDoGroupEntitlement`, `AzDoServicePrincipalEntitlement` | Licensing at scale |
 | `111`–`116` | `AzDoPicklist`, `AzDoProcessWorkItemType`, `AzDoProcessField`, `AzDoProcessState`, `AzDoProcessRule`, `AzDoProcessBehavior` | Inherited-process customization |
+| `132`–`134` | `AzDoReleaseFolder`, `AzDoReleaseFolderPermission`, `AzDoReleaseDefinitionPermission` | Classic Release Management; `ReleaseManagement` namespace, `vsrm.dev.azure.com` host |
 
-There are currently **65** `[DscResource()]` classes. `docs/ResourceRoadmap.md` is the plan of record for what is implemented and what is still outstanding.
+There are currently **68** `[DscResource()]` classes. `docs/ResourceRoadmap.md` is the plan of record for what is implemented and what is still outstanding.
 
 The `Construct()` method (in `AzDevOpsDscResourceBase`) runs at `new()` time, reads `ModuleSettings.clixml`, and sets `$Global:DSCAZDO_AuthenticationToken` and `$Global:DSCAZDO_OrganizationName`.
 

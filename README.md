@@ -160,6 +160,8 @@ Each resource links to its example/usage documentation.
 | [AzDoSecurityNamespacePermission](source/Examples/Resources/AzDoSecurityNamespacePermission.md) | Manages permissions for an arbitrary security namespace and token. |
 | [AzDoGroupPermission](source/Examples/Resources/AzDoGroupPermission.md) | *(Not currently supported)* Manages group-level identity permissions. |
 | [AzDoQueryPermission](source/Examples/Resources/AzDoQueryPermission.md) | Manages permissions on work item query folders. |
+| [AzDoReleaseFolderPermission](source/Examples/Resources/AzDoReleaseFolderPermission.md) | Manages permissions on classic Release folders, which definitions inherit. |
+| [AzDoReleaseDefinitionPermission](source/Examples/Resources/AzDoReleaseDefinitionPermission.md) | Manages permissions on a single classic Release definition. |
 
 ### Pipelines, environments and agents
 
@@ -178,6 +180,16 @@ Each resource links to its example/usage documentation.
 | [AzDoSecureFile](source/Examples/Resources/AzDoSecureFile.md) | Manages secure files (certificates, keystores) available to pipelines. |
 | [AzDoServiceConnection](source/Examples/Resources/AzDoServiceConnection.md) | Creates and manages service connections (service endpoints). |
 | [AzDoPipelineSettings](source/Examples/Resources/AzDoPipelineSettings.md) | Manages a project's pipeline general settings (job auth scope, settable variables, etc.). |
+
+### Classic Release Management
+
+The classic Release Management APIs live on the `vsrm.dev.azure.com` host rather than
+`dev.azure.com`. Folders (like pipeline folders) must exist before a definition can be
+created at their path.
+
+| Resource | Description |
+|---|---|
+| [AzDoReleaseFolder](source/Examples/Resources/AzDoReleaseFolder.md) | Manages the classic Release folder tree. |
 
 ### Boards and work items
 

@@ -15,7 +15,7 @@ explicitly.
 
 ## 1. Current coverage (verified)
 
-76 class files exist, `001`–`116`; 65 of them carry `[DscResource()]` (the other 11 are the
+79 class files exist, `001`–`134`; 68 of them carry `[DscResource()]` (the other 11 are the
 auth and base classes). By subsystem:
 
 | Subsystem | Resources |
@@ -31,6 +31,7 @@ auth and base classes). By subsystem:
 | Pipelines | `AzDoPipeline`, `AzDoPipelinePermission`, `AzDoPipelineSettings`, `AzDoPipelineEnvironment`, `AzDoEnvironmentApproval`, `AzDoEnvironmentPermission`, `AzDoCheckConfiguration`, `AzDoTaskGroup`, `AzDoAgentPool`, `AzDoAgentPoolPermission`, `AzDoAgentQueue`, `AzDoDeploymentGroup`, `AzDoPipelineFolder`, `AzDoPipelineFolderPermission` |
 | Library / connections | `AzDoVariableGroup`, `AzDoVariableGroupPermission`, `AzDoServiceConnection`, `AzDoServiceConnectionPermission`, `AzDoSecureFile`, `AzDoSecureFilePermission` |
 | Artifacts | `AzDoArtifactFeed`, `AzDoArtifactFeedPermission`, `AzDoArtifactFeedSettings`, `AzDoArtifactFeedView` |
+| Classic Release Management | `AzDoReleaseFolder`, `AzDoReleaseFolderPermission`, `AzDoReleaseDefinitionPermission` |
 | Wiki | `AzDoWiki` |
 | Generic | `AzDoSecurityNamespacePermission` |
 
@@ -61,7 +62,8 @@ error-prone part. Every permission resource below needs a matching `New-ACLToken
 | `AzDoDashboardPermission` | `Dashboards` / `DashboardsPrivileges` | `$/{projectId}/{teamId}/{dashboardId}` | Outstanding |
 | `AzDoDeliveryPlanPermission` | `Plan` | `Plan/{planId}` | Outstanding |
 | `AzDoTaggingPermission` | `Tagging` | `/{projectId}` | Outstanding |
-| `AzDoReleaseDefinitionPermission` | `ReleaseManagement` | `{projectId}/{folderPath}/{definitionId}` | Outstanding |
+| `AzDoReleaseFolderPermission` | `ReleaseManagement` | `{projectId}/{folderPath}` (folder) or `{projectId}` (root) | **Shipped** — see §5.5 |
+| `AzDoReleaseDefinitionPermission` | `ReleaseManagement` | `{projectId}/{folderPath}/{definitionId}` (or `{projectId}/{definitionId}` at the root) | **Shipped** — see §5.5 |
 | `AzDoAnalyticsPermission` | `Analytics` | `$/{projectId}` | Outstanding |
 
 Whenever a namespace is added, add a `New-ACLToken` → `ConvertTo-FormattedToken` →
@@ -208,9 +210,9 @@ Tag merges are **irreversible and project-wide**. The guards matter more than th
 ## 5. Directory / folder hierarchies
 
 Azure DevOps exposes three folder trees that are configuration in their own right — they
-carry ACLs, and objects cannot be created at a path whose folders do not exist. Two of the
-three are now manageable: query folders (§5.2) and pipeline folders (§5.3–5.4) shipped as
-classes `101` and `107`–`108`. Release folders (§5.5) remain outstanding.
+carry ACLs, and objects cannot be created at a path whose folders do not exist. All three
+are now manageable: query folders (§5.2), pipeline folders (§5.3–5.4) and Release folders
+(§5.5), shipped as classes `101`, `107`–`108` and `132`–`133`.
 
 ### 5.1 Why folders need their own resources
 
@@ -271,19 +273,30 @@ Both consequences are now resolved:
    previously could not target a folder — folder-inherited pipeline permissions were
    unmanageable in shipped functionality, not only absent from the roadmap.
 
-### 5.5 Release folders
+### 5.5 Release folders — **shipped** (classes `132`–`134`, #86)
 
-`AzDoReleaseFolder` / `AzDoReleaseFolderPermission` (from #59) are the third tree
-(`_apis/release/folders`, `ReleaseManagement` namespace). Same modelling as 5.3/5.4. Keep
-them with the classic release management phase — there is no reason to build the folder
-resource ahead of the definitions it would contain.
+`AzDoReleaseFolder` (`132`) / `AzDoReleaseFolderPermission` (`133`) are the third tree
+(`_apis/release/folders`, `ReleaseManagement` namespace, on the `vsrm.dev.azure.com` host
+rather than `dev.azure.com`). Same modelling as §5.3/5.4, and `Format-AzDoPipelineFolderPath`
+is reused directly for path normalization since the rules are identical. Creation fails with
+a clear error naming the org setting when classic Release Management creation is disabled,
+rather than surfacing a raw 403/400.
+
+`AzDoReleaseDefinitionPermission` (`134`) shipped alongside the folder resources rather than
+waiting for `AzDoReleaseDefinition` itself: it resolves a definition by name (optionally
+disambiguated by `FolderPath`) through the live `release/definitions` search endpoint, since
+no resource populates the `LiveReleaseDefinitions` cache yet.
+
+`AzDoReleaseDefinition` — the resource managing definitions themselves (stages, artifacts,
+approvers) — is **outstanding**. It is a materially larger surface than the folder and
+permission resources (comparable to `AzDoPipeline`) and is tracked separately; see §7.
 
 ### 5.6 Sequencing (as executed)
 
 `AzDoQueryFolder` and `AzDoPipelineFolder` were independent of each other and shared no
 code beyond conventions. Both landed **before** their permission counterparts, and
-`AzDoQueryFolder` before `AzDoWorkItemQuery`. Apply the same ordering to
-`AzDoReleaseFolder` / `AzDoReleaseFolderPermission` when §5.5 is picked up.
+`AzDoQueryFolder` before `AzDoWorkItemQuery`. The same ordering was applied to
+`AzDoReleaseFolder` → `AzDoReleaseFolderPermission` → `AzDoReleaseDefinitionPermission`.
 
 ---
 
@@ -349,7 +362,7 @@ Items from #59 checked against the code:
 | `AzDoGroupEntitlement` | **Closed.** Shipped as class `109` (§6). |
 | `AzDoPipelineFolder` | **Closed.** Shipped as classes `107`–`108`, together with the `Build` folder ACL token (§5.3–5.4). |
 | `AzDoWikiPage`, `AzDoElasticPool`, `AzDoDeploymentGroupAgent`, dashboards, delivery plans, analytics | Confirmed gaps, still outstanding. |
-| Classic Release Management (Phase 2 in #59) | Confirmed gap, but **recommend demoting** below Boards/Queries and Process customization. It is a legacy subsystem in maintenance mode, and it is the largest surface on the list (`AzDoReleaseDefinition` alone is comparable in size to `AzDoPipeline`). Value per unit of effort is the lowest of anything proposed. |
+| Classic Release Management (Phase 2 in #59) | **Partially closed** (#86). `AzDoReleaseFolder`, `AzDoReleaseFolderPermission` and `AzDoReleaseDefinitionPermission` shipped as classes `132`–`134`, together with `ReleaseManagement` ACL token support (§2). `AzDoReleaseDefinition` itself — the resource managing a definition's stages, artifacts and approvers — remains outstanding; it is a materially larger surface, comparable in size to `AzDoPipeline`. |
 | Test Management (Phase 3 in #59) | Confirmed gap. Genuinely unrepresented, but demand is narrower than queries/dashboards; keep after the §6 gaps. |
 | `AzDoBillingSettings`, `AzDoPatPolicy`, `AzDoExtensionPolicy`, `AzDoAuditLogAlert` | Confirmed gaps, tenant-scoped. Note that several of these APIs are undocumented/preview and may not be stable enough to build a resource on — spike each before committing. |
 
@@ -386,8 +399,10 @@ Still outstanding, in the order below:
 - **Remaining §6 gaps** — `AzDoElasticPool`, `AzDoBuildRetentionSettings`, `AzDoWikiPage`.
 - **Org-scoped pipeline settings** (§7) — extend `AzDoPipelineSettings` rather than adding
   six resources.
-- **Test management** (§7), then **classic release management** (§7) with
-  `AzDoReleaseFolder` (§5.5).
+- **Test management** (§7).
+- **`AzDoReleaseDefinition`** (§5.5, §7) — the remaining piece of classic release
+  management; `AzDoReleaseFolder`, `AzDoReleaseFolderPermission` and
+  `AzDoReleaseDefinitionPermission` shipped in #86.
 - **Tenant-scoped items** (§7) — `AzDoBillingSettings`, `AzDoPatPolicy`,
   `AzDoExtensionPolicy`, `AzDoAuditLogAlert`. Spike each first; several of these APIs are
   undocumented or preview.
@@ -410,7 +425,8 @@ remains:
 4. **Board configuration** (§6) — `AzDoBoardColumn`, `AzDoBoardSettings`, `AzDoCardRule`.
 5. **`AzDoWikiPage`** (§6).
 6. **Org-scoped pipeline settings** (§7) — extend `AzDoPipelineSettings`.
-7. Test management, then classic release management, with `AzDoReleaseFolder` (§5.5).
+7. Test management, then **`AzDoReleaseDefinition`** (§5.5) — the remaining piece of
+   classic release management now that its folders and permissions (#86) have shipped.
 8. **Tenant-scoped items** (§7), each spiked before it is committed to.
 
 Per-resource checklist (from `CLAUDE.md`): class in `source/Classes/` with the next numeric
