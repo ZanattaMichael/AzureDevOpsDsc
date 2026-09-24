@@ -216,9 +216,9 @@ Describe "AzDoCheckConfiguration Integration Tests (Branch control check on a va
         }
 
         It "Should exist on the variable group when queried directly via the REST API" {
-            $checks = Invoke-RestMethod -Uri ("https://dev.azure.com/{0}/{1}/_apis/pipelines/checks/configurations?resourceType=variablegroup&resourceId={2}&api-version=7.1-preview.1" -f $org_, $VG_PROJECTNAME, $VG_ID) -Headers $hdr_
+            $checks = Invoke-RestMethod -Uri ('https://dev.azure.com/{0}/{1}/_apis/pipelines/checks/configurations?resourceType=variablegroup&resourceId={2}&$expand=settings&api-version=7.1-preview.1' -f $org_, $VG_PROJECTNAME, $VG_ID) -Headers $hdr_
             $match  = $checks.value | Where-Object { $_.settings.definitionRef.id -eq '86b05a0c-73e6-4f7d-b3cf-e38f3b39a75b' }
-            $match  | Should -Not -BeNullOrEmpty
+            $match  | Should -Not -BeNullOrEmpty -Because ('the variable group returned these checks: {0}' -f ($checks.value | ConvertTo-Json -Depth 6 -Compress))
             $match.resource.id | Should -Be $VG_ID
         }
     }
@@ -248,7 +248,7 @@ Describe "AzDoCheckConfiguration Integration Tests (Branch control check on a va
         }
 
         It "Should no longer exist on the variable group when queried directly via the REST API" {
-            $checks = Invoke-RestMethod -Uri ("https://dev.azure.com/{0}/{1}/_apis/pipelines/checks/configurations?resourceType=variablegroup&resourceId={2}&api-version=7.1-preview.1" -f $org_, $VG_PROJECTNAME, $VG_ID) -Headers $hdr_
+            $checks = Invoke-RestMethod -Uri ('https://dev.azure.com/{0}/{1}/_apis/pipelines/checks/configurations?resourceType=variablegroup&resourceId={2}&$expand=settings&api-version=7.1-preview.1' -f $org_, $VG_PROJECTNAME, $VG_ID) -Headers $hdr_
             $match  = $checks.value | Where-Object { $_.settings.definitionRef.id -eq '86b05a0c-73e6-4f7d-b3cf-e38f3b39a75b' }
             $match | Should -BeNullOrEmpty
         }
