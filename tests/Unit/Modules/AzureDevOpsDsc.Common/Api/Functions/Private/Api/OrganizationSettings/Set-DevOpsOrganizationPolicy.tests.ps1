@@ -37,6 +37,27 @@ Describe 'Set-DevOpsOrganizationPolicy' -Tag "Unit", "OrganizationSettings", "AP
         }
     }
 
+    It 'sends a JSON array even when the patch has a single operation' {
+        Set-DevOpsOrganizationPolicy -ApiUri 'https://dev.azure.com/myorg/' -PolicyName 'Policy.LogAuditEvents' -Value $true
+        Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -Exactly -ParameterFilter {
+            $parsed = ConvertFrom-Json -InputObject $Body -NoEnumerate
+            $Body.TrimStart().StartsWith('[') -and
+            $parsed -is [System.Array] -and
+            $parsed.Count -eq 1 -and
+            $parsed[0].path -eq '/Value' -and
+            $parsed[0].value -eq 'true'
+        }
+    }
+
+    It 'sends both operations in one array when Url is supplied' {
+        Set-DevOpsOrganizationPolicy -ApiUri 'https://dev.azure.com/myorg/' -PolicyName 'Policy.AllowRequestAccessToken' -Value $true -Url 'https://contoso.example/request'
+        Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -Exactly -ParameterFilter {
+            $parsed = ConvertFrom-Json -InputObject $Body -NoEnumerate
+            $parsed.Count -eq 2 -and
+            ($parsed.path -join ',') -eq '/Value,/Url'
+        }
+    }
+
     Context 'when the API call fails' {
         BeforeEach { Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { throw 'boom' } }
 

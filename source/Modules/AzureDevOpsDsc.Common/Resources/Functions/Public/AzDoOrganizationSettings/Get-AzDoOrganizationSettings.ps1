@@ -9,12 +9,12 @@ Function Get-AzDoOrganizationSettings
         [Parameter()][bool]$EnableOAuthAuthentication,
         [Parameter()][bool]$EnableSSHAuthentication,
         [Parameter()][bool]$DisallowAadGuestUserPolicy,
-        [Parameter()][bool]$EnableIPConditionalAccessPolicyValidation,
-        [Parameter()][bool]$LogAuditEvents,
-        [Parameter()][bool]$AllowTeamAdminsToInviteUsers,
-        [Parameter()][bool]$EnableRequestAccess,
+        [Parameter()][string]$EnableIPConditionalAccessPolicyValidation,
+        [Parameter()][string]$LogAuditEvents,
+        [Parameter()][string]$AllowTeamAdminsToInviteUsers,
+        [Parameter()][string]$EnableRequestAccess,
         [Parameter()][string]$RequestAccessUrl,
-        [Parameter()][bool]$EnableArtifactsFeedUpstreamProtection,
+        [Parameter()][string]$EnableArtifactsFeedUpstreamProtection,
         [Parameter()][HashTable]$LookupResult,
         [Parameter()][Ensure]$Ensure,
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
@@ -55,18 +55,31 @@ Function Get-AzDoOrganizationSettings
         if ($PSBoundParameters.ContainsKey('EnableSSHAuthentication')    -and $liveEnableSSH                  -ne $EnableSSHAuthentication)    { $changed += 'EnableSSHAuthentication' }
         if ($PSBoundParameters.ContainsKey('DisallowAadGuestUserPolicy') -and $liveDisallowAadGuestUserPolicy -ne $DisallowAadGuestUserPolicy) { $changed += 'DisallowAadGuestUserPolicy' }
 
-        # Organization policies (separate API: _apis/OrganizationPolicy/Policies/{policyName})
-        $policyMap = Get-DevOpsOrganizationPolicyMap
-        $livePolicyValues = @{}
-
-        foreach ($entry in $policyMap)
+        # Organization policies (separate API, read through the policy page's data provider).
+        # These properties are tri-state strings: '' leaves the policy unmanaged, so it is never
+        # compared. A [bool] could not express that, because the base class passes every property.
+        $livePolicies = @{}
+        foreach ($policy in @(Get-DevOpsOrganizationPolicy -ApiUri $apiUri))
         {
-            $policy = Get-DevOpsOrganizationPolicy -ApiUri $apiUri -PolicyName $entry.PolicyName
-            $liveValue = [System.Boolean]$policy.value
-            $livePolicyValues[$entry.PropertyName] = $liveValue
+            $livePolicies[[string]$policy.name] = $policy
+        }
+
+        foreach ($entry in (Get-DevOpsOrganizationPolicyMap))
+        {
+            $policy = $livePolicies[$entry.PolicyName]
+            if ($null -eq $policy)
+            {
+                throw "Organization policy '$($entry.PolicyName)' (property $($entry.PropertyName)) was not returned by the service."
+            }
+
+            # effectiveValue is what is in force (it differs from value when the policy was never
+            # set explicitly); the value may come back as a boolean or as a string.
+            $rawValue  = if ($null -ne $policy.PSObject.Properties['effectiveValue'] -and $null -ne $policy.effectiveValue) { $policy.effectiveValue } else { $policy.value }
+            $liveValue = if ($rawValue -is [bool]) { $rawValue.ToString().ToLower() } elseif ("$rawValue" -eq 'true') { 'true' } else { 'false' }
             $result.($entry.PropertyName) = $liveValue
 
-            if ($PSBoundParameters.ContainsKey($entry.PropertyName) -and $liveValue -ne (Get-Variable -Name $entry.PropertyName -ValueOnly))
+            $desiredValue = Get-Variable -Name $entry.PropertyName -ValueOnly
+            if (-not [string]::IsNullOrEmpty($desiredValue) -and $liveValue -ne $desiredValue.ToLower())
             {
                 $changed += $entry.PropertyName
             }
@@ -76,7 +89,7 @@ Function Get-AzDoOrganizationSettings
                 $liveRequestAccessUrl = [string]$policy.url
                 $result.RequestAccessUrl = $liveRequestAccessUrl
 
-                if ($PSBoundParameters.ContainsKey('RequestAccessUrl') -and $PSBoundParameters.ContainsKey('EnableRequestAccess') -and $EnableRequestAccess -and $liveRequestAccessUrl -ne $RequestAccessUrl)
+                if ($EnableRequestAccess -eq 'true' -and -not [string]::IsNullOrEmpty($RequestAccessUrl) -and $liveRequestAccessUrl -ne $RequestAccessUrl)
                 {
                     $changed += 'RequestAccessUrl'
                 }

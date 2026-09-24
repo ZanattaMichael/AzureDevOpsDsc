@@ -5,8 +5,8 @@ Writes one Azure DevOps organization policy.
 .DESCRIPTION
 PATCHes `_apis/OrganizationPolicy/Policies/{policyName}` with a JSON-patch document replacing the
 policy's `/Value` (and, when supplied, its `/Url` — used only by the request-access policy). The
-body is `application/json-patch+json`, matching what the *Organization settings -> Policies* page
-sends.
+body is an `application/json-patch+json` array, matching what the *Organization settings -> Policies*
+page sends: `[{"from":"","op":2,"path":"/Value","value":"true"}]`.
 
 .PARAMETER ApiUri
 The base organization URI, e.g. 'https://dev.azure.com/myorg/'.
@@ -48,7 +48,9 @@ function Set-DevOpsOrganizationPolicy
         Uri         = '{0}/_apis/OrganizationPolicy/Policies/{1}?api-version={2}' -f $ApiUri.TrimEnd('/'), $PolicyName, $ApiVersion
         Method      = 'PATCH'
         ContentType = 'application/json-patch+json'
-        Body        = $patch | ConvertTo-Json -Depth 10
+        # -AsArray: a JSON patch document is always an array. Without it a one-operation patch
+        # serializes as a bare object, which the service rejects.
+        Body        = $patch | ConvertTo-Json -Depth 10 -AsArray
     }
 
     if (-not $PSCmdlet.ShouldProcess($PolicyName, 'Update organization policy'))

@@ -31,10 +31,86 @@ Describe "AzDoOrganizationSettings Policies Integration Tests" -Tag "Integration
             'Policy.ArtifactsExternalPackageProtectionToken'
         )
 
-        function Get-LivePolicy {
+        # The policy API has no GET route (_apis/OrganizationPolicy/Policies/{name} answers 405),
+        # so read the policies the way the resource does: through the policy page's data
+        # provider, falling back to the page's own data route. Independent of the module's
+        # private functions, which are not loaded in this scope.
+        function Get-LivePolicies {
+            $providerId = 'ms.vss-org-web.collection-admin-policy-data-provider'
+            $groups     = $null
+            $body = @{
+                contributionIds     = @($providerId)
+                dataProviderContext = @{
+                    properties = @{
+                        sourcePage = @{
+                            url         = "https://dev.azure.com/$ORGNAME/_settings/organizationPolicy"
+                            routeId     = 'ms.vss-admin-web.collection-admin-hub-route'
+                            routeValues = @{ adminPivot = 'organizationPolicy'; controller = 'ContributedPage'; action = 'Execute' }
+                        }
+                    }
+                }
+            } | ConvertTo-Json -Depth 10
+
+            try
+            {
+                $response = Invoke-RestMethod -Uri "https://dev.azure.com/$ORGNAME/_apis/Contribution/HierarchyQuery?api-version=5.0-preview.1" `
+                    -Method Post -Headers (New-RestAuthHeader) -ContentType 'application/json' -Body $body
+                $groups = $response.dataProviders.$providerId.policies
+            }
+            catch
+            {
+                Write-Warning "[AzDoOrganizationSettings.Policies] HierarchyQuery read failed, trying the page data route: $_"
+            }
+
+            if ($null -eq $groups)
+            {
+                $response = Invoke-RestMethod -Uri "https://dev.azure.com/$ORGNAME/_settings/organizationPolicy?__rt=fps&__ver=2" `
+                    -Method Get -Headers (New-RestAuthHeader)
+                $groups = $response.fps.dataProviders.data.$providerId.policies
+            }
+
+            if ($null -eq $groups) { throw 'No organization policy data returned by either route.' }
+
+            foreach ($group in $groups.PSObject.Properties)
+            {
+                foreach ($entry in @($group.Value)) { if ($null -ne $entry.policy) { $entry.policy } }
+            }
+        }
+
+        function Get-LivePolicyValue {
             param([Parameter(Mandatory)][string]$PolicyName)
-            $uri = 'https://dev.azure.com/{0}/_apis/OrganizationPolicy/Policies/{1}?api-version=5.0-preview.1' -f $ORGNAME, $PolicyName
-            return Invoke-RestMethod -Uri $uri -Method Get -Headers (New-RestAuthHeader)
+            $policy = Get-LivePolicies | Where-Object { $_.name -eq $PolicyName } | Select-Object -First 1
+            if ($null -eq $policy) { throw "Policy '$PolicyName' was not returned." }
+            $raw = if ($null -ne $policy.PSObject.Properties['effectiveValue'] -and $null -ne $policy.effectiveValue) { $policy.effectiveValue } else { $policy.value }
+            if ("$raw" -eq 'true') { 'true' } else { 'false' }
+        }
+
+        # The resource base class passes every DSC property to Get and Set, so the five host
+        # settings ([bool], not tri-state) are always compared and always written. Pass them at
+        # their current live values in every call, so toggling a policy here never rewrites the
+        # organization's host settings. Values are derived exactly as Get-AzDoOrganizationSettings
+        # derives them.
+        $hostEntries = (Invoke-RestMethod -Uri "https://dev.azure.com/$ORGNAME/_apis/settings/entries/host?api-version=7.1-preview.1" `
+            -Method Get -Headers (New-RestAuthHeader)).value
+        $script:HostSettings = @{
+            AllowPublicProjects        = $hostEntries.'Microsoft.VisualStudio.Services.EnablePublicProjects' -eq 'true'
+            AllowExternalGuestAccess   = $hostEntries.'Microsoft.VisualStudio.Services.Security.EnableAADGuestPolicy' -eq 'false'
+            EnableOAuthAuthentication  = $hostEntries.'Microsoft.VisualStudio.Services.Security.EnableOAuthToken' -eq 'true'
+            EnableSSHAuthentication    = $hostEntries.'Microsoft.VisualStudio.Services.Security.EnableSSHPolicy' -eq 'true'
+            DisallowAadGuestUserPolicy = $hostEntries.'Microsoft.VisualStudio.Services.Security.DisallowAADGuestUserPolicy' -eq 'true'
+        }
+
+        function New-PolicyProperty {
+            param([hashtable]$Policy = @{})
+            $property = @{ OrganizationName = $ORGNAME }
+            foreach ($key in $script:HostSettings.Keys) { $property[$key] = $script:HostSettings[$key] }
+            foreach ($key in $Policy.Keys) { $property[$key] = $Policy[$key] }
+            return $property
+        }
+
+        function Get-Opposite {
+            param([Parameter(Mandatory)][string]$Value)
+            if ($Value -eq 'true') { 'false' } else { 'true' }
         }
 
         $parameters = @{
@@ -44,8 +120,8 @@ Describe "AzDoOrganizationSettings Policies Integration Tests" -Tag "Integration
 
         # Snapshot the two policies this suite is allowed to toggle live, so AfterAll can restore
         # them even if a test fails. Every other managed policy is read-only in this suite.
-        $script:OriginalAllowTeamAdminsToInviteUsers = [bool](Get-LivePolicy -PolicyName 'Policy.AllowTeamAdminsInvitationsAccessToken').value
-        $script:OriginalLogAuditEvents               = [bool](Get-LivePolicy -PolicyName 'Policy.LogAuditEvents').value
+        $script:OriginalAllowTeamAdminsToInviteUsers = Get-LivePolicyValue -PolicyName 'Policy.AllowTeamAdminsInvitationsAccessToken'
+        $script:OriginalLogAuditEvents               = Get-LivePolicyValue -PolicyName 'Policy.LogAuditEvents'
     }
 
     AfterAll {
@@ -53,10 +129,9 @@ Describe "AzDoOrganizationSettings Policies Integration Tests" -Tag "Integration
         try
         {
             $parameters.Method   = 'Set'
-            $parameters.property = @{
-                OrganizationName              = $ORGNAME
-                AllowTeamAdminsToInviteUsers  = $script:OriginalAllowTeamAdminsToInviteUsers
-                LogAuditEvents                = $script:OriginalLogAuditEvents
+            $parameters.property = New-PolicyProperty -Policy @{
+                AllowTeamAdminsToInviteUsers = $script:OriginalAllowTeamAdminsToInviteUsers
+                LogAuditEvents               = $script:OriginalLogAuditEvents
             }
             Invoke-DscResource @parameters
         }
@@ -70,76 +145,71 @@ Describe "AzDoOrganizationSettings Policies Integration Tests" -Tag "Integration
 
         BeforeAll {
             $parameters.Method   = 'Get'
-            $parameters.property = @{ OrganizationName = $ORGNAME }
+            $parameters.property = New-PolicyProperty
         }
 
         It "Should not throw retrieving the resource" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
-        It "Should read every managed policy name directly, so a wrong name or route fails loudly" {
+        It "Should find every managed policy name in the live policy data, so a wrong name fails loudly" {
+            $liveNames = @(Get-LivePolicies | ForEach-Object { [string]$_.name })
             foreach ($policyName in $script:ManagedPolicyNames)
             {
-                { Get-LivePolicy -PolicyName $policyName } | Should -Not -Throw -Because "policy '$policyName' must exist at the route the resource uses"
+                $liveNames | Should -Contain $policyName -Because "policy '$policyName' must exist for the resource to manage it"
             }
         }
 
-        It "Should surface the read-only-in-this-suite policies on the Get result" {
+        It "Should report every managed policy as 'true' or 'false' on the Get result" {
             $result = Invoke-DscResource @parameters
-            $result.EnableIPConditionalAccessPolicyValidation | Should -BeOfType [bool]
-            $result.EnableRequestAccess | Should -BeOfType [bool]
-            $result.EnableArtifactsFeedUpstreamProtection | Should -BeOfType [bool]
+            $result.EnableIPConditionalAccessPolicyValidation | Should -BeIn @('true', 'false')
+            $result.LogAuditEvents                            | Should -BeIn @('true', 'false')
+            $result.AllowTeamAdminsToInviteUsers              | Should -BeIn @('true', 'false')
+            $result.EnableRequestAccess                       | Should -BeIn @('true', 'false')
+            $result.EnableArtifactsFeedUpstreamProtection     | Should -BeIn @('true', 'false')
+        }
+
+        It "Should report the same policy values the live data shows" {
+            $result = Invoke-DscResource @parameters
+            $result.LogAuditEvents               | Should -Be $script:OriginalLogAuditEvents
+            $result.AllowTeamAdminsToInviteUsers | Should -Be $script:OriginalAllowTeamAdminsToInviteUsers
         }
     }
 
     Context "Setting AllowTeamAdminsToInviteUsers (user policy) and asserting no drift" {
 
         It "Should apply the desired value without throwing" {
-            $desired = -not $script:OriginalAllowTeamAdminsToInviteUsers
+            $desired = Get-Opposite $script:OriginalAllowTeamAdminsToInviteUsers
 
             $parameters.Method   = 'Set'
-            $parameters.property = @{
-                OrganizationName             = $ORGNAME
-                AllowTeamAdminsToInviteUsers = $desired
-            }
+            $parameters.property = New-PolicyProperty -Policy @{ AllowTeamAdminsToInviteUsers = $desired }
             { Invoke-DscResource @parameters } | Should -Not -Throw
 
             $script:ToggledAllowTeamAdminsToInviteUsers = $desired
         }
 
+        It "Should have written the value to the live policy" {
+            Get-LivePolicyValue -PolicyName 'Policy.AllowTeamAdminsInvitationsAccessToken' | Should -Be $script:ToggledAllowTeamAdminsToInviteUsers
+        }
+
         It "Should report no drift (Test) once applied" {
             $parameters.Method   = 'Test'
-            $parameters.property = @{
-                OrganizationName             = $ORGNAME
-                AllowTeamAdminsToInviteUsers = $script:ToggledAllowTeamAdminsToInviteUsers
-            }
+            $parameters.property = New-PolicyProperty -Policy @{ AllowTeamAdminsToInviteUsers = $script:ToggledAllowTeamAdminsToInviteUsers }
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
         }
 
         It "Should report drift when the opposite value is requested, and Set fixes it" {
-            $driftValue = -not $script:ToggledAllowTeamAdminsToInviteUsers
+            $driftValue = Get-Opposite $script:ToggledAllowTeamAdminsToInviteUsers
 
             $parameters.Method   = 'Test'
-            $parameters.property = @{
-                OrganizationName             = $ORGNAME
-                AllowTeamAdminsToInviteUsers = $driftValue
-            }
-            $testResult = Invoke-DscResource @parameters
-            $testResult.InDesiredState | Should -BeFalse
+            $parameters.property = New-PolicyProperty -Policy @{ AllowTeamAdminsToInviteUsers = $driftValue }
+            (Invoke-DscResource @parameters).InDesiredState | Should -BeFalse
 
             $parameters.Method   = 'Set'
-            $parameters.property = @{
-                OrganizationName             = $ORGNAME
-                AllowTeamAdminsToInviteUsers = $driftValue
-            }
             { Invoke-DscResource @parameters } | Should -Not -Throw
 
             $parameters.Method   = 'Test'
-            $parameters.property = @{
-                OrganizationName             = $ORGNAME
-                AllowTeamAdminsToInviteUsers = $driftValue
-            }
             (Invoke-DscResource @parameters).InDesiredState | Should -BeTrue
 
             $script:ToggledAllowTeamAdminsToInviteUsers = $driftValue
@@ -149,13 +219,10 @@ Describe "AzDoOrganizationSettings Policies Integration Tests" -Tag "Integration
     Context "Setting LogAuditEvents (security policy) and asserting no drift" {
 
         It "Should apply the desired value without throwing" {
-            $desired = -not $script:OriginalLogAuditEvents
+            $desired = Get-Opposite $script:OriginalLogAuditEvents
 
             $parameters.Method   = 'Set'
-            $parameters.property = @{
-                OrganizationName = $ORGNAME
-                LogAuditEvents   = $desired
-            }
+            $parameters.property = New-PolicyProperty -Policy @{ LogAuditEvents = $desired }
             { Invoke-DscResource @parameters } | Should -Not -Throw
 
             $script:ToggledLogAuditEvents = $desired
@@ -163,29 +230,32 @@ Describe "AzDoOrganizationSettings Policies Integration Tests" -Tag "Integration
 
         It "Should report no drift (Test) once applied" {
             $parameters.Method   = 'Test'
-            $parameters.property = @{
-                OrganizationName = $ORGNAME
-                LogAuditEvents   = $script:ToggledLogAuditEvents
-            }
+            $parameters.property = New-PolicyProperty -Policy @{ LogAuditEvents = $script:ToggledLogAuditEvents }
             $result = Invoke-DscResource @parameters
             $result.InDesiredState | Should -BeTrue
         }
     }
 
-    Context "An unbound property is never compared" {
+    Context "An unmanaged policy property is never compared or written" {
 
-        It "Should not report drift for a property the configuration does not mention" {
-            # Only OrganizationName and LogAuditEvents are bound. AllowTeamAdminsToInviteUsers,
+        It "Should not report drift for policies the configuration does not mention" {
+            # Only LogAuditEvents is managed here. AllowTeamAdminsToInviteUsers,
             # EnableIPConditionalAccessPolicyValidation, EnableRequestAccess and
-            # EnableArtifactsFeedUpstreamProtection are intentionally left unset here - none of
-            # them may cause drift even if their live value differs from any prior test run.
+            # EnableArtifactsFeedUpstreamProtection are left at '' (unmanaged) - none of them may
+            # cause drift whatever their live value.
             $parameters.Method   = 'Test'
-            $parameters.property = @{
-                OrganizationName = $ORGNAME
-                LogAuditEvents   = $script:ToggledLogAuditEvents
-            }
-            $result = Invoke-DscResource @parameters
-            $result.InDesiredState | Should -BeTrue
+            $parameters.property = New-PolicyProperty -Policy @{ LogAuditEvents = $script:ToggledLogAuditEvents }
+            (Invoke-DscResource @parameters).InDesiredState | Should -BeTrue
+        }
+
+        It "Should leave an unmanaged policy unchanged when Set runs" {
+            $before = Get-LivePolicyValue -PolicyName 'Policy.AllowTeamAdminsInvitationsAccessToken'
+
+            $parameters.Method   = 'Set'
+            $parameters.property = New-PolicyProperty -Policy @{ LogAuditEvents = $script:ToggledLogAuditEvents }
+            { Invoke-DscResource @parameters } | Should -Not -Throw
+
+            Get-LivePolicyValue -PolicyName 'Policy.AllowTeamAdminsInvitationsAccessToken' | Should -Be $before
         }
     }
 }

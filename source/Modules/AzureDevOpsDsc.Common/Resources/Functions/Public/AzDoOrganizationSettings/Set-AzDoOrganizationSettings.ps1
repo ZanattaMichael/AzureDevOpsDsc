@@ -8,12 +8,12 @@ Function Set-AzDoOrganizationSettings
         [Parameter()][bool]$EnableOAuthAuthentication,
         [Parameter()][bool]$EnableSSHAuthentication,
         [Parameter()][bool]$DisallowAadGuestUserPolicy,
-        [Parameter()][bool]$EnableIPConditionalAccessPolicyValidation,
-        [Parameter()][bool]$LogAuditEvents,
-        [Parameter()][bool]$AllowTeamAdminsToInviteUsers,
-        [Parameter()][bool]$EnableRequestAccess,
+        [Parameter()][string]$EnableIPConditionalAccessPolicyValidation,
+        [Parameter()][string]$LogAuditEvents,
+        [Parameter()][string]$AllowTeamAdminsToInviteUsers,
+        [Parameter()][string]$EnableRequestAccess,
         [Parameter()][string]$RequestAccessUrl,
-        [Parameter()][bool]$EnableArtifactsFeedUpstreamProtection,
+        [Parameter()][string]$EnableArtifactsFeedUpstreamProtection,
         [Parameter()][HashTable]$LookupResult,
         [Parameter()][Ensure]$Ensure,
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
@@ -23,9 +23,9 @@ Function Set-AzDoOrganizationSettings
 
     $apiUri = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
 
-    if ($PSBoundParameters.ContainsKey('LogAuditEvents') -and -not $LogAuditEvents)
+    if ($LogAuditEvents -eq 'false')
     {
-        Write-Warning "[Set-AzDoOrganizationSettings] LogAuditEvents is being set to `$false. Any AzDoAuditStream configured on this organization will receive no events while auditing is off."
+        Write-Warning "[Set-AzDoOrganizationSettings] LogAuditEvents is being set to 'false'. Any AzDoAuditStream configured on this organization will receive no events while auditing is off."
     }
 
     $settings = @{}
@@ -53,19 +53,20 @@ Function Set-AzDoOrganizationSettings
         Write-Verbose "[Set-AzDoOrganizationSettings] No host settings to update."
     }
 
-    # Organization policies (separate API: PATCH _apis/OrganizationPolicy/Policies/{policyName})
-    $policyMap = Get-DevOpsOrganizationPolicyMap
-    foreach ($entry in $policyMap)
+    # Organization policies (separate API: PATCH _apis/OrganizationPolicy/Policies/{policyName}).
+    # '' means unmanaged: the policy is left as it is.
+    foreach ($entry in (Get-DevOpsOrganizationPolicyMap))
     {
-        if (-not $PSBoundParameters.ContainsKey($entry.PropertyName)) { continue }
+        $desiredValue = Get-Variable -Name $entry.PropertyName -ValueOnly
+        if ([string]::IsNullOrEmpty($desiredValue)) { continue }
 
         $policyParams = @{
             ApiUri     = $apiUri
             PolicyName = $entry.PolicyName
-            Value      = Get-Variable -Name $entry.PropertyName -ValueOnly
+            Value      = ($desiredValue -eq 'true')
         }
 
-        if ($entry.PropertyName -eq 'EnableRequestAccess' -and $PSBoundParameters.ContainsKey('RequestAccessUrl') -and $EnableRequestAccess)
+        if ($entry.PropertyName -eq 'EnableRequestAccess' -and $EnableRequestAccess -eq 'true' -and -not [string]::IsNullOrEmpty($RequestAccessUrl))
         {
             $policyParams.Url = $RequestAccessUrl
         }

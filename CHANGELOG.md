@@ -13,11 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `AllowTeamAdminsToInviteUsers`, `EnableRequestAccess` (with `RequestAccessUrl`) and
     `EnableArtifactsFeedUpstreamProtection` (#84). Unlike the resource's original five
     properties, which read/write `_apis/settings/entries/host`, these are backed by the
-    separate `_apis/OrganizationPolicy/Policies/{policyName}` API, added as the new
-    `Get-/Set-DevOpsOrganizationPolicy` private helpers and a single
-    `Get-DevOpsOrganizationPolicyMap` mapping properties to policy names. `LimitUserVisibility`
+    organization policy API, added as the new `Get-/Set-DevOpsOrganizationPolicy` private
+    helpers and a single `Get-DevOpsOrganizationPolicyMap` mapping properties to policy names.
+    Policies are written with a JSON-patch array to `_apis/OrganizationPolicy/Policies/{policyName}`;
+    that route has no GET (405), so they are read in one call from the policy page's data
+    provider (`_apis/Contribution/HierarchyQuery`, falling back to the page's
+    `__rt=fps` data route). The policy properties are tri-state strings (`'true'`, `'false'`,
+    or `''` for unmanaged) rather than booleans: the resource base class passes every
+    property, so an unset boolean would have switched the policy off. `LimitUserVisibility`
     was left out: it is a preview-feature flag rather than a confirmed organization policy, and
-    is documented as excluded in `docs/ResourceRoadmap.md`. Setting `LogAuditEvents` to `$false`
+    is documented as excluded in `docs/ResourceRoadmap.md`. Setting `LogAuditEvents` to `'false'`
     now warns that any `AzDoAuditStream` on the organization will receive nothing while auditing
     is off. This closes out the `AzDoOrganizationPolicy` item in `docs/ResourceRoadmap.md` §7.
   - Added `AzDoQueryFolder`, a resource managing folders in a project's shared work

@@ -77,6 +77,45 @@ Describe "Set-AzDoOrganizationSettings" -Tag "Unit", "OrganizationSettings" {
             }
         }
 
+        It "writes nothing for policy properties passed as '' (unmanaged), as the resource base class passes them" {
+            Set-AzDoOrganizationSettings -OrganizationName 'TestOrganization' `
+                -EnableIPConditionalAccessPolicyValidation '' -LogAuditEvents '' -AllowTeamAdminsToInviteUsers '' `
+                -EnableRequestAccess '' -RequestAccessUrl '' -EnableArtifactsFeedUpstreamProtection ''
+            Assert-MockCalled -CommandName Set-DevOpsOrganizationPolicy -Times 0
+        }
+
+        It "writes only the managed policy when the others are passed as ''" {
+            Set-AzDoOrganizationSettings -OrganizationName 'TestOrganization' `
+                -EnableIPConditionalAccessPolicyValidation '' -LogAuditEvents '' -AllowTeamAdminsToInviteUsers 'false' `
+                -EnableRequestAccess '' -RequestAccessUrl '' -EnableArtifactsFeedUpstreamProtection ''
+            Assert-MockCalled -CommandName Set-DevOpsOrganizationPolicy -Exactly -Times 1
+            Assert-MockCalled -CommandName Set-DevOpsOrganizationPolicy -Exactly -Times 1 -ParameterFilter {
+                $PolicyName -eq 'Policy.AllowTeamAdminsInvitationsAccessToken' -and $Value -eq $false
+            }
+        }
+
+        It "converts 'true' and 'false' to the boolean the policy API takes" {
+            Set-AzDoOrganizationSettings -OrganizationName 'TestOrganization' -LogAuditEvents 'true' -EnableArtifactsFeedUpstreamProtection 'false'
+            Assert-MockCalled -CommandName Set-DevOpsOrganizationPolicy -Exactly -Times 1 -ParameterFilter {
+                $PolicyName -eq 'Policy.LogAuditEvents' -and $Value -eq $true
+            }
+            Assert-MockCalled -CommandName Set-DevOpsOrganizationPolicy -Exactly -Times 1 -ParameterFilter {
+                $PolicyName -eq 'Policy.ArtifactsExternalPackageProtectionToken' -and $Value -eq $false
+            }
+        }
+
+        It "does not pass RequestAccessUrl when it is empty" {
+            Set-AzDoOrganizationSettings -OrganizationName 'TestOrganization' -EnableRequestAccess 'true' -RequestAccessUrl ''
+            Assert-MockCalled -CommandName Set-DevOpsOrganizationPolicy -Exactly -Times 1 -ParameterFilter {
+                $PolicyName -eq 'Policy.AllowRequestAccessToken' -and [String]::IsNullOrEmpty($Url)
+            }
+        }
+
+        It "does not warn when LogAuditEvents is unmanaged" {
+            Set-AzDoOrganizationSettings -OrganizationName 'TestOrganization' -LogAuditEvents ''
+            Assert-MockCalled -CommandName Write-Warning -Times 0
+        }
+
         It "warns when LogAuditEvents is set to false" {
             Set-AzDoOrganizationSettings -OrganizationName 'TestOrganization' -LogAuditEvents $false
             Assert-MockCalled -CommandName Write-Warning -Exactly -Times 1

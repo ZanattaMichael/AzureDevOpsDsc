@@ -29,10 +29,16 @@
     settings -> Policies -> Security -> "Enable IP Conditional Access policy validation"). Backed by the
     organization policy API, not the host settings entries used by the properties above.
 
+    This and the other organization policy properties take 'true', 'false' or '' (the default). ''
+    leaves the policy unmanaged: it is neither compared nor written. A plain boolean cannot express
+    that, because the resource base class passes every property to Get and Set, so an unset boolean
+    would arrive as $false and switch the policy off. `$true` and `$false` in a configuration are
+    accepted and converted.
+
 .PARAMETER LogAuditEvents
     Whether organization audit events are logged (Organization settings -> Policies -> Security ->
     "Log audit events"). Turning this off means an `AzDoAuditStream` on this organization receives
-    nothing; `Set-AzDoOrganizationSettings` warns when this is set to `$false`.
+    nothing; `Set-AzDoOrganizationSettings` warns when this is set to 'false'.
 
 .PARAMETER AllowTeamAdminsToInviteUsers
     Whether team and project administrators can invite new users (Organization settings -> Policies ->
@@ -43,8 +49,8 @@
     Policies -> User -> "Request access").
 
 .PARAMETER RequestAccessUrl
-    The URL shown alongside the request-access prompt. Only meaningful, compared and written when
-    `EnableRequestAccess` is `$true`.
+    The URL shown alongside the request-access prompt. Only compared and written when
+    `EnableRequestAccess` is 'true' and this is not empty.
 
 .PARAMETER EnableArtifactsFeedUpstreamProtection
     Whether additional protections are applied when Artifacts feeds use public package registries as
@@ -75,22 +81,27 @@ class AzDoOrganizationSettings : AzDevOpsDscResourceBase
     [System.Boolean]$DisallowAadGuestUserPolicy
 
     [DscProperty()]
-    [System.Boolean]$EnableIPConditionalAccessPolicyValidation
+    [ValidateSet('', 'true', 'false')]
+    [System.String]$EnableIPConditionalAccessPolicyValidation
 
     [DscProperty()]
-    [System.Boolean]$LogAuditEvents
+    [ValidateSet('', 'true', 'false')]
+    [System.String]$LogAuditEvents
 
     [DscProperty()]
-    [System.Boolean]$AllowTeamAdminsToInviteUsers
+    [ValidateSet('', 'true', 'false')]
+    [System.String]$AllowTeamAdminsToInviteUsers
 
     [DscProperty()]
-    [System.Boolean]$EnableRequestAccess
+    [ValidateSet('', 'true', 'false')]
+    [System.String]$EnableRequestAccess
 
     [DscProperty()]
     [System.String]$RequestAccessUrl
 
     [DscProperty()]
-    [System.Boolean]$EnableArtifactsFeedUpstreamProtection
+    [ValidateSet('', 'true', 'false')]
+    [System.String]$EnableArtifactsFeedUpstreamProtection
 
     AzDoOrganizationSettings()
     {
