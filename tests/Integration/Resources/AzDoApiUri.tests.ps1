@@ -9,13 +9,27 @@ Describe "AzDoApiUri Integration Tests" -Tag "Integration", "ApiUri" {
         $ORG = Resolve-TestOrg
         $hdr = Resolve-TestAuthHeader
 
+        # Get-AzDoApiUri is private to AzureDevOpsDsc.Common - it is not exported, so the test
+        # session cannot call it by name. Invoke it inside the module's own scope instead.
+        $commonModule = Get-Module -Name 'AzureDevOpsDsc.Common' | Select-Object -First 1
+        if ($null -eq $commonModule)
+        {
+            throw "AzureDevOpsDsc.Common is not loaded; the test framework initialization should have imported it."
+        }
+
+        function Get-TestApiUri
+        {
+            param([string]$Service, [string]$OrganizationName)
+            & $commonModule { param($s, $o) Get-AzDoApiUri -Service $s -OrganizationName $o } $Service $OrganizationName
+        }
+
         $script:FirstProjectName = $null
     }
 
     Context "Core" {
 
         It "resolves a base URL that answers a project list read" {
-            $base = Get-AzDoApiUri -Service Core -OrganizationName $ORG
+            $base = Get-TestApiUri -Service Core -OrganizationName $ORG
 
             $base | Should -BeExactly "https://dev.azure.com/$ORG"
 
@@ -32,7 +46,7 @@ Describe "AzDoApiUri Integration Tests" -Tag "Integration", "ApiUri" {
     Context "Identity" {
 
         It "resolves a base URL that answers a graph groups read" {
-            $base = Get-AzDoApiUri -Service Identity -OrganizationName $ORG
+            $base = Get-TestApiUri -Service Identity -OrganizationName $ORG
 
             $base | Should -BeExactly "https://vssps.dev.azure.com/$ORG"
 
@@ -43,7 +57,7 @@ Describe "AzDoApiUri Integration Tests" -Tag "Integration", "ApiUri" {
     Context "Entitlements" {
 
         It "resolves a base URL that answers a user entitlements read" {
-            $base = Get-AzDoApiUri -Service Entitlements -OrganizationName $ORG
+            $base = Get-TestApiUri -Service Entitlements -OrganizationName $ORG
 
             $base | Should -BeExactly "https://vsaex.dev.azure.com/$ORG"
 
@@ -54,7 +68,7 @@ Describe "AzDoApiUri Integration Tests" -Tag "Integration", "ApiUri" {
     Context "Feeds" {
 
         It "resolves a base URL that answers a feeds list read" {
-            $base = Get-AzDoApiUri -Service Feeds -OrganizationName $ORG
+            $base = Get-TestApiUri -Service Feeds -OrganizationName $ORG
 
             $base | Should -BeExactly "https://feeds.dev.azure.com/$ORG"
 
@@ -65,7 +79,7 @@ Describe "AzDoApiUri Integration Tests" -Tag "Integration", "ApiUri" {
     Context "Audit" {
 
         It "resolves a base URL that answers an audit log read, or is skipped when the run identity lacks audit read" {
-            $base = Get-AzDoApiUri -Service Audit -OrganizationName $ORG
+            $base = Get-TestApiUri -Service Audit -OrganizationName $ORG
 
             $base | Should -BeExactly "https://auditservice.dev.azure.com/$ORG"
 
@@ -92,7 +106,7 @@ Describe "AzDoApiUri Integration Tests" -Tag "Integration", "ApiUri" {
     Context "Release" {
 
         It "resolves a base URL that answers a project-scoped release definitions read" {
-            $base = Get-AzDoApiUri -Service Release -OrganizationName $ORG
+            $base = Get-TestApiUri -Service Release -OrganizationName $ORG
 
             $base | Should -BeExactly "https://vsrm.dev.azure.com/$ORG"
 
