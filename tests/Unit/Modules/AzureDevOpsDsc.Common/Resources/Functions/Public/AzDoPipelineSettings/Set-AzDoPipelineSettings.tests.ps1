@@ -21,11 +21,8 @@ Describe 'Set-AzDoPipelineSettings' -Tag "Unit", "PipelineSettings" {
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
-        . (Get-FunctionItem 'Get-AzDoPipelineSettingsMap.ps1').FullName
-        . (Get-FunctionItem 'ConvertTo-AzDoPipelineSettingsPatch.ps1').FullName
 
         Mock -CommandName Write-Verbose
-        Mock -CommandName Write-Warning
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
         Mock -CommandName Set-DevOpsPipelineSettings
     }
@@ -41,22 +38,6 @@ Describe 'Set-AzDoPipelineSettings' -Tag "Unit", "PipelineSettings" {
 
     It 'does not call the API when no settings are managed' {
         Set-AzDoPipelineSettings -ProjectName 'MyProject'
-        Assert-MockCalled -CommandName Set-DevOpsPipelineSettings -Times 0
-    }
-
-    It 'never PATCHes a property listed in LookupResult.LockedProperties, and warns' {
-        $lookup = @{ LockedProperties = @('StatusBadgesArePrivate') }
-        Set-AzDoPipelineSettings -ProjectName 'MyProject' -EnforceJobAuthScope 'true' -StatusBadgesArePrivate 'false' -LookupResult $lookup
-        Assert-MockCalled -CommandName Set-DevOpsPipelineSettings -Times 1 -ParameterFilter {
-            ($Settings['enforceJobAuthScope'] -eq $true) -and
-            (-not $Settings.ContainsKey('statusBadgesArePrivate'))
-        }
-        Assert-MockCalled -CommandName Write-Warning -Times 1
-    }
-
-    It 'sends nothing when the only managed property is locked' {
-        $lookup = @{ LockedProperties = @('StatusBadgesArePrivate') }
-        Set-AzDoPipelineSettings -ProjectName 'MyProject' -StatusBadgesArePrivate 'false' -LookupResult $lookup
         Assert-MockCalled -CommandName Set-DevOpsPipelineSettings -Times 0
     }
 }

@@ -28,7 +28,7 @@ auth and base classes). By subsystem:
 | Work item queries | `AzDoQueryFolder`, `AzDoWorkItemQuery`, `AzDoQueryPermission` |
 | Process customization | `AzDoPicklist`, `AzDoProcessWorkItemType`, `AzDoProcessField`, `AzDoProcessState`, `AzDoProcessRule`, `AzDoProcessBehavior` |
 | Teams | `AzDoTeam`, `AzDoTeamMember`, `AzDoTeamSettings` |
-| Pipelines | `AzDoPipeline`, `AzDoPipelinePermission`, `AzDoPipelineSettings`, `AzDoOrgPipelineSettings`, `AzDoPipelineEnvironment`, `AzDoEnvironmentApproval`, `AzDoEnvironmentPermission`, `AzDoCheckConfiguration`, `AzDoTaskGroup`, `AzDoAgentPool`, `AzDoAgentPoolPermission`, `AzDoAgentQueue`, `AzDoDeploymentGroup`, `AzDoPipelineFolder`, `AzDoPipelineFolderPermission` |
+| Pipelines | `AzDoPipeline`, `AzDoPipelinePermission`, `AzDoPipelineSettings`, `AzDoPipelineEnvironment`, `AzDoEnvironmentApproval`, `AzDoEnvironmentPermission`, `AzDoCheckConfiguration`, `AzDoTaskGroup`, `AzDoAgentPool`, `AzDoAgentPoolPermission`, `AzDoAgentQueue`, `AzDoDeploymentGroup`, `AzDoPipelineFolder`, `AzDoPipelineFolderPermission` |
 | Library / connections | `AzDoVariableGroup`, `AzDoVariableGroupPermission`, `AzDoServiceConnection`, `AzDoServiceConnectionPermission`, `AzDoSecureFile`, `AzDoSecureFilePermission` |
 | Artifacts | `AzDoArtifactFeed`, `AzDoArtifactFeedPermission`, `AzDoArtifactFeedSettings`, `AzDoArtifactFeedView` |
 | Wiki | `AzDoWiki` |
@@ -338,7 +338,7 @@ Items from #59 checked against the code:
 
 | #59 item | Finding |
 |---|---|
-| `AzDoOrgPipelineSettings`, `...JobAuthorizationScope`, `...ArtifactsRetention` | **Closed** (#83). Shipped as class `128`, `AzDoOrgPipelineSettings`, keyed by `OrganizationName` against `_apis/build/generalsettings` with no project segment. **Option B** was chosen over extending `AzDoPipelineSettings` with an optional org scope: a separate class, modeled on `AzDoOrganizationSettings`'s org-Key convention, keeps each resource to exactly one Key property and keeps `LockedProperties` semantics (below) unambiguous — an org-scoped `Get` never needs to know whether it is also being asked to act like a project. The two resources share their compare/patch logic through new private helpers rather than duplicating it. `AzDoPipelineSettings` gained an organization-lock check: a switch forced on at org level is excluded from the project's drift, listed in `LockedProperties`, warned about, and never PATCHed by `Set`. Three org-only switches from #83 — disabling classic release pipeline creation, marketplace tasks and built-in/in-box tasks — are **deferred**: this work was done without access to a live organization to confirm their exact `generalsettings` JSON keys, and CLAUDE.md's "do not invent keys" rule applies. Confirm the keys against a live org before adding them. |
+| `AzDoOrgPipelineSettings`, `...JobAuthorizationScope`, `...ArtifactsRetention` | **Partially covered.** `AzDoPipelineSettings` already exposes `EnforceJobAuthScope`, `EnforceJobAuthScopeForReleases`, `EnforceReferencedRepoScopedToken`, `EnforceSettableVar`, `PublishPipelineMetadata`, `StatusBadgesArePrivate`, `DisableClassicPipelineCreation`, `DisableImpliedYAMLCiTrigger` — but scoped to `ProjectName`. The gap is the **org-scoped** equivalent, not the settings themselves. **Blocked (#83): there is no organization-scoped REST route.** The public reference documents General Settings only with a `{project}` segment, and the same route without one does not exist — against the live test organization, `GET https://dev.azure.com/{org}/_apis/build/generalsettings` returns 404 `The controller for path '/_apis/build/generalsettings' was not found or does not implement IController`. A first attempt at `AzDoOrgPipelineSettings` built on that route was withdrawn for this reason. The switches are visible in the portal (Organization settings → Pipelines → Settings), so a route exists somewhere, but not a documented one. Before building anything, spike what the portal calls and decide whether an undocumented contract is acceptable. The same spike should check whether the project-scoped GET shows that a switch is locked on by the organization: today `AzDoPipelineSettings` cannot tell, so a project that wants such a switch off reports drift. |
 | `AzDoOrganizationPolicy` | **Overlaps** `AzDoOrganizationSettings` (`AllowPublicProjects`, `AllowExternalGuestAccess`, `EnableOAuthAuthentication`, `EnableSSHAuthentication`, `DisallowAadGuestUserPolicy`). Extend it rather than adding a resource. |
 | `AzDoRepositoryDefaultBranch`, `AzDoForkPolicy` | **Already covered** by `AzDoRepositorySettings` (`DefaultBranch`, `DisableForking`, `AllowSquashMerge`, `AllowRebaseMerge`, `AllowNoFastForward`). Drop both. |
 | `AzDoCommitStatusPolicy`, `AzDoPullRequestPolicySettings` | **Verify against `AzDoBranchPolicy`** before starting — likely expressible as policy types there rather than as new resources. |
@@ -384,10 +384,9 @@ Still outstanding, in the order below:
   `AzDoBoardSettings`, `AzDoCardRule`. The `Dashboards` and `Plan` ACL namespaces are
   still unimplemented (§2).
 - **Remaining §6 gaps** — `AzDoElasticPool`, `AzDoBuildRetentionSettings`, `AzDoWikiPage`.
-- **Org-scoped pipeline settings** (§7) — **closed** (#83) as `AzDoOrgPipelineSettings`
-  (class `128`). Three org-only switches (classic release pipeline creation, marketplace
-  tasks, built-in/in-box tasks) remain deferred pending a live-org spike to confirm their
-  JSON keys.
+- **Org-scoped pipeline settings** (§7) — **blocked**: there is no organization-scoped
+  `_apis/build/generalsettings` route (it returns 404). Needs a spike of the route the portal
+  uses before any resource is built (#83).
 - **Test management** (§7), then **classic release management** (§7) with
   `AzDoReleaseFolder` (§5.5).
 - **Tenant-scoped items** (§7) — `AzDoBillingSettings`, `AzDoPatPolicy`,
@@ -411,7 +410,7 @@ remains:
    `AzDoDeliveryPlan`.
 4. **Board configuration** (§6) — `AzDoBoardColumn`, `AzDoBoardSettings`, `AzDoCardRule`.
 5. **`AzDoWikiPage`** (§6).
-6. **Org-scoped pipeline settings** (§7) — **closed** (#83) as `AzDoOrgPipelineSettings`.
+6. **Org-scoped pipeline settings** (§7) — blocked on a spike; no documented org-scoped route.
 7. Test management, then classic release management, with `AzDoReleaseFolder` (§5.5).
 8. **Tenant-scoped items** (§7), each spiked before it is committed to.
 

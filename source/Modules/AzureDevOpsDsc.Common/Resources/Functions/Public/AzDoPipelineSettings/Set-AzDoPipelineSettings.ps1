@@ -64,25 +64,41 @@ function Set-AzDoPipelineSettings
     Write-Verbose "[Set-AzDoPipelineSettings] Started."
 
     $OrganizationName = (Get-AzDoOrganizationName)
-    $settingMap       = Get-AzDoPipelineSettingsMap
 
-    # Never PATCH a property Get-AzDoPipelineSettings found locked ON at organization level - the API
-    # rejects or ignores it, and it is not this resource's to change (see AzDoOrgPipelineSettings).
-    $effectiveParameters = @{}
-    foreach ($key in $PSBoundParameters.Keys) { $effectiveParameters[$key] = $PSBoundParameters[$key] }
-    if ($null -ne $LookupResult -and $LookupResult.ContainsKey('LockedProperties'))
+    $settingMap = [ordered]@{
+        EnforceJobAuthScope              = 'enforceJobAuthScope'
+        EnforceJobAuthScopeForReleases   = 'enforceJobAuthScopeForReleases'
+        EnforceReferencedRepoScopedToken = 'enforceReferencedRepoScopedToken'
+        EnforceSettableVar               = 'enforceSettableVar'
+        PublishPipelineMetadata          = 'publishPipelineMetadata'
+        StatusBadgesArePrivate           = 'statusBadgesArePrivate'
+        DisableClassicPipelineCreation   = 'disableClassicPipelineCreation'
+        DisableImpliedYAMLCiTrigger      = 'disableImpliedYAMLCiTrigger'
+    }
+
+    $settings = @{}
+    foreach ($dscName in $settingMap.Keys)
     {
-        foreach ($name in @($LookupResult.LockedProperties))
+        # Only send settings the caller is managing (set to 'true'/'false'); '' means leave untouched.
+        $desired = [string]$PSBoundParameters[$dscName]
+        if ($desired -ne '')
         {
-            if ($effectiveParameters.ContainsKey($name))
+            $boolValue = ($desired -eq 'true')
+            if ($dscName -eq 'DisableClassicPipelineCreation')
             {
-                Write-Warning "[Set-AzDoPipelineSettings] Skipping '$name'; it is locked ON at organization level for project '$ProjectName'."
-                $effectiveParameters[$name] = ''
+                # The API's own 'disableClassicPipelineCreation' field is a read-only aggregate: PATCHing
+                # it returns 200 OK but the live value never changes (a known platform bug - see
+                # https://github.com/microsoft/azure-devops-go-api/issues/133). The two fields it
+                # aggregates ARE independently settable, so drive those instead.
+                $settings['disableClassicBuildPipelineCreation']   = $boolValue
+                $settings['disableClassicReleasePipelineCreation'] = $boolValue
+            }
+            else
+            {
+                $settings[$settingMap[$dscName]] = $boolValue
             }
         }
     }
-
-    $settings = ConvertTo-AzDoPipelineSettingsPatch -BoundParameters $effectiveParameters -SettingMap $settingMap
 
     if ($settings.Count -eq 0)
     {
