@@ -5,6 +5,9 @@ Deletes a test configuration.
 .DESCRIPTION
 Deletes a test configuration via the Azure DevOps Test Plan API, addressed by id.
 
+The id goes in the 'testConfiguartionId' query parameter (the spelling is the API's own), not
+the path: the route answers 405 when the id is a path segment.
+
 .PARAMETER Organization
 The name of the Azure DevOps organization.
 
@@ -35,7 +38,7 @@ Function Remove-DevOpsTestConfiguration
         [String]$ApiVersion = '7.1'
     )
 
-    $uri = 'https://dev.azure.com/{0}/{1}/_apis/testplan/configurations/{2}?api-version={3}' -f
+    $uri = 'https://dev.azure.com/{0}/{1}/_apis/testplan/configurations?testConfiguartionId={2}&api-version={3}' -f
         $Organization, [System.Uri]::EscapeDataString($ProjectName), $TestConfigurationId, $ApiVersion
 
     try

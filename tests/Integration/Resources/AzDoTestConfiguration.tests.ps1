@@ -6,6 +6,29 @@
 
 Describe "AzDoTestConfiguration Integration Tests" -Tag "Integration", "TestManagement" {
 
+    AfterAll {
+        # Remove the configuration first (a no-op if the Removing context already did), then the
+        # variable it refers to: the service refuses to delete a variable that is still in use.
+        # Best effort - a failure here should not mask the result of the tests above.
+        if (-not $script:accessRefused)
+        {
+            foreach ($cleanup in @(
+                @{ Name = 'AzDoTestConfiguration'; property = @{ ProjectName = $PROJECTNAME; Name = $CONFIGNAME;   Ensure = 'Absent' } }
+                @{ Name = 'AzDoTestVariable';      property = @{ ProjectName = $PROJECTNAME; Name = $VARIABLENAME; Ensure = 'Absent' } }
+            ))
+            {
+                try
+                {
+                    Invoke-DscResource -Name $cleanup.Name -ModuleName 'AzureDevOpsDscNative' -Method 'Set' -Property $cleanup.property
+                }
+                catch
+                {
+                    Write-Warning "[AzDoTestConfiguration.tests] Cleanup of $($cleanup.Name) '$($cleanup.property.Name)' failed: $_"
+                }
+            }
+        }
+    }
+
     BeforeAll {
 
         $PROJECTNAME    = 'TEST_TESTCONFIGURATION'

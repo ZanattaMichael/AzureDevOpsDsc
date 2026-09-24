@@ -8,7 +8,10 @@ Describe "AzDoTestVariable Integration Tests" -Tag "Integration", "TestManagemen
     BeforeAll {
 
         $PROJECTNAME  = 'TEST_TESTVARIABLE'
-        $VARIABLENAME = 'DSC_TEST_BROWSER'
+        # Not the name AzDoTestConfiguration.tests.ps1 uses. The service refuses to delete a variable
+        # that a configuration still refers to, and when the two tests shared a name, deleting this
+        # one failed as 'in use' while that test's configuration was left behind in its own project.
+        $VARIABLENAME = 'DSC_TEST_VARIABLE'
 
         $parameters = @{
             Name       = 'AzDoTestVariable'
