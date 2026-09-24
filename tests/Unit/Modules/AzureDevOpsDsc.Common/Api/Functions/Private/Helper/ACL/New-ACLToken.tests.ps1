@@ -252,6 +252,87 @@ Describe 'New-ACLToken Function Tests' -Tag "Unit", "ACL", "Helper" {
         }
     }
 
+    Context 'Tagging SecurityNamespace' {
+
+        It "Returns type 'Tagging' and the project id for a valid token" {
+            $projectId = [guid]::NewGuid().ToString()
+            $result = New-ACLToken -SecurityNamespace 'Tagging' -TokenName "/$projectId"
+            $result.type | Should -Be 'Tagging'
+            $result.ProjectId | Should -Be $projectId
+        }
+
+        It "Returns type 'TaggingUnknown' for a token that does not match the shape" {
+            $result = New-ACLToken -SecurityNamespace 'Tagging' -TokenName 'not-a-tagging-token/extra'
+            $result.type | Should -Be 'TaggingUnknown'
+        }
+
+        It 'Round-trips a Tagging token back to its original string' {
+            . (Get-FunctionItem 'ConvertTo-FormattedToken.ps1').FullName
+
+            $projectId = [guid]::NewGuid().ToString()
+            $original  = "/$projectId"
+
+            $structured = New-ACLToken -SecurityNamespace 'Tagging' -TokenName $original
+            ConvertTo-FormattedToken -Token $structured | Should -Be $original
+        }
+    }
+
+    Context 'Analytics SecurityNamespace' {
+
+        It "Returns type 'Analytics' and the project id for a valid token" {
+            $projectId = [guid]::NewGuid().ToString()
+            $result = New-ACLToken -SecurityNamespace 'Analytics' -TokenName "`$/$projectId"
+            $result.type | Should -Be 'Analytics'
+            $result.ProjectId | Should -Be $projectId
+        }
+
+        It "Returns type 'AnalyticsUnknown' for a token that does not match the shape" {
+            $result = New-ACLToken -SecurityNamespace 'Analytics' -TokenName 'not-an-analytics-token'
+            $result.type | Should -Be 'AnalyticsUnknown'
+        }
+
+        It 'Round-trips an Analytics token back to its original string' {
+            . (Get-FunctionItem 'ConvertTo-FormattedToken.ps1').FullName
+
+            $projectId = [guid]::NewGuid().ToString()
+            $original  = "`$/$projectId"
+
+            $structured = New-ACLToken -SecurityNamespace 'Analytics' -TokenName $original
+            ConvertTo-FormattedToken -Token $structured | Should -Be $original
+        }
+
+        It 'Does not match the AnalyticsViews shape' {
+            $projectId = [guid]::NewGuid().ToString()
+            $result = New-ACLToken -SecurityNamespace 'Analytics' -TokenName "`$/Shared/$projectId"
+            $result.type | Should -Be 'AnalyticsUnknown'
+        }
+    }
+
+    Context 'AnalyticsViews SecurityNamespace' {
+
+        It "Returns type 'AnalyticsViews' and the project id for a valid token" {
+            $projectId = [guid]::NewGuid().ToString()
+            $result = New-ACLToken -SecurityNamespace 'AnalyticsViews' -TokenName "`$/Shared/$projectId"
+            $result.type | Should -Be 'AnalyticsViews'
+            $result.ProjectId | Should -Be $projectId
+        }
+
+        It "Returns type 'AnalyticsViewsUnknown' for a token that does not match the shape" {
+            $result = New-ACLToken -SecurityNamespace 'AnalyticsViews' -TokenName 'not-a-views-token'
+            $result.type | Should -Be 'AnalyticsViewsUnknown'
+        }
+
+        It 'Round-trips an AnalyticsViews token back to its original string' {
+            . (Get-FunctionItem 'ConvertTo-FormattedToken.ps1').FullName
+
+            $projectId = [guid]::NewGuid().ToString()
+            $original  = "`$/Shared/$projectId"
+
+            $structured = New-ACLToken -SecurityNamespace 'AnalyticsViews' -TokenName $original
+            ConvertTo-FormattedToken -Token $structured | Should -Be $original
+        }
+    }
+
     Context 'Unknown SecurityNamespace' {
 
         It 'Should return Generic type for unrecognized security namespace (pass-through)' {

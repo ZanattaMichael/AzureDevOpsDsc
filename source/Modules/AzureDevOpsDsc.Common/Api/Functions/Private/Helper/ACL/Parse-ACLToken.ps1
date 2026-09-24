@@ -122,6 +122,30 @@ Function Parse-ACLToken
             }
         }
 
+        'Tagging' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.TaggingPermission { $result.type = 'Tagging';        break }
+                default                                          { $result.type = 'TaggingUnknown'        }
+            }
+        }
+
+        'Analytics' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.AnalyticsPermission { $result.type = 'Analytics';        break }
+                default                                            { $result.type = 'AnalyticsUnknown'        }
+            }
+        }
+
+        'AnalyticsViews' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.AnalyticsViewsPermission { $result.type = 'AnalyticsViews';        break }
+                default                                                 { $result.type = 'AnalyticsViewsUnknown'        }
+            }
+        }
+
         'Process' {
             switch -regex ($Token.Trim())
             {

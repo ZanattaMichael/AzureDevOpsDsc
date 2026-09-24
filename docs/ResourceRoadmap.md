@@ -15,7 +15,7 @@ explicitly.
 
 ## 1. Current coverage (verified)
 
-76 class files exist, `001`–`116`; 65 of them carry `[DscResource()]` (the other 11 are the
+79 class files exist, `001`–`149`; 68 of them carry `[DscResource()]` (the other 11 are the
 auth and base classes). By subsystem:
 
 | Subsystem | Resources |
@@ -32,6 +32,7 @@ auth and base classes). By subsystem:
 | Library / connections | `AzDoVariableGroup`, `AzDoVariableGroupPermission`, `AzDoServiceConnection`, `AzDoServiceConnectionPermission`, `AzDoSecureFile`, `AzDoSecureFilePermission` |
 | Artifacts | `AzDoArtifactFeed`, `AzDoArtifactFeedPermission`, `AzDoArtifactFeedSettings`, `AzDoArtifactFeedView` |
 | Wiki | `AzDoWiki` |
+| Analytics | `AzDoTaggingPermission`, `AzDoAnalyticsPermission`, `AzDoAnalyticsViewsPermission` |
 | Generic | `AzDoSecurityNamespacePermission` |
 
 ---
@@ -41,9 +42,10 @@ auth and base classes). By subsystem:
 Most new *permission* resources are blocked on one shared piece of work, and it should land
 before (or with) the first of them.
 
-`New-ACLToken.ps1` builds security tokens for **12** namespaces: `Git Repositories`,
+`New-ACLToken.ps1` builds security tokens for **15** namespaces: `Git Repositories`,
 `Identity`, `CSS`, `Iteration`, `Project`, `Process`, `Build`, `Library`,
-`ServiceEndpoints`, `AgentPool`, `DistributedTask`, `WorkItemQueryFolders`.
+`ServiceEndpoints`, `AgentPool`, `DistributedTask`, `WorkItemQueryFolders`, `Tagging`,
+`Analytics`, `AnalyticsViews`.
 `Parse-ACLToken.ps1` mirrors that set and falls through to a `Generic` type for anything
 else. `Build` now covers both the definition and the folder token form, and `Library` both
 the variable group and the secure file form.
@@ -60,9 +62,10 @@ error-prone part. Every permission resource below needs a matching `New-ACLToken
 | `AzDoPipelineFolderPermission` | `Build` | `{projectId}/{folderPath}` | **Shipped** — see §5.4 |
 | `AzDoDashboardPermission` | `Dashboards` / `DashboardsPrivileges` | `$/{projectId}/{teamId}/{dashboardId}` | Outstanding |
 | `AzDoDeliveryPlanPermission` | `Plan` | `Plan/{planId}` | Outstanding |
-| `AzDoTaggingPermission` | `Tagging` | `/{projectId}` | Outstanding |
+| `AzDoTaggingPermission` | `Tagging` | `/{projectId}` | **Shipped** — see §6 |
 | `AzDoReleaseDefinitionPermission` | `ReleaseManagement` | `{projectId}/{folderPath}/{definitionId}` | Outstanding |
-| `AzDoAnalyticsPermission` | `Analytics` | `$/{projectId}` | Outstanding |
+| `AzDoAnalyticsPermission` | `Analytics` | `$/{projectId}` | **Shipped** — see §6 |
+| `AzDoAnalyticsViewsPermission` | `AnalyticsViews` | `$/Shared/{projectId}` | **Shipped** — see §6 |
 
 Whenever a namespace is added, add a `New-ACLToken` → `ConvertTo-FormattedToken` →
 `Parse-ACLToken` round-trip test with it. If the build and parse directions disagree, a
@@ -300,6 +303,9 @@ code beyond conventions. Both landed **before** their permission counterparts, a
 | `AzDoBuildRetentionSettings` | Project-level run/artifact retention (`_apis/build/retention`). | Low | Outstanding |
 | `AzDoBoardColumn` / `AzDoBoardSettings` / `AzDoCardRule` | Board columns, swimlanes, card fields and styling. `AzDoTeamSettings` covers backlog/iteration/area defaults and working days, but not the board itself. | Medium | Outstanding |
 | `AzDoWikiPage` | `AzDoWiki` manages the wiki, not its pages or their ordering. | Medium | Outstanding |
+| `AzDoTaggingPermission` | Work item tag creation permissions; project-scoped `Tagging` namespace (`/{projectId}`). | Low | **Shipped** (`147`) |
+| `AzDoAnalyticsPermission` | Analytics read/administer/staging permissions; project-scoped `Analytics` namespace (`$/{projectId}`). | Low | **Shipped** (`148`) |
+| `AzDoAnalyticsViewsPermission` | Read/write/delete permissions on shared Analytics views; project-scoped `AnalyticsViews` namespace (`$/Shared/{projectId}`). | Low | **Shipped** (`149`) |
 
 ### Process customization — mostly closed
 
@@ -391,6 +397,11 @@ Still outstanding, in the order below:
 - **Tenant-scoped items** (§7) — `AzDoBillingSettings`, `AzDoPatPolicy`,
   `AzDoExtensionPolicy`, `AzDoAuditLogAlert`. Spike each first; several of these APIs are
   undocumented or preview.
+
+Since that merge, [#90](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/90) shipped
+`AzDoTaggingPermission`, `AzDoAnalyticsPermission` and `AzDoAnalyticsViewsPermission`
+(classes `147`–`149`; §2, §6), adding the `Tagging`, `Analytics` and `AnalyticsViews` ACL
+namespaces.
 
 ---
 

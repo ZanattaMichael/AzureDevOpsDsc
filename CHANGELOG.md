@@ -8,6 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - AzureDevOpsDscNative
+  - Added `AzDoTaggingPermission`, `AzDoAnalyticsPermission` and
+    `AzDoAnalyticsViewsPermission` (#90), three project-scoped ACL permission
+    resources modeled on `AzDoProjectPermission`: `AzDoTaggingPermission` controls
+    who can create work item tags (`Tagging` namespace, token `/{projectId}`),
+    `AzDoAnalyticsPermission` controls read/administer/staging access to Analytics
+    (`Analytics` namespace, token `$/{projectId}`), and
+    `AzDoAnalyticsViewsPermission` controls read/write/delete access to shared
+    Analytics views (`AnalyticsViews` namespace, token `$/Shared/{projectId}`).
+    None of them hardcode permission bits - each resolves its action names from
+    the live security namespace at apply time. Added matching `New-ACLToken` /
+    `ConvertTo-FormattedToken` / `Parse-ACLToken` branches and localized token
+    patterns for all three namespaces, plus round-trip unit tests, and a unit
+    test proving `Parse-ACLToken`'s `Generic` fallback still applies to any
+    namespace these changes did not touch. `Ensure = Absent` against a project
+    that no longer exists reports `NotFound`, never `Missing`. `New-`/`Set-`/
+    `Remove-` throw on a failed converge rather than writing a non-terminating
+    error, so a failed `Set()` is never reported as a success.
   - Added `AzDoQueryFolder`, a resource managing folders in a project's shared work
     item query tree. Folders are declared in their own right so that queries can
     depend on them, rather than each query creating its own ancestry - which would

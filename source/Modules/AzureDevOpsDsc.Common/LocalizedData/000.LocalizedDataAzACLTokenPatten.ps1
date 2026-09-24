@@ -42,6 +42,12 @@ data LocalizedDataAzACLTokenPatten
         QueryFolderIdentifier   = '\/(?<identifiers>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})'
         # Project-level ACL Token Patterns
         ProjectPermission       = '^\$PROJECT:vstfs:\/{3}Classification\/TeamProject\/(?<ProjectId>[A-Za-z0-9-]+)$'
+        # Tagging ACL Token Patterns — '/{projectId}'
+        TaggingPermission       = '^\/(?<ProjectId>[A-Za-z0-9-]+)$'
+        # Analytics ACL Token Patterns — '$/{projectId}'
+        AnalyticsPermission     = '^\$\/(?<ProjectId>[A-Za-z0-9-]+)$'
+        # AnalyticsViews ACL Token Patterns — '$/Shared/{projectId}'
+        AnalyticsViewsPermission = '^\$\/Shared\/(?<ProjectId>[A-Za-z0-9-]+)$'
         # Process ACL Token Patterns — org-wide root ($PROCESS), or $PROCESS:{parentProcessId}:{processId}
         ProcessRootPermission   = '^\$PROCESS$'
         ProcessPermission       = '^\$PROCESS:(?<ParentProcessId>[A-Za-z0-9-]+):(?<ProcessId>[A-Za-z0-9-]+)$'

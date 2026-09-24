@@ -211,6 +211,51 @@ Function New-ACLToken
             break
         }
 
+        # Tagging permissions — '/{projectId}'
+        'Tagging' {
+            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.TaggingPermission)
+            {
+                $result.type      = 'Tagging'
+                $result.ProjectId = $matches.ProjectId
+            }
+            else
+            {
+                $result.type = 'TaggingUnknown'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known Tagging ACL Token Patterns."
+            }
+            break
+        }
+
+        # Analytics permissions — '$/{projectId}'
+        'Analytics' {
+            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.AnalyticsPermission)
+            {
+                $result.type      = 'Analytics'
+                $result.ProjectId = $matches.ProjectId
+            }
+            else
+            {
+                $result.type = 'AnalyticsUnknown'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known Analytics ACL Token Patterns."
+            }
+            break
+        }
+
+        # AnalyticsViews permissions — '$/Shared/{projectId}'
+        'AnalyticsViews' {
+            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.AnalyticsViewsPermission)
+            {
+                $result.type      = 'AnalyticsViews'
+                $result.ProjectId = $matches.ProjectId
+            }
+            else
+            {
+                $result.type = 'AnalyticsViewsUnknown'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known AnalyticsViews ACL Token Patterns."
+            }
+            break
+        }
+
         # Process permissions — root ($PROCESS) or a specific process ($PROCESS:{parentId}:{processId}).
         'Process' {
             if ($TokenName -match $LocalizedDataAzACLTokenPatten.ProcessRootPermission)

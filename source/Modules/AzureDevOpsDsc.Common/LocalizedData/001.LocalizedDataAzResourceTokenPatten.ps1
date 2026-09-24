@@ -34,6 +34,12 @@ data LocalizedDataAzResourceTokenPatten
         GroupPermission     = '^(?<ProjectId>[A-Za-z0-9-_]+)\\(?<GroupId>[A-Za-z0-9-_]+)$'
         ResourcePermission  = '^\(\?<ProjectId>[A-Za-z0-9-_]+\)$'
         ProjectPermission   = '^\$PROJECT:vstfs:\/{3}Classification\/TeamProject\/(?<ProjectId>[A-Za-z0-9-_]+)$'
+        # Tagging Token Patterns — '/{projectId}' (project-scoped token, addressed by id like Project)
+        TaggingPermission       = '^\/(?<ProjectId>[A-Za-z0-9-_]+)$'
+        # Analytics Token Patterns — '$/{projectId}'
+        AnalyticsPermission     = '^\$\/(?<ProjectId>[A-Za-z0-9-_]+)$'
+        # AnalyticsViews Token Patterns — '$/Shared/{projectId}'
+        AnalyticsViewsPermission = '^\$\/Shared\/(?<ProjectId>[A-Za-z0-9-_]+)$'
         # AreaPath and IterationPath ACL Token Patterns
         AreaPathPermission      = '(vstfs:\/{3}Classification\/Node\/)(?<identifiers>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})'
         IterationPathPermission = '(vstfs:\/{3}Classification\/Node\/)(?<identifiers>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})'

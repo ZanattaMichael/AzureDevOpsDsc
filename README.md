@@ -160,6 +160,9 @@ Each resource links to its example/usage documentation.
 | [AzDoSecurityNamespacePermission](source/Examples/Resources/AzDoSecurityNamespacePermission.md) | Manages permissions for an arbitrary security namespace and token. |
 | [AzDoGroupPermission](source/Examples/Resources/AzDoGroupPermission.md) | *(Not currently supported)* Manages group-level identity permissions. |
 | [AzDoQueryPermission](source/Examples/Resources/AzDoQueryPermission.md) | Manages permissions on work item query folders. |
+| [AzDoTaggingPermission](source/Examples/Resources/AzDoTaggingPermission.md) | Manages permissions for creating work item tags. |
+| [AzDoAnalyticsPermission](source/Examples/Resources/AzDoAnalyticsPermission.md) | Manages Analytics read/administer/staging permissions. |
+| [AzDoAnalyticsViewsPermission](source/Examples/Resources/AzDoAnalyticsViewsPermission.md) | Manages read/write/delete permissions on shared Analytics views. |
 
 ### Pipelines, environments and agents
 

@@ -80,6 +80,39 @@ Describe "ConvertTo-FormattedToken" -Tag "Unit", "ACL", "Helper" {
         ConvertTo-FormattedToken -Token $token | Should -Be "`$/$projectId/$folderId1/$folderId2"
     }
 
+    It "should format Tagging token correctly" {
+        $token = @{
+            type      = 'Tagging'
+            ProjectId = 'myProject'
+        }
+
+        $result = ConvertTo-FormattedToken -Token $token
+
+        $result | Should -Be '/myProject'
+    }
+
+    It "should format Analytics token correctly" {
+        $token = @{
+            type      = 'Analytics'
+            ProjectId = 'myProject'
+        }
+
+        $result = ConvertTo-FormattedToken -Token $token
+
+        $result | Should -Be '$/myProject'
+    }
+
+    It "should format AnalyticsViews token correctly" {
+        $token = @{
+            type      = 'AnalyticsViews'
+            ProjectId = 'myProject'
+        }
+
+        $result = ConvertTo-FormattedToken -Token $token
+
+        $result | Should -Be '$/Shared/myProject'
+    }
+
     It "should return an empty string for unrecognized token type" {
         $token = @{
             type = 'UnknownType'
