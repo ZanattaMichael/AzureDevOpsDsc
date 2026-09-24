@@ -54,6 +54,8 @@ Describe "Set-AzDoProject" -Tag "Unit", "Project" {
 
         Mock -CommandName Wait-DevOpsProject
         Mock -CommandName Refresh-AzDoCache
+        Mock -CommandName Move-DevOpsProjectProcess -MockWith { return @{ processId = 'newproc'; projectId = '12345' } }
+        Mock -CommandName Write-Error
 
     }
 
@@ -83,8 +85,7 @@ Describe "Set-AzDoProject" -Tag "Unit", "Project" {
             Assert-MockCalled -CommandName Update-DevOpsProject -Exactly -Times 1 -ParameterFilter {
                 ($organization -eq "TestOrganization") -and
                 ($projectId -eq '12345') -and
-                ($description -eq $projectDescription) -and
-                ($processTemplateId -eq '67890')
+                ($description -eq $projectDescription)
             }
             Assert-MockCalled -CommandName Wait-DevOpsProject -Exactly -Times 1 -ParameterFilter {
                 ($ProjectURL -eq "http://devopsprojecturl") -and
@@ -92,6 +93,71 @@ Describe "Set-AzDoProject" -Tag "Unit", "Project" {
             }
             Assert-MockCalled -CommandName Refresh-AzDoCache -Exactly -Times 1 -ParameterFilter {
                 $OrganizationName -eq "TestOrganization"
+            }
+        }
+    }
+
+    Context "When the process template does not exist" {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                param ($Key, $Type)
+                if ($Type -eq 'LiveProjects')
+                {
+                    return @{ id = '12345' }
+                }
+                elseif ($Type -eq 'LiveProcesses')
+                {
+                    return $null
+                }
+            }
+        }
+
+        It "should throw" {
+            { Set-AzDoProject -ProjectName 'TestProject' -ProjectDescription 'Test Description' -SourceControlType 'Git' -ProcessTemplate 'NonExistentTemplate' -Visibility 'Private' } | Should -Throw
+        }
+    }
+
+    Context "When Get-AzDoProject reported the process change as incompatible" {
+
+        It "should refuse the change and not call Update-DevOpsProject or Move-DevOpsProjectProcess" {
+            $lookupResult = @{ reason = 'ProcessMigrationIncompatible' }
+
+            Set-AzDoProject -ProjectName 'TestProject' -ProjectDescription 'Test Description' -SourceControlType 'Git' -ProcessTemplate 'InheritedProcess' -Visibility 'Private' -LookupResult $lookupResult
+
+            Assert-MockCalled -CommandName Write-Error -Exactly -Times 1
+            Assert-MockCalled -CommandName Update-DevOpsProject -Exactly -Times 0
+            Assert-MockCalled -CommandName Move-DevOpsProjectProcess -Exactly -Times 0
+        }
+    }
+
+    Context "When Get-AzDoProject reported a supported process change" {
+
+        It "should migrate the project to the desired process" {
+            $lookupResult = @{
+                propertiesChanged    = @('ProcessTemplate')
+                desiredProcessTypeId = 'abcde-desired-id'
+            }
+
+            Set-AzDoProject -ProjectName 'TestProject' -ProjectDescription 'Test Description' -SourceControlType 'Git' -ProcessTemplate 'InheritedProcess' -Visibility 'Private' -LookupResult $lookupResult
+
+            Assert-MockCalled -CommandName Move-DevOpsProjectProcess -Exactly -Times 1 -ParameterFilter {
+                ($Organization -eq 'TestOrganization') -and
+                ($ProjectId -eq '12345') -and
+                ($ProcessTypeId -eq 'abcde-desired-id')
+            }
+        }
+
+        It "should fall back to the resolved process template id when LookupResult has none" {
+            $lookupResult = @{
+                propertiesChanged = @('ProcessTemplate')
+            }
+
+            Set-AzDoProject -ProjectName 'TestProject' -ProjectDescription 'Test Description' -SourceControlType 'Git' -ProcessTemplate 'InheritedProcess' -Visibility 'Private' -LookupResult $lookupResult
+
+            Assert-MockCalled -CommandName Move-DevOpsProjectProcess -Exactly -Times 1 -ParameterFilter {
+                ($ProjectId -eq '12345') -and
+                ($ProcessTypeId -eq '67890')
             }
         }
     }
