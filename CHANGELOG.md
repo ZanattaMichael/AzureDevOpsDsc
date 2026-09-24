@@ -520,6 +520,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - AzureDevOpsDscNative
+  - Fixed the Windows PowerShell integration workflow (`integration-tests.yml`)
+    testing the resource classes of a stale, hand-deployed copy of the module
+    rather than the ones the job had just built. Every `shell: pwsh` step is a new
+    `pwsh` started by the runner, and such a `pwsh` re-adds the default module
+    directories to the `PSModulePath` it inherits - the runner's profile directory,
+    where `scripts/redeploy-module.ps1` deploys `AzureDevOpsDscNative`, among them.
+    The workflow's `PSModulePath` rewrite, and the single-copy assertion made with
+    it, therefore held only in their own step, and `Invoke-DscResource` in the test
+    step loaded the classes from the profile copy. Changes to resource functions
+    were exercised correctly, but a pull request adding a class property failed
+    with `The property '<Name>' cannot be found on this object`, and one relaxing a
+    `ValidateSet` still had the old set enforced. The workflow now shelves those
+    copies for the duration of the job and restores them in an `always()` step, in
+    the same way (and with the same record format) as `integration-tests-v3.yml`,
+    and repeats the single-copy assertion in the test step itself.
   - Fixed every live `dsc resource get/set/test` call in the DSC v3 integration
     suite failing with `Cannot convert the "System.Object[]" value ... to type
     "System.Management.Automation.PSModuleInfo"` - 25 failures across the
