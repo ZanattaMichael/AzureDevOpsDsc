@@ -40,6 +40,12 @@ Function Remove-AzDoServiceConnection
         return
     }
 
+    $otherProjects = @($sc.serviceEndpointProjectReferences | Where-Object { $_.projectReference.name -and $_.projectReference.name -ne $ProjectName } | ForEach-Object { $_.projectReference.name })
+    if ($otherProjects.Count -gt 0)
+    {
+        Write-Warning "[Remove-AzDoServiceConnection] Service connection '$ConnectionName' is also shared with project(s): $($otherProjects -join ', '). Removing it from the owning project '$ProjectName' deletes it for all of them."
+    }
+
     $params = @{
         ApiUri              = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
         ProjectId           = $project.id

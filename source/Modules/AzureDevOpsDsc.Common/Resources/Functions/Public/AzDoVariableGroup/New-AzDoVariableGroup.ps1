@@ -8,6 +8,8 @@ Function New-AzDoVariableGroup
         [Parameter()][string]$VariableGroupType = 'Vsts',
         [Parameter()][HashTable]$Variables,
         [Parameter()][bool]$AllowAccess = $false,
+        [Parameter()][string[]]$SharedWithProjects,
+        [Parameter()][HashTable]$SharedNameOverrides,
         [Parameter()][HashTable]$LookupResult,
         [Parameter()][Ensure]$Ensure,
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
@@ -23,6 +25,19 @@ Function New-AzDoVariableGroup
         Type              = $VariableGroupType
         Variables         = if ($Variables) { $Variables } else { @{} }
         AllowAccess       = $AllowAccess
+    }
+
+    if ($PSBoundParameters.ContainsKey('SharedWithProjects'))
+    {
+        try
+        {
+            $params.ProjectReferences = @(Resolve-AzDoSharedProjectReferences -ProjectName $ProjectName -SharedWithProjects $SharedWithProjects -SharedNameOverrides $SharedNameOverrides -DefaultName $VariableGroupName -Description $Description)
+        }
+        catch
+        {
+            Write-Error "[New-AzDoVariableGroup] $_"
+            return
+        }
     }
 
     $value = New-DevOpsVariableGroup @params

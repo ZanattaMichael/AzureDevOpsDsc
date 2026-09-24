@@ -9,8 +9,14 @@ Function Set-DevOpsVariableGroup
         [Parameter()][string]$Description,
         [Parameter()][ValidateSet('Vsts','AzureKeyVault')][string]$Type = 'Vsts',
         [Parameter()][HashTable]$Variables = @{},
+        # Full project reference array for a group shared across projects (issue #79). See
+        # New-DevOpsVariableGroup for the shape and the single-project default.
+        [Parameter()][Object[]]$ProjectReferences,
         [Parameter()][string]$ApiVersion = '7.1-preview.2'
     )
+    $variableGroupProjectReferences = if ($ProjectReferences) { $ProjectReferences } else {
+        @( @{ projectReference = @{ name = $ProjectName }; name = $VariableGroupName } )
+    }
     $params = @{
         Uri         = '{0}/{1}/_apis/distributedtask/variablegroups/{2}?api-version={3}' -f $ApiUri.TrimEnd('/'), $ProjectName, $VariableGroupId, $ApiVersion
         Method      = 'PUT'
@@ -21,9 +27,7 @@ Function Set-DevOpsVariableGroup
             description = $Description
             type        = $Type
             variables   = $Variables
-            variableGroupProjectReferences = @(
-                @{ projectReference = @{ name = $ProjectName }; name = $VariableGroupName }
-            )
+            variableGroupProjectReferences = $variableGroupProjectReferences
         } | ConvertTo-Json -Depth 10
     }
     try   { return Invoke-AzDevOpsApiRestMethod @params }

@@ -291,6 +291,7 @@ code beyond conventions. Both landed **before** their permission counterparts, a
 
 | Resource | Why it matters | Effort | Status |
 |---|---|---|---|
+| `AzDoVariableGroup` / `AzDoServiceConnection` cross-project sharing | Both objects support being shared with other projects instead of copied per project (#79). Added `SharedWithProjects`/`SharedNameOverrides` to each, backed by the shared helper `Resolve-AzDoSharedProjectReferences`; ACL tokens are unaffected since they anchor to the owning project and the object's own id. | Low | **Shipped** |
 | `AzDoSecureFile` / `AzDoSecureFilePermission` | Certificates, keystores and signing files used by pipelines. They share the `Library` namespace with `AzDoVariableGroup`, so most of the ACL token work already existed. | Low | **Shipped** (`105`–`106`) |
 | `AzDoGroupEntitlement` | Group-based license rules. `AzDoUserEntitlement` covers only per-user licensing. | Low | **Shipped** (`109`) |
 | `AzDoServicePrincipalEntitlement` | Workload identities / service principals as org members, closing the inconsistency with the existing `ServicePrincipalToken` and `WorkloadIdentityFederationToken` auth. | Low | **Shipped** (`110`) |

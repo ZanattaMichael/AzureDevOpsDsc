@@ -27,6 +27,7 @@ Describe 'Remove-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
         Mock -CommandName Remove-CacheItem
         Mock -CommandName Export-CacheObject
         Mock -CommandName Write-Error
+        Mock -CommandName Write-Warning
 
         # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
         Mock -CommandName Resolve-AzDoProject -MockWith { Get-CacheItem -Key $ProjectName -Type 'LiveProjects' }
@@ -66,6 +67,54 @@ Describe 'Remove-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
             Assert-MockCalled -CommandName Export-CacheObject -Exactly 1 -ParameterFilter {
                 $CacheType -eq 'LiveVariableGroups'
             }
+        }
+
+    }
+
+    Context 'When the variable group is shared with other projects' {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                if ($Type -eq 'LiveProjects') { return @{ id = 'proj-id'; name = 'TestProject' } }
+                return @{
+                    id                              = 'vg-id'
+                    name                             = 'TestVG'
+                    variableGroupProjectReferences = @(
+                        @{ projectReference = @{ id = 'proj-id'; name = 'TestProject' }; name = 'TestVG' },
+                        @{ projectReference = @{ id = 'fab-id'; name = 'Fabrikam' }; name = 'TestVG' }
+                    )
+                }
+            }
+        }
+
+        It 'Should warn that the group is also shared, but still remove it' {
+            Remove-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG'
+
+            Assert-MockCalled -CommandName Write-Warning -Exactly 1
+            Assert-MockCalled -CommandName Remove-DevOpsVariableGroup -Exactly 1
+        }
+
+    }
+
+    Context 'When the variable group is not shared with any other project' {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                if ($Type -eq 'LiveProjects') { return @{ id = 'proj-id'; name = 'TestProject' } }
+                return @{
+                    id                              = 'vg-id'
+                    name                             = 'TestVG'
+                    variableGroupProjectReferences = @(
+                        @{ projectReference = @{ id = 'proj-id'; name = 'TestProject' }; name = 'TestVG' }
+                    )
+                }
+            }
+        }
+
+        It 'Should not warn' {
+            Remove-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG'
+
+            Assert-MockCalled -CommandName Write-Warning -Exactly 0
         }
 
     }

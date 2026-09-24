@@ -8,6 +8,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - AzureDevOpsDscNative
+  - `AzDoVariableGroup` and `AzDoServiceConnection` can now share the object they
+    manage with other projects (#79), via two new properties: `SharedWithProjects`
+    (the project names to share with, in addition to the owning `ProjectName`) and
+    `SharedNameOverrides` (a per-project display name, for when the shared copy
+    should not carry the same name as the original). `New-` and `Set-` resolve the
+    full `variableGroupProjectReferences`/`serviceEndpointProjectReferences` array
+    through the new helper `Resolve-AzDoSharedProjectReferences` and write it back
+    with the same PUT/PATCH used for every other update, so sharing is applied
+    alongside any other change rather than as a separate call. Dropping a project
+    from `SharedWithProjects` unshares it individually (`DELETE
+    .../{id}?projectIds=...`) rather than deleting and recreating the object, which
+    would have changed its id and broken any ACL token or pipeline reference to it.
+    Comparison only happens when `SharedWithProjects` is bound, so a configuration
+    that never mentions sharing leaves whatever sharing exists (however it got
+    there) alone. Removing the object from its owning project still removes it
+    everywhere it is shared - Azure DevOps has no "orphan and promote" operation for
+    this - so `Remove-` now warns, naming the other projects, before doing so rather
+    than deleting silently. ACL tokens for both resources are anchored to the owning
+    project and the object's own id, so permissions are unaffected by sharing.
+  - Added the private helper `Resolve-AzDoSharedProjectReferences`, shared by
+    `AzDoVariableGroup` and `AzDoServiceConnection`, which turns `ProjectName` +
+    `SharedWithProjects` + `SharedNameOverrides` into the project-reference array
+    both APIs expect, resolving each project through `Resolve-AzDoProject` and
+    de-duplicating and dropping blanks so a repeated or empty entry in
+    `SharedWithProjects` cannot produce a malformed reference.
   - Added `AzDoQueryFolder`, a resource managing folders in a project's shared work
     item query tree. Folders are declared in their own right so that queries can
     depend on them, rather than each query creating its own ancestry - which would

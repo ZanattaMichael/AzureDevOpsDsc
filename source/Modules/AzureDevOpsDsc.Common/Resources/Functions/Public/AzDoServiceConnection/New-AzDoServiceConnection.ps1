@@ -9,6 +9,8 @@ Function New-AzDoServiceConnection
         [Parameter()][bool]$AllowAllPipelines = $false,
         [Parameter()][HashTable]$Authorization,
         [Parameter()][HashTable]$Data,
+        [Parameter()][string[]]$SharedWithProjects,
+        [Parameter()][HashTable]$SharedNameOverrides,
         [Parameter()][HashTable]$LookupResult,
         [Parameter()][Ensure]$Ensure,
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
@@ -33,6 +35,19 @@ Function New-AzDoServiceConnection
         Description           = $Description
         Authorization         = if ($Authorization) { $Authorization } else { @{} }
         Data                  = if ($Data)          { $Data }          else { @{} }
+    }
+
+    if ($PSBoundParameters.ContainsKey('SharedWithProjects'))
+    {
+        try
+        {
+            $params.ProjectReferences = @(Resolve-AzDoSharedProjectReferences -ProjectName $ProjectName -SharedWithProjects $SharedWithProjects -SharedNameOverrides $SharedNameOverrides -DefaultName $ConnectionName -Description $Description)
+        }
+        catch
+        {
+            Write-Error "[New-AzDoServiceConnection] $_"
+            return
+        }
     }
 
     $value = New-DevOpsServiceConnection @params

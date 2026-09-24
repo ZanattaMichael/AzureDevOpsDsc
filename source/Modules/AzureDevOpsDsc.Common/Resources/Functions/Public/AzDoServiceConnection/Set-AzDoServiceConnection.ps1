@@ -9,6 +9,8 @@ Function Set-AzDoServiceConnection
         [Parameter()][bool]$AllowAllPipelines = $false,
         [Parameter()][HashTable]$Authorization,
         [Parameter()][HashTable]$Data,
+        [Parameter()][string[]]$SharedWithProjects,
+        [Parameter()][HashTable]$SharedNameOverrides,
         [Parameter()][HashTable]$LookupResult,
         [Parameter()][Ensure]$Ensure,
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
@@ -16,8 +18,9 @@ Function Set-AzDoServiceConnection
 
     Write-Verbose "[Set-AzDoServiceConnection] Updating service connection '$ConnectionName'."
 
-    $orgName = Get-AzDoOrganizationName
-    $project = Resolve-AzDoProject -ProjectName $ProjectName
+    $orgName   = Get-AzDoOrganizationName
+    $orgApiUri = 'https://dev.azure.com/{0}/' -f $orgName
+    $project   = Resolve-AzDoProject -ProjectName $ProjectName
 
     $scKey = '{0}\{1}' -f $ProjectName, $ConnectionName
     $sc    = Get-CacheItem -Key $scKey -Type 'LiveServiceConnections'
@@ -37,7 +40,7 @@ Function Set-AzDoServiceConnection
     }
 
     $params = @{
-        ApiUri                = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
+        ApiUri                = $orgApiUri
         ProjectId             = $project.id
         ProjectName           = $ProjectName
         ServiceConnectionId   = $sc.id
@@ -48,12 +51,49 @@ Function Set-AzDoServiceConnection
         Data                  = if ($Data)          { $Data }          else { @{} }
     }
 
+    $projectReferences = $null
+    if ($PSBoundParameters.ContainsKey('SharedWithProjects'))
+    {
+        try
+        {
+            $projectReferences = @(Resolve-AzDoSharedProjectReferences -ProjectName $ProjectName -SharedWithProjects $SharedWithProjects -SharedNameOverrides $SharedNameOverrides -DefaultName $ConnectionName -Description $Description)
+        }
+        catch
+        {
+            Write-Error "[Set-AzDoServiceConnection] $_"
+            return
+        }
+        $params.ProjectReferences = $projectReferences
+    }
+
     $value = Set-DevOpsServiceConnection @params
 
     if ($null -eq $value)
     {
         Write-Error "[Set-AzDoServiceConnection] Set-DevOpsServiceConnection returned null. Check authentication token and organization settings."
         return
+    }
+
+    if ($null -ne $projectReferences)
+    {
+        # PUT adds/renames project references but does not remove any - projects dropped from
+        # SharedWithProjects need the separate DELETE-with-projectIds call to actually unshare.
+        $desiredIds  = @($projectReferences | ForEach-Object { $_.projectReference.id } | Where-Object { $_ })
+        $removedRefs = @($sc.serviceEndpointProjectReferences | Where-Object { $_.projectReference.id -and $_.projectReference.id -notin $desiredIds })
+        foreach ($removedRef in $removedRefs)
+        {
+            Write-Verbose "[Set-AzDoServiceConnection] Unsharing service connection '$ConnectionName' from project '$($removedRef.projectReference.name)'."
+            try
+            {
+                Remove-DevOpsServiceConnection -ApiUri $orgApiUri -ProjectId $removedRef.projectReference.id -ServiceConnectionId $sc.id
+            }
+            catch
+            {
+                Write-Error "[Set-AzDoServiceConnection] Failed to unshare from project '$($removedRef.projectReference.name)': $_"
+            }
+        }
+
+        $value.serviceEndpointProjectReferences = $projectReferences
     }
 
     Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $ConnectionName) -Value $value -Type 'LiveServiceConnections'

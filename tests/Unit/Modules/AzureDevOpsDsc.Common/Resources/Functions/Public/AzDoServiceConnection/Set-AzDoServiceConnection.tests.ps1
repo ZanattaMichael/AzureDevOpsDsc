@@ -28,6 +28,8 @@ Describe 'Set-AzDoServiceConnection Tests' -Tag "Unit", "ServiceConnection" {
         Mock -CommandName Export-CacheObject
         Mock -CommandName Refresh-CacheObject
         Mock -CommandName Write-Error
+        Mock -CommandName Resolve-AzDoSharedProjectReferences
+        Mock -CommandName Remove-DevOpsServiceConnection
 
         # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
         Mock -CommandName Resolve-AzDoProject -MockWith { Get-CacheItem -Key $ProjectName -Type 'LiveProjects' }
@@ -116,6 +118,70 @@ Describe 'Set-AzDoServiceConnection Tests' -Tag "Unit", "ServiceConnection" {
 
             Assert-MockCalled -CommandName Write-Error -Exactly 1
             Assert-MockCalled -CommandName Set-DevOpsServiceConnection -Exactly 0
+        }
+
+    }
+
+    Context 'When SharedWithProjects removes a previously shared project' {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                param($Key, $Type)
+                if ($Type -eq 'LiveProjects') { return @{ id = 'proj-id'; name = 'TestProject' } }
+                return @{
+                    id                                = 'sc-id'
+                    name                               = 'TestSC'
+                    serviceEndpointProjectReferences = @(
+                        @{ projectReference = @{ id = 'proj-id'; name = 'TestProject' }; name = 'TestSC' },
+                        @{ projectReference = @{ id = 'fab-id'; name = 'Fabrikam' }; name = 'TestSC' }
+                    )
+                }
+            }
+            Mock -CommandName Resolve-AzDoSharedProjectReferences -MockWith {
+                @( @{ projectReference = @{ id = 'proj-id'; name = 'TestProject' }; name = 'TestSC' } )
+            }
+        }
+
+        It 'Should call Remove-DevOpsServiceConnection to unshare the dropped project' {
+            Set-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic' -SharedWithProjects @()
+
+            Assert-MockCalled -CommandName Remove-DevOpsServiceConnection -Exactly 1 -ParameterFilter {
+                $ProjectId -eq 'fab-id' -and $ServiceConnectionId -eq 'sc-id'
+            }
+        }
+
+        It 'Should pass the resolved project references to Set-DevOpsServiceConnection' {
+            Set-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic' -SharedWithProjects @()
+
+            Assert-MockCalled -CommandName Set-DevOpsServiceConnection -Exactly 1 -ParameterFilter {
+                $ProjectReferences.Count -eq 1
+            }
+        }
+
+    }
+
+    Context 'When SharedWithProjects is not specified' {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                param($Key, $Type)
+                if ($Type -eq 'LiveProjects') { return @{ id = 'proj-id'; name = 'TestProject' } }
+                return @{
+                    id                                = 'sc-id'
+                    name                               = 'TestSC'
+                    serviceEndpointProjectReferences = @(
+                        @{ projectReference = @{ id = 'proj-id'; name = 'TestProject' }; name = 'TestSC' },
+                        @{ projectReference = @{ id = 'fab-id'; name = 'Fabrikam' }; name = 'TestSC' }
+                    )
+                }
+            }
+        }
+
+        It 'Should not touch sharing at all' {
+            Set-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic'
+
+            Assert-MockCalled -CommandName Resolve-AzDoSharedProjectReferences -Exactly 0
+            Assert-MockCalled -CommandName Remove-DevOpsServiceConnection -Exactly 0
         }
 
     }

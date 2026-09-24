@@ -13,6 +13,9 @@ Function Set-DevOpsServiceConnection
         [Parameter()][bool]$IsReady = $true,
         [Parameter()][hashtable]$Authorization = @{},
         [Parameter()][hashtable]$Data = @{},
+        # Full project reference array for an endpoint shared across projects (issue #79). See
+        # New-DevOpsServiceConnection for the shape and the single-project default.
+        [Parameter()][Object[]]$ProjectReferences,
         [Parameter()][string]$ApiVersion = '7.1-preview.4'
     )
     $params = @{
@@ -28,13 +31,15 @@ Function Set-DevOpsServiceConnection
             isReady       = $IsReady
             authorization = $Authorization
             data          = $Data
-            serviceEndpointProjectReferences = @(
-                @{
-                    projectReference = @{ id = $ProjectId; name = $ProjectName }
-                    name             = $ServiceConnectionName
-                    description      = $Description
-                }
-            )
+            serviceEndpointProjectReferences = if ($ProjectReferences) { $ProjectReferences } else {
+                @(
+                    @{
+                        projectReference = @{ id = $ProjectId; name = $ProjectName }
+                        name             = $ServiceConnectionName
+                        description      = $Description
+                    }
+                )
+            }
         } | ConvertTo-Json -Depth 10
     }
     try   { return Invoke-AzDevOpsApiRestMethod @params }

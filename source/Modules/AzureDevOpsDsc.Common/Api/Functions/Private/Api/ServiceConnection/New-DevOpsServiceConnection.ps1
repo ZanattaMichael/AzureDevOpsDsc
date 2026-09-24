@@ -12,6 +12,11 @@ Function New-DevOpsServiceConnection
         [Parameter()][bool]$IsReady = $true,
         [Parameter()][hashtable]$Authorization = @{},
         [Parameter()][hashtable]$Data = @{},
+        # Full project reference array for an endpoint shared across projects (issue #79). Each
+        # entry is @{ projectReference = @{ id; name }; name; description }. Defaults to a single
+        # reference for the owning project - the shape this function always sent before sharing
+        # support existed - when the caller has no sharing to configure.
+        [Parameter()][Object[]]$ProjectReferences,
         [Parameter()][string]$ApiVersion = '7.1-preview.4'
     )
     # The Azure DevOps service endpoint API requires 'url' at the top-level body,
@@ -47,13 +52,15 @@ Function New-DevOpsServiceConnection
             isReady       = $IsReady
             authorization = $Authorization
             data          = $Data
-            serviceEndpointProjectReferences = @(
-                @{
-                    projectReference = @{ id = $ProjectId; name = $ProjectName }
-                    name             = $ServiceConnectionName
-                    description      = $Description
-                }
-            )
+            serviceEndpointProjectReferences = if ($ProjectReferences) { $ProjectReferences } else {
+                @(
+                    @{
+                        projectReference = @{ id = $ProjectId; name = $ProjectName }
+                        name             = $ServiceConnectionName
+                        description      = $Description
+                    }
+                )
+            }
         } | ConvertTo-Json -Depth 10
     }
     try   { return Invoke-AzDevOpsApiRestMethod @params }

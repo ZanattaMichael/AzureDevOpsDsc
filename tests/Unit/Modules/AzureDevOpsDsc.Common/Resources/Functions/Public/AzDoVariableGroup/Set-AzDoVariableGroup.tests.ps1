@@ -28,6 +28,8 @@ Describe 'Set-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
         Mock -CommandName Export-CacheObject
         Mock -CommandName Refresh-CacheObject
         Mock -CommandName Write-Error
+        Mock -CommandName Resolve-AzDoSharedProjectReferences
+        Mock -CommandName Remove-DevOpsVariableGroup
 
     }
 
@@ -90,6 +92,66 @@ Describe 'Set-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
             Set-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'MissingVG'
 
             Assert-MockCalled -CommandName Add-CacheItem -Exactly 0
+        }
+
+    }
+
+    Context 'When SharedWithProjects removes a previously shared project' {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                return @{
+                    id                              = 'vg-id'
+                    name                             = 'TestVG'
+                    variableGroupProjectReferences = @(
+                        @{ projectReference = @{ id = 'proj-id'; name = 'TestProject' }; name = 'TestVG' },
+                        @{ projectReference = @{ id = 'fab-id'; name = 'Fabrikam' }; name = 'TestVG' }
+                    )
+                }
+            }
+            Mock -CommandName Resolve-AzDoSharedProjectReferences -MockWith {
+                @( @{ projectReference = @{ id = 'proj-id'; name = 'TestProject' }; name = 'TestVG' } )
+            }
+        }
+
+        It 'Should call Remove-DevOpsVariableGroup to unshare the dropped project' {
+            Set-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @()
+
+            Assert-MockCalled -CommandName Remove-DevOpsVariableGroup -Exactly 1 -ParameterFilter {
+                $ProjectId -eq 'fab-id' -and $VariableGroupId -eq 'vg-id'
+            }
+        }
+
+        It 'Should pass the resolved project references to Set-DevOpsVariableGroup' {
+            Set-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @()
+
+            Assert-MockCalled -CommandName Set-DevOpsVariableGroup -Exactly 1 -ParameterFilter {
+                $ProjectReferences.Count -eq 1
+            }
+        }
+
+    }
+
+    Context 'When SharedWithProjects is not specified' {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                return @{
+                    id                              = 'vg-id'
+                    name                             = 'TestVG'
+                    variableGroupProjectReferences = @(
+                        @{ projectReference = @{ id = 'proj-id'; name = 'TestProject' }; name = 'TestVG' },
+                        @{ projectReference = @{ id = 'fab-id'; name = 'Fabrikam' }; name = 'TestVG' }
+                    )
+                }
+            }
+        }
+
+        It 'Should not touch sharing at all' {
+            Set-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG'
+
+            Assert-MockCalled -CommandName Resolve-AzDoSharedProjectReferences -Exactly 0
+            Assert-MockCalled -CommandName Remove-DevOpsVariableGroup -Exactly 0
         }
 
     }

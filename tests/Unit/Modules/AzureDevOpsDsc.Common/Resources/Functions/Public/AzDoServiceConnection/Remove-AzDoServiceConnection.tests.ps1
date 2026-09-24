@@ -27,6 +27,7 @@ Describe 'Remove-AzDoServiceConnection Tests' -Tag "Unit", "ServiceConnection" {
         Mock -CommandName Remove-CacheItem
         Mock -CommandName Export-CacheObject
         Mock -CommandName Write-Error
+        Mock -CommandName Write-Warning
 
         # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
         Mock -CommandName Resolve-AzDoProject -MockWith { Get-CacheItem -Key $ProjectName -Type 'LiveProjects' }
@@ -66,6 +67,54 @@ Describe 'Remove-AzDoServiceConnection Tests' -Tag "Unit", "ServiceConnection" {
             Assert-MockCalled -CommandName Export-CacheObject -Exactly 1 -ParameterFilter {
                 $CacheType -eq 'LiveServiceConnections'
             }
+        }
+
+    }
+
+    Context 'When the service connection is shared with other projects' {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                if ($Type -eq 'LiveProjects') { return @{ id = 'proj-id'; name = 'TestProject' } }
+                return @{
+                    id                                = 'sc-id'
+                    name                               = 'TestSC'
+                    serviceEndpointProjectReferences = @(
+                        @{ projectReference = @{ id = 'proj-id'; name = 'TestProject' }; name = 'TestSC' },
+                        @{ projectReference = @{ id = 'fab-id'; name = 'Fabrikam' }; name = 'TestSC' }
+                    )
+                }
+            }
+        }
+
+        It 'Should warn that the connection is also shared, but still remove it' {
+            Remove-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic'
+
+            Assert-MockCalled -CommandName Write-Warning -Exactly 1
+            Assert-MockCalled -CommandName Remove-DevOpsServiceConnection -Exactly 1
+        }
+
+    }
+
+    Context 'When the service connection is not shared with any other project' {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                if ($Type -eq 'LiveProjects') { return @{ id = 'proj-id'; name = 'TestProject' } }
+                return @{
+                    id                                = 'sc-id'
+                    name                               = 'TestSC'
+                    serviceEndpointProjectReferences = @(
+                        @{ projectReference = @{ id = 'proj-id'; name = 'TestProject' }; name = 'TestSC' }
+                    )
+                }
+            }
+        }
+
+        It 'Should not warn' {
+            Remove-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic'
+
+            Assert-MockCalled -CommandName Write-Warning -Exactly 0
         }
 
     }
