@@ -8,6 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - AzureDevOpsDscNative
+  - Added DSC v3 `Export()` support (#92), starting with `AzDoProject` and
+    `AzDoGitRepository`. Each supporting class gets its own parameterless static
+    `Export()` (matching how DSC v3's PowerShell adapter reflects for and invokes an
+    export method), delegating to a shared `AzDevOpsDscResourceBase::ExportDscResourceInstances()`
+    helper that dispatches to a resource's `Export-<ResourceName>` function by the same
+    naming convention as `Get`/`New`/`Set`/`Remove`, and converts each returned hashtable
+    into a typed instance. This lets an existing organization be onboarded from its live
+    state instead of a hand-written configuration - see USAGE.md, "Onboarding an Existing
+    Organization with Export". A resource with no exporter fails clearly ("export is not
+    implemented for `<ResourceName>`") rather than returning nothing. Any property a
+    resource declares secret is replaced in exported output with a fixed placeholder and a
+    warning naming the resource and property, via the new shared
+    `Protect-AzDoExportedSecretProperty` helper. `Export-AzDoProject` and
+    `Export-AzDoGitRepository` emit only the properties their resources can `Set`, in the
+    exact form `Get` reports them, so `Export()` followed by `Test()` reports
+    `InDesiredState = $true` with no further editing. Other resources are not yet
+    exportable; see `docs/ResourceRoadmap.md`.
   - Added `AzDoQueryFolder`, a resource managing folders in a project's shared work
     item query tree. Folders are declared in their own right so that queries can
     depend on them, rather than each query creating its own ancestry - which would

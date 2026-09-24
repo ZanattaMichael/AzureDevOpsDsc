@@ -148,6 +148,77 @@ Here is an example of how to invoke a resource using the module:
 
 By following these steps, you can successfully set up and use the module with Azure DevOps.
 
+## Onboarding an Existing Organization with Export
+
+Rather than hand-writing a DSC configuration for objects that already exist in an
+organization, resources that support export can generate one from the live state.
+
+### How Export is dispatched
+
+DSC v3's PowerShell adapter (`Microsoft.Adapter/PowerShell`, `adapters/powershell/psDscAdapter/psDscAdapter.psm1`
+in [PowerShell/DSC](https://github.com/PowerShell/DSC)) discovers a class-based resource's
+export support by reflecting over its methods: `GetExportMethod` looks for a method literally
+named `Export`, and invokes the parameterless overload it finds with
+`$method.Invoke($null, $null)`. There is no filtered/parameterized `Export($instance)` overload
+in this module — every exporter returns everything the API will let it see, unfiltered, exactly
+as the adapter's own dispatch expects.
+
+The manifest capability this requires is not something to add by hand: `New-DscAdaptedResourceManifest`
+(from `DscResource.Authoring`, run by `build.ps1 -Tasks dscv3`) derives a resource's `capabilities`
+list — `get`, `set`, `test`, `delete`, `export`, `whatif`, `sethandlesexist` — from which of the
+matching methods the class actually defines. Adding a class's own `static [<Class>[]] Export()`
+method is therefore enough; `.build/tasks/2.Fix_DscAdaptedResourceManifestTypes.ps1` only patches
+JSON-schema property *types* in the generated manifest and never touches the capabilities list, so
+no manifest-generation code needs to change.
+
+### Which resources support export
+
+| Resource | Exported properties | Notes |
+|---|---|---|
+| `AzDoProject` | `Ensure`, `ProjectName`, `ProjectDescription`, `Visibility` | `SourceControlType` and `ProcessTemplate` are never emitted — they cannot be changed by `Set-AzDoProject` after creation, so including them would report drift `Test()` can never resolve. Projects in `deleting`/`deleted`/`createPending` state are skipped. |
+| `AzDoGitRepository` | `Ensure`, `ProjectName`, `RepositoryName` | `SourceRepository` (fork-from-template) is never emitted for the same reason. Disabled repositories are skipped. |
+
+Every other resource is out of scope for this increment; see `docs/ResourceRoadmap.md` for the
+plan of record. Calling `Export()` on a resource that has no `Export-<ResourceName>` function
+throws `"export is not implemented for <ResourceName>"` rather than silently returning nothing.
+
+### Running an export
+
+From a session with the module imported and authenticated (see **Authentication** above):
+
+```powershell
+using module AzureDevOpsDscNative
+
+$exportedProjects = [AzDoProject]::Export()
+$exportedRepositories = [AzDoGitRepository]::Export()
+```
+
+Each call returns an array of resource instances whose properties are already in the exact form
+`Get-<ResourceName>` reports them, so feeding one straight back through `Test()` reports
+`InDesiredState = $true` with no further editing:
+
+```powershell
+$properties = @{
+    ProjectName        = $exportedProjects[0].ProjectName
+    ProjectDescription = $exportedProjects[0].ProjectDescription
+    Visibility          = $exportedProjects[0].Visibility.ToString()
+}
+
+Invoke-DscResource -Name 'AzDoProject' -Method Test -Property $properties -ModuleName 'AzureDevOpsDscNative'
+```
+
+### Secrets in exported output
+
+If a resource declares any of its properties secret (via a `GetDscResourceSecretPropertyNames()`
+override), export never writes the real value out. Each secret property is replaced with the fixed
+placeholder `<REDACTED-BY-EXPORT>`, and a warning names the resource and property so the omission is
+visible rather than silently wrong. `AzDoProject` and `AzDoGitRepository` declare no secret
+properties today; the placeholder mechanism (`Protect-AzDoExportedSecretProperty`) is shared by
+every exporter and is exercised with a synthetic resource in
+`tests/Unit/Modules/AzureDevOpsDsc.Common/Api/Functions/Private/Helper/Protect-AzDoExportedSecretProperty.tests.ps1`.
+Replace the placeholder with the real value by hand before applying an exported configuration that
+contains one.
+
 ## Implementation using `Dsc.PipelineRunner`
 
 [Current Source](https://github.com/ZanattaMichael/Dsc.PipelineRunner/)

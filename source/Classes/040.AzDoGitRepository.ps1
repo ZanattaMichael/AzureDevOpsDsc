@@ -70,6 +70,19 @@ class AzDoGitRepository : AzDevOpsDscResourceBase
         return [AzDoGitRepository]$($this.GetDscCurrentStateProperties())
     }
 
+    <#
+        .NOTES
+            Discovered by the DSC v3 PowerShell adapter (Microsoft.Adapter/PowerShell) by
+            reflection on this static, parameterless method - see docs/USAGE.md, "Onboarding an
+            existing organization with export". Delegates to the shared base-class helper, which
+            calls Export-AzDoGitRepository and converts each returned hashtable into an
+            [AzDoGitRepository].
+    #>
+    static [AzDoGitRepository[]] Export()
+    {
+        return [AzDoGitRepository[]]([AzDevOpsDscResourceBase]::ExportDscResourceInstances([AzDoGitRepository]))
+    }
+
     hidden [System.String[]]GetDscResourcePropertyNamesWithNoSetSupport()
     {
         return @('ProjectName', 'RepositoryName', 'SourceRepository')

@@ -79,6 +79,18 @@ class AzDoProject : AzDevOpsDscResourceBase
         return [AzDoProject]$($this.GetDscCurrentStateProperties())
     }
 
+    <#
+        .NOTES
+            Discovered by the DSC v3 PowerShell adapter (Microsoft.Adapter/PowerShell) by
+            reflection on this static, parameterless method - see docs/USAGE.md, "Onboarding an
+            existing organization with export". Delegates to the shared base-class helper, which
+            calls Export-AzDoProject and converts each returned hashtable into an [AzDoProject].
+    #>
+    static [AzDoProject[]] Export()
+    {
+        return [AzDoProject[]]([AzDevOpsDscResourceBase]::ExportDscResourceInstances([AzDoProject]))
+    }
+
 
     hidden [System.String[]]GetDscResourcePropertyNamesWithNoSetSupport()
     {
