@@ -17,7 +17,7 @@ The name of the Azure DevOps project.
 .PARAMETER ResourceType
 The protected resource type: endpoint, queue, variablegroup, securefile, environment or repository.
 
-.PARAMETER ResourceName
+.PARAMETER TargetResourceName
 The name of the protected resource.
 
 .PARAMETER AuthorizedPipelines
@@ -43,7 +43,7 @@ reported as drift.
 System.Management.Automation.PSObject[]
 
 .EXAMPLE
-Get-AzDoPipelineAuthorization -ProjectName 'MyProject' -ResourceType 'variablegroup' -ResourceName 'Prod Secrets' -AuthorizedPipelines @('\Platform\deploy-infra')
+Get-AzDoPipelineAuthorization -ProjectName 'MyProject' -ResourceType 'variablegroup' -TargetResourceName 'Prod Secrets' -AuthorizedPipelines @('\Platform\deploy-infra')
 #>
 Function Get-AzDoPipelineAuthorization
 {
@@ -58,7 +58,7 @@ Function Get-AzDoPipelineAuthorization
         [string]$ResourceType,
 
         [Parameter(Mandatory = $true)]
-        [string]$ResourceName,
+        [string]$TargetResourceName,
 
         [Parameter()]
         [string[]]$AuthorizedPipelines,
@@ -89,13 +89,13 @@ Function Get-AzDoPipelineAuthorization
         reason            = $null
     }
 
-    $resourceId = Resolve-AzDoPipelineAuthorizationResource -ProjectName $ProjectName -ResourceType $ResourceType -ResourceName $ResourceName
+    $resourceId = Resolve-AzDoPipelineAuthorizationResource -ProjectName $ProjectName -ResourceType $ResourceType -TargetResourceName $TargetResourceName
 
     if (-not $resourceId)
     {
-        Write-Warning "[Get-AzDoPipelineAuthorization] Resource '$ResourceName' of type '$ResourceType' was not found in project '$ProjectName'."
+        Write-Warning "[Get-AzDoPipelineAuthorization] Resource '$TargetResourceName' of type '$ResourceType' was not found in project '$ProjectName'."
         $result.status = [DSCGetSummaryState]::Error
-        $result.reason = "Resource '$ResourceName' of type '$ResourceType' was not found in project '$ProjectName'."
+        $result.reason = "Resource '$TargetResourceName' of type '$ResourceType' was not found in project '$ProjectName'."
         return $result
     }
 

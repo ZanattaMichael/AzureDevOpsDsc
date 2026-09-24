@@ -14,7 +14,7 @@ The name of the Azure DevOps project.
 .PARAMETER ResourceType
 The protected resource type: endpoint, queue, variablegroup, securefile, environment or repository.
 
-.PARAMETER ResourceName
+.PARAMETER TargetResourceName
 The name of the protected resource.
 
 .PARAMETER AuthorizedPipelines
@@ -37,7 +37,7 @@ revoked.
 (Optional) A switch parameter to force the operation.
 
 .EXAMPLE
-New-AzDoPipelineAuthorization -ProjectName 'MyProject' -ResourceType 'variablegroup' -ResourceName 'Prod Secrets' -AuthorizedPipelines @('\Platform\deploy-infra')
+New-AzDoPipelineAuthorization -ProjectName 'MyProject' -ResourceType 'variablegroup' -TargetResourceName 'Prod Secrets' -AuthorizedPipelines @('\Platform\deploy-infra')
 #>
 Function New-AzDoPipelineAuthorization
 {
@@ -51,7 +51,7 @@ Function New-AzDoPipelineAuthorization
         [string]$ResourceType,
 
         [Parameter(Mandatory = $true)]
-        [string]$ResourceName,
+        [string]$TargetResourceName,
 
         [Parameter()]
         [string[]]$AuthorizedPipelines,
@@ -73,7 +73,7 @@ Function New-AzDoPipelineAuthorization
         $Force
     )
 
-    Write-Verbose "[New-AzDoPipelineAuthorization] Delegating to Set-AzDoPipelineAuthorization for $ResourceType '$ResourceName' in project '$ProjectName'."
+    Write-Verbose "[New-AzDoPipelineAuthorization] Delegating to Set-AzDoPipelineAuthorization for $ResourceType '$TargetResourceName' in project '$ProjectName'."
 
     Set-AzDoPipelineAuthorization @PSBoundParameters
 }

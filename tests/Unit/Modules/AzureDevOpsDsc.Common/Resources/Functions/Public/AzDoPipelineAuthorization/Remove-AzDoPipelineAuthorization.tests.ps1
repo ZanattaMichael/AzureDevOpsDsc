@@ -32,7 +32,7 @@ Describe "Remove-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization"
             Mock -CommandName Resolve-AzDoPipelineAuthorizationResource -MockWith { return $null }
             Mock -CommandName Set-DevOpsPipelinePermission
 
-            Remove-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -ResourceName 'NoSuchVG'
+            Remove-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -TargetResourceName 'NoSuchVG'
 
             Assert-MockCalled -CommandName Write-Error -Times 1
             Assert-MockCalled -CommandName Set-DevOpsPipelinePermission -Times 0
@@ -48,7 +48,7 @@ Describe "Remove-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization"
         It "revokes only the declared pipelines and always resets AllPipelines to `$false" {
             Mock -CommandName Resolve-AzDoPipelineAuthorizationTargets -MockWith { return @(@{ Path = '\Platform\deploy-infra'; Id = 101 }) }
 
-            Remove-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -ResourceName 'Prod Secrets' `
+            Remove-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -TargetResourceName 'Prod Secrets' `
                 -AuthorizedPipelines @('\Platform\deploy-infra') -AllPipelines $true -ExclusiveList $true
 
             Assert-MockCalled -CommandName Set-DevOpsPipelinePermission -ParameterFilter {
@@ -62,7 +62,7 @@ Describe "Remove-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization"
         It "skips a path it cannot resolve and warns, rather than failing the whole revoke" {
             Mock -CommandName Resolve-AzDoPipelineAuthorizationTargets -MockWith { return @(@{ Path = '\Missing\pipeline'; Id = $null }) }
 
-            Remove-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -ResourceName 'Prod Secrets' `
+            Remove-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -TargetResourceName 'Prod Secrets' `
                 -AuthorizedPipelines @('\Missing\pipeline')
 
             Assert-MockCalled -CommandName Write-Warning -Times 1
@@ -77,7 +77,7 @@ Describe "Remove-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization"
             Mock -CommandName Resolve-AzDoPipelineAuthorizationResource -MockWith { return '4' }
             Mock -CommandName Set-DevOpsPipelinePermission -MockWith { return @{ resource = @{ id = '4' } } }
 
-            Remove-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'environment' -ResourceName 'Production'
+            Remove-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'environment' -TargetResourceName 'Production'
 
             Assert-MockCalled -CommandName Set-DevOpsPipelinePermission -ParameterFilter {
                 $AllPipelinesAuthorized -eq $false -and -not $PipelineAuthorizations
@@ -90,7 +90,7 @@ Describe "Remove-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization"
             Mock -CommandName Resolve-AzDoPipelineAuthorizationResource -MockWith { return '4' }
             Mock -CommandName Set-DevOpsPipelinePermission -MockWith { return @{ resource = @{ id = '4' } } }
 
-            Remove-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'environment' -ResourceName 'Production'
+            Remove-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'environment' -TargetResourceName 'Production'
 
             Assert-MockCalled -CommandName Remove-CacheItem -ParameterFilter {
                 $Key -eq 'TestProject\environment\Production' -and $Type -eq 'LivePipelineAuthorizations'
@@ -104,7 +104,7 @@ Describe "Remove-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization"
             Mock -CommandName Resolve-AzDoPipelineAuthorizationResource -MockWith { return '4' }
             Mock -CommandName Set-DevOpsPipelinePermission -MockWith { return $null }
 
-            Remove-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'environment' -ResourceName 'Production'
+            Remove-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'environment' -TargetResourceName 'Production'
 
             Assert-MockCalled -CommandName Write-Error -Times 1
             Assert-MockCalled -CommandName Remove-CacheItem -Times 0

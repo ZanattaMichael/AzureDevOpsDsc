@@ -27,7 +27,7 @@ Describe "Get-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization" {
             Mock -CommandName Resolve-AzDoPipelineAuthorizationResource -MockWith { return $null }
             Mock -CommandName Get-DevOpsPipelinePermission
 
-            $result = Get-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -ResourceName 'NoSuchVG'
+            $result = Get-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -TargetResourceName 'NoSuchVG'
 
             $result.status | Should -Be 'Error'
             $result.reason | Should -Match 'NoSuchVG'
@@ -40,7 +40,7 @@ Describe "Get-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization" {
             Mock -CommandName Resolve-AzDoPipelineAuthorizationResource -MockWith { return '4' }
             Mock -CommandName Get-DevOpsPipelinePermission -MockWith { throw 'boom' }
 
-            $result = Get-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -ResourceName 'Prod Secrets'
+            $result = Get-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -TargetResourceName 'Prod Secrets'
 
             $result.status | Should -Be 'Error'
         }
@@ -52,7 +52,7 @@ Describe "Get-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization" {
             Mock -CommandName Get-DevOpsPipelinePermission -MockWith { return @{ allPipelines = @{ authorized = $false }; pipelines = @() } }
             Mock -CommandName Resolve-AzDoPipelineAuthorizationTargets -MockWith { return @(@{ Path = '\Missing\pipeline'; Id = $null }) }
 
-            $result = Get-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -ResourceName 'Prod Secrets' `
+            $result = Get-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -TargetResourceName 'Prod Secrets' `
                 -AuthorizedPipelines @('\Missing\pipeline')
 
             $result.status | Should -Be 'Error'
@@ -71,7 +71,7 @@ Describe "Get-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization" {
                 return @{ allPipelines = @{ authorized = $false }; pipelines = @(@{ id = 101; authorized = $true }) }
             }
 
-            $result = Get-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -ResourceName 'Prod Secrets' `
+            $result = Get-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -TargetResourceName 'Prod Secrets' `
                 -AuthorizedPipelines @('\Platform\deploy-infra') -AllPipelines $false -ExclusiveList $false
 
             $result.status | Should -Be 'Unchanged'
@@ -82,7 +82,7 @@ Describe "Get-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization" {
                 return @{ allPipelines = @{ authorized = $false }; pipelines = @(@{ id = 101; authorized = $true }, @{ id = 999; authorized = $true }) }
             }
 
-            $result = Get-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -ResourceName 'Prod Secrets' `
+            $result = Get-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -TargetResourceName 'Prod Secrets' `
                 -AuthorizedPipelines @('\Platform\deploy-infra') -AllPipelines $false -ExclusiveList $false
 
             $result.status | Should -Be 'Unchanged'
@@ -93,7 +93,7 @@ Describe "Get-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization" {
                 return @{ allPipelines = @{ authorized = $false }; pipelines = @() }
             }
 
-            $result = Get-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -ResourceName 'Prod Secrets' `
+            $result = Get-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -TargetResourceName 'Prod Secrets' `
                 -AuthorizedPipelines @('\Platform\deploy-infra') -AllPipelines $false -ExclusiveList $false
 
             $result.status | Should -Be 'Changed'
@@ -105,7 +105,7 @@ Describe "Get-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization" {
                 return @{ allPipelines = @{ authorized = $true }; pipelines = @(@{ id = 101; authorized = $true }) }
             }
 
-            $result = Get-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -ResourceName 'Prod Secrets' `
+            $result = Get-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -TargetResourceName 'Prod Secrets' `
                 -AuthorizedPipelines @('\Platform\deploy-infra') -AllPipelines $false -ExclusiveList $false
 
             $result.status | Should -Be 'Changed'
@@ -124,7 +124,7 @@ Describe "Get-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization" {
                 return @{ allPipelines = @{ authorized = $false }; pipelines = @(@{ id = 101; authorized = $true }, @{ id = 999; authorized = $true }) }
             }
 
-            $result = Get-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -ResourceName 'Prod Secrets' `
+            $result = Get-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -TargetResourceName 'Prod Secrets' `
                 -AuthorizedPipelines @('\Platform\deploy-infra') -AllPipelines $false -ExclusiveList $true
 
             $result.status | Should -Be 'Changed'
@@ -136,7 +136,7 @@ Describe "Get-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization" {
                 return @{ allPipelines = @{ authorized = $false }; pipelines = @(@{ id = 101; authorized = $true }) }
             }
 
-            $result = Get-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -ResourceName 'Prod Secrets' `
+            $result = Get-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -TargetResourceName 'Prod Secrets' `
                 -AuthorizedPipelines @('\Platform\deploy-infra') -AllPipelines $false -ExclusiveList $true
 
             $result.status | Should -Be 'Unchanged'

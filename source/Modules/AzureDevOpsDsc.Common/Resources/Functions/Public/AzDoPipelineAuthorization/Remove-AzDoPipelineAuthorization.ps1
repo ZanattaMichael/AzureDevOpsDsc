@@ -18,7 +18,7 @@ The name of the Azure DevOps project.
 .PARAMETER ResourceType
 The protected resource type: endpoint, queue, variablegroup, securefile, environment or repository.
 
-.PARAMETER ResourceName
+.PARAMETER TargetResourceName
 The name of the protected resource.
 
 .PARAMETER AuthorizedPipelines
@@ -40,7 +40,7 @@ Unused for removal - only the pipelines this configuration declared are revoked.
 (Optional) A switch parameter to force the operation.
 
 .EXAMPLE
-Remove-AzDoPipelineAuthorization -ProjectName 'MyProject' -ResourceType 'variablegroup' -ResourceName 'Prod Secrets' -AuthorizedPipelines @('\Platform\deploy-infra')
+Remove-AzDoPipelineAuthorization -ProjectName 'MyProject' -ResourceType 'variablegroup' -TargetResourceName 'Prod Secrets' -AuthorizedPipelines @('\Platform\deploy-infra')
 #>
 Function Remove-AzDoPipelineAuthorization
 {
@@ -54,7 +54,7 @@ Function Remove-AzDoPipelineAuthorization
         [string]$ResourceType,
 
         [Parameter(Mandatory = $true)]
-        [string]$ResourceName,
+        [string]$TargetResourceName,
 
         [Parameter()]
         [string[]]$AuthorizedPipelines,
@@ -76,12 +76,12 @@ Function Remove-AzDoPipelineAuthorization
         $Force
     )
 
-    Write-Verbose "[Remove-AzDoPipelineAuthorization] Revoking declared pipeline authorization for $ResourceType '$ResourceName' in project '$ProjectName'."
+    Write-Verbose "[Remove-AzDoPipelineAuthorization] Revoking declared pipeline authorization for $ResourceType '$TargetResourceName' in project '$ProjectName'."
 
-    $resourceId = Resolve-AzDoPipelineAuthorizationResource -ProjectName $ProjectName -ResourceType $ResourceType -ResourceName $ResourceName
+    $resourceId = Resolve-AzDoPipelineAuthorizationResource -ProjectName $ProjectName -ResourceType $ResourceType -TargetResourceName $TargetResourceName
     if (-not $resourceId)
     {
-        Write-Error "[Remove-AzDoPipelineAuthorization] Resource '$ResourceName' of type '$ResourceType' was not found in project '$ProjectName'."
+        Write-Error "[Remove-AzDoPipelineAuthorization] Resource '$TargetResourceName' of type '$ResourceType' was not found in project '$ProjectName'."
         return
     }
 
@@ -123,7 +123,7 @@ Function Remove-AzDoPipelineAuthorization
         return
     }
 
-    $cacheKey = '{0}\{1}\{2}' -f $ProjectName, $ResourceType, $ResourceName
+    $cacheKey = '{0}\{1}\{2}' -f $ProjectName, $ResourceType, $TargetResourceName
     Remove-CacheItem -Key $cacheKey -Type 'LivePipelineAuthorizations'
     Export-CacheObject -CacheType 'LivePipelineAuthorizations' -Content $AzDoLivePipelineAuthorizations
 }

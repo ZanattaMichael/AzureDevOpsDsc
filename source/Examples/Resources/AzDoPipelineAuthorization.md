@@ -7,7 +7,7 @@ AzDoPipelineAuthorization [string] #ResourceName
 {
     ProjectName           = [String]$ProjectName
     ResourceType          = [String] {'endpoint', 'queue', 'variablegroup', 'securefile', 'environment', 'repository'}
-    ResourceName          = [String]$ResourceName
+    TargetResourceName    = [String]$TargetResourceName
     [ AuthorizedPipelines = [String[]]$AuthorizedPipelines ]
     [ AllPipelines        = [Boolean]$AllPipelines ]
     [ ExclusiveList       = [Boolean]$ExclusiveList ]
@@ -21,7 +21,7 @@ AzDoPipelineAuthorization [string] #ResourceName
 
 - **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as the key property for the resource.
 - **ResourceType**: The type of protected resource. Valid values are `endpoint` (service connection), `queue` (agent queue), `variablegroup`, `securefile`, `environment`, and `repository`. This property is mandatory.
-- **ResourceName**: The name of the resource (or, for `repository`, the name of the Git repository). This property is mandatory.
+- **TargetResourceName**: The name of the resource (or, for `repository`, the name of the Git repository). This property is mandatory.
 - **AuthorizedPipelines**: The pipeline definitions (by name or folder path) allowed to use the resource. Additive by default — see `ExclusiveList`.
 - **AllPipelines**: Whether every pipeline in the project may use the resource without individual authorization (the portal's "Open access" toggle). Defaults to `$false`.
 - **ExclusiveList**: When `$true`, a pipeline authorized on the resource in Azure DevOps but absent from `AuthorizedPipelines` is revoked. When `$false` (the default), `AuthorizedPipelines` only adds authorizations and never removes one it did not itself grant.
@@ -53,7 +53,7 @@ any check is evaluated.
 
 For `ResourceType = 'repository'`, Azure DevOps addresses the pipeline permission record by
 `{projectId}.{repositoryId}` rather than by the repository's own id alone. This resource resolves
-both ids from `ProjectName`/`ResourceName` and builds that composite id automatically.
+both ids from `ProjectName`/`TargetResourceName` and builds that composite id automatically.
 
 ### There is nothing to create or delete
 
@@ -77,7 +77,7 @@ Configuration ExampleConfig {
             Ensure              = 'Present'
             ProjectName         = 'MyProject'
             ResourceType        = 'variablegroup'
-            ResourceName        = 'Release Secrets'
+            TargetResourceName  = 'Release Secrets'
             AuthorizedPipelines = @('Deploy-Production')
             AllPipelines        = $false
             ExclusiveList       = $true
@@ -93,9 +93,9 @@ Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ``` PowerShell
 # Return the current configuration for AzDoPipelineAuthorization
 $properties = @{
-    ProjectName  = 'MyProject'
-    ResourceType = 'variablegroup'
-    ResourceName = 'Release Secrets'
+    ProjectName        = 'MyProject'
+    ResourceType       = 'variablegroup'
+    TargetResourceName = 'Release Secrets'
 }
 
 Invoke-DscResource -Name 'AzDoPipelineAuthorization' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
@@ -118,7 +118,7 @@ resources:
   properties:
     ProjectName: $ProjectName
     ResourceType: variablegroup
-    ResourceName: Release Secrets
+    TargetResourceName: Release Secrets
     AuthorizedPipelines:
       - Deploy-Production
     AllPipelines: false

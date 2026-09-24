@@ -299,6 +299,10 @@ A few conventions that are easy to get wrong:
   `New`/`Set` parameter set, so a DSC property named `Force` is always true by the time the
   function sees it. A guard property needs another name — `AllowRecursiveDelete`,
   `AllowDestructiveRemove`.
+- **`ResourceName` is reserved.** `AzDevOpsApiDscResourceBase` builds the `Get-`/`New-`/`Set-`/`Remove-`
+  function names from its own `ResourceName` property, so a DSC property with that name makes the
+  base class call `Get-<its value>`. Name the target `TargetResourceName` instead, as
+  `AzDoCheckConfiguration` and `AzDoPipelineAuthorization` do.
 - **Exactly one `[DscProperty(Key)]`.** More than one throws at runtime. Other identifying
   properties are `[DscProperty(Mandatory)]`.
 - **Only compare what the configuration states.** Use `$PSBoundParameters.ContainsKey(...)` rather

@@ -26,7 +26,7 @@
     The type of protected resource. One of: endpoint (service connection), queue (agent queue),
     variablegroup, securefile, environment, repository.
 
-.PARAMETER ResourceName
+.PARAMETER TargetResourceName
     The name of the protected resource, resolved via the matching Live* cache for ResourceType
     (falling back to a live API lookup on a cache miss). For 'repository' the underlying API id is
     composed as "{projectId}.{repositoryId}" - the pipelinePermissions API's own convention.
@@ -49,7 +49,7 @@
     [AzDoPipelineAuthorization]@{
         ProjectName         = 'MyProject'
         ResourceType        = 'variablegroup'
-        ResourceName        = 'Prod Secrets'
+        TargetResourceName  = 'Prod Secrets'
         AllPipelines        = $false
         AuthorizedPipelines = @('\Platform\deploy-infra')
         ExclusiveList       = $true
@@ -67,7 +67,7 @@ class AzDoPipelineAuthorization : AzDevOpsDscResourceBase
     [System.String]$ResourceType
 
     [DscProperty(Mandatory)]
-    [System.String]$ResourceName
+    [System.String]$TargetResourceName
 
     [DscProperty()]
     [System.String[]]$AuthorizedPipelines
@@ -101,7 +101,7 @@ class AzDoPipelineAuthorization : AzDevOpsDscResourceBase
         if ($null -eq $CurrentResourceObject) { return $properties }
         $properties.ProjectName          = $CurrentResourceObject.ProjectName
         $properties.ResourceType         = $CurrentResourceObject.ResourceType
-        $properties.ResourceName         = $CurrentResourceObject.ResourceName
+        $properties.TargetResourceName   = $CurrentResourceObject.TargetResourceName
         $properties.AuthorizedPipelines  = $CurrentResourceObject.AuthorizedPipelines
         $properties.AllPipelines         = $CurrentResourceObject.AllPipelines
         $properties.ExclusiveList        = $CurrentResourceObject.ExclusiveList

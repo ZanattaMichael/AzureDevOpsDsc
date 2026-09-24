@@ -95,7 +95,7 @@ Describe "AzDoPipelineAuthorization Integration Tests" -Tag "Integration", "Pipe
             property   = @{
                 ProjectName         = $PROJECTNAME
                 ResourceType        = 'variablegroup'
-                ResourceName        = $VGNAME
+                TargetResourceName  = $VGNAME
                 AuthorizedPipelines = @($PIPELINE)
                 AllPipelines        = $false
                 ExclusiveList       = $false
@@ -145,7 +145,7 @@ Describe "AzDoPipelineAuthorization Integration Tests" -Tag "Integration", "Pipe
             $parameters.property = @{
                 ProjectName         = $PROJECTNAME
                 ResourceType        = 'variablegroup'
-                ResourceName        = $VGNAME
+                TargetResourceName  = $VGNAME
                 AuthorizedPipelines = @($PIPELINE)
                 Ensure              = 'Absent'
             }

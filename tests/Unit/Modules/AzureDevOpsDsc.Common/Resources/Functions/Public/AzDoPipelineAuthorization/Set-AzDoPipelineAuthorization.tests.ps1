@@ -31,7 +31,7 @@ Describe "Set-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization" {
             Mock -CommandName Resolve-AzDoPipelineAuthorizationResource -MockWith { return $null }
             Mock -CommandName Set-DevOpsPipelinePermission
 
-            Set-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -ResourceName 'NoSuchVG'
+            Set-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -TargetResourceName 'NoSuchVG'
 
             Assert-MockCalled -CommandName Write-Error -Times 1
             Assert-MockCalled -CommandName Set-DevOpsPipelinePermission -Times 0
@@ -45,7 +45,7 @@ Describe "Set-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization" {
             Mock -CommandName Resolve-AzDoPipelineAuthorizationTargets -MockWith { return @(@{ Path = '\Missing\pipeline'; Id = $null }) }
             Mock -CommandName Set-DevOpsPipelinePermission
 
-            Set-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -ResourceName 'Prod Secrets' `
+            Set-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -TargetResourceName 'Prod Secrets' `
                 -AuthorizedPipelines @('\Missing\pipeline')
 
             Assert-MockCalled -CommandName Write-Error -Times 1
@@ -65,7 +65,7 @@ Describe "Set-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization" {
                 return @{ pipelines = @(@{ id = 999; authorized = $true }) }
             }
 
-            Set-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -ResourceName 'Prod Secrets' `
+            Set-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -TargetResourceName 'Prod Secrets' `
                 -AuthorizedPipelines @('\Platform\deploy-infra') -AllPipelines $false -ExclusiveList $false
 
             Assert-MockCalled -CommandName Set-DevOpsPipelinePermission -ParameterFilter {
@@ -78,7 +78,7 @@ Describe "Set-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization" {
                 return @{ pipelines = @(@{ id = 101; authorized = $true }) }
             }
 
-            Set-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -ResourceName 'Prod Secrets' `
+            Set-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -TargetResourceName 'Prod Secrets' `
                 -AuthorizedPipelines @('\Platform\deploy-infra') -AllPipelines $false -ExclusiveList $false
 
             Assert-MockCalled -CommandName Set-DevOpsPipelinePermission -ParameterFilter {
@@ -89,7 +89,7 @@ Describe "Set-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization" {
         It "always sends AllPipelinesAuthorized" {
             Mock -CommandName Get-DevOpsPipelinePermission -MockWith { return @{ pipelines = @() } }
 
-            Set-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -ResourceName 'Prod Secrets' `
+            Set-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -TargetResourceName 'Prod Secrets' `
                 -AuthorizedPipelines @('\Platform\deploy-infra') -AllPipelines $true -ExclusiveList $false
 
             Assert-MockCalled -CommandName Set-DevOpsPipelinePermission -ParameterFilter {
@@ -100,7 +100,7 @@ Describe "Set-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization" {
         It "caches the returned value on success" {
             Mock -CommandName Get-DevOpsPipelinePermission -MockWith { return @{ pipelines = @() } }
 
-            Set-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -ResourceName 'Prod Secrets' `
+            Set-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -TargetResourceName 'Prod Secrets' `
                 -AuthorizedPipelines @('\Platform\deploy-infra') -AllPipelines $false -ExclusiveList $false
 
             Assert-MockCalled -CommandName Add-CacheItem -ParameterFilter {
@@ -122,7 +122,7 @@ Describe "Set-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization" {
                 return @{ pipelines = @(@{ id = 101; authorized = $true }, @{ id = 999; authorized = $true }) }
             }
 
-            Set-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -ResourceName 'Prod Secrets' `
+            Set-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -TargetResourceName 'Prod Secrets' `
                 -AuthorizedPipelines @('\Platform\deploy-infra') -AllPipelines $false -ExclusiveList $true
 
             Assert-MockCalled -CommandName Set-DevOpsPipelinePermission -ParameterFilter {
@@ -140,7 +140,7 @@ Describe "Set-AzDoPipelineAuthorization" -Tag "Unit", "PipelineAuthorization" {
             Mock -CommandName Resolve-AzDoPipelineAuthorizationTargets -MockWith { return @() }
             Mock -CommandName Set-DevOpsPipelinePermission -MockWith { return $null }
 
-            Set-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -ResourceName 'Prod Secrets' -AllPipelines $false
+            Set-AzDoPipelineAuthorization -ProjectName 'TestProject' -ResourceType 'variablegroup' -TargetResourceName 'Prod Secrets' -AllPipelines $false
 
             Assert-MockCalled -CommandName Write-Error -Times 1
             Assert-MockCalled -CommandName Add-CacheItem -Times 0

@@ -17,7 +17,7 @@ The name of the Azure DevOps project.
 .PARAMETER ResourceType
 The protected resource type: endpoint, queue, variablegroup, securefile, environment or repository.
 
-.PARAMETER ResourceName
+.PARAMETER TargetResourceName
 The name of the protected resource.
 
 .PARAMETER AuthorizedPipelines
@@ -40,7 +40,7 @@ revoked.
 (Optional) A switch parameter to force the operation.
 
 .EXAMPLE
-Set-AzDoPipelineAuthorization -ProjectName 'MyProject' -ResourceType 'variablegroup' -ResourceName 'Prod Secrets' -AllPipelines $false -AuthorizedPipelines @('\Platform\deploy-infra') -ExclusiveList $true
+Set-AzDoPipelineAuthorization -ProjectName 'MyProject' -ResourceType 'variablegroup' -TargetResourceName 'Prod Secrets' -AllPipelines $false -AuthorizedPipelines @('\Platform\deploy-infra') -ExclusiveList $true
 #>
 Function Set-AzDoPipelineAuthorization
 {
@@ -54,7 +54,7 @@ Function Set-AzDoPipelineAuthorization
         [string]$ResourceType,
 
         [Parameter(Mandatory = $true)]
-        [string]$ResourceName,
+        [string]$TargetResourceName,
 
         [Parameter()]
         [string[]]$AuthorizedPipelines,
@@ -76,12 +76,12 @@ Function Set-AzDoPipelineAuthorization
         $Force
     )
 
-    Write-Verbose "[Set-AzDoPipelineAuthorization] Updating pipeline authorization for $ResourceType '$ResourceName' in project '$ProjectName'."
+    Write-Verbose "[Set-AzDoPipelineAuthorization] Updating pipeline authorization for $ResourceType '$TargetResourceName' in project '$ProjectName'."
 
-    $resourceId = Resolve-AzDoPipelineAuthorizationResource -ProjectName $ProjectName -ResourceType $ResourceType -ResourceName $ResourceName
+    $resourceId = Resolve-AzDoPipelineAuthorizationResource -ProjectName $ProjectName -ResourceType $ResourceType -TargetResourceName $TargetResourceName
     if (-not $resourceId)
     {
-        Write-Error "[Set-AzDoPipelineAuthorization] Resource '$ResourceName' of type '$ResourceType' was not found in project '$ProjectName'."
+        Write-Error "[Set-AzDoPipelineAuthorization] Resource '$TargetResourceName' of type '$ResourceType' was not found in project '$ProjectName'."
         return
     }
 
@@ -145,7 +145,7 @@ Function Set-AzDoPipelineAuthorization
         return
     }
 
-    $cacheKey = '{0}\{1}\{2}' -f $ProjectName, $ResourceType, $ResourceName
+    $cacheKey = '{0}\{1}\{2}' -f $ProjectName, $ResourceType, $TargetResourceName
     Add-CacheItem -Key $cacheKey -Value $value -Type 'LivePipelineAuthorizations' -SuppressWarning
     Export-CacheObject -CacheType 'LivePipelineAuthorizations' -Content $AzDoLivePipelineAuthorizations
 }
