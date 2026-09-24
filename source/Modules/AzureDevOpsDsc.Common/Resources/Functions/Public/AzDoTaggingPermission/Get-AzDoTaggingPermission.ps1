@@ -26,13 +26,9 @@ Function Get-AzDoTaggingPermission
         reason            = $null
     }
 
-    $projectCache = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
-    if (-not $projectCache)
-    {
-        Write-Verbose "[Get-AzDoTaggingPermission] Project '$ProjectName' not in cache — falling back to live API lookup."
-        $projectCache = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
-        if ($projectCache) { Add-CacheItem -Key $ProjectName -Value $projectCache -Type 'LiveProjects' }
-    }
+    # Resolve-AzDoProject falls back to a live lookup for a project created after the cache was
+    # built, and returns $null rather than throwing when that lookup answers 404 (a deleted project).
+    $projectCache = Resolve-AzDoProject -ProjectName $ProjectName
     if (-not $projectCache)
     {
         # A project that no longer exists is NotFound, never Missing - Missing would drive the

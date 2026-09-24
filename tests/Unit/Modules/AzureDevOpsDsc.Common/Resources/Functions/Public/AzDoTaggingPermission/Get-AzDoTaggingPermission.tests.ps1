@@ -21,6 +21,7 @@ Describe 'Get-AzDoTaggingPermission' -Tag "Unit", "TaggingPermission" {
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
+        . (Get-FunctionItem 'Resolve-AzDoProject.ps1')
 
         Mock -CommandName Write-Verbose
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
@@ -106,6 +107,17 @@ Describe 'Get-AzDoTaggingPermission' -Tag "Unit", "TaggingPermission" {
         It 'does not call Get-DevOpsACL' {
             Get-AzDoTaggingPermission -ProjectName 'NonExistent' -GroupName 'TestGroup' -isInherited $false
             Assert-MockCalled -CommandName Get-DevOpsACL -Times 0
+        }
+
+        It 'returns NotFound, without throwing, when the live lookup answers 404 (a deleted project)' {
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { throw 'Response status code does not indicate success: 404 (Not Found).' }
+            $result = Get-AzDoTaggingPermission -ProjectName 'NonExistent' -GroupName 'TestGroup' -isInherited $false
+            $result.status | Should -Be 'NotFound'
+        }
+
+        It 'rethrows a live lookup failure that is not a 404' {
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { throw 'Response status code does not indicate success: 401 (Unauthorized).' }
+            { Get-AzDoTaggingPermission -ProjectName 'NonExistent' -GroupName 'TestGroup' -isInherited $false } | Should -Throw '*401*'
         }
     }
 
