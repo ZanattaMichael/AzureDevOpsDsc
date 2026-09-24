@@ -224,6 +224,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     so passing the resolved multi-project reference array to either (as the
     initial #79 implementation did) never worked. See the `Added` entry above for
     the corrected two-step create-then-share design.
+  - Fixed `New-`/`Set-AzDoVariableGroup` reporting success when the share call
+    failed. The failure was written with `Write-Error`, which a class-based DSC
+    resource method never passes back to the caller, so `Set()` returned cleanly
+    while every later `Test()` reported drift with no reason. A share failure now
+    throws, carrying the API's error, after the group itself has been cached (#79).
+  - Fixed `Set-AzDoServiceConnection` failing every update with a missing
+    mandatory `ConnectionType` parameter. `ConnectionType` is one of the class's
+    no-Set-support properties, so the base class removes it before calling `Set-`,
+    and the function declared it as mandatory. It is now optional, and when it is
+    absent the existing connection's type is sent. This affected every
+    `AzDoServiceConnection` update, not only sharing (#79).
 
 ### Changed
 

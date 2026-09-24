@@ -4,7 +4,9 @@ Function Set-AzDoServiceConnection
     param (
         [Parameter(Mandatory = $true)][string]$ProjectName,
         [Parameter(Mandatory = $true)][string]$ConnectionName,
-        [Parameter(Mandatory = $true)][string]$ConnectionType,
+        # Not mandatory: ConnectionType is in the class's NoSetSupport list, so the base class
+        # strips it from every Set call. The existing connection's type is used instead.
+        [Parameter()][string]$ConnectionType,
         [Parameter()][string]$Description,
         [Parameter()][bool]$AllowAllPipelines = $false,
         [Parameter()][HashTable]$Authorization,
@@ -45,7 +47,7 @@ Function Set-AzDoServiceConnection
         ProjectName           = $ProjectName
         ServiceConnectionId   = $sc.id
         ServiceConnectionName = $ConnectionName
-        ServiceConnectionType = $ConnectionType
+        ServiceConnectionType = if ([System.String]::IsNullOrWhiteSpace($ConnectionType)) { $sc.type } else { $ConnectionType }
         Description           = $Description
         Authorization         = if ($Authorization) { $Authorization } else { @{} }
         Data                  = if ($Data)          { $Data }          else { @{} }

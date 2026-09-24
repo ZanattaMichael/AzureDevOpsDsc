@@ -82,6 +82,40 @@ Describe 'Set-AzDoServiceConnection Tests' -Tag "Unit", "ServiceConnection" {
 
     }
 
+    Context 'When ConnectionType is not supplied (the DSC base class strips it from Set)' {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                param($Key, $Type)
+                if ($Type -eq 'LiveProjects') {
+                    return @{ id = 'proj-id'; name = 'TestProject' }
+                }
+                return @{ id = 'sc-id'; name = 'TestSC'; type = 'generic' }
+            }
+        }
+
+        It 'Should not throw a missing mandatory parameter error' {
+            { Set-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' } | Should -Not -Throw
+        }
+
+        It 'Should update the connection using the existing connection type' {
+            Set-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC'
+
+            Assert-MockCalled -CommandName Set-DevOpsServiceConnection -Exactly 1 -ParameterFilter {
+                $ServiceConnectionType -eq 'generic'
+            }
+        }
+
+        It 'Should prefer an explicitly supplied ConnectionType' {
+            Set-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'AzureRM'
+
+            Assert-MockCalled -CommandName Set-DevOpsServiceConnection -Exactly 1 -ParameterFilter {
+                $ServiceConnectionType -eq 'AzureRM'
+            }
+        }
+
+    }
+
     Context 'When the project is not found in cache' {
 
         BeforeEach {

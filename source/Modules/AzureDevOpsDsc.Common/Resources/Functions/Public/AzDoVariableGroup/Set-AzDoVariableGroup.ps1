@@ -53,6 +53,12 @@ Function Set-AzDoVariableGroup
     # every DSC property (including SharedWithProjects), so ContainsKey is always true through
     # that path. The class property has no default initializer, so $null reliably means "not
     # configured" while @() means "configured empty" - in every call path, DSC-splatted or direct.
+    #
+    # A share failure is thrown rather than written with Write-Error: a non-terminating error
+    # raised inside a class-based DSC resource method never reaches the caller, so Set() would
+    # report success while every later Test() reports drift with no reason given. The update
+    # itself succeeded, so it is still cached before the error is raised.
+    $shareError = $null
     if ($null -ne $SharedWithProjects)
     {
         try
@@ -63,12 +69,18 @@ Function Set-AzDoVariableGroup
         }
         catch
         {
-            Write-Error "[Set-AzDoVariableGroup] $_"
+            $shareError = $_
         }
     }
 
     Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $VariableGroupName) -Value $value -Type 'LiveVariableGroups'
     Export-CacheObject -CacheType 'LiveVariableGroups' -Content $AzDoLiveVariableGroups
     Refresh-CacheObject -CacheType 'LiveVariableGroups'
+
+    if ($null -ne $shareError)
+    {
+        throw "[Set-AzDoVariableGroup] Variable group '$VariableGroupName' was updated but could not be shared: $shareError"
+    }
+
     Write-Verbose "[Set-AzDoVariableGroup] Variable group '$VariableGroupName' updated."
 }

@@ -139,6 +139,38 @@ Describe 'Set-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
 
     }
 
+    Context 'When the share call fails' {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                return @{ id = 'vg-id'; name = 'TestVG' }
+            }
+            Mock -CommandName Resolve-AzDoSharedProjectReferences -MockWith {
+                @(
+                    @{ projectReference = @{ id = 'proj-id'; name = 'TestProject' }; name = 'TestVG' },
+                    @{ projectReference = @{ id = 'fab-id'; name = 'Fabrikam' }; name = 'TestVG' }
+                )
+            }
+            Mock -CommandName Set-DevOpsVariableGroupProjectReferences -MockWith { throw 'share rejected' }
+        }
+
+        It 'Should throw, so a DSC Set() reports the failure instead of silently succeeding' {
+            { Set-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @('Fabrikam') } |
+                Should -Throw "*could not be shared*share rejected*"
+        }
+
+        It 'Should still cache the update that did succeed before throwing' {
+            { Set-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @('Fabrikam') } |
+                Should -Throw
+
+            Assert-MockCalled -CommandName Add-CacheItem -Exactly 1 -ParameterFilter {
+                $Key -eq 'TestProject\TestVG' -and $Type -eq 'LiveVariableGroups'
+            }
+            Assert-MockCalled -CommandName Export-CacheObject -Exactly 1
+        }
+
+    }
+
     Context 'When SharedWithProjects is not specified' {
 
         BeforeEach {

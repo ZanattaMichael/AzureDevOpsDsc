@@ -58,6 +58,11 @@ Function New-AzDoVariableGroup
         return
     }
 
+    # A share failure is thrown rather than written with Write-Error: a non-terminating error
+    # raised inside a class-based DSC resource method never reaches the caller, so Set() would
+    # report success while every later Test() reports drift with no reason given. The group
+    # itself was created, so it is still cached before the error is raised.
+    $shareError = $null
     if ($projectReferences -and $projectReferences.Count -gt 1)
     {
         Write-Verbose "[New-AzDoVariableGroup] Sharing variable group '$VariableGroupName' with $($projectReferences.Count - 1) additional project(s)."
@@ -68,12 +73,18 @@ Function New-AzDoVariableGroup
         }
         catch
         {
-            Write-Error "[New-AzDoVariableGroup] Variable group '$VariableGroupName' was created but could not be shared: $_"
+            $shareError = $_
         }
     }
 
     Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $VariableGroupName) -Value $value -Type 'LiveVariableGroups'
     Export-CacheObject -CacheType 'LiveVariableGroups' -Content $AzDoLiveVariableGroups
     Refresh-CacheObject -CacheType 'LiveVariableGroups'
+
+    if ($null -ne $shareError)
+    {
+        throw "[New-AzDoVariableGroup] Variable group '$VariableGroupName' was created but could not be shared: $shareError"
+    }
+
     Write-Verbose "[New-AzDoVariableGroup] Variable group '$VariableGroupName' created."
 }
