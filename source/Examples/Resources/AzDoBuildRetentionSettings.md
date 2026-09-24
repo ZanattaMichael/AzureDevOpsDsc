@@ -19,10 +19,10 @@ AzDoBuildRetentionSettings [string] #ResourceName
 ### Common Properties
 
 - **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as the key property for the resource.
-- **DaysToKeepRuns**: The number of days to keep pipeline runs before they are purged (API field `purgeRuns`).
-- **DaysToKeepArtifacts**: The number of days to keep build artifacts, symbols and attachments before they are purged (API field `purgeArtifacts`).
-- **DaysToKeepPullRequestRuns**: The number of days to keep runs triggered by pull requests before they are purged (API field `purgePullRequestRuns`).
-- **RunsToRetainPerProtectedBranch**: The minimum number of runs to always retain per protected branch, regardless of age (API field `retainRunsPerProtectedBranch`).
+- **DaysToKeepRuns**: The number of days to keep pipeline runs before they are purged (API field `purgeRuns` when read, `runRetention` when written).
+- **DaysToKeepArtifacts**: The number of days to keep build artifacts, symbols and attachments before they are purged (API field `purgeArtifacts` when read, `artifactsRetention` when written).
+- **DaysToKeepPullRequestRuns**: The number of days to keep runs triggered by pull requests before they are purged (API field `purgePullRequestRuns` when read, `pullRequestRunRetention` when written).
+- **RunsToRetainPerProtectedBranch**: The minimum number of runs to always retain per protected branch, regardless of age (API field `retainRunsPerProtectedBranch`, the same when read and written).
 - **Ensure**: Specifies the desired state. These settings are intrinsic to a project and cannot be removed, so `Absent` is a no-op.
 
 Each setting is unmanaged unless you specify it - an omitted property is left untouched rather

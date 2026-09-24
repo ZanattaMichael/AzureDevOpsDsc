@@ -5,8 +5,15 @@ Updates the build (run/artifact) retention settings for an Azure DevOps project.
 .DESCRIPTION
 Patches the project's retention settings via the Build REST API
 (PATCH https://dev.azure.com/{org}/{project}/_apis/build/retention). Only the supplied settings are
-changed; the endpoint merges them with the existing settings. Each setting is sent as
-'{ "<setting>": { "value": n } }' per the Retention - Update API contract.
+changed; the endpoint merges them with the existing settings.
+
+The update contract names the settings differently from the read shape: the GET returns
+'purgeRuns', 'purgeArtifacts', 'purgePullRequestRuns' and 'retainRunsPerProtectedBranch', while the
+PATCH takes 'runRetention', 'artifactsRetention', 'pullRequestRunRetention' and
+'retainRunsPerProtectedBranch', each as '{ "<setting>": { "value": n } }'. The endpoint answers 200
+and ignores a field it does not know, so sending the read-side names changes nothing. This function
+takes the read-side names and translates them, and throws on a name it cannot translate rather than
+send a PATCH that would be silently ignored.
 
 .PARAMETER Organization
 The name of the Azure DevOps organization.
@@ -15,8 +22,8 @@ The name of the Azure DevOps organization.
 The name (or id) of the project.
 
 .PARAMETER Settings
-A hashtable of the settings to change (API field names, e.g. 'purgeRuns', mapped to the new integer
-value for each).
+A hashtable of the settings to change, keyed by the read-side field names the GET returns (e.g.
+'purgeRuns'), each mapped to the new integer value.
 
 .PARAMETER ApiVersion
 The REST API version to use. Defaults to '7.1'.
@@ -48,11 +55,23 @@ function Set-DevOpsBuildRetentionSettings
         return
     }
 
+    # The GET and the PATCH name the settings differently; translate from the read-side names.
+    $updateFieldNames = @{
+        purgeRuns                    = 'runRetention'
+        purgeArtifacts               = 'artifactsRetention'
+        purgePullRequestRuns         = 'pullRequestRunRetention'
+        retainRunsPerProtectedBranch = 'retainRunsPerProtectedBranch'
+    }
+
     # Build the '{ "<setting>": { "value": n } }' PATCH body the API expects.
     $body = [ordered]@{}
     foreach ($key in $Settings.Keys)
     {
-        $body[$key] = @{ value = $Settings[$key] }
+        if (-not $updateFieldNames.ContainsKey($key))
+        {
+            throw "[Set-DevOpsBuildRetentionSettings] Unknown retention setting '$key'. Expected one of: $(($updateFieldNames.Keys | Sort-Object) -join ', ')."
+        }
+        $body[$updateFieldNames[$key]] = @{ value = $Settings[$key] }
     }
 
     $params = @{

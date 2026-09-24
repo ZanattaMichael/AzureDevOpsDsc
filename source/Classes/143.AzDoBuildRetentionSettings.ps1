@@ -23,20 +23,24 @@
     The name of the Azure DevOps project.
 
 .PARAMETER DaysToKeepRuns
-    The number of days to keep pipeline runs before they are purged (API field 'purgeRuns'). Rejected
-    if outside the org's live min/max range for this setting.
+    The number of days to keep pipeline runs before they are purged (API field 'purgeRuns' when
+    read, 'runRetention' when written). Rejected if outside the org's live min/max range for this
+    setting.
 
 .PARAMETER DaysToKeepArtifacts
     The number of days to keep build artifacts, symbols and attachments before they are purged (API
-    field 'purgeArtifacts'). Rejected if outside the org's live min/max range for this setting.
+    field 'purgeArtifacts' when read, 'artifactsRetention' when written). Rejected if outside the
+    org's live min/max range for this setting.
 
 .PARAMETER DaysToKeepPullRequestRuns
     The number of days to keep runs triggered by pull requests before they are purged (API field
-    'purgePullRequestRuns'). Rejected if outside the org's live min/max range for this setting.
+    'purgePullRequestRuns' when read, 'pullRequestRunRetention' when written). Rejected if outside
+    the org's live min/max range for this setting.
 
 .PARAMETER RunsToRetainPerProtectedBranch
     The minimum number of runs to always retain per protected branch, regardless of age (API field
-    'retainRunsPerProtectedBranch'). Rejected if outside the org's live min/max range for this setting.
+    'retainRunsPerProtectedBranch', the same when read and written). Rejected if outside the org's
+    live min/max range for this setting.
 
 .EXAMPLE
     AzDoBuildRetentionSettings ProjectRetention

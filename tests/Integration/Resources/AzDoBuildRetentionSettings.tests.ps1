@@ -14,6 +14,9 @@ Describe "AzDoBuildRetentionSettings Integration Tests" -Tag "Integration", "Bui
             Invoke-RestMethod -Uri ("https://dev.azure.com/{0}/{1}/_apis/build/retention?api-version=7.1" -f $ORG_, $PROJECTNAME) -Headers $HDR_
         }
 
+        # $ApiName is the update-side field name (runRetention, artifactsRetention,
+        # pullRequestRunRetention, retainRunsPerProtectedBranch). The GET returns the settings under
+        # different names (purgeRuns, ...) and the PATCH silently ignores a name it does not know.
         function Set-TestBuildRetentionSetting
         {
             param([string]$ApiName, [int]$Value)
@@ -128,7 +131,11 @@ Describe "AzDoBuildRetentionSettings Integration Tests" -Tag "Integration", "Bui
 
             # Drift a single managed setting directly via REST, bypassing the DSC resource.
             $script:DRIFTED_RUNS_VALUE = New-InRangeValue -Setting $LIVE.purgeRuns -Avoid $RUNS_VALUE
-            Set-TestBuildRetentionSetting -ApiName 'purgeRuns' -Value $script:DRIFTED_RUNS_VALUE
+            Set-TestBuildRetentionSetting -ApiName 'runRetention' -Value $script:DRIFTED_RUNS_VALUE
+        }
+
+        It "Should have drifted the live value (the drift PATCH took effect)" {
+            (Get-TestBuildRetentionSettings).purgeRuns.value | Should -Be $script:DRIFTED_RUNS_VALUE
         }
 
         It "Should return False (Test detects the drift)" {

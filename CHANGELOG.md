@@ -23,7 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     classic build/release experience being retired alongside classic release management
     (#86). Resolves #88.
   - Added the private BuildRetentionSettings API functions
-    `Get-DevOpsBuildRetentionSettings` and `Set-DevOpsBuildRetentionSettings`.
+    `Get-DevOpsBuildRetentionSettings` and `Set-DevOpsBuildRetentionSettings`. The
+    retention API reads and writes the settings under different names (`purgeRuns` is
+    written as `runRetention`, `purgeArtifacts` as `artifactsRetention`,
+    `purgePullRequestRuns` as `pullRequestRunRetention`) and silently ignores a name it
+    does not know, so `Set-DevOpsBuildRetentionSettings` takes the read-side names,
+    translates them, and throws on any other name rather than send a no-op PATCH.
   - Added `AzDoQueryFolder`, a resource managing folders in a project's shared work
     item query tree. Folders are declared in their own right so that queries can
     depend on them, rather than each query creating its own ancestry - which would
