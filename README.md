@@ -216,6 +216,7 @@ CMMI) are read-only, so start by creating an inherited process with `AzDoProcess
 | [AzDoArtifactFeedSettings](source/Examples/Resources/AzDoArtifactFeedSettings.md) | Configures feed upstream sources, deleted-version hiding and retention policy. |
 | [AzDoArtifactFeedView](source/Examples/Resources/AzDoArtifactFeedView.md) | Creates and manages feed views (e.g. `@Release`). |
 | [AzDoWiki](source/Examples/Resources/AzDoWiki.md) | Creates and manages project and code wikis. |
+| [AzDoWikiPage](source/Examples/Resources/AzDoWikiPage.md) | Manages the content and sibling order of a page within a project wiki. |
 | [AzDoExtension](source/Examples/Resources/AzDoExtension.md) | Installs and uninstalls organization extensions. |
 | [AzDoAuditStream](source/Examples/Resources/AzDoAuditStream.md) | Manages audit log streaming. |
 | [AzDoServiceHook](source/Examples/Resources/AzDoServiceHook.md) | Creates and manages service hook subscriptions (e.g. webhooks). |

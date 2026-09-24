@@ -15,8 +15,8 @@ explicitly.
 
 ## 1. Current coverage (verified)
 
-76 class files exist, `001`–`116`; 65 of them carry `[DscResource()]` (the other 11 are the
-auth and base classes). By subsystem:
+77 class files exist, `001`–`116`, `145`; 66 of them carry `[DscResource()]` (the other 11 are
+the auth and base classes). By subsystem:
 
 | Subsystem | Resources |
 |---|---|
@@ -31,7 +31,7 @@ auth and base classes). By subsystem:
 | Pipelines | `AzDoPipeline`, `AzDoPipelinePermission`, `AzDoPipelineSettings`, `AzDoPipelineEnvironment`, `AzDoEnvironmentApproval`, `AzDoEnvironmentPermission`, `AzDoCheckConfiguration`, `AzDoTaskGroup`, `AzDoAgentPool`, `AzDoAgentPoolPermission`, `AzDoAgentQueue`, `AzDoDeploymentGroup`, `AzDoPipelineFolder`, `AzDoPipelineFolderPermission` |
 | Library / connections | `AzDoVariableGroup`, `AzDoVariableGroupPermission`, `AzDoServiceConnection`, `AzDoServiceConnectionPermission`, `AzDoSecureFile`, `AzDoSecureFilePermission` |
 | Artifacts | `AzDoArtifactFeed`, `AzDoArtifactFeedPermission`, `AzDoArtifactFeedSettings`, `AzDoArtifactFeedView` |
-| Wiki | `AzDoWiki` |
+| Wiki | `AzDoWiki`, `AzDoWikiPage` |
 | Generic | `AzDoSecurityNamespacePermission` |
 
 ---
@@ -299,7 +299,7 @@ code beyond conventions. Both landed **before** their permission counterparts, a
 | `AzDoElasticPool` | VMSS-backed agent pools — increasingly the default for self-hosted compute. Complements the existing `AzDoAgentPool`. | Medium | Outstanding |
 | `AzDoBuildRetentionSettings` | Project-level run/artifact retention (`_apis/build/retention`). | Low | Outstanding |
 | `AzDoBoardColumn` / `AzDoBoardSettings` / `AzDoCardRule` | Board columns, swimlanes, card fields and styling. `AzDoTeamSettings` covers backlog/iteration/area defaults and working days, but not the board itself. | Medium | Outstanding |
-| `AzDoWikiPage` | `AzDoWiki` manages the wiki, not its pages or their ordering. | Medium | Outstanding |
+| `AzDoWikiPage` | `AzDoWiki` manages the wiki, not its pages or their ordering. | Medium | **Shipped** (`145`) |
 
 ### Process customization — mostly closed
 
@@ -348,7 +348,8 @@ Items from #59 checked against the code:
 | `AzDoResourceAuthorization` | **Partially covered** by `AzDoCheckConfiguration` and the per-resource permission resources. Scope it precisely before starting. |
 | `AzDoGroupEntitlement` | **Closed.** Shipped as class `109` (§6). |
 | `AzDoPipelineFolder` | **Closed.** Shipped as classes `107`–`108`, together with the `Build` folder ACL token (§5.3–5.4). |
-| `AzDoWikiPage`, `AzDoElasticPool`, `AzDoDeploymentGroupAgent`, dashboards, delivery plans, analytics | Confirmed gaps, still outstanding. |
+| `AzDoWikiPage` | **Closed.** Shipped as class `145` (#89, §6). |
+| `AzDoElasticPool`, `AzDoDeploymentGroupAgent`, dashboards, delivery plans, analytics | Confirmed gaps, still outstanding. |
 | Classic Release Management (Phase 2 in #59) | Confirmed gap, but **recommend demoting** below Boards/Queries and Process customization. It is a legacy subsystem in maintenance mode, and it is the largest surface on the list (`AzDoReleaseDefinition` alone is comparable in size to `AzDoPipeline`). Value per unit of effort is the lowest of anything proposed. |
 | Test Management (Phase 3 in #59) | Confirmed gap. Genuinely unrepresented, but demand is narrower than queries/dashboards; keep after the §6 gaps. |
 | `AzDoBillingSettings`, `AzDoPatPolicy`, `AzDoExtensionPolicy`, `AzDoAuditLogAlert` | Confirmed gaps, tenant-scoped. Note that several of these APIs are undocumented/preview and may not be stable enough to build a resource on — spike each before committing. |
@@ -383,7 +384,8 @@ Still outstanding, in the order below:
   `AzDoDashboardWidget`, `AzDoDashboardPermission`, `AzDoDeliveryPlan`, `AzDoBoardColumn`,
   `AzDoBoardSettings`, `AzDoCardRule`. The `Dashboards` and `Plan` ACL namespaces are
   still unimplemented (§2).
-- **Remaining §6 gaps** — `AzDoElasticPool`, `AzDoBuildRetentionSettings`, `AzDoWikiPage`.
+- **Remaining §6 gaps** — `AzDoElasticPool`, `AzDoBuildRetentionSettings`. `AzDoWikiPage`
+  shipped as class `145` (#89).
 - **Org-scoped pipeline settings** (§7) — extend `AzDoPipelineSettings` rather than adding
   six resources.
 - **Test management** (§7), then **classic release management** (§7) with
@@ -408,7 +410,7 @@ remains:
    (§2), then `AzDoDashboard` → `AzDoDashboardWidget` → `AzDoDashboardPermission`, and
    `AzDoDeliveryPlan`.
 4. **Board configuration** (§6) — `AzDoBoardColumn`, `AzDoBoardSettings`, `AzDoCardRule`.
-5. **`AzDoWikiPage`** (§6).
+5. **`AzDoWikiPage`** (§6) — **shipped** (class `145`, #89).
 6. **Org-scoped pipeline settings** (§7) — extend `AzDoPipelineSettings`.
 7. Test management, then classic release management, with `AzDoReleaseFolder` (§5.5).
 8. **Tenant-scoped items** (§7), each spiked before it is committed to.

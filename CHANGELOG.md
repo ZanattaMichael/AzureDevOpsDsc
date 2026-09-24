@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - AzureDevOpsDscNative
+  - Added `AzDoWikiPage`, a resource managing the content and sibling order of a
+    single page in a project wiki (#89). Content can be supplied inline or read
+    from a local file via `ContentPath`; comparisons ignore line-ending and
+    trailing-whitespace differences so re-formatted content is not reported as
+    drift, but the configuration's own text is always what gets written back.
+    Updates use the page's ETag as `If-Match`, so a page changed out of band since
+    the last `Get` is caught as a conflict rather than silently overwritten.
+    Reordering a page among its siblings uses the wiki `pagemoves` endpoint and is
+    only attempted when `Order` is configured. Deleting a page also deletes its
+    sub-pages, so removal is refused unless `AllowRecursiveDelete` is set. Code
+    wikis are not supported and are refused with a clear error.
+  - Added the private WikiPage API functions `Get-DevOpsWikiPage`,
+    `Set-DevOpsWikiPage`, `Remove-DevOpsWikiPage` and `Move-DevOpsWikiPage`, the
+    helpers `Format-AzDoWikiPagePath` and `ConvertTo-NormalizedWikiPageContent`,
+    and the shared `Resolve-AzDoWiki` helper (used to resolve a wiki by name from
+    cache, matching `Get-AzDoWiki`'s own lookup, without duplicating it).
   - Added `AzDoQueryFolder`, a resource managing folders in a project's shared work
     item query tree. Folders are declared in their own right so that queries can
     depend on them, rather than each query creating its own ancestry - which would
