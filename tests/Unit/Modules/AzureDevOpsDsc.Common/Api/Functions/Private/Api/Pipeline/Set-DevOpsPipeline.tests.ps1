@@ -32,4 +32,30 @@ Describe 'Set-DevOpsPipeline' -Tag "Unit", "Pipeline", "API" {
         Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { throw 'API error' }
         { Set-DevOpsPipeline -ApiUri 'https://dev.azure.com/myorg' -ProjectName 'TestProject' -PipelineId 1 -PipelineName 'TestPipeline' } | Should -Throw
     }
+
+    It 'Builds an Azure Repos (id/name) repository body for the default RepositoryType' {
+        Set-DevOpsPipeline -ApiUri 'https://dev.azure.com/myorg' -ProjectName 'TestProject' -PipelineId 1 -PipelineName 'TestPipeline' `
+            -RepositoryId 'repo-id-1' -RepositoryName 'TestRepo'
+        Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -ParameterFilter {
+            $body = $Body | ConvertFrom-Json
+            $body.configuration.repository.type -eq 'azureReposGit' -and
+            $body.configuration.repository.id -eq 'repo-id-1' -and
+            $body.configuration.repository.name -eq 'TestRepo' -and
+            -not ($body.configuration.repository.PSObject.Properties.Name -contains 'fullName') -and
+            -not ($body.configuration.repository.PSObject.Properties.Name -contains 'connection')
+        }
+    }
+
+    It 'Builds an external (fullName/connection.id) repository body for a GitHubEnterprise RepositoryType' {
+        Set-DevOpsPipeline -ApiUri 'https://dev.azure.com/myorg' -ProjectName 'TestProject' -PipelineId 1 -PipelineName 'TestPipeline' `
+            -RepositoryType 'gitHubEnterprise' -RepositoryName 'owner/repo' -ServiceConnectionId 'conn-id-1'
+        Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -ParameterFilter {
+            $body = $Body | ConvertFrom-Json
+            $body.configuration.repository.type -eq 'gitHubEnterprise' -and
+            $body.configuration.repository.fullName -eq 'owner/repo' -and
+            $body.configuration.repository.connection.id -eq 'conn-id-1' -and
+            -not ($body.configuration.repository.PSObject.Properties.Name -contains 'id') -and
+            -not ($body.configuration.repository.PSObject.Properties.Name -contains 'name')
+        }
+    }
 }

@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - AzureDevOpsDscNative
+  - `AzDoPipeline` now supports GitHub, GitHub Enterprise and Bitbucket repositories, and
+    pipeline variables ([#81](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/81)):
+    - Added the `RepositoryType` property (`TfsGit` default, `GitHub`, `GitHubEnterprise`,
+      `Bitbucket`) and the `ServiceConnectionName` property, required for the three
+      non-`TfsGit` types and resolved to a connection id via the new helper
+      `Resolve-AzDoServiceConnection`. Added `Convert-AzDoPipelineRepositoryType` to bridge
+      the classic Build Definitions API's repository type strings and the Pipelines API's.
+    - Added the `Variables` property (an array of `@{ Name; Value; IsSecret; AllowOverride }`
+      hashtables) and the private API function `Set-DevOpsPipelineVariables`, which reads the
+      build definition, replaces only the named variables in its `variables` map, and writes
+      the whole definition back. Only the variables listed in the configuration are managed;
+      other variables already on the pipeline are left untouched.
+    - Secret variable values are write-only: Azure DevOps never returns one, so drift
+      detection for a secret variable compares only its presence and its
+      `IsSecret`/`AllowOverride` flags, never its value; `New`/`Set` always write the value
+      the configuration currently holds.
+    - The live CI organization has no GitHub or Bitbucket service connection, so the
+      `GitHub`/`GitHubEnterprise`/`Bitbucket` repository types and the
+      `ServiceConnectionName` resolution path are covered by unit tests only. The integration
+      suite exercises `Variables` (create, update, secret rotation, no-drift `Test`) against a
+      `TfsGit` pipeline in `tests/Integration/Resources/AzDoPipeline.Variables.tests.ps1`. See
+      `docs/ResourceRoadmap.md` §10.
   - Added `AzDoQueryFolder`, a resource managing folders in a project's shared work
     item query tree. Folders are declared in their own right so that queries can
     depend on them, rather than each query creating its own ancestry - which would
