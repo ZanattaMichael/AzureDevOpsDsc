@@ -171,11 +171,17 @@ Describe "AzDoGitPermission Integration Tests" -Tag "Integration", "GitPermissio
             $proj_ = Invoke-RestMethod -Uri ("https://dev.azure.com/{0}/_apis/projects/{1}?api-version=7.1-preview.4" -f $org_, $PROJECTNAME) -Headers $hdr_
             $repo_ = Invoke-RestMethod -Uri ("https://dev.azure.com/{0}/{1}/_apis/git/repositories/TESTREPOSITORY?api-version=7.1-preview.1" -f $org_, $PROJECTNAME) -Headers $hdr_
 
-            # The ACE is keyed by the group's graph descriptor, not its display name.
+            # Resolve the test group by display name through the graph API.
             $projDesc_ = Invoke-RestMethod -Uri ("https://vssps.dev.azure.com/{0}/_apis/graph/descriptors/{1}?api-version=7.1-preview.1" -f $org_, $proj_.id) -Headers $hdr_
             $groups_   = Invoke-RestMethod -Uri ("https://vssps.dev.azure.com/{0}/_apis/graph/groups?scopeDescriptor={1}&api-version=7.1-preview.1" -f $org_, $projDesc_.value) -Headers $hdr_
             $group1_   = $groups_.value | Where-Object { $_.displayName -eq 'Group1' } | Select-Object -First 1
             if (-not $group1_) { throw "[AzDoGitPermission.tests] Could not resolve test group 'Group1'." }
+
+            # The security ACL API keys acesDictionary by identity descriptor
+            # ('Microsoft.TeamFoundation.Identity;S-1-9-...'), not by the graph descriptor ('vssgp....').
+            $identity_ = Invoke-RestMethod -Uri ("https://vssps.dev.azure.com/{0}/_apis/identities?subjectDescriptors={1}&api-version=7.1-preview.1" -f $org_, $group1_.descriptor) -Headers $hdr_
+            $group1AceKey_ = ($identity_.value | Select-Object -First 1).descriptor
+            if (-not $group1AceKey_) { throw "[AzDoGitPermission.tests] Could not resolve the identity descriptor of test group 'Group1'." }
 
             $branchParameters = @{
                 Name       = 'AzDoGitPermission'
@@ -220,7 +226,7 @@ Describe "AzDoGitPermission Integration Tests" -Tag "Integration", "GitPermissio
             $acl = Get-TestGitBranchACL -ProjectId $proj_.id -RepositoryId $repo_.id -BranchName $BRANCHNAME
             $acl | Should -Not -BeNullOrEmpty
 
-            $aceProperty = $acl.acesDictionary.PSObject.Properties | Where-Object { $_.Name -eq $group1_.descriptor } | Select-Object -First 1
+            $aceProperty = $acl.acesDictionary.PSObject.Properties | Where-Object { $_.Name -eq $group1AceKey_ } | Select-Object -First 1
             $aceProperty | Should -Not -BeNullOrEmpty
             $ace = $aceProperty.Value
 
@@ -247,7 +253,7 @@ Describe "AzDoGitPermission Integration Tests" -Tag "Integration", "GitPermissio
 
             if ($repoAcl)
             {
-                $repoAceProperty = $repoAcl.acesDictionary.PSObject.Properties | Where-Object { $_.Name -eq $group1_.descriptor } | Select-Object -First 1
+                $repoAceProperty = $repoAcl.acesDictionary.PSObject.Properties | Where-Object { $_.Name -eq $group1AceKey_ } | Select-Object -First 1
                 if ($repoAceProperty)
                 {
                     $gitNamespace = $namespaces.value | Where-Object { $_.name -eq 'Git Repositories' } | Select-Object -First 1
