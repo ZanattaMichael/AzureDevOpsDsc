@@ -18,6 +18,15 @@ Function New-DevOpsServiceConnection
     # not nested inside 'data'. Callers may supply it via Data.url as a convenience.
     $endpointUrl = if ($Data.url) { $Data.url } elseif ($Data.Url) { $Data.Url } else { '' }
 
+    # Once lifted, 'url' must not also be sent inside 'data': that accepts only the inputs the
+    # connection type declares, and rejects the request with
+    # "Following fields in the service connection are not expected: url".
+    $endpointData = @{}
+    foreach ($key in $Data.Keys)
+    {
+        if ($key -ne 'url') { $endpointData[$key] = $Data[$key] }
+    }
+
     # The endpoint API expects the credential values nested under Authorization.parameters,
     # with only 'scheme' at the top level. Callers may pass the credential values flat
     # (e.g. @{ scheme = 'UsernamePassword'; username = 'x'; password = 'y' }) for convenience;
@@ -46,7 +55,7 @@ Function New-DevOpsServiceConnection
             isShared      = $IsShared
             isReady       = $IsReady
             authorization = $Authorization
-            data          = $Data
+            data          = $endpointData
             serviceEndpointProjectReferences = @(
                 @{
                     projectReference = @{ id = $ProjectId; name = $ProjectName }
