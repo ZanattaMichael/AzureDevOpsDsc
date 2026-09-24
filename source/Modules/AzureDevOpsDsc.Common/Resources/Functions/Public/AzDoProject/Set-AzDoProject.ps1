@@ -93,7 +93,9 @@ function Set-AzDoProject
     #
     # Perform a lookup to see if the group exists in Azure DevOps
     $project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
-    $processTemplateObj = Get-CacheItem -Key $ProcessTemplate -Type 'LiveProcesses'
+    # Resolve-DevOpsProcess falls back to a live lookup: an inherited process created by an
+    # AzDoProcess resource earlier in the same configuration is not in the LiveProcesses cache.
+    $processTemplateObj = Resolve-DevOpsProcess -ProcessName $ProcessTemplate -OrganizationName $OrganizationName
 
     if ($null -eq $processTemplateObj)
     {

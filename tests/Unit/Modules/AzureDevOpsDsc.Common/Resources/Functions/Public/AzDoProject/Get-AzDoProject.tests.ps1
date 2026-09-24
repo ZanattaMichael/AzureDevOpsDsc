@@ -37,6 +37,12 @@ Describe "Get-AzDoProject" -Tag "Unit", "Project" {
         # Load Get-AzDoCacheObjects
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
+        # Resolve-DevOpsProcess runs for real - it wraps the LiveProcesses cache lookup these
+        # tests mock - so Find-MockedFunctions never picks it up. Load it explicitly. Its live
+        # fallback finds nothing unless a test says otherwise.
+        . (Get-FunctionItem 'Resolve-DevOpsProcess.ps1').FullName
+        Mock -CommandName List-DevOpsProcess -MockWith { return @() }
+
         # Define common mock responses
         $mockProject = @{
             ProjectName       = 'ExistingProject'
@@ -103,7 +109,24 @@ Describe "Get-AzDoProject" -Tag "Unit", "Project" {
         }
 
         It "should throw an error" {
-            { Get-AzDoProject -ProjectName 'ExistingProject' -ProjectDescription 'ExistingDescription' -SourceControlType 'Git' -ProcessTemplate 'NonExistentTemplate' -Visibility 'Private' } | Should -Throw
+            { Get-AzDoProject -ProjectName 'ExistingProject' -ProjectDescription 'ExistingDescription' -SourceControlType 'Git' -ProcessTemplate 'NonExistentTemplate' -Visibility 'Private' } | Should -Throw "*Process template 'NonExistentTemplate' not found*"
+        }
+    }
+
+    Context "when the process template was created after the cache was built" {
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -ParameterFilter { $Key -eq 'ExistingProject' -and $Type -eq 'LiveProjects' } -MockWith { return $mockProject }
+            Mock -CommandName Get-CacheItem -ParameterFilter { $Key -eq 'NewInheritedProcess' -and $Type -eq 'LiveProcesses' } -MockWith { return $null }
+            Mock -CommandName List-DevOpsProcess -MockWith {
+                return @([PSCustomObject]@{ id = 'inherited-id'; name = 'NewInheritedProcess' })
+            }
+            Mock -CommandName Add-CacheItem
+        }
+
+        It "should resolve the process live rather than throw" {
+            { Get-AzDoProject -ProjectName 'ExistingProject' -ProjectDescription 'ExistingDescription' -SourceControlType 'Git' -ProcessTemplate 'NewInheritedProcess' -Visibility 'Private' } | Should -Not -Throw "*not found*"
+
+            Assert-MockCalled -CommandName List-DevOpsProcess -Exactly 1
         }
     }
 

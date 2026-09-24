@@ -11,8 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `AzDoProject.ProcessTemplate` no longer restricts a project to the four
     system processes (`Agile`, `Scrum`, `CMMI`, `Basic`) via `ValidateSet` -
     any process name known to the organization, including an inherited
-    process, is accepted and validated against the live `LiveProcesses` cache
-    instead. `Set` can now change a project's process: `Get-AzDoProject`
+    process, is accepted and resolved against the `LiveProcesses` cache,
+    falling back to a live lookup. `Set` can now change a project's process: `Get-AzDoProject`
     compares the project's current process against the desired one and, when
     they differ, resolves both to their system-process ancestor
     (`Get-AzDoProcessFamilyRootId`) to decide whether Azure DevOps will permit
@@ -34,6 +34,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     of naming the process that was actually missing - the "not found" error
     interpolated an unrelated, always-null variable rather than the
     `-ProcessTemplate` parameter it was given ([issue #75](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/75)).
+  - Fixed `AzDoProject` failing with "Process template '<name>' not found"
+    when the process was created by an `AzDoProcess` resource earlier in the
+    same configuration. `Get`, `New` and `Set` looked the name up only in the
+    `LiveProcesses` cache, and each resource invocation runs in its own
+    runspace, so a process created by another resource was not in it. They
+    now use `Resolve-DevOpsProcess`, which falls back to a live lookup and
+    caches what it finds ([issue #75](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/75)).
 
 ### Added
 

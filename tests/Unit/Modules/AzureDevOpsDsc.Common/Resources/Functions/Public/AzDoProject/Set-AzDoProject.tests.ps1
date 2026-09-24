@@ -32,6 +32,12 @@ Describe "Set-AzDoProject" -Tag "Unit", "Project" {
         # Load Get-AzDoCacheObjects
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
+        # Resolve-DevOpsProcess runs for real - it wraps the LiveProcesses cache lookup these
+        # tests mock - so Find-MockedFunctions never picks it up. Load it explicitly. Its live
+        # fallback finds nothing unless a test says otherwise.
+        . (Get-FunctionItem 'Resolve-DevOpsProcess.ps1').FullName
+        Mock -CommandName List-DevOpsProcess -MockWith { return @() }
+
         Mock -CommandName Test-AzDevOpsProjectName -MockWith {
             return $true
         }
@@ -114,7 +120,23 @@ Describe "Set-AzDoProject" -Tag "Unit", "Project" {
         }
 
         It "should throw" {
-            { Set-AzDoProject -ProjectName 'TestProject' -ProjectDescription 'Test Description' -SourceControlType 'Git' -ProcessTemplate 'NonExistentTemplate' -Visibility 'Private' } | Should -Throw
+            { Set-AzDoProject -ProjectName 'TestProject' -ProjectDescription 'Test Description' -SourceControlType 'Git' -ProcessTemplate 'NonExistentTemplate' -Visibility 'Private' } | Should -Throw "*Process template 'NonExistentTemplate' not found*"
+        }
+
+        It "should resolve a process missing from the cache through the live process list" {
+            Mock -CommandName List-DevOpsProcess -MockWith {
+                return @([PSCustomObject]@{ id = 'inherited-id'; name = 'NewInheritedProcess' })
+            }
+            Mock -CommandName Add-CacheItem
+
+            $lookupResult = @{ propertiesChanged = @('ProcessTemplate') }
+
+            Set-AzDoProject -ProjectName 'TestProject' -ProjectDescription 'Test Description' -SourceControlType 'Git' -ProcessTemplate 'NewInheritedProcess' -Visibility 'Private' -LookupResult $lookupResult
+
+            Assert-MockCalled -CommandName Move-DevOpsProjectProcess -Exactly -Times 1 -ParameterFilter {
+                ($ProjectId -eq '12345') -and
+                ($ProcessTypeId -eq 'inherited-id')
+            }
         }
     }
 

@@ -124,7 +124,9 @@ function Get-AzDoProject
 
     Write-Verbose "[Get-AzDoProject] Project lookup result: $project"
 
-    $processTemplateObj = Get-CacheItem -Key $ProcessTemplate -Type 'LiveProcesses'
+    # Resolve-DevOpsProcess falls back to a live lookup: an inherited process created by an
+    # AzDoProcess resource earlier in the same configuration is not in the LiveProcesses cache.
+    $processTemplateObj = Resolve-DevOpsProcess -ProcessName $ProcessTemplate -OrganizationName $OrganizationName
     Write-Verbose "[Get-AzDoProject] Process template lookup result: $processTemplateObj"
 
     # Test if the project exists. If the project does not exist, return NotFound
