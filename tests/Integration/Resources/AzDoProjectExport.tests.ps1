@@ -21,14 +21,16 @@ Describe "AzDoProject Export Integration Tests" -Tag "Integration", "Project", "
             ModuleName = 'AzureDevOpsDscNative'
         }
 
-        # Create the project this test owns, with a description and Public visibility so
-        # the export mapping (Ensure/ProjectDescription/Visibility) is exercised, not just
-        # defaults.
+        # Create the project this test owns, with a description so the export mapping is
+        # exercised, not just defaults. It stays Private: a Public project can only be created
+        # while the organization's "Allow public projects" policy is on, which this shared
+        # organization does not guarantee. The 'public' -> 'Public' mapping is covered by
+        # Export-AzDoProject's unit tests.
         $parameters.Method   = 'Set'
         $parameters.property = @{
             ProjectName        = $PROJECTNAME
             ProjectDescription = 'Created by the AzDoProject export integration test.'
-            Visibility         = 'Public'
+            Visibility         = 'Private'
         }
         Invoke-DscResource @parameters
     }
@@ -61,7 +63,7 @@ Describe "AzDoProject Export Integration Tests" -Tag "Integration", "Project", "
 
         It "Should export the description and visibility this test set" {
             $script:own.ProjectDescription | Should -Be 'Created by the AzDoProject export integration test.'
-            $script:own.Visibility | Should -Be 'Public'
+            $script:own.Visibility | Should -Be 'Private'
             $script:own.Ensure | Should -Be 'Present'
         }
 
