@@ -127,8 +127,22 @@ Function New-AzDoWikiPage
 
     Write-Verbose "[New-AzDoWikiPage] Creating wiki page '$normalizedPath' in wiki '$WikiName'."
 
-    $created = Set-DevOpsWikiPage -Organization $organization -ProjectName $ProjectName -WikiIdentifier $wikiIdentifier `
-        -Path $normalizedPath -Content $desiredContent
+    try
+    {
+        $created = Set-DevOpsWikiPage -Organization $organization -ProjectName $ProjectName -WikiIdentifier $wikiIdentifier `
+            -Path $normalizedPath -Content $desiredContent
+    }
+    catch
+    {
+        # The API does not create parent pages. Name the missing parent and the fix, rather than
+        # passing on the API's "one or more ancestor pages ... does not exist".
+        if ("$_" -match 'WikiAncestorPageNotFoundException')
+        {
+            $parentPath = $normalizedPath.Substring(0, $normalizedPath.LastIndexOf('/'))
+            throw "[New-AzDoWikiPage] Cannot create wiki page '$normalizedPath' in wiki '$WikiName': its parent page '$parentPath' does not exist, and the wiki API does not create parent pages. Declare '$parentPath' as its own AzDoWikiPage (Content can be omitted) and make this resource depend on it."
+        }
+        throw
+    }
 
     if ($null -eq $created)
     {

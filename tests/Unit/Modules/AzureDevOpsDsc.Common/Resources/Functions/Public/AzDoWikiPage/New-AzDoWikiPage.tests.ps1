@@ -53,6 +53,29 @@ Describe "New-AzDoWikiPage" -Tag "Unit", "WikiPage" {
         }
     }
 
+    Context "when the parent page does not exist" {
+
+        It "throws naming the missing parent and how to declare it" {
+            Mock -CommandName Set-DevOpsWikiPage -MockWith {
+                throw "[Set-DevOpsWikiPage] Failed to write wiki page '/Runbooks/On-call'. Error: 404 (Not Found). | ResponseBody: {`"typeKey`": `"WikiAncestorPageNotFoundException`"}"
+            }
+            { New-AzDoWikiPage -ProjectName 'TestProject' -WikiName 'TestProject.wiki' -Path '/Runbooks/On-call' -Content '# On-call' } |
+                Should -Throw "*parent page '/Runbooks' does not exist*Declare '/Runbooks' as its own AzDoWikiPage*"
+        }
+
+        It "names the immediate parent of a deeper page" {
+            Mock -CommandName Set-DevOpsWikiPage -MockWith { throw 'WikiAncestorPageNotFoundException' }
+            { New-AzDoWikiPage -ProjectName 'TestProject' -WikiName 'TestProject.wiki' -Path '/Runbooks/Team A/On-call' -Content '# On-call' } |
+                Should -Throw "*parent page '/Runbooks/Team A' does not exist*"
+        }
+
+        It "rethrows any other failure unchanged" {
+            Mock -CommandName Set-DevOpsWikiPage -MockWith { throw 'boom' }
+            { New-AzDoWikiPage -ProjectName 'TestProject' -WikiName 'TestProject.wiki' -Path '/Runbooks/On-call' -Content '# On-call' } |
+                Should -Throw 'boom'
+        }
+    }
+
     Context "when creating a page from ContentPath" {
 
         BeforeEach {

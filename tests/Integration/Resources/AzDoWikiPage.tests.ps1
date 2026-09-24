@@ -60,6 +60,16 @@ Describe "AzDoWikiPage Integration Tests" -Tag "Integration", "WikiPage" {
             WikiName    = $WIKINAME
             WikiType    = 'projectWiki'
         }
+
+        # The pages under test live beneath '/Runbooks'. The wiki API does not create parent pages
+        # (a child page's create answers 404 WikiAncestorPageNotFoundException), so the parent is
+        # declared as its own AzDoWikiPage first - the same way a configuration has to declare it.
+        Invoke-DscResource -Name 'AzDoWikiPage' -ModuleName 'AzureDevOpsDscNative' -Method Set -Property @{
+            ProjectName = $PROJECTNAME
+            WikiName    = $WIKINAME
+            Path        = '/Runbooks'
+            Content     = '# Runbooks'
+        }
     }
 
     Context "Testing if the wiki page exists" {
@@ -239,8 +249,8 @@ Describe "AzDoWikiPage Integration Tests" -Tag "Integration", "WikiPage" {
             }
             $script:removeParameters = $removeParameters
 
-            # '/Runbooks' has no content of its own but is the parent of '/Runbooks/On-call' and
-            # '/Runbooks/Escalation', created above - it exists implicitly as their parent page.
+            # '/Runbooks' was declared in the Describe's BeforeAll and is the parent of
+            # '/Runbooks/On-call' and '/Runbooks/Escalation', created above.
         }
 
         It "Should leave the page in place" {

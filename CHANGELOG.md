@@ -18,7 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     Reordering a page among its siblings uses the wiki `pagemoves` endpoint and is
     only attempted when `Order` is configured. Deleting a page also deletes its
     sub-pages, so removal is refused unless `AllowRecursiveDelete` is set. Code
-    wikis are not supported and are refused with a clear error.
+    wikis are not supported and are refused with a clear error. The wiki API does
+    not create parent pages, so each parent is declared as its own `AzDoWikiPage`;
+    creating a page whose parent is missing fails naming the parent to declare.
   - Added the private WikiPage API functions `Get-DevOpsWikiPage`,
     `Set-DevOpsWikiPage`, `Remove-DevOpsWikiPage` and `Move-DevOpsWikiPage`, the
     helpers `Format-AzDoWikiPagePath` and `ConvertTo-NormalizedWikiPageContent`,

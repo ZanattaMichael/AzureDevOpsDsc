@@ -26,7 +26,7 @@ AzDoWikiPage [string] #ResourceName
   refused with a clear error, since its content lives in a Git branch rather than in the wiki
   page store.
 - **Path**: The full path of the wiki page, for example `/Runbooks/On-call`. This is the resource
-  key.
+  key. The parent page (`/Runbooks` here) must already exist - see below.
 - **Content**: The page's Markdown content. Mutually exclusive with `ContentPath`. Comparison
   ignores line-ending and trailing-whitespace-only differences; what is written back is always
   exactly what the configuration supplied.
@@ -48,6 +48,13 @@ project wiki. `AzDoWiki` manages the wiki itself, not its pages.
 Updates send the page's current ETag back as `If-Match`, so a page changed out of band since the
 last `Get` is caught as a conflict (412) rather than silently overwritten by a stale write.
 
+### Parent pages must be declared
+
+The wiki API does not create parent pages: creating `/Runbooks/On-call` fails while `/Runbooks`
+does not exist. Declare each parent page as its own `AzDoWikiPage` - `Content` can be omitted to
+create an empty page - and make the child depend on it, as Example 1 does. A missing parent is
+reported by name rather than as the API's "one or more ancestor pages does not exist".
+
 ## Examples
 
 ## Example 1: Sample Configuration using AzDoWikiPage Resource
@@ -57,12 +64,22 @@ Configuration ExampleConfig {
     Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
+        # The parent page has to exist before a page can be created beneath it.
+        AzDoWikiPage RunbooksPage {
+            Ensure      = 'Present'
+            ProjectName = 'MyProject'
+            WikiName    = 'MyProjectWiki'
+            Path        = '/Runbooks'
+            Content     = '# Runbooks'
+        }
+
         AzDoWikiPage AddRunbookPage {
             Ensure      = 'Present'
             ProjectName = 'MyProject'
             WikiName    = 'MyProjectWiki'
             Path        = '/Runbooks/On-call'
             Content     = "# On-call`n`nCall the on-call engineer."
+            DependsOn   = '[AzDoWikiPage]RunbooksPage'
         }
     }
 }
@@ -93,10 +110,20 @@ variables: {
 }
 
 resources:
-- name: On-call Runbook Page
+- name: Runbooks Page
   type: AzureDevOpsDscNative/AzDoWikiPage
   dependsOn:
     - AzureDevOpsDscNative/AzDoWiki/MyProjectWiki
+  properties:
+    ProjectName: $ProjectName
+    WikiName: MyProjectWiki
+    Path: /Runbooks
+    Ensure: Present
+
+- name: On-call Runbook Page
+  type: AzureDevOpsDscNative/AzDoWikiPage
+  dependsOn:
+    - AzureDevOpsDscNative/AzDoWikiPage/Runbooks Page
   properties:
     ProjectName: $ProjectName
     WikiName: MyProjectWiki

@@ -29,6 +29,10 @@
     is refused unless AllowRecursiveDelete is set - this is the same pattern as AzDoQueryFolder and
     AzDoPipelineFolder, and deliberately not named 'Force', which is reserved by the base class.
 
+    The wiki API does not create parent pages: creating '/Runbooks/On-call' fails when '/Runbooks'
+    does not exist yet. Declare each parent page as its own AzDoWikiPage (Content can be omitted to
+    create an empty page) and make the child depend on it; a missing parent is reported by name.
+
 .PARAMETER ProjectName
     The name of the Azure DevOps project.
 
@@ -38,6 +42,7 @@
 
 .PARAMETER Path
     The full path of the wiki page, for example '/Runbooks/On-call'. This is the resource key.
+    The parent page ('/Runbooks' here) must already exist - declare it as its own AzDoWikiPage.
 
 .PARAMETER Content
     The page's Markdown content. Mutually exclusive with ContentPath.
