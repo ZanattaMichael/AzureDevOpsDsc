@@ -160,6 +160,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     group to well over a hundred for an AAD-backed user. A batch that fails is
     retried one descriptor at a time, so a single unresolvable identity no longer
     costs the whole batch.
+  - Added `AzDoTestVariable`, `AzDoTestConfiguration`, `AzDoTestPlan` and
+    `AzDoTestSuite`, covering test plan management (#87): shared test variables and
+    their allowed values, named configurations that combine variable values,
+    top-level test plans (area path, iteration, owner, schedule, state and an
+    optional automated-run build pipeline), and the static, query-based and
+    requirement-based test suites beneath a plan's root suite. A suite's identity
+    is its path under the plan's root suite, the same way `AzDoQueryFolder` treats
+    query folder paths; a `DynamicTestSuite`'s WIQL is compared with
+    `ConvertTo-NormalizedWiql` and always written back exactly as supplied, and
+    removal of a suite that still has children is refused unless
+    `AllowRecursiveDelete` is set. There is no test-plan security namespace -
+    'Manage test plans' and 'Manage test suites' are CSS (area path) permissions
+    already covered by `AzDoAreaPermission`, so no `AzDoTestPlanPermission`
+    resource was added. Creating or updating plans and suites requires the DSC
+    identity to have a Test Plans license/access level in the organization.
+  - Added the private Test Plan API functions `Get-/New-/Update-/Remove-DevOpsTestVariable`,
+    `Get-/New-/Update-/Remove-DevOpsTestConfiguration`,
+    `Get-/New-/Update-/Remove-DevOpsTestPlan` and
+    `Get-/New-/Update-/Remove-DevOpsTestSuite`, plus the helpers
+    `ConvertTo-AzDoTestConfigurationValue` (validates a configuration's
+    `'Variable=Value'` pairs against existing test variables), `Format-AzDoTestSuitePath`
+    and `Resolve-AzDoTestSuitePath` (walk a plan's flat suite list to find a suite
+    by path, since the Test Plan API has no get-suite-by-path endpoint).
 
 ### Changed
 

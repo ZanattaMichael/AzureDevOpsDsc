@@ -350,7 +350,7 @@ Items from #59 checked against the code:
 | `AzDoPipelineFolder` | **Closed.** Shipped as classes `107`–`108`, together with the `Build` folder ACL token (§5.3–5.4). |
 | `AzDoWikiPage`, `AzDoElasticPool`, `AzDoDeploymentGroupAgent`, dashboards, delivery plans, analytics | Confirmed gaps, still outstanding. |
 | Classic Release Management (Phase 2 in #59) | Confirmed gap, but **recommend demoting** below Boards/Queries and Process customization. It is a legacy subsystem in maintenance mode, and it is the largest surface on the list (`AzDoReleaseDefinition` alone is comparable in size to `AzDoPipeline`). Value per unit of effort is the lowest of anything proposed. |
-| Test Management (Phase 3 in #59) | Confirmed gap. Genuinely unrepresented, but demand is narrower than queries/dashboards; keep after the §6 gaps. |
+| Test Management (Phase 3 in #59) | **Closed** (#87). Shipped as `AzDoTestVariable`, `AzDoTestConfiguration`, `AzDoTestPlan` and `AzDoTestSuite` (classes `138`–`141`, §8). Test cases, test points and test runs remain out of scope - they are execution-time state, not desired-state configuration. There is no test-plan security namespace; 'Manage test plans'/'Manage test suites' are CSS (area path) permissions already covered by `AzDoAreaPermission`, so no `AzDoTestPlanPermission` resource was added. |
 | `AzDoBillingSettings`, `AzDoPatPolicy`, `AzDoExtensionPolicy`, `AzDoAuditLogAlert` | Confirmed gaps, tenant-scoped. Note that several of these APIs are undocumented/preview and may not be stable enough to build a resource on — spike each before committing. |
 
 ---
@@ -373,6 +373,20 @@ This closed §3, §4, §5.2, §5.3, §5.4 and most of §6, and added `WorkItemQu
 the `SecureFile` form of `Library` and the folder form of `Build` to the ACL token helpers
 (§2).
 
+Test management (#87) added 4 more resources, classes `138`–`141`:
+
+| Resource | Notes |
+|---|---|
+| `AzDoTestVariable` | Shared test variables and their allowed values. |
+| `AzDoTestConfiguration` | Named configurations combining test variable values (`'Variable=Value'` pairs, validated against existing variables and their allowed values). |
+| `AzDoTestPlan` | Top-level test plans: area path, iteration, owner (resolved via `Find-AzDoIdentity`), schedule, state and an optional build pipeline id for automated runs. |
+| `AzDoTestSuite` | Static, query-based (`DynamicTestSuite`, WIQL compared with `ConvertTo-NormalizedWiql`) and requirement-based suites beneath a plan's root suite, identified by path the same way `AzDoQueryFolder` treats query folder paths. `SuiteType` is immutable once created. Removal of a suite with children is refused unless `AllowRecursiveDelete` is set. |
+
+This closed Test Management (Phase 3 in #59, §7). No `AzDoTestPlanPermission` resource was
+added - there is no test-plan security namespace, and 'Manage test plans'/'Manage test
+suites' are CSS (area path) permissions `AzDoAreaPermission` already manages. Test cases,
+test points and test runs remain out of scope.
+
 Still outstanding, in the order below:
 
 - **`AzDoProcessLayout`** (§6) — the one remaining piece of process customization, and a
@@ -386,8 +400,8 @@ Still outstanding, in the order below:
 - **Remaining §6 gaps** — `AzDoElasticPool`, `AzDoBuildRetentionSettings`, `AzDoWikiPage`.
 - **Org-scoped pipeline settings** (§7) — extend `AzDoPipelineSettings` rather than adding
   six resources.
-- **Test management** (§7), then **classic release management** (§7) with
-  `AzDoReleaseFolder` (§5.5).
+- **Classic release management** (§7) with `AzDoReleaseFolder` (§5.5). Test management
+  (§7) is closed - see §8.
 - **Tenant-scoped items** (§7) — `AzDoBillingSettings`, `AzDoPatPolicy`,
   `AzDoExtensionPolicy`, `AzDoAuditLogAlert`. Spike each first; several of these APIs are
   undocumented or preview.
@@ -410,7 +424,8 @@ remains:
 4. **Board configuration** (§6) — `AzDoBoardColumn`, `AzDoBoardSettings`, `AzDoCardRule`.
 5. **`AzDoWikiPage`** (§6).
 6. **Org-scoped pipeline settings** (§7) — extend `AzDoPipelineSettings`.
-7. Test management, then classic release management, with `AzDoReleaseFolder` (§5.5).
+7. Classic release management, with `AzDoReleaseFolder` (§5.5). Test management (§7) is
+   closed - see §8.
 8. **Tenant-scoped items** (§7), each spiked before it is committed to.
 
 Per-resource checklist (from `CLAUDE.md`): class in `source/Classes/` with the next numeric
