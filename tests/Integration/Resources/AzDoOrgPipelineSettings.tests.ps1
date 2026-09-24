@@ -8,25 +8,27 @@ Describe "AzDoOrgPipelineSettings Integration Tests" -Tag "Integration", "Pipeli
     # The original org values are snapshotted in BeforeAll and restored in AfterAll (even on
     # failure), so a failed assertion never leaves the shared organization changed.
 
-    function New-RestAuthHeader
-    {
-        $cfg  = Import-Clixml -Path (Join-Path $ENV:AZDODSC_CACHE_DIRECTORY 'ModuleSettings.clixml')
-        $tok  = $cfg.Token
-        $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($tok.access_token)
-        try   { $plain = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr) }
-        finally { [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
-        if ($tok.tokenType.ToString() -eq 'PersonalAccessToken' -or $tok.tokenType.ToString() -eq '1')
-        {
-            $encoded = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$plain"))
-            return @{ Authorization = "Basic $encoded" }
-        }
-        else
-        {
-            return @{ Authorization = "Bearer $plain" }
-        }
-    }
-
     BeforeAll {
+
+        # Defined inside BeforeAll: Pester 5 discards functions declared directly in a Describe body
+        # once discovery ends, so they are not callable from BeforeAll/AfterAll/It.
+        function New-RestAuthHeader
+        {
+            $cfg  = Import-Clixml -Path (Join-Path $ENV:AZDODSC_CACHE_DIRECTORY 'ModuleSettings.clixml')
+            $tok  = $cfg.Token
+            $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($tok.access_token)
+            try   { $plain = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr) }
+            finally { [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
+            if ($tok.tokenType.ToString() -eq 'PersonalAccessToken' -or $tok.tokenType.ToString() -eq '1')
+            {
+                $encoded = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$plain"))
+                return @{ Authorization = "Basic $encoded" }
+            }
+            else
+            {
+                return @{ Authorization = "Bearer $plain" }
+            }
+        }
 
         $settings   = Import-Clixml -Path (Join-Path $ENV:AZDODSC_CACHE_DIRECTORY 'ModuleSettings.clixml')
         $ORGNAME    = $settings.OrganizationName
@@ -167,8 +169,9 @@ Describe "AzDoOrgPipelineSettings Integration Tests" -Tag "Integration", "Pipeli
 
         It "Reports InDesiredState True and never throws applying the locked desired state" {
             $projectParameters.Method = 'Test'
-            $result = $null
-            { $result = Invoke-DscResource @projectParameters } | Should -Not -Throw
+            # Called directly: an assignment inside a 'Should -Not -Throw' script block does not reach
+            # this scope. A throw still fails the test.
+            $result = Invoke-DscResource @projectParameters
             $result.InDesiredState | Should -BeTrue
         }
     }
