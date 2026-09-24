@@ -170,6 +170,7 @@ Each resource links to its example/usage documentation.
 | [AzDoPipelineEnvironment](source/Examples/Resources/AzDoPipelineEnvironment.md) | Creates and manages pipeline environments. |
 | [AzDoEnvironmentApproval](source/Examples/Resources/AzDoEnvironmentApproval.md) | Manages approval checks on a pipeline environment. |
 | [AzDoCheckConfiguration](source/Examples/Resources/AzDoCheckConfiguration.md) | Manages pipeline checks (e.g. Approval) on a protected resource. |
+| [AzDoPipelineAuthorization](source/Examples/Resources/AzDoPipelineAuthorization.md) | Manages which pipelines may use a protected resource (service connection, queue, variable group, secure file, environment or repository) via `pipelinePermissions`. |
 | [AzDoDeploymentGroup](source/Examples/Resources/AzDoDeploymentGroup.md) | Creates and manages deployment groups. |
 | [AzDoAgentPool](source/Examples/Resources/AzDoAgentPool.md) | Creates and manages organization agent pools. |
 | [AzDoAgentQueue](source/Examples/Resources/AzDoAgentQueue.md) | Creates and manages project agent queues. |
