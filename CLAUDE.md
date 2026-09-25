@@ -71,8 +71,9 @@ All DSC resources live in `source\Classes\` with numeric prefixes controlling lo
 | `125`–`127` | `AzDoEnvironmentKubernetesResource`, `AzDoEnvironmentVMResource`, `AzDoDeploymentGroupTarget` | Environment/deployment-group targets. VM and deployment-group targets are agent-install-only - DSC owns tags/removal, never registration. |
 | `132`–`134` | `AzDoReleaseFolder`, `AzDoReleaseFolderPermission`, `AzDoReleaseDefinitionPermission` | Classic Release Management; `ReleaseManagement` namespace, `vsrm.dev.azure.com` host |
 | `138`–`141` | `AzDoTestVariable`, `AzDoTestConfiguration`, `AzDoTestPlan`, `AzDoTestSuite` | Test management (test plan REST API 7.1); no test-plan security namespace exists, so there is no `AzDoTestPlanPermission` |
+| `143.AzDoBuildRetentionSettings.ps1` | `AzDoBuildRetentionSettings` | Project run/artifact retention (`_apis/build/retention`) |
 
-There are currently **76** `[DscResource()]` classes. `docs/ResourceRoadmap.md` is the plan of record for what is implemented and what is still outstanding.
+There are currently **77** `[DscResource()]` classes. `docs/ResourceRoadmap.md` is the plan of record for what is implemented and what is still outstanding.
 
 The `Construct()` method (in `AzDevOpsDscResourceBase`) runs at `new()` time, reads `ModuleSettings.clixml`, and sets `$Global:DSCAZDO_AuthenticationToken` and `$Global:DSCAZDO_OrganizationName`.
 

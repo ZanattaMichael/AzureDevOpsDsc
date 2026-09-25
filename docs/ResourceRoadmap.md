@@ -15,7 +15,7 @@ explicitly.
 
 ## 1. Current coverage (verified)
 
-87 class files exist, `001`–`141` (not contiguous); 76 of them carry
+88 class files exist, `001`–`143` (not contiguous); 77 of them carry
 `[DscResource()]` (the other 11 are the auth and base classes). By subsystem:
 
 | Subsystem | Resources |
@@ -315,7 +315,7 @@ code beyond conventions. Both landed **before** their permission counterparts, a
 | `AzDoDashboard` / `AzDoDashboardWidget` / `AzDoDashboardPermission` | Team and project dashboards. `Dashboards` namespace needs adding. | Medium | Outstanding |
 | `AzDoDeliveryPlan` | Cross-team roadmap plans; `Plan` namespace. | Medium | Outstanding |
 | `AzDoElasticPool` | VMSS-backed agent pools — increasingly the default for self-hosted compute. Complements the existing `AzDoAgentPool`. | Medium | Outstanding |
-| `AzDoBuildRetentionSettings` | Project-level run/artifact retention (`_apis/build/retention`). | Low | Outstanding |
+| `AzDoBuildRetentionSettings` | Project-level run/artifact retention (`_apis/build/retention`). | Low | **Shipped** (`143`) |
 | `AzDoBoardColumn` / `AzDoBoardSettings` / `AzDoCardRule` | Board columns, swimlanes, card fields and styling. `AzDoTeamSettings` covers backlog/iteration/area defaults and working days, but not the board itself. | Medium | Outstanding |
 | `AzDoWikiPage` | `AzDoWiki` manages the wiki, not its pages or their ordering. | Medium | Outstanding |
 | `AzDoCheckConfiguration` — `queue`/`variablegroup`/`securefile` resource types | Checks were previously limited to `environment`, `repository` and `endpoint`; agent queues, variable groups and secure files can carry checks too (e.g. Branch control on a signing certificate). | Low | **Shipped** (#77) |
@@ -363,7 +363,7 @@ Items from #59 checked against the code:
 | `AzDoCommitStatusPolicy`, `AzDoPullRequestPolicySettings` | **Closed (#74).** `AzDoBranchPolicy` now detects `PolicySettings` drift and supports several policies of the same `PolicyType` in one scope via `PolicyIdentifier`, so a commit status policy is `PolicyType = 'StatusCheck'` with `PolicyIdentifier` set to the status name, and pull request policy settings (merge strategy, comment requirements, work item linking) are `PolicySettings` on the existing policy types. No new resource needed. Deferred: `PolicyIdentifier` only matches a top-level scalar or array settings value, not one nested a level deeper (e.g. a status check's `genre`/`name` pair) — see `Test-AzDoBranchPolicyIdentifierMatch`. |
 | `AzDoTeamFieldValues` | **Likely covered** by `AzDoTeamSettings` (`DefaultAreaPath`, `AreaPaths`). Verify, then drop. |
 | `AzDoWorkItemQuery`, `AzDoQueryFolderPermission` | **Closed.** Split into `AzDoQueryFolder` / `AzDoWorkItemQuery` / `AzDoQueryPermission` and shipped (§3). |
-| `AzDoPipelineRetentionPolicy` | Confirmed gap; listed above as `AzDoBuildRetentionSettings`. |
+| `AzDoPipelineRetentionPolicy` | **Closed.** Shipped as `AzDoBuildRetentionSettings`, class `143` (§6). Out of scope: the classic-era `maximumRetentionPolicy`/`defaultRetentionPolicy` values at `_apis/build/settings`, tied to classic release management (#86). |
 | `AzDoResourceAuthorization` | **Closed.** Shipped as `AzDoPipelineAuthorization` (class `119`, [#78](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/78)) — manages the `pipelinePermissions` REST API (which pipelines may *use* a service connection, agent queue, variable group, secure file, environment or repository), distinct from `AzDoCheckConfiguration` (approval/other checks gating a run) and the per-resource permission resources (who may *administer* the resource). |
 | `AzDoGroupEntitlement` | **Closed.** Shipped as class `109` (§6). |
 | `AzDoPipelineFolder` | **Closed.** Shipped as classes `107`–`108`, together with the `Build` folder ACL token (§5.3–5.4). |
@@ -437,7 +437,8 @@ Still outstanding, in the order below:
   `AzDoDashboardWidget`, `AzDoDashboardPermission`, `AzDoDeliveryPlan`, `AzDoBoardColumn`,
   `AzDoBoardSettings`, `AzDoCardRule`. The `Dashboards` and `Plan` ACL namespaces are
   still unimplemented (§2).
-- **Remaining §6 gaps** — `AzDoElasticPool`, `AzDoBuildRetentionSettings`, `AzDoWikiPage`.
+- **Remaining §6 gaps** — `AzDoElasticPool`, `AzDoWikiPage`. `AzDoBuildRetentionSettings` shipped
+  as class `143` (issue #88).
 - **Org-scoped pipeline settings** (§7) — **blocked**: there is no organization-scoped
   `_apis/build/generalsettings` route (it returns 404). Needs a spike of the route the portal
   uses before any resource is built (#83).
@@ -550,8 +551,8 @@ resources) are done, as is all of process customization except the layout API. W
 remains:
 
 1. **`AzDoProcessLayout`** (§6) — finishes the process customization sub-project.
-2. **`AzDoElasticPool`**, **`AzDoBuildRetentionSettings`** (§6) — low effort each, no ACL
-   dependency.
+2. **`AzDoElasticPool`** (§6) — low effort, no ACL dependency.
+   `AzDoBuildRetentionSettings` shipped as class `143` (issue #88).
 3. **Dashboards and delivery plans** (§6) — `Dashboards` and `Plan` ACL namespaces first
    (§2), then `AzDoDashboard` → `AzDoDashboardWidget` → `AzDoDashboardPermission`, and
    `AzDoDeliveryPlan`.

@@ -347,6 +347,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     stable and a rename would otherwise cause a duplicate to be created. The
     endpoint is a preview API; when an organization does not expose it, the lookup
     reports the entitlement as absent rather than failing the configuration.
+  - Added `AzDoBuildRetentionSettings` (class `143`), a resource managing a project's run
+    and artifact retention policy (`_apis/build/retention`): `DaysToKeepRuns`,
+    `DaysToKeepArtifacts` (artifacts, symbols and attachments), `DaysToKeepPullRequestRuns`
+    and `RunsToRetainPerProtectedBranch`. Retention is a compliance setting - too short a
+    window loses audit evidence, too long costs storage - and was previously unmanaged.
+    Only the settings a configuration actually specifies are compared and applied; each is
+    validated against the org's own live `min`/`max` bounds (read from the API, never
+    hard-coded) and an out-of-range value is refused before any PATCH is sent, including
+    when a prior `Get` already flagged it and still routed to `Set`. Modeled on
+    `AzDoPipelineSettings`: `Ensure = 'Absent'` is a documented no-op and `New` delegates to
+    `Set`. Out of scope: the classic-pipeline-era `maximumRetentionPolicy` /
+    `defaultRetentionPolicy` values at `_apis/build/settings`, which apply only to the
+    classic build/release experience being retired alongside classic release management
+    (#86). Resolves #88.
+  - Added the private BuildRetentionSettings API functions
+    `Get-DevOpsBuildRetentionSettings` and `Set-DevOpsBuildRetentionSettings`. The
+    retention API reads and writes the settings under different names (`purgeRuns` is
+    written as `runRetention`, `purgeArtifacts` as `artifactsRetention`,
+    `purgePullRequestRuns` as `pullRequestRunRetention`) and silently ignores a name it
+    does not know, so `Set-DevOpsBuildRetentionSettings` takes the read-side names,
+    translates them, and throws on any other name rather than send a no-op PATCH.
   - Added `AzDoPicklist`, a resource managing picklists - the allowed values behind
     picklist-typed custom fields. Picklists are organization-scoped, so one list
     backs fields across processes. Items are replaced wholesale because the update
