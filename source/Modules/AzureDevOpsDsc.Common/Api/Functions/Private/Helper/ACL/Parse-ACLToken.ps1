@@ -31,7 +31,25 @@ Function Parse-ACLToken
                 $LocalizedDataAzACLTokenPatten.OrganizationGit { $result.type = 'OrganizationGit'; break }
                 $LocalizedDataAzACLTokenPatten.GitProject      { $result.type = 'GitProject';      break }
                 $LocalizedDataAzACLTokenPatten.GitRepository   { $result.type = 'GitRepository';   break }
-                $LocalizedDataAzACLTokenPatten.GitBranch       { $result.type = 'GitBranch';       break }
+                # Branch/tag tokens carry the ref name as hex/UTF-16LE-encoded segments - decode it
+                # back to the human-readable name here so it round-trips against what New-ACLToken
+                # keeps on the resource side (see ConvertFrom-GitRefToken).
+                $LocalizedDataAzACLTokenPatten.GitBranch {
+                    $result.type       = 'GitBranch'
+                    $result.ProjectId  = $matches.ProjectId
+                    $result.RepoId     = $matches.RepoId
+                    $result.BranchName = ConvertFrom-GitRefToken -EncodedRef $matches.BranchName
+                    $useRegexVariable  = $false
+                    break
+                }
+                $LocalizedDataAzACLTokenPatten.GitTag {
+                    $result.type      = 'GitTag'
+                    $result.ProjectId = $matches.ProjectId
+                    $result.RepoId    = $matches.RepoId
+                    $result.TagName   = ConvertFrom-GitRefToken -EncodedRef $matches.TagName
+                    $useRegexVariable = $false
+                    break
+                }
                 default { throw "Token '$Token' is not recognized." }
             }
         }

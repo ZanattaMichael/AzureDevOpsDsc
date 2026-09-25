@@ -20,7 +20,11 @@ Describe 'Parse-ACLToken' -Tag "Unit", "ACL", "Helper" {
             OrganizationGit         = '^org:(.+)$'
             GitProject              = '^project:(.+)$'
             GitRepository           = '^repo:(.+)$'
-            GitBranch               = '^branch:(.+)$'
+            # Real patterns: GitBranch/GitTag decoding is shape-sensitive (it hex/UTF-16LE
+            # decodes the captured ref segments), so a stand-in pattern would not exercise what
+            # it actually does - mirror the real production regex here instead.
+            GitBranch               = '^(repoV2)\/(?<ProjectId>[A-Za-z0-9-]+)\/(?<RepoId>[A-Za-z0-9-]+)\/refs\/heads\/(?<BranchName>[0-9a-fA-F]+(?:\/[0-9a-fA-F]+)*)$'
+            GitTag                  = '^(repoV2)\/(?<ProjectId>[A-Za-z0-9-]+)\/(?<RepoId>[A-Za-z0-9-]+)\/refs\/tags\/(?<TagName>[0-9a-fA-F]+(?:\/[0-9a-fA-F]+)*)$'
             ResourcePermission      = '^resource:(.+)$'
             GroupPermission         = '^group:(.+)$'
             IterationPathPermission = '^iteration:(.+)$'

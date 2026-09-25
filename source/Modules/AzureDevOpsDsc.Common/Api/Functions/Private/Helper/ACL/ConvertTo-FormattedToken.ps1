@@ -53,6 +53,18 @@ Function ConvertTo-FormattedToken {
             $string = 'repoV2/{0}/{1}' -f $Token.projectId, $Token.RepoId
             break
         }
+        # If the token type is 'GitBranch' — each '/'-delimited ref segment is hex/UTF-16LE
+        # encoded separately by ConvertTo-GitRefToken (a branch folder such as 'release/' falls
+        # out of this for free, since it is just the same per-segment encoding one segment short).
+        {$_.type -eq 'GitBranch'} {
+            $string = 'repoV2/{0}/{1}/refs/heads/{2}' -f $Token.projectId, $Token.RepoId, (ConvertTo-GitRefToken -RefName $Token.BranchName)
+            break
+        }
+        # If the token type is 'GitTag'
+        {$_.type -eq 'GitTag'} {
+            $string = 'repoV2/{0}/{1}/refs/tags/{2}' -f $Token.projectId, $Token.RepoId, (ConvertTo-GitRefToken -RefName $Token.TagName)
+            break
+        }
         # If the token type is 'CSS'
         {$_.type -eq 'CSS'} {
             $string = $(($Token.Identifiers | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_.identifier }) -join ':')

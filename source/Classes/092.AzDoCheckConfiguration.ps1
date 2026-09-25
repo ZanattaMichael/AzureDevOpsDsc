@@ -3,14 +3,20 @@
     DSC resource for managing pipeline check configurations.
 .DESCRIPTION
     This resource manages pipeline check configurations on Azure DevOps resources such as
-    environments, repositories, and service connections. Checks enforce gates that must pass before
-    a pipeline can access the protected resource.
+    environments, repositories, service connections, agent queues, variable groups and secure
+    files. Checks enforce gates that must pass before a pipeline can access the protected resource.
 
 .PARAMETER ProjectName
     The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
 
 .PARAMETER ResourceType
-    The type of resource. Valid values are environment, repository, and endpoint. This is a key property.
+    The type of resource. Valid values are environment, repository, endpoint, queue, variablegroup, and
+    securefile. This is a key property.
+
+    'queue' attaches the check to the project-level agent queue (distributedtask/queues), not the
+    org-level pool. 'variablegroup' and 'securefile' attach to a variable group or secure file
+    respectively. See https://learn.microsoft.com/en-us/azure/devops/pipelines/process/approvals for
+    the full list of protected-resource types the Checks API supports.
 
 .PARAMETER CheckType
     The type of check to configure (e.g., Task Check, Approval, ExclusiveLock). This is a key property.
@@ -25,8 +31,10 @@
     Whether the check is active. Defaults to $true.
 
 .PARAMETER TargetResourceName
-    The name of the resource the check is attached to - an environment name, repository name
-    or service connection name, depending on ResourceType. This property is mandatory.
+    The name of the resource the check is attached to - an environment, repository, service
+    connection, agent queue, variable group or secure file name, depending on ResourceType. For
+    ResourceType 'queue' this is the project-level agent queue name (resolved via the project's
+    distributedtask/queues, not the org-level pool). This property is mandatory.
 
 #>
 
@@ -40,7 +48,7 @@ class AzDoCheckConfiguration : AzDevOpsDscResourceBase
     [System.String]$TargetResourceName
 
     [DscProperty(Mandatory)]
-    [ValidateSet('environment','repository','endpoint')]
+    [ValidateSet('environment','repository','endpoint','queue','variablegroup','securefile')]
     [System.String]$ResourceType
 
     [DscProperty(Mandatory)]
