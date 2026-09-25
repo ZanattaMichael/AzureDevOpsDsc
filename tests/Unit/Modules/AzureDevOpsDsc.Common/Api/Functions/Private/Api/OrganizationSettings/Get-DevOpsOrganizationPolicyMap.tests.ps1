@@ -27,6 +27,14 @@ Describe 'Get-DevOpsOrganizationPolicyMap' -Tag "Unit", "OrganizationSettings", 
         }
     }
 
+    It 'gives every entry a default of true or false' {
+        $map = Get-DevOpsOrganizationPolicyMap
+        foreach ($entry in $map)
+        {
+            $entry.DefaultValue | Should -BeIn @('true', 'false') -Because "policy '$($entry.PolicyName)' needs a default for the per-policy read"
+        }
+    }
+
     It 'has no duplicate property names' {
         $map = Get-DevOpsOrganizationPolicyMap
         ($map.PropertyName | Select-Object -Unique).Count | Should -Be $map.Count

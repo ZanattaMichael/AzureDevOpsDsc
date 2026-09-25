@@ -10,6 +10,10 @@ than the `_apis/settings/entries/host` mechanism used by the resource's original
 candidates (see issue #84); the integration test reads them from a live organization and fails
 loudly if a name or route is wrong.
 
+`DefaultValue` is the value the per-policy read route is asked to report for a policy that was
+never set: the value the *Policies* page shows for it in a new organization. It is used only when
+the page's own routes return no policy data.
+
 .EXAMPLE
 Get-DevOpsOrganizationPolicyMap
 #>
@@ -20,10 +24,10 @@ function Get-DevOpsOrganizationPolicyMap
     param ()
 
     return @(
-        @{ PropertyName = 'EnableIPConditionalAccessPolicyValidation';  PolicyName = 'Policy.EnforceAADConditionalAccess' }
-        @{ PropertyName = 'LogAuditEvents';                             PolicyName = 'Policy.LogAuditEvents' }
-        @{ PropertyName = 'AllowTeamAdminsToInviteUsers';               PolicyName = 'Policy.AllowTeamAdminsInvitationsAccessToken' }
-        @{ PropertyName = 'EnableRequestAccess';                        PolicyName = 'Policy.AllowRequestAccessToken' }
-        @{ PropertyName = 'EnableArtifactsFeedUpstreamProtection';      PolicyName = 'Policy.ArtifactsExternalPackageProtectionToken' }
+        @{ PropertyName = 'EnableIPConditionalAccessPolicyValidation';  PolicyName = 'Policy.EnforceAADConditionalAccess';             DefaultValue = 'false' }
+        @{ PropertyName = 'LogAuditEvents';                             PolicyName = 'Policy.LogAuditEvents';                        DefaultValue = 'false' }
+        @{ PropertyName = 'AllowTeamAdminsToInviteUsers';               PolicyName = 'Policy.AllowTeamAdminsInvitationsAccessToken'; DefaultValue = 'true' }
+        @{ PropertyName = 'EnableRequestAccess';                        PolicyName = 'Policy.AllowRequestAccessToken';               DefaultValue = 'true' }
+        @{ PropertyName = 'EnableArtifactsFeedUpstreamProtection';      PolicyName = 'Policy.ArtifactsExternalPackageProtectionToken'; DefaultValue = 'false' }
     )
 }

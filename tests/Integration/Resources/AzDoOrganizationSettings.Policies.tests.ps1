@@ -31,11 +31,21 @@ Describe "AzDoOrganizationSettings Policies Integration Tests" -Tag "Integration
             'Policy.ArtifactsExternalPackageProtectionToken'
         )
 
-        # The dev.azure.com policy route has no GET (_apis/OrganizationPolicy/Policies/{name}
-        # answers 405), so read the policies the way the resource does: through the policy page's
-        # data provider, then the page's own data route, then per policy from the SPS host.
-        # Independent of the module's private functions, which are not loaded in this scope.
-        # Each route that comes back empty says why, so a failure names the cause.
+        # The value reported for a policy that was never set, as Get-DevOpsOrganizationPolicyMap
+        # declares it. The per-policy read route needs one.
+        $script:PolicyDefaults = @{
+            'Policy.EnforceAADConditionalAccess'             = 'false'
+            'Policy.LogAuditEvents'                          = 'false'
+            'Policy.AllowTeamAdminsInvitationsAccessToken'   = 'true'
+            'Policy.AllowRequestAccessToken'                 = 'true'
+            'Policy.ArtifactsExternalPackageProtectionToken' = 'false'
+        }
+
+        # Read the policies the way the resource does: through the policy page's data provider,
+        # then the page's own data route, then per policy from the policy API (organization host,
+        # then SPS host), whose GET needs defaultValue and answers 405 without it. Independent of
+        # the module's private functions, which are not loaded in this scope. Each route that
+        # comes back empty says why, so a failure names the cause.
         function Get-LivePolicies {
             param([string[]]$PolicyName = $script:ManagedPolicyNames)
 
@@ -100,17 +110,27 @@ Describe "AzDoOrganizationSettings Policies Integration Tests" -Tag "Integration
                 return
             }
 
-            Write-Warning "[AzDoOrganizationSettings.Policies] Page routes returned no policy data, reading per policy from the SPS host: $($failures -join '; ')"
+            Write-Warning "[AzDoOrganizationSettings.Policies] Page routes returned no policy data, reading per policy from the policy API: $($failures -join '; ')"
             foreach ($name in $PolicyName)
             {
-                try
+                $policy  = $null
+                $reasons = @()
+                foreach ($hostName in 'dev.azure.com', 'vssps.dev.azure.com')
                 {
-                    $policy = Invoke-RestMethod -Uri "https://vssps.dev.azure.com/$ORGNAME/_apis/OrganizationPolicy/Policies/$($name)?api-version=5.0-preview.1" `
-                        -Method Get -Headers (New-RestAuthHeader)
+                    try
+                    {
+                        $policy = Invoke-RestMethod -Uri "https://$hostName/$ORGNAME/_apis/OrganizationPolicy/Policies/$($name)?defaultValue=$($script:PolicyDefaults[$name])&api-version=5.0-preview.1" `
+                            -Method Get -Headers (New-RestAuthHeader)
+                        break
+                    }
+                    catch
+                    {
+                        $reasons += "$($hostName): $_"
+                    }
                 }
-                catch
+                if ($null -eq $policy)
                 {
-                    throw "No organization policy data from any route: $($failures -join '; '); SPS policy read ($name): $_"
+                    throw "No organization policy data from any route: $($failures -join '; '); policy API read ($name): $($reasons -join ' | ')"
                 }
                 if ($null -eq $policy.PSObject.Properties['name']) { $policy | Add-Member -NotePropertyName name -NotePropertyValue $name }
                 $policy

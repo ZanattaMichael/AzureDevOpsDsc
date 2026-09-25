@@ -71,7 +71,9 @@ Function Get-AzDoOrganizationSettings
         try
         {
             $livePolicies = @{}
-            foreach ($policy in @(Get-DevOpsOrganizationPolicy -ApiUri $apiUri -PolicyName $policyMap.PolicyName))
+            $defaults     = @{}
+            foreach ($entry in $policyMap) { $defaults[$entry.PolicyName] = $entry.DefaultValue }
+            foreach ($policy in @(Get-DevOpsOrganizationPolicy -ApiUri $apiUri -PolicyName $policyMap.PolicyName -DefaultValue $defaults))
             {
                 $livePolicies[[string]$policy.name] = $policy
             }

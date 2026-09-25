@@ -53,14 +53,18 @@ Policies* page:
 
 - **Write**: `PATCH _apis/OrganizationPolicy/Policies/{policyName}?api-version=5.0-preview.1` with a JSON
   patch array, e.g. `[{"from":"","op":2,"path":"/Value","value":"true"}]`.
-- **Read**: that route has no GET (it answers `405 Method Not Allowed`). The policies are read from the
-  page's data provider, `ms.vss-org-web.collection-admin-policy-data-provider`, through
-  `_apis/Contribution/HierarchyQuery`, falling back to the page's own data route
-  (`_settings/organizationPolicy?__rt=fps&__ver=2`). All policies come back in one call. Both are the web
-  page's routes and can return no policy data to a service principal or managed identity; when they do,
-  each policy is read on its own from the organization's SPS host
-  (`GET https://vssps.dev.azure.com/{org}/_apis/OrganizationPolicy/Policies/{policyName}`). If every
-  route fails, the error says what each one returned. The value compared is the policy's
+- **Read**: the policies are read from the page's data provider,
+  `ms.vss-org-web.collection-admin-policy-data-provider`, through `_apis/Contribution/HierarchyQuery`,
+  falling back to the page's own data route (`_settings/organizationPolicy?__rt=fps&__ver=2`). All
+  policies come back in one call. Both are the web page's routes and can return no policy data to a
+  service principal or managed identity; when they do, each policy is read on its own with
+  `GET _apis/OrganizationPolicy/Policies/{policyName}?defaultValue={default}&api-version=5.0-preview.1`,
+  on the organization host and then on its SPS host (`vssps.dev.azure.com`). That GET answers
+  `405 Method Not Allowed` without `defaultValue`, the value to report for a policy that was never set.
+  The defaults are declared per policy in `Get-DevOpsOrganizationPolicyMap` (`EnableIPConditionalAccessPolicyValidation`,
+  `LogAuditEvents` and `EnableArtifactsFeedUpstreamProtection` off, `AllowTeamAdminsToInviteUsers` and
+  `EnableRequestAccess` on), so on this route a policy nobody has set is reported at that default. If
+  every route fails, the error says what each one returned. The value compared is the policy's
   `effectiveValue` (what is in force), falling back to `value`.
 - **Read failures**: a failed policy read is an error only when the configuration sets a policy property
   (or `RequestAccessUrl`). A configuration that manages only the host settings above gets a warning

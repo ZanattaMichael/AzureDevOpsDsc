@@ -3,10 +3,8 @@
 Reads the Azure DevOps organization policies.
 
 .DESCRIPTION
-The organization policy API has no read route: `_apis/OrganizationPolicy/Policies/{policyName}`
-accepts PATCH only and answers GET with 405 Method Not Allowed. The *Organization settings ->
-Policies* page reads the policies from the `ms.vss-org-web.collection-admin-policy-data-provider`
-data provider instead, and so does this function.
+The *Organization settings -> Policies* page reads the policies from the
+`ms.vss-org-web.collection-admin-policy-data-provider` data provider, and so does this function.
 
 The data provider is queried through `_apis/Contribution/HierarchyQuery`. If that returns no policy
 data, the function falls back to the page's own data route
@@ -17,8 +15,10 @@ gets one policy object per policy, exactly as the service returned it.
 
 Both of those are the web page's routes, and can answer a service principal or managed identity
 with no policy data at all. When they do and `PolicyName` is given, each named policy is read from
-the organization's SPS host (`vssps.dev.azure.com/{org}/_apis/OrganizationPolicy/Policies/{name}`)
-as a last resort. If every route comes back empty, the error says what each one returned.
+the policy API (`_apis/OrganizationPolicy/Policies/{name}`) as a last resort, on the organization
+host and then on its SPS host (`vssps.dev.azure.com`). That GET needs a `defaultValue` query
+parameter - the value to report for a policy that was never set - and answers 405 without one. If
+every route comes back empty, the error says what each one returned.
 
 .PARAMETER ApiUri
 The base organization URI, e.g. 'https://dev.azure.com/myorg/'.
@@ -26,6 +26,10 @@ The base organization URI, e.g. 'https://dev.azure.com/myorg/'.
 .PARAMETER PolicyName
 Optional. Returns only the policies with these names, e.g. 'Policy.LogAuditEvents'. Required for the
 per-policy fallback route.
+
+.PARAMETER DefaultValue
+Optional. Policy name to the value the per-policy route reports for a policy that was never set.
+A policy not listed is read with 'false'.
 
 .PARAMETER ApiVersion
 The REST API version used for the HierarchyQuery call. Defaults to '5.0-preview.1'.
@@ -42,6 +46,7 @@ function Get-DevOpsOrganizationPolicy
     param(
         [Parameter(Mandatory)][string]$ApiUri,
         [Parameter()][string[]]$PolicyName,
+        [Parameter()][hashtable]$DefaultValue = @{},
         [Parameter()][string]$ApiVersion = '5.0-preview.1'
     )
 
@@ -134,34 +139,50 @@ function Get-DevOpsOrganizationPolicy
     }
     elseif ($PolicyName.Count -gt 0)
     {
-        # Last resort: read each policy from the SPS host. The dev.azure.com policy route is
-        # PATCH-only (GET answers 405). All or nothing, so a failure keeps every route's reason.
-        $spsUri   = $baseUri -replace '^https://dev\.azure\.com/', 'https://vssps.dev.azure.com/'
-        $spsFails = @()
-        $policies = foreach ($name in $PolicyName)
+        # Last resort: read each policy from the policy API, on the organization host and then on
+        # the SPS host. The GET needs defaultValue; without it the service answers 405. All or
+        # nothing, so a failure keeps every route's reason.
+        $spsUri    = $baseUri -replace '^https://dev\.azure\.com/', 'https://vssps.dev.azure.com/'
+        $readFails = @()
+        $policies  = foreach ($name in $PolicyName)
         {
-            try
+            $default = if ($DefaultValue.ContainsKey($name)) { [string]$DefaultValue[$name] } else { 'false' }
+            $policy  = $null
+            $reasons = @()
+
+            foreach ($hostUri in @($baseUri, $spsUri | Select-Object -Unique))
             {
-                $params = @{
-                    Uri    = '{0}/_apis/OrganizationPolicy/Policies/{1}?api-version={2}' -f $spsUri, $name, $ApiVersion
-                    Method = 'GET'
-                }
-                $policy = Invoke-AzDevOpsApiRestMethod @params
-                if ($null -eq $policy.PSObject.Properties['name'])
+                try
                 {
-                    $policy | Add-Member -NotePropertyName name -NotePropertyValue $name
+                    $params = @{
+                        Uri    = '{0}/_apis/OrganizationPolicy/Policies/{1}?defaultValue={2}&api-version={3}' -f $hostUri, $name, [uri]::EscapeDataString($default), $ApiVersion
+                        Method = 'GET'
+                    }
+                    $policy = Invoke-AzDevOpsApiRestMethod @params
+                    break
                 }
-                $policy
+                catch
+                {
+                    $reasons += "$($hostUri): $_"
+                }
             }
-            catch
+
+            if ($null -eq $policy)
             {
-                $spsFails += "SPS policy read ($name): $_"
+                $readFails += "policy API read ($name): $($reasons -join ' | ')"
+                continue
             }
+
+            if ($null -eq $policy.PSObject.Properties['name'])
+            {
+                $policy | Add-Member -NotePropertyName name -NotePropertyValue $name
+            }
+            $policy
         }
 
-        if ($spsFails.Count -gt 0)
+        if ($readFails.Count -gt 0)
         {
-            $failures += $spsFails
+            $failures += $readFails
             $policies  = $null
         }
     }

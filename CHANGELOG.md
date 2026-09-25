@@ -15,13 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     properties, which read/write `_apis/settings/entries/host`, these are backed by the
     organization policy API, added as the new `Get-/Set-DevOpsOrganizationPolicy` private
     helpers and a single `Get-DevOpsOrganizationPolicyMap` mapping properties to policy names.
-    Policies are written with a JSON-patch array to `_apis/OrganizationPolicy/Policies/{policyName}`;
-    that route has no GET (405), so they are read in one call from the policy page's data
-    provider (`_apis/Contribution/HierarchyQuery`, falling back to the page's
-    `__rt=fps` data route, then to a per-policy read from the organization's
-    `vssps.dev.azure.com` host for identities the page routes answer with no data). A failed
-    policy read is an error only when a policy property is configured, so a configuration of
-    the original five properties does not depend on it. The policy properties are tri-state strings (`'true'`, `'false'`,
+    Policies are written with a JSON-patch array to `_apis/OrganizationPolicy/Policies/{policyName}`,
+    and read in one call from the policy page's data provider (`_apis/Contribution/HierarchyQuery`,
+    falling back to the page's `__rt=fps` data route). For identities the page routes answer with
+    no data, each policy is read from that same policy route with a GET, which needs a
+    `defaultValue` query parameter (405 without it), on the organization host and then on
+    `vssps.dev.azure.com`; the defaults are declared per policy in the map. A failed policy read is an error
+    only when a policy property is configured, so a configuration of the original five properties
+    does not depend on it. The policy properties are tri-state strings (`'true'`, `'false'`,
     or `''` for unmanaged) rather than booleans: the resource base class passes every
     property, so an unset boolean would have switched the policy off. `LimitUserVisibility`
     was left out: it is a preview-feature flag rather than a confirmed organization policy, and

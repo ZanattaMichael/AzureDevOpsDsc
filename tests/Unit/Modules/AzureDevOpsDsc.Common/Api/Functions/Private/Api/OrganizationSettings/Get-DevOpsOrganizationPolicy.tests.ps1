@@ -41,7 +41,7 @@ Describe 'Get-DevOpsOrganizationPolicy' -Tag "Unit", "OrganizationSettings", "AP
             Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { New-HierarchyQueryResponse -PoliciesJson $script:policiesJson }
         }
 
-        It 'POSTs the policy data provider to Contribution/HierarchyQuery and never GETs the PATCH-only policy route' {
+        It 'POSTs the policy data provider to Contribution/HierarchyQuery and does not read policies one by one' {
             $null = Get-DevOpsOrganizationPolicy -ApiUri 'https://dev.azure.com/myorg/'
             Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -Exactly -ParameterFilter {
                 $ApiUri -like 'https://dev.azure.com/myorg/_apis/Contribution/HierarchyQuery*' -and
@@ -138,14 +138,31 @@ Describe 'Get-DevOpsOrganizationPolicy' -Tag "Unit", "OrganizationSettings", "AP
             }
             Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith {
                 [PSCustomObject]@{ value = $true; effectiveValue = $true }
-            } -ParameterFilter { $Method -eq 'GET' -and $ApiUri -like 'https://vssps.dev.azure.com/myorg/_apis/OrganizationPolicy/Policies/*' }
+            } -ParameterFilter { $Method -eq 'GET' -and $ApiUri -like 'https://dev.azure.com/myorg/_apis/OrganizationPolicy/Policies/*' }
         }
 
-        It 'reads each named policy from the SPS host' {
+        It 'reads each named policy from the policy API on the organization host, passing defaultValue' {
             $result = @(Get-DevOpsOrganizationPolicy -ApiUri 'https://dev.azure.com/myorg/' -PolicyName 'Policy.LogAuditEvents', 'Policy.AllowRequestAccessToken')
             $result.Count | Should -Be 2
             Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -Exactly -ParameterFilter {
-                $ApiUri -eq 'https://vssps.dev.azure.com/myorg/_apis/OrganizationPolicy/Policies/Policy.LogAuditEvents?api-version=5.0-preview.1' -and $Method -eq 'GET'
+                $ApiUri -eq 'https://dev.azure.com/myorg/_apis/OrganizationPolicy/Policies/Policy.LogAuditEvents?defaultValue=false&api-version=5.0-preview.1' -and $Method -eq 'GET'
+            }
+        }
+
+        It 'passes the given default for a policy, and false for one without' {
+            $null = Get-DevOpsOrganizationPolicy -ApiUri 'https://dev.azure.com/myorg/' -PolicyName 'Policy.AllowRequestAccessToken', 'Policy.LogAuditEvents' -DefaultValue @{ 'Policy.AllowRequestAccessToken' = 'true' }
+            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -Exactly -ParameterFilter {
+                $ApiUri -like '*/Policies/Policy.AllowRequestAccessToken?defaultValue=true&*'
+            }
+            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -Exactly -ParameterFilter {
+                $ApiUri -like '*/Policies/Policy.LogAuditEvents?defaultValue=false&*'
+            }
+        }
+
+        It 'does not try the SPS host when the organization host answers' {
+            $null = Get-DevOpsOrganizationPolicy -ApiUri 'https://dev.azure.com/myorg/' -PolicyName 'Policy.LogAuditEvents'
+            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 0 -Exactly -ParameterFilter {
+                $ApiUri -like '*vssps.dev.azure.com*'
             }
         }
 
@@ -154,11 +171,28 @@ Describe 'Get-DevOpsOrganizationPolicy' -Tag "Unit", "OrganizationSettings", "AP
             $result[0].name | Should -Be 'Policy.LogAuditEvents'
             $result[0].value | Should -BeTrue
         }
+    }
 
-        It 'never GETs the PATCH-only dev.azure.com policy route' {
-            $null = Get-DevOpsOrganizationPolicy -ApiUri 'https://dev.azure.com/myorg/' -PolicyName 'Policy.LogAuditEvents'
-            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 0 -Exactly -ParameterFilter {
-                $ApiUri -like 'https://dev.azure.com/*_apis/OrganizationPolicy/Policies*'
+    Context 'when the organization host refuses the per-policy read' {
+        BeforeEach {
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { throw 'hierarchy boom' } -ParameterFilter { $Method -eq 'POST' }
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { '<html>sign in</html>' } -ParameterFilter {
+                $Method -eq 'GET' -and $ApiUri -like '*_settings/organizationPolicy*'
+            }
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { throw 'org 405' } -ParameterFilter {
+                $Method -eq 'GET' -and $ApiUri -like 'https://dev.azure.com/myorg/_apis/OrganizationPolicy/Policies/*'
+            }
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith {
+                [PSCustomObject]@{ name = 'Policy.LogAuditEvents'; value = $false; effectiveValue = $false }
+            } -ParameterFilter { $Method -eq 'GET' -and $ApiUri -like 'https://vssps.dev.azure.com/myorg/_apis/OrganizationPolicy/Policies/*' }
+        }
+
+        It 'reads the policy from the SPS host, passing defaultValue' {
+            $result = @(Get-DevOpsOrganizationPolicy -ApiUri 'https://dev.azure.com/myorg/' -PolicyName 'Policy.LogAuditEvents')
+            $result.Count | Should -Be 1
+            $result[0].value | Should -BeFalse
+            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -Exactly -ParameterFilter {
+                $ApiUri -eq 'https://vssps.dev.azure.com/myorg/_apis/OrganizationPolicy/Policies/Policy.LogAuditEvents?defaultValue=false&api-version=5.0-preview.1' -and $Method -eq 'GET'
             }
         }
     }
@@ -169,6 +203,9 @@ Describe 'Get-DevOpsOrganizationPolicy' -Tag "Unit", "OrganizationSettings", "AP
             Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { '<html>sign in</html>' } -ParameterFilter {
                 $Method -eq 'GET' -and $ApiUri -like '*_settings/organizationPolicy*'
             }
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { throw 'org boom' } -ParameterFilter {
+                $Method -eq 'GET' -and $ApiUri -like 'https://dev.azure.com/*_apis/OrganizationPolicy/Policies/*'
+            }
             Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { throw 'sps boom' } -ParameterFilter {
                 $Method -eq 'GET' -and $ApiUri -like '*vssps.dev.azure.com*'
             }
@@ -176,7 +213,7 @@ Describe 'Get-DevOpsOrganizationPolicy' -Tag "Unit", "OrganizationSettings", "AP
 
         It 'throws, keeping every route''s reason' {
             { Get-DevOpsOrganizationPolicy -ApiUri 'https://dev.azure.com/myorg/' -PolicyName 'Policy.LogAuditEvents' } |
-                Should -Throw '*hierarchy boom*non-JSON response*SPS policy read (Policy.LogAuditEvents): sps boom*'
+                Should -Throw '*hierarchy boom*non-JSON response*policy API read (Policy.LogAuditEvents): https://dev.azure.com/myorg: org boom | https://vssps.dev.azure.com/myorg: sps boom*'
         }
     }
 }

@@ -40,11 +40,11 @@ Describe "Get-AzDoOrganizationSettings" -Tag "Unit", "OrganizationSettings" {
 
         Mock -CommandName Get-DevOpsOrganizationPolicyMap -MockWith {
             return @(
-                @{ PropertyName = 'EnableIPConditionalAccessPolicyValidation'; PolicyName = 'Policy.EnforceAADConditionalAccess' }
-                @{ PropertyName = 'LogAuditEvents';                            PolicyName = 'Policy.LogAuditEvents' }
-                @{ PropertyName = 'AllowTeamAdminsToInviteUsers';              PolicyName = 'Policy.AllowTeamAdminsInvitationsAccessToken' }
-                @{ PropertyName = 'EnableRequestAccess';                       PolicyName = 'Policy.AllowRequestAccessToken' }
-                @{ PropertyName = 'EnableArtifactsFeedUpstreamProtection';     PolicyName = 'Policy.ArtifactsExternalPackageProtectionToken' }
+                @{ PropertyName = 'EnableIPConditionalAccessPolicyValidation'; PolicyName = 'Policy.EnforceAADConditionalAccess';             DefaultValue = 'false' }
+                @{ PropertyName = 'LogAuditEvents';                            PolicyName = 'Policy.LogAuditEvents';                        DefaultValue = 'false' }
+                @{ PropertyName = 'AllowTeamAdminsToInviteUsers';              PolicyName = 'Policy.AllowTeamAdminsInvitationsAccessToken'; DefaultValue = 'true' }
+                @{ PropertyName = 'EnableRequestAccess';                       PolicyName = 'Policy.AllowRequestAccessToken';               DefaultValue = 'true' }
+                @{ PropertyName = 'EnableArtifactsFeedUpstreamProtection';     PolicyName = 'Policy.ArtifactsExternalPackageProtectionToken'; DefaultValue = 'false' }
             )
         }
     }
@@ -106,6 +106,13 @@ Describe "Get-AzDoOrganizationSettings" -Tag "Unit", "OrganizationSettings" {
         It "reads all policies in one call rather than one call per policy" {
             $null = Get-AzDoOrganizationSettings -OrganizationName 'TestOrganization'
             Assert-MockCalled -CommandName Get-DevOpsOrganizationPolicy -Exactly -Times 1
+        }
+
+        It "passes each mapped policy's default for the per-policy read" {
+            $null = Get-AzDoOrganizationSettings -OrganizationName 'TestOrganization'
+            Assert-MockCalled -CommandName Get-DevOpsOrganizationPolicy -Exactly -Times 1 -ParameterFilter {
+                $DefaultValue['Policy.AllowRequestAccessToken'] -eq 'true' -and $DefaultValue['Policy.LogAuditEvents'] -eq 'false' -and $DefaultValue.Count -eq 5
+            }
         }
 
         It "returns status Unchanged when all managed policy properties match" {
