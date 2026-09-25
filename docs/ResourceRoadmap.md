@@ -15,8 +15,8 @@ explicitly.
 
 ## 1. Current coverage (verified)
 
-76 class files exist, `001`–`116`; 65 of them carry `[DscResource()]` (the other 11 are the
-auth and base classes). By subsystem:
+77 class files exist, `001`–`119` (`117`–`118` reserved); 66 of them carry
+`[DscResource()]` (the other 11 are the auth and base classes). By subsystem:
 
 | Subsystem | Resources |
 |---|---|
@@ -28,7 +28,7 @@ auth and base classes). By subsystem:
 | Work item queries | `AzDoQueryFolder`, `AzDoWorkItemQuery`, `AzDoQueryPermission` |
 | Process customization | `AzDoPicklist`, `AzDoProcessWorkItemType`, `AzDoProcessField`, `AzDoProcessState`, `AzDoProcessRule`, `AzDoProcessBehavior` |
 | Teams | `AzDoTeam`, `AzDoTeamMember`, `AzDoTeamSettings` |
-| Pipelines | `AzDoPipeline`, `AzDoPipelinePermission`, `AzDoPipelineSettings`, `AzDoPipelineEnvironment`, `AzDoEnvironmentApproval`, `AzDoEnvironmentPermission`, `AzDoCheckConfiguration`, `AzDoTaskGroup`, `AzDoAgentPool`, `AzDoAgentPoolPermission`, `AzDoAgentQueue`, `AzDoDeploymentGroup`, `AzDoPipelineFolder`, `AzDoPipelineFolderPermission` |
+| Pipelines | `AzDoPipeline`, `AzDoPipelinePermission`, `AzDoPipelineSettings`, `AzDoPipelineEnvironment`, `AzDoEnvironmentApproval`, `AzDoEnvironmentPermission`, `AzDoCheckConfiguration`, `AzDoTaskGroup`, `AzDoAgentPool`, `AzDoAgentPoolPermission`, `AzDoAgentQueue`, `AzDoDeploymentGroup`, `AzDoPipelineFolder`, `AzDoPipelineFolderPermission`, `AzDoPipelineAuthorization` |
 | Library / connections | `AzDoVariableGroup`, `AzDoVariableGroupPermission`, `AzDoServiceConnection`, `AzDoServiceConnectionPermission`, `AzDoSecureFile`, `AzDoSecureFilePermission` |
 | Artifacts | `AzDoArtifactFeed`, `AzDoArtifactFeedPermission`, `AzDoArtifactFeedSettings`, `AzDoArtifactFeedView` |
 | Wiki | `AzDoWiki` |
@@ -344,13 +344,13 @@ Items from #59 checked against the code:
 | #59 item | Finding |
 |---|---|
 | `AzDoOrgPipelineSettings`, `...JobAuthorizationScope`, `...ArtifactsRetention` | **Partially covered.** `AzDoPipelineSettings` already exposes `EnforceJobAuthScope`, `EnforceJobAuthScopeForReleases`, `EnforceReferencedRepoScopedToken`, `EnforceSettableVar`, `PublishPipelineMetadata`, `StatusBadgesArePrivate`, `DisableClassicPipelineCreation`, `DisableImpliedYAMLCiTrigger` — but scoped to `ProjectName`. The gap is the **org-scoped** equivalent, not the settings themselves. **Blocked (#83): there is no organization-scoped REST route.** The public reference documents General Settings only with a `{project}` segment, and the same route without one does not exist — against the live test organization, `GET https://dev.azure.com/{org}/_apis/build/generalsettings` returns 404 `The controller for path '/_apis/build/generalsettings' was not found or does not implement IController`. A first attempt at `AzDoOrgPipelineSettings` built on that route was withdrawn for this reason. The switches are visible in the portal (Organization settings → Pipelines → Settings), so a route exists somewhere, but not a documented one. Before building anything, spike what the portal calls and decide whether an undocumented contract is acceptable. The same spike should check whether the project-scoped GET shows that a switch is locked on by the organization: today `AzDoPipelineSettings` cannot tell, so a project that wants such a switch off reports drift. |
-| `AzDoOrganizationPolicy` | **Overlaps** `AzDoOrganizationSettings` (`AllowPublicProjects`, `AllowExternalGuestAccess`, `EnableOAuthAuthentication`, `EnableSSHAuthentication`, `DisallowAadGuestUserPolicy`). Extend it rather than adding a resource. |
+| `AzDoOrganizationPolicy` | **Closed (#84).** Implemented as five more properties on `AzDoOrganizationSettings` rather than a new resource: `EnableIPConditionalAccessPolicyValidation`, `LogAuditEvents`, `AllowTeamAdminsToInviteUsers`, `EnableRequestAccess` (+ `RequestAccessUrl`) and `EnableArtifactsFeedUpstreamProtection`, written through `PATCH _apis/OrganizationPolicy/Policies/{policyName}` and read from the policy page's data provider, or per policy from the same route's GET (which needs `defaultValue`) when the page routes return nothing, separate from the original five properties' `_apis/settings/entries/host` mechanism. The policy properties are tri-state strings (`''` = unmanaged). `LimitUserVisibility` was left out — it verified as a preview-feature flag, not a confirmed organization policy. Microsoft Entra tenant-level policies (PAT restrictions, organization-creation restrictions) are out of scope here and tracked in #85. |
 | `AzDoRepositoryDefaultBranch`, `AzDoForkPolicy` | **Already covered** by `AzDoRepositorySettings` (`DefaultBranch`, `DisableForking`, `AllowSquashMerge`, `AllowRebaseMerge`, `AllowNoFastForward`). Drop both. |
-| `AzDoCommitStatusPolicy`, `AzDoPullRequestPolicySettings` | **Verify against `AzDoBranchPolicy`** before starting — likely expressible as policy types there rather than as new resources. |
+| `AzDoCommitStatusPolicy`, `AzDoPullRequestPolicySettings` | **Closed (#74).** `AzDoBranchPolicy` now detects `PolicySettings` drift and supports several policies of the same `PolicyType` in one scope via `PolicyIdentifier`, so a commit status policy is `PolicyType = 'StatusCheck'` with `PolicyIdentifier` set to the status name, and pull request policy settings (merge strategy, comment requirements, work item linking) are `PolicySettings` on the existing policy types. No new resource needed. Deferred: `PolicyIdentifier` only matches a top-level scalar or array settings value, not one nested a level deeper (e.g. a status check's `genre`/`name` pair) — see `Test-AzDoBranchPolicyIdentifierMatch`. |
 | `AzDoTeamFieldValues` | **Likely covered** by `AzDoTeamSettings` (`DefaultAreaPath`, `AreaPaths`). Verify, then drop. |
 | `AzDoWorkItemQuery`, `AzDoQueryFolderPermission` | **Closed.** Split into `AzDoQueryFolder` / `AzDoWorkItemQuery` / `AzDoQueryPermission` and shipped (§3). |
 | `AzDoPipelineRetentionPolicy` | Confirmed gap; listed above as `AzDoBuildRetentionSettings`. |
-| `AzDoResourceAuthorization` | **Partially covered** by `AzDoCheckConfiguration` and the per-resource permission resources. Scope it precisely before starting. |
+| `AzDoResourceAuthorization` | **Closed.** Shipped as `AzDoPipelineAuthorization` (class `119`, [#78](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/78)) — manages the `pipelinePermissions` REST API (which pipelines may *use* a service connection, agent queue, variable group, secure file, environment or repository), distinct from `AzDoCheckConfiguration` (approval/other checks gating a run) and the per-resource permission resources (who may *administer* the resource). |
 | `AzDoGroupEntitlement` | **Closed.** Shipped as class `109` (§6). |
 | `AzDoPipelineFolder` | **Closed.** Shipped as classes `107`–`108`, together with the `Build` folder ACL token (§5.3–5.4). |
 | `AzDoWikiPage`, `AzDoElasticPool`, `AzDoDeploymentGroupAgent`, dashboards, delivery plans, analytics | Confirmed gaps, still outstanding. |
@@ -400,6 +400,40 @@ Still outstanding, in the order below:
 
 ---
 
+## 8a. DSC v3 export (#92)
+
+DSC v3's PowerShell adapter can call a parameterless static `Export()` on a class-based
+resource to generate its configuration from live state instead of it being hand-written.
+See USAGE.md, "Onboarding an Existing Organization with Export", for how it is dispatched
+and how to run it.
+
+**Shipped** — first increment ([#92](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/92)):
+
+| Resource | Notes |
+|---|---|
+| `AzDoProject` | Exports `Ensure`, `ProjectName`, `ProjectDescription`, `Visibility`. Skips projects that are not `wellFormed`. |
+| `AzDoGitRepository` | Exports `Ensure`, `ProjectName`, `RepositoryName`. Skips disabled repositories. |
+
+Both reuse the shared `AzDevOpsDscResourceBase::ExportDscResourceInstances()` plumbing and the
+`Protect-AzDoExportedSecretProperty` secret-redaction helper; neither resource has secret
+properties today.
+
+Still outstanding — every other resource has no `Export-<ResourceName>` function yet, so
+calling `Export()` on it throws `"export is not implemented for <ResourceName>"`. Adding one
+is additive per resource (no shared-plumbing changes needed) and should follow the existing
+`Get-`/list-cache pattern each resource already has. Not yet attempted:
+
+- Permission resources (`AzDoAreaPermission`, `AzDoIterationPermission`, `AzDoPipelinePermission`,
+  `AzDoProjectPermission`, `AzDoQueryPermission`, `AzDoSecureFilePermission`,
+  `AzDoPipelineFolderPermission`) — exporting an ACL means walking every relevant token and
+  reverse-parsing it with `Parse-ACLToken`, which is more work per resource than a plain list.
+- The work item query, tag hygiene, secure file, pipeline folder, entitlement and inherited
+  process resources (classes `101`–`116`).
+- A `dsc resource export` CLI-level integration test (`tests/Integration/V3/`) — deferred:
+  `dsc resource export`'s output shape (a DSC configuration document, distinct from the single
+  JSON object `get`/`set`/`test` return) needs to be confirmed against the runner's actual `dsc`
+  version before `V3TestHelpers.ps1`'s `Invoke-DscV3Resource` is extended to parse it.
+
 ## 9. Suggested order of work
 
 Steps 1–6 of the original plan (`WorkItemQueryFolders` ACL support, the three query
@@ -428,7 +462,20 @@ class resolves them by that convention, so a missing one fails at apply time), e
 function path, an integration test using the `New-RestAuthHeader` pattern, and a rebuild +
 redeploy before running integration tests.
 
-## 10. Team administration and backlog visibility (#80) — **shipped**
+---
+
+## 10. Cross-cutting — Azure DevOps Server support
+
+Whether this module targets on-premise Azure DevOps Server in addition to Azure DevOps
+Services is tracked as its own cross-cutting effort in
+[#91](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/91), not as a per-resource
+item here. See [`docs/AzureDevOpsServerSupport.md`](AzureDevOpsServerSupport.md) for the
+increment plan; the decision of whether to build it out is the repository owner's and is
+recorded there as pending.
+
+---
+
+## 11. Team administration and backlog visibility (#80) — **shipped**
 
 Two properties added to existing Teams resources rather than new classes, since both are
 facets of objects those resources already own:
