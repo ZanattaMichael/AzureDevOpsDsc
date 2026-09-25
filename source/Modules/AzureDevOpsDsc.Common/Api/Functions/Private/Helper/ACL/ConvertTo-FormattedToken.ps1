@@ -125,6 +125,23 @@ Function ConvertTo-FormattedToken {
             $string = '{0}/{1}' -f $Token.ProjectId, $Token.FolderPath
             break
         }
+        # ReleaseManagement — project root
+        {$_.type -eq 'ReleaseRoot'} {
+            $string = '{0}' -f $Token.ProjectId
+            break
+        }
+        # ReleaseManagement — folder permissions, addressed by path, not by id
+        {$_.type -eq 'ReleaseFolder'} {
+            $string = '{0}/{1}' -f $Token.ProjectId, $Token.FolderPath
+            break
+        }
+        # ReleaseManagement — definition permissions. The root folder is omitted from the token
+        # rather than written out.
+        {$_.type -eq 'ReleaseDefinition'} {
+            $string = if ($Token.FolderPath) { '{0}/{1}/{2}' -f $Token.ProjectId, $Token.FolderPath, $Token.DefinitionId }
+                      else                   { '{0}/{1}' -f $Token.ProjectId, $Token.DefinitionId }
+            break
+        }
         # Library (VariableGroup) permissions
         {$_.type -eq 'Library'} {
             $string = if ($Token.SecureFileId)         { 'Library/Project/{0}/SecureFile/{1}' -f $Token.ProjectId, $Token.SecureFileId }

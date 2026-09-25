@@ -160,6 +160,8 @@ Each resource links to its example/usage documentation.
 | [AzDoSecurityNamespacePermission](source/Examples/Resources/AzDoSecurityNamespacePermission.md) | Manages permissions for an arbitrary security namespace and token. |
 | [AzDoGroupPermission](source/Examples/Resources/AzDoGroupPermission.md) | *(Not currently supported)* Manages group-level identity permissions. |
 | [AzDoQueryPermission](source/Examples/Resources/AzDoQueryPermission.md) | Manages permissions on work item query folders. |
+| [AzDoReleaseFolderPermission](source/Examples/Resources/AzDoReleaseFolderPermission.md) | Manages permissions on classic Release folders, which definitions inherit. |
+| [AzDoReleaseDefinitionPermission](source/Examples/Resources/AzDoReleaseDefinitionPermission.md) | Manages permissions on a single classic Release definition. |
 | [AzDoTaggingPermission](source/Examples/Resources/AzDoTaggingPermission.md) | Manages permissions for creating work item tags. |
 | [AzDoAnalyticsPermission](source/Examples/Resources/AzDoAnalyticsPermission.md) | Manages Analytics read/administer/staging permissions. |
 | [AzDoAnalyticsViewsPermission](source/Examples/Resources/AzDoAnalyticsViewsPermission.md) | Manages read/write/delete permissions on shared Analytics views. |
@@ -185,6 +187,17 @@ Each resource links to its example/usage documentation.
 | [AzDoSecureFile](source/Examples/Resources/AzDoSecureFile.md) | Manages secure files (certificates, keystores) available to pipelines. |
 | [AzDoServiceConnection](source/Examples/Resources/AzDoServiceConnection.md) | Creates and manages service connections (service endpoints), optionally shared with other projects. |
 | [AzDoPipelineSettings](source/Examples/Resources/AzDoPipelineSettings.md) | Manages a project's pipeline general settings (job auth scope, settable variables, etc.). |
+| [AzDoBuildRetentionSettings](source/Examples/Resources/AzDoBuildRetentionSettings.md) | Manages a project's run and artifact retention policy (days to keep runs/artifacts/PR runs, runs to retain per protected branch). |
+
+### Classic Release Management
+
+The classic Release Management APIs live on the `vsrm.dev.azure.com` host rather than
+`dev.azure.com`. Folders (like pipeline folders) must exist before a definition can be
+created at their path.
+
+| Resource | Description |
+|---|---|
+| [AzDoReleaseFolder](source/Examples/Resources/AzDoReleaseFolder.md) | Manages the classic Release folder tree. |
 
 ### Boards and work items
 
@@ -197,6 +210,17 @@ Each resource links to its example/usage documentation.
 | [AzDoQueryFolder](source/Examples/Resources/AzDoQueryFolder.md) | Manages folders in the shared work item query tree. |
 | [AzDoWorkItemQuery](source/Examples/Resources/AzDoWorkItemQuery.md) | Manages shared work item queries, including WIQL, columns and sort order. |
 | [AzDoNotificationSubscription](source/Examples/Resources/AzDoNotificationSubscription.md) | Manages notification subscriptions. |
+
+### Test management
+
+| Resource | Description |
+|---|---|
+| [AzDoTestVariable](source/Examples/Resources/AzDoTestVariable.md) | Manages test plan variables and their allowed values. |
+| [AzDoTestConfiguration](source/Examples/Resources/AzDoTestConfiguration.md) | Manages test configurations built from test variable/value pairs. |
+| [AzDoTestPlan](source/Examples/Resources/AzDoTestPlan.md) | Creates and manages test plans. |
+| [AzDoTestSuite](source/Examples/Resources/AzDoTestSuite.md) | Manages test suites beneath a test plan's root suite. |
+
+Test cases, test points and test runs are out of scope. There is no test-plan security namespace - "Manage test plans"/"Manage test suites" are `CSS` (area path) permissions, already covered by `AzDoAreaPermission`, so there is no `AzDoTestPlanPermission` resource.
 
 ### Process customization
 
@@ -223,6 +247,7 @@ CMMI) are read-only, so start by creating an inherited process with `AzDoProcess
 | [AzDoArtifactFeedSettings](source/Examples/Resources/AzDoArtifactFeedSettings.md) | Configures feed upstream sources, deleted-version hiding and retention policy. |
 | [AzDoArtifactFeedView](source/Examples/Resources/AzDoArtifactFeedView.md) | Creates and manages feed views (e.g. `@Release`). |
 | [AzDoWiki](source/Examples/Resources/AzDoWiki.md) | Creates and manages project and code wikis. |
+| [AzDoWikiPage](source/Examples/Resources/AzDoWikiPage.md) | Manages the content and sibling order of a page within a project wiki. |
 | [AzDoExtension](source/Examples/Resources/AzDoExtension.md) | Installs and uninstalls organization extensions. |
 | [AzDoAuditStream](source/Examples/Resources/AzDoAuditStream.md) | Manages audit log streaming. |
 | [AzDoServiceHook](source/Examples/Resources/AzDoServiceHook.md) | Creates and manages service hook subscriptions (e.g. webhooks). |
