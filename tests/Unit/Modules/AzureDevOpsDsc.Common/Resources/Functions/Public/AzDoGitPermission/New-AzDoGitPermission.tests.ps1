@@ -137,4 +137,93 @@ Describe 'New-AzDoGitPermission' -Tag "Unit", "GitPermission" {
 
         }
     }
+
+    Context 'Branch and Tag scoped permissions' {
+
+        BeforeAll {
+            . (Get-FunctionItem 'Format-AzDoGitRefName.ps1').FullName
+            . (Get-FunctionItem 'ConvertTo-GitRefToken.ps1').FullName
+        }
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith { return @{ namespaceId = '12345'; id = '67890' } }
+        }
+
+        It 'Stops without calling Set-AzDoPermission when BranchName and TagName are both specified' {
+
+            Mock -CommandName Write-Warning -Verifiable
+
+            $params = @{
+                ProjectName = 'TestProject'
+                RepositoryName = 'TestRepo'
+                isInherited = $true
+                BranchName = 'main'
+                TagName = 'v1.0'
+            }
+            New-AzDoGitPermission @params
+
+            Assert-MockCalled -CommandName Set-AzDoPermission -Exactly 0
+            Assert-VerifiableMock
+        }
+
+        It 'Builds a branch-scoped DescriptorMatchToken using the hex/UTF-16LE-encoded branch name' {
+
+            $script:capturedToken = $null
+            Mock -CommandName ConvertTo-ACLHashtable -MockWith {
+                $script:capturedToken = $DescriptorMatchToken
+                return @{}
+            }
+
+            $params = @{
+                ProjectName = 'TestProject'
+                RepositoryName = 'TestRepo'
+                isInherited = $true
+                BranchName = 'main'
+            }
+            New-AzDoGitPermission @params
+
+            $expected = '^repoV2\/[A-Za-z0-9-]+\/67890\/refs\/heads\/6d00610069006e00$'
+            $script:capturedToken | Should -Be $expected
+        }
+
+        It 'Builds a tag-scoped DescriptorMatchToken using the hex/UTF-16LE-encoded tag name' {
+
+            $script:capturedToken = $null
+            Mock -CommandName ConvertTo-ACLHashtable -MockWith {
+                $script:capturedToken = $DescriptorMatchToken
+                return @{}
+            }
+
+            $params = @{
+                ProjectName = 'TestProject'
+                RepositoryName = 'TestRepo'
+                isInherited = $true
+                TagName = 'v1.0'
+            }
+            New-AzDoGitPermission @params
+
+            $expected = '^repoV2\/[A-Za-z0-9-]+\/67890\/refs\/tags\/{0}$' -f (ConvertTo-GitRefToken -RefName 'v1.0')
+            $script:capturedToken | Should -Be $expected
+        }
+
+        It 'Strips a leading refs/heads/ prefix from BranchName before building the token' {
+
+            $script:capturedToken = $null
+            Mock -CommandName ConvertTo-ACLHashtable -MockWith {
+                $script:capturedToken = $DescriptorMatchToken
+                return @{}
+            }
+
+            $params = @{
+                ProjectName = 'TestProject'
+                RepositoryName = 'TestRepo'
+                isInherited = $true
+                BranchName = 'refs/heads/main'
+            }
+            New-AzDoGitPermission @params
+
+            $expected = '^repoV2\/[A-Za-z0-9-]+\/67890\/refs\/heads\/6d00610069006e00$'
+            $script:capturedToken | Should -Be $expected
+        }
+    }
 }

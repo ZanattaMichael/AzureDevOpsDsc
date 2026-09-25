@@ -43,7 +43,7 @@ Describe 'Get-AffectedIntegrationTest' -Tag 'Unit' {
             $result = Invoke-Selector -Path 'source/Classes/020.AzDoProject.ps1'
 
             $result.RunAll | Should -BeFalse
-            Get-SelectedName $result | Should -Be @('AzDoProject.Description', 'AzDoProject.NoDescription')
+            Get-SelectedName $result | Should -Be @('AzDoProject.Description', 'AzDoProject.InheritedProcess', 'AzDoProject.NoDescription')
         }
 
         It 'does not drag in resources that merely share a name prefix' {

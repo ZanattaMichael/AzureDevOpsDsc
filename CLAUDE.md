@@ -60,7 +60,7 @@ All DSC resources live in `source\Classes\` with numeric prefixes controlling lo
 | `042.AzDoAreaPermission.ps1` | `AzDoAreaPermission` | `CSS` namespace |
 | `043.AzDoIterationPermission.ps1` | `AzDoIterationPermission` | `Iteration` namespace |
 | `069.AzDoPipelinePermission.ps1` | `AzDoPipelinePermission` | `Build` namespace |
-| `092.AzDoCheckConfiguration.ps1` | `AzDoCheckConfiguration` | Approval checks on environments |
+| `092.AzDoCheckConfiguration.ps1` | `AzDoCheckConfiguration` | Checks (Approval, Branch control, etc.) on environments, repositories, service connections, agent queues, variable groups and secure files |
 | `101`–`103` | `AzDoQueryFolder`, `AzDoWorkItemQuery`, `AzDoQueryPermission` | Shared work item queries; `WorkItemQueryFolders` namespace |
 | `104.AzDoWIPTagHygiene.ps1` | `AzDoWIPTagHygiene` | Detects/merges misaligned work item tags |
 | `105`–`106` | `AzDoSecureFile`, `AzDoSecureFilePermission` | Secure files; `Library` namespace |
