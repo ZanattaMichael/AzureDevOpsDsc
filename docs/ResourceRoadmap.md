@@ -357,7 +357,7 @@ Items from #59 checked against the code:
 | `AzDoDeploymentGroupAgent` | **Closed for tags/removal.** Shipped as `AzDoEnvironmentKubernetesResource` (`125`), `AzDoEnvironmentVMResource` (`126`) and `AzDoDeploymentGroupTarget` (`127`) — see §8. VM and deployment-group targets are agent-install-only by design; DSC never registers one, only manages tags and removal of an already-registered target. Kubernetes resources are fully creatable via the REST API. |
 | `AzDoWikiPage`, `AzDoElasticPool`, dashboards, delivery plans, analytics | Confirmed gaps, still outstanding. |
 | Classic Release Management (Phase 2 in #59) | Confirmed gap, but **recommend demoting** below Boards/Queries and Process customization. It is a legacy subsystem in maintenance mode, and it is the largest surface on the list (`AzDoReleaseDefinition` alone is comparable in size to `AzDoPipeline`). Value per unit of effort is the lowest of anything proposed. |
-| Test Management (Phase 3 in #59) | Confirmed gap. Genuinely unrepresented, but demand is narrower than queries/dashboards; keep after the §6 gaps. |
+| Test Management (Phase 3 in #59) | **Closed** (#87). Shipped as `AzDoTestVariable`, `AzDoTestConfiguration`, `AzDoTestPlan` and `AzDoTestSuite` (classes `138`–`141`, §8). Test cases, test points and test runs remain out of scope - they are execution-time state, not desired-state configuration. There is no test-plan security namespace; 'Manage test plans'/'Manage test suites' are CSS (area path) permissions already covered by `AzDoAreaPermission`, so no `AzDoTestPlanPermission` resource was added. |
 | `AzDoBillingSettings`, `AzDoPatPolicy`, `AzDoExtensionPolicy`, `AzDoAuditLogAlert` | **Spiked in [#85](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/85), see [`docs/Spikes/TenantScopedPolicies.md`](Spikes/TenantScopedPolicies.md).** All four verdicts are **unsupported / not built**: `AzDoPatPolicy` and an org-creation-restriction candidate have no documented REST route and the tenant-level halves need a Microsoft Entra tenant-admin identity this module cannot model; `AzDoBillingSettings` is excluded outright because every write is a billing/purchase change; `AzDoExtensionPolicy` has no documented route for the policy toggles (role constraint alone would pass); `AzDoAuditLogAlert` is not a distinct feature and folds into the shipped `AzDoAuditStream` (#69). The org-level "restrict PAT creation" allow-list is a follow-up property for `AzDoOrganizationSettings` once #84 lands, not a tenant policy. |
 
 ---
@@ -400,6 +400,20 @@ independently of that. `AzDoEnvironmentVMResource.tests.ps1` and
 (`Present` → `Test` false, `Set` throws; `Absent` → `Test` true) because installing an agent is
 outside what a CI job can do; the tag-patch path is unit-tested only.
 
+Test management (#87) added 4 more resources, classes `138`–`141`:
+
+| Resource | Notes |
+|---|---|
+| `AzDoTestVariable` | Shared test variables and their allowed values. |
+| `AzDoTestConfiguration` | Named configurations combining test variable values (`'Variable=Value'` pairs, validated against existing variables and their allowed values). |
+| `AzDoTestPlan` | Top-level test plans: area path, iteration, owner (resolved via `Find-AzDoIdentity`), schedule, state and an optional build pipeline id for automated runs. |
+| `AzDoTestSuite` | Static, query-based (`DynamicTestSuite`, WIQL compared with `ConvertTo-NormalizedWiql`) and requirement-based suites beneath a plan's root suite, identified by path the same way `AzDoQueryFolder` treats query folder paths. `SuiteType` is immutable once created. Removal of a suite with children is refused unless `AllowRecursiveDelete` is set. |
+
+This closed Test Management (Phase 3 in #59, §7). No `AzDoTestPlanPermission` resource was
+added - there is no test-plan security namespace, and 'Manage test plans'/'Manage test
+suites' are CSS (area path) permissions `AzDoAreaPermission` already manages. Test cases,
+test points and test runs remain out of scope.
+
 Still outstanding, in the order below:
 
 - **`AzDoProcessLayout`** (§6) — the one remaining piece of process customization, and a
@@ -414,8 +428,8 @@ Still outstanding, in the order below:
 - **Org-scoped pipeline settings** (§7) — **blocked**: there is no organization-scoped
   `_apis/build/generalsettings` route (it returns 404). Needs a spike of the route the portal
   uses before any resource is built (#83).
-- **Test management** (§7), then **classic release management** (§7) with
-  `AzDoReleaseFolder` (§5.5).
+- **Classic release management** (§7) with `AzDoReleaseFolder` (§5.5). Test management
+  (§7) is closed - see §8.
 - **Tenant-scoped items** (§7) — **spiked and closed as unsupported/not-built**, see
   [`docs/Spikes/TenantScopedPolicies.md`](Spikes/TenantScopedPolicies.md) (#85). No
   resources were built; class prefixes `130`–`131` reserved for the spike are unused.
@@ -529,7 +543,8 @@ remains:
 4. **Board configuration** (§6) — `AzDoBoardColumn`, `AzDoBoardSettings`, `AzDoCardRule`.
 5. **`AzDoWikiPage`** (§6).
 6. **Org-scoped pipeline settings** (§7) — blocked on a spike; no documented org-scoped route.
-7. Test management, then classic release management, with `AzDoReleaseFolder` (§5.5).
+7. Classic release management, with `AzDoReleaseFolder` (§5.5). Test management (§7) is
+   closed - see §8.
 8. **Tenant-scoped items** (§7) — done: spiked in #85 and closed as unsupported/not-built,
    see [`docs/Spikes/TenantScopedPolicies.md`](Spikes/TenantScopedPolicies.md).
 

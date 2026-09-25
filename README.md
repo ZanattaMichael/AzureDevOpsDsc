@@ -195,6 +195,17 @@ Each resource links to its example/usage documentation.
 | [AzDoWorkItemQuery](source/Examples/Resources/AzDoWorkItemQuery.md) | Manages shared work item queries, including WIQL, columns and sort order. |
 | [AzDoNotificationSubscription](source/Examples/Resources/AzDoNotificationSubscription.md) | Manages notification subscriptions. |
 
+### Test management
+
+| Resource | Description |
+|---|---|
+| [AzDoTestVariable](source/Examples/Resources/AzDoTestVariable.md) | Manages test plan variables and their allowed values. |
+| [AzDoTestConfiguration](source/Examples/Resources/AzDoTestConfiguration.md) | Manages test configurations built from test variable/value pairs. |
+| [AzDoTestPlan](source/Examples/Resources/AzDoTestPlan.md) | Creates and manages test plans. |
+| [AzDoTestSuite](source/Examples/Resources/AzDoTestSuite.md) | Manages test suites beneath a test plan's root suite. |
+
+Test cases, test points and test runs are out of scope. There is no test-plan security namespace - "Manage test plans"/"Manage test suites" are `CSS` (area path) permissions, already covered by `AzDoAreaPermission`, so there is no `AzDoTestPlanPermission` resource.
+
 ### Process customization
 
 Customizing an inherited process is a layered job, and the resources are usually declared in this
