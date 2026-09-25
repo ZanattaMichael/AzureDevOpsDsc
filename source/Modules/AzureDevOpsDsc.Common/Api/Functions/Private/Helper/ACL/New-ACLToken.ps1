@@ -282,6 +282,46 @@ Function New-ACLToken
             break
         }
 
+        # ReleaseManagement permissions — resolve a definition name to numeric ID; the folder is
+        # addressed by literal path segments, the same as the Build folder form.
+        'ReleaseManagement' {
+            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.ReleaseDefinitionPermission)
+            {
+                $result.type      = 'ReleaseDefinition'
+                $result.ProjectId = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
+
+                if ($matches.FolderPath)
+                {
+                    $result.FolderPath = (Format-AzDoPipelineFolderPath -Path $matches.FolderPath).TrimStart('\')
+                }
+
+                $definitionName = $matches.DefinitionName.Trim()
+                $defCacheKey     = '{0}\{1}' -f $matches.ProjectName.Trim(), $definitionName
+                $defEntry        = Get-CacheItem -Key $defCacheKey -Type 'LiveReleaseDefinitions'
+                $result.DefinitionId = if ($defEntry) { $defEntry.id.ToString() } else { $definitionName }
+            }
+            elseif ($TokenName -match $LocalizedDataAzResourceTokenPatten.ReleaseFolderPermission)
+            {
+                # Folder tokens address the folder by path rather than by id, so there is nothing
+                # to resolve through the cache. The leading separator is a marker for this parse
+                # only - the API token carries the path without it.
+                $result.type       = 'ReleaseFolder'
+                $result.ProjectId  = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
+                $result.FolderPath = (Format-AzDoPipelineFolderPath -Path $matches.FolderPath).TrimStart('\')
+            }
+            elseif ($TokenName -match $LocalizedDataAzResourceTokenPatten.ReleaseRootPermission)
+            {
+                $result.type      = 'ReleaseRoot'
+                $result.ProjectId = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
+            }
+            else
+            {
+                $result.type = 'ReleaseUnknown'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known ReleaseManagement ACL Token Patterns."
+            }
+            break
+        }
+
         # Library / VariableGroup permissions — resolve variable group name to numeric ID.
         'Library' {
             if ($TokenName -match $LocalizedDataAzResourceTokenPatten.LibraryPermission)
