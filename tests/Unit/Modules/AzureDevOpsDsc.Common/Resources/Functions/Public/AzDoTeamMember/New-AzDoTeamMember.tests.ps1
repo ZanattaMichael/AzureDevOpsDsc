@@ -39,6 +39,7 @@ Describe "New-AzDoTeamMember" -Tag "Unit", "TeamMember" {
         Mock -CommandName Add-CacheItem
         Mock -CommandName Export-CacheObject
         # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Resolve-AzDoProject -MockWith { Get-CacheItem -Key $ProjectName -Type 'LiveProjects' }
         Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
         Mock -CommandName Find-AzDoIdentity -MockWith { return $null }
         Mock -CommandName List-DevOpsTeams -MockWith { return $null }
@@ -138,6 +139,66 @@ Describe "New-AzDoTeamMember" -Tag "Unit", "TeamMember" {
             New-AzDoTeamMember -ProjectName 'TestProject' -TeamName 'TestTeam' -MemberName 'user@example.com'
             Assert-VerifiableMock
             Assert-MockCalled -CommandName Add-CacheItem -Exactly -Times 0
+        }
+    }
+
+    Context "when IsTeamAdmin is bound" {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -ParameterFilter {
+                $Key -eq 'TestProject' -and $Type -eq 'LiveProjects'
+            } -MockWith { return @{ id = 'project-id-001'; name = 'TestProject' } }
+
+            Mock -CommandName Get-CacheItem -ParameterFilter {
+                $Key -eq 'TestProject\TestTeam' -and $Type -eq 'LiveTeams'
+            } -MockWith { return $mockTeam }
+
+            Mock -CommandName Get-CacheItem -ParameterFilter {
+                $Key -eq 'user@example.com' -and $Type -eq 'LiveGroups'
+            } -MockWith { return $mockMember }
+
+            Mock -CommandName Get-DevOpsDescriptorIdentity -MockWith {
+                return [PSCustomObject]@{ descriptor = 'Microsoft.TeamFoundation.Identity;S-1-9-live' }
+            }
+            Mock -CommandName Set-DevOpsTeamAdministrator
+        }
+
+        It "resolves the member's ACL descriptor live and calls Set-DevOpsTeamAdministrator" {
+            New-AzDoTeamMember -ProjectName 'TestProject' -TeamName 'TestTeam' -MemberName 'user@example.com' -IsTeamAdmin $true
+            Assert-MockCalled -CommandName Set-DevOpsTeamAdministrator -Exactly -Times 1 -ParameterFilter {
+                $ProjectId -eq 'project-id-001' -and $TeamId -eq 'team-id-001' -and
+                $MemberDescriptor -eq 'Microsoft.TeamFoundation.Identity;S-1-9-live' -and $IsTeamAdmin -eq $true
+            }
+        }
+
+        It "forwards IsTeamAdmin = false as a revoke" {
+            New-AzDoTeamMember -ProjectName 'TestProject' -TeamName 'TestTeam' -MemberName 'user@example.com' -IsTeamAdmin $false
+            Assert-MockCalled -CommandName Set-DevOpsTeamAdministrator -Exactly -Times 1 -ParameterFilter {
+                $IsTeamAdmin -eq $false
+            }
+        }
+
+        It "writes an error and does not call Set-DevOpsTeamAdministrator when the ACL descriptor cannot be resolved" {
+            Mock -CommandName Get-DevOpsDescriptorIdentity -MockWith { return $null }
+            Mock -CommandName Write-Error -Verifiable
+
+            New-AzDoTeamMember -ProjectName 'TestProject' -TeamName 'TestTeam' -MemberName 'user@example.com' -IsTeamAdmin $true
+
+            Assert-VerifiableMock
+            Assert-MockCalled -CommandName Set-DevOpsTeamAdministrator -Exactly -Times 0
+        }
+
+        It "writes an error instead of throwing when Set-DevOpsTeamAdministrator fails" {
+            Mock -CommandName Set-DevOpsTeamAdministrator -MockWith { throw 'ACL write failed' }
+            Mock -CommandName Write-Error -Verifiable
+
+            { New-AzDoTeamMember -ProjectName 'TestProject' -TeamName 'TestTeam' -MemberName 'user@example.com' -IsTeamAdmin $true } | Should -Not -Throw
+            Assert-VerifiableMock
+        }
+
+        It "still adds the membership even though IsTeamAdmin was requested" {
+            New-AzDoTeamMember -ProjectName 'TestProject' -TeamName 'TestTeam' -MemberName 'user@example.com' -IsTeamAdmin $true
+            Assert-MockCalled -CommandName New-DevOpsTeamMember -Exactly -Times 1
         }
     }
 }

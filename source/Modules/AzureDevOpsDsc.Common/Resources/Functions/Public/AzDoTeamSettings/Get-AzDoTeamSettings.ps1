@@ -12,6 +12,7 @@ Function Get-AzDoTeamSettings
         [Parameter()][string[]]$AreaPaths,
         [Parameter()][string[]]$WorkingDays,
         [Parameter()][ValidateSet('', 'asRequirements', 'asTasks', 'off')][string]$BugsBehavior,
+        [Parameter()][HashTable]$BacklogVisibilities,
         [Parameter()][HashTable]$LookupResult,
         [Parameter()][Ensure]$Ensure,
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
@@ -97,6 +98,23 @@ Function Get-AzDoTeamSettings
 
     if ($PSBoundParameters.ContainsKey('BugsBehavior') -and $BugsBehavior -and
         $live.BugsBehavior -ne $BugsBehavior) { $propertiesChanged += 'BugsBehavior' }
+
+    # Compare only the categories the configuration states - a category BacklogVisibilities does
+    # not mention is not read as "must be hidden" and is left untouched.
+    if ($PSBoundParameters.ContainsKey('BacklogVisibilities') -and $BacklogVisibilities)
+    {
+        $backlogVisibilityDrift = $false
+        foreach ($category in $BacklogVisibilities.Keys)
+        {
+            $liveValue = $false
+            if ($live.BacklogVisibilities -and $live.BacklogVisibilities.ContainsKey($category))
+            {
+                $liveValue = [bool]$live.BacklogVisibilities[$category]
+            }
+            if ($liveValue -ne [bool]$BacklogVisibilities[$category]) { $backlogVisibilityDrift = $true }
+        }
+        if ($backlogVisibilityDrift) { $propertiesChanged += 'BacklogVisibilities' }
+    }
 
     $result.propertiesChanged = $propertiesChanged
     $result.Ensure            = [Ensure]::Present

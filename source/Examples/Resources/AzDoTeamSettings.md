@@ -14,6 +14,7 @@ AzDoTeamSettings [string] #ResourceName
     [ AreaPaths             = [String[]]$AreaPaths ]
     [ WorkingDays           = [String[]]$WorkingDays ]
     [ BugsBehavior          = [String] {'asRequirements', 'asTasks', 'off'} ]
+    [ BacklogVisibilities   = [Hashtable]$BacklogVisibilities ]
     [ Ensure                = [String] {'Present', 'Absent'} ]
 }
 ```
@@ -31,11 +32,12 @@ AzDoTeamSettings [string] #ResourceName
 - **AreaPaths**: The area paths assigned to the team.
 - **WorkingDays**: The team's working days, for example `@('monday','tuesday','wednesday','thursday','friday')`.
 - **BugsBehavior**: How bugs are shown on backlogs and boards. Valid values are `asRequirements`, `asTasks` and `off`.
+- **BacklogVisibilities**: A hashtable of backlog category reference names to a boolean, controlling which backlogs the team sees, for example `@{ 'Microsoft.EpicCategory' = $true; 'Microsoft.FeatureCategory' = $false }`. Only the categories the configuration states are compared; categories left out of the hashtable are never reported as drift. Accepting the backlog *behavior* name shown in the Azure DevOps UI (for example "Epics") as an alternative to the category reference name is not yet supported — see `docs/ResourceRoadmap.md`.
 - **Ensure**: Specifies the desired state. This resource configures an existing team's settings and cannot be removed, so `Absent` is a no-op.
 
 ## Additional Information
 
-This resource configures an existing Azure DevOps team's board/backlog settings: iteration and area paths, working days, and bug behaviour. The team itself is managed by the `AzDoTeam` resource. Because team settings cannot be deleted, `Ensure = 'Absent'` is treated as a no-op.
+This resource configures an existing Azure DevOps team's board/backlog settings: iteration and area paths, working days, bug behaviour, and which backlogs are visible to the team. The team itself is managed by the `AzDoTeam` resource. Because team settings cannot be deleted, `Ensure = 'Absent'` is treated as a no-op.
 
 ## Examples
 
@@ -57,6 +59,11 @@ Configuration ExampleConfig {
             AreaPaths            = @('MyProject')
             WorkingDays          = @('monday', 'tuesday', 'wednesday', 'thursday', 'friday')
             BugsBehavior         = 'asRequirements'
+            BacklogVisibilities  = @{
+                'Microsoft.EpicCategory'        = $true
+                'Microsoft.FeatureCategory'     = $true
+                'Microsoft.RequirementCategory' = $true
+            }
         }
     }
 }
