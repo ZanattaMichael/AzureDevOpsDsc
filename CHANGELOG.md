@@ -264,6 +264,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added the private API functions `List-DevOpsSecureFiles`, `New-DevOpsSecureFile`,
     `Update-DevOpsSecureFile` and `Remove-DevOpsSecureFile`, and a `LiveSecureFiles`
     cache type.
+  - Added `AzDoTestVariable`, `AzDoTestConfiguration`, `AzDoTestPlan` and
+    `AzDoTestSuite`, covering test plan management (#87): shared test variables and
+    their allowed values, named configurations that combine variable values,
+    top-level test plans (area path, iteration, owner, schedule, state and an
+    optional automated-run build pipeline), and the static, query-based and
+    requirement-based test suites beneath a plan's root suite. A suite's identity
+    is its path under the plan's root suite, the same way `AzDoQueryFolder` treats
+    query folder paths; a `DynamicTestSuite`'s WIQL is compared with
+    `ConvertTo-NormalizedWiql` and always written back exactly as supplied, and
+    removal of a suite that still has children is refused unless
+    `AllowRecursiveDelete` is set. There is no test-plan security namespace -
+    'Manage test plans' and 'Manage test suites' are CSS (area path) permissions
+    already covered by `AzDoAreaPermission`, so no `AzDoTestPlanPermission`
+    resource was added. Creating or updating plans and suites requires the DSC
+    identity to have a Test Plans license/access level in the organization.
+  - Added the private Test Plan API functions `Get-/New-/Update-/Remove-DevOpsTestVariable`,
+    `Get-/New-/Update-/Remove-DevOpsTestConfiguration`,
+    `Get-/New-/Update-/Remove-DevOpsTestPlan` and
+    `Get-/New-/Update-/Remove-DevOpsTestSuite`, plus the helpers
+    `ConvertTo-AzDoTestConfigurationValue` (validates a configuration's
+    `'Variable=Value'` pairs against existing test variables), `Format-AzDoTestSuitePath`
+    and `Resolve-AzDoTestSuitePath` (walk a plan's flat suite list to find a suite
+    by path, since the Test Plan API has no get-suite-by-path endpoint).
   - Added `AzDoPipelineFolder`, a resource managing the pipeline (build) folder tree.
     Paths are backslash-delimited and normalized, so the several ways a folder path
     can be written are one desired state. Deleting a pipeline folder deletes every
@@ -280,6 +303,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `List-DevOpsPipelineFolders`, `New-DevOpsPipelineFolder`,
     `Update-DevOpsPipelineFolder`, `Remove-DevOpsPipelineFolder` and
     `Get-DevOpsPipelineDefinitionsInFolder`.
+  - Added `ReleaseManagement` support to `New-ACLToken`, `ConvertTo-FormattedToken`
+    and `Parse-ACLToken`, with the token patterns in the localized data files
+    (#86). The namespace addresses a project's release root by project id alone,
+    a folder by path, and a definition by numeric id - with the folder segment
+    omitted from a definition's token when the definition lives at the root
+    rather than written out as a literal empty segment.
+  - Added `AzDoReleaseFolder`, a resource managing folders in a project's classic
+    Release folder tree, on the `vsrm.dev.azure.com` host (#86). Reuses
+    `Format-AzDoPipelineFolderPath` for path normalization, since Release folder
+    paths follow the identical backslash-rooted convention as pipeline folders.
+    The release root cannot be managed as a folder in its own right. Deleting a
+    folder that still has sub-folders or release definitions is refused unless
+    `AllowRecursiveDelete` is set. Creation fails with a clear error naming the
+    org setting when classic Release Management creation has been disabled,
+    rather than surfacing a raw 403/400.
+  - Added the private Release Folder API functions `List-DevOpsReleaseFolders`,
+    `New-DevOpsReleaseFolder`, `Update-DevOpsReleaseFolder`,
+    `Remove-DevOpsReleaseFolder` and `Get-DevOpsReleaseDefinitionsInFolder`.
+  - Added `AzDoReleaseFolderPermission`, a resource managing the ACL on a classic
+    Release folder via the `ReleaseManagement` security namespace (#86).
+    Permissions are set on folders and inherited by the definitions beneath them;
+    omitting `FolderPath` targets the project's release root. Removing the ACL on
+    the release root is refused, since that token has no parent to inherit from.
+  - Added `AzDoReleaseDefinitionPermission`, a resource managing the ACL on a
+    single classic Release definition via the `ReleaseManagement` security
+    namespace (#86). The definition is resolved by name - optionally
+    disambiguated by the folder it lives in - through the live
+    `release/definitions` search endpoint, since `AzDoReleaseDefinition` itself
+    (issue #86's remaining scope) does not yet populate a `LiveReleaseDefinitions`
+    cache entry for it to reuse.
+  - Added the private API function `Find-DevOpsReleaseDefinition`, resolving a
+    Release definition name (and optional folder) to its numeric id and path via
+    the `release/definitions` exact-name-match search.
   - Added `AzDoGroupEntitlement`, a resource managing group licensing rules - the
     access level applied to every member of a group. `AzDoUserEntitlement` assigns
     a level one user at a time, which does not scale to an organization. Changing
@@ -291,6 +347,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     stable and a rename would otherwise cause a duplicate to be created. The
     endpoint is a preview API; when an organization does not expose it, the lookup
     reports the entitlement as absent rather than failing the configuration.
+  - Added `AzDoBuildRetentionSettings` (class `143`), a resource managing a project's run
+    and artifact retention policy (`_apis/build/retention`): `DaysToKeepRuns`,
+    `DaysToKeepArtifacts` (artifacts, symbols and attachments), `DaysToKeepPullRequestRuns`
+    and `RunsToRetainPerProtectedBranch`. Retention is a compliance setting - too short a
+    window loses audit evidence, too long costs storage - and was previously unmanaged.
+    Only the settings a configuration actually specifies are compared and applied; each is
+    validated against the org's own live `min`/`max` bounds (read from the API, never
+    hard-coded) and an out-of-range value is refused before any PATCH is sent, including
+    when a prior `Get` already flagged it and still routed to `Set`. Modeled on
+    `AzDoPipelineSettings`: `Ensure = 'Absent'` is a documented no-op and `New` delegates to
+    `Set`. Out of scope: the classic-pipeline-era `maximumRetentionPolicy` /
+    `defaultRetentionPolicy` values at `_apis/build/settings`, which apply only to the
+    classic build/release experience being retired alongside classic release management
+    (#86). Resolves #88.
+  - Added the private BuildRetentionSettings API functions
+    `Get-DevOpsBuildRetentionSettings` and `Set-DevOpsBuildRetentionSettings`. The
+    retention API reads and writes the settings under different names (`purgeRuns` is
+    written as `runRetention`, `purgeArtifacts` as `artifactsRetention`,
+    `purgePullRequestRuns` as `pullRequestRunRetention`) and silently ignores a name it
+    does not know, so `Set-DevOpsBuildRetentionSettings` takes the read-side names,
+    translates them, and throws on any other name rather than send a no-op PATCH.
   - Added `AzDoPicklist`, a resource managing picklists - the allowed values behind
     picklist-typed custom fields. Picklists are organization-scoped, so one list
     backs fields across processes. Items are replaced wholesale because the update

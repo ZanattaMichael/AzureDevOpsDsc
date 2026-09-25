@@ -36,6 +36,9 @@ Describe 'Parse-ACLToken' -Tag "Unit", "ACL", "Helper" {
             QueryFolderIdentifier   = '\/(?<identifiers>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})'
             BuildPermission         = '^(?<ProjectId>[A-Za-z0-9-]+)(\/(?<PipelineId>[0-9]+))?$'
             BuildFolderPermission   = '^(?<ProjectId>[A-Za-z0-9-]+)\/(?<FolderPath>(?![0-9]+$).+)$'
+            ReleaseDefinitionPermission = '^(?<ProjectId>[A-Za-z0-9-]+)(\/(?<FolderPath>.+?))?\/(?<DefinitionId>[0-9]+)$'
+            ReleaseFolderPermission     = '^(?<ProjectId>[A-Za-z0-9-]+)\/(?<FolderPath>(?![0-9]+$).+)$'
+            ReleaseRootPermission       = '^(?<ProjectId>[A-Za-z0-9-]+)$'
         }
 
         # If there were any Mock commands needed, they should be added here using the complete syntax.
@@ -178,6 +181,32 @@ Describe 'Parse-ACLToken' -Tag "Unit", "ACL", "Helper" {
     It 'Should parse a nested Build folder token as a folder' {
         $result = Parse-ACLToken -Token 'project-id-1/Platform/Release' -SecurityNamespace 'Build'
         $result.type | Should -Be 'BuildFolder'
+    }
+
+    It 'Should parse a ReleaseManagement project-root token' {
+        $result = Parse-ACLToken -Token 'project-id-1' -SecurityNamespace 'ReleaseManagement'
+        $result.type | Should -Be 'ReleaseRoot'
+        $result.ProjectId | Should -Be 'project-id-1'
+    }
+
+    It 'Should parse a ReleaseManagement definition token at the root' {
+        $result = Parse-ACLToken -Token 'project-id-1/123' -SecurityNamespace 'ReleaseManagement'
+        $result.type | Should -Be 'ReleaseDefinition'
+        $result.ProjectId | Should -Be 'project-id-1'
+        $result.DefinitionId | Should -Be '123'
+    }
+
+    It 'Should parse a ReleaseManagement definition token inside a folder' {
+        $result = Parse-ACLToken -Token 'project-id-1/Platform/123' -SecurityNamespace 'ReleaseManagement'
+        $result.type | Should -Be 'ReleaseDefinition'
+        $result.FolderPath | Should -Be 'Platform'
+        $result.DefinitionId | Should -Be '123'
+    }
+
+    It 'Should parse a ReleaseManagement folder token as a folder, not a definition' {
+        $result = Parse-ACLToken -Token 'project-id-1/Platform' -SecurityNamespace 'ReleaseManagement'
+        $result.type | Should -Be 'ReleaseFolder'
+        $result.FolderPath | Should -Be 'Platform'
     }
 
     It 'Should throw for unrecognized Identity token' {

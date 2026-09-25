@@ -15,7 +15,7 @@ explicitly.
 
 ## 1. Current coverage (verified)
 
-81 class files exist, `001`–`145` (not contiguous); 70 of them carry
+89 class files exist, `001`–`145` (not contiguous); 78 of them carry
 `[DscResource()]` (the other 11 are the auth and base classes). By subsystem:
 
 | Subsystem | Resources |
@@ -31,6 +31,7 @@ explicitly.
 | Pipelines | `AzDoPipeline`, `AzDoPipelinePermission`, `AzDoPipelineSettings`, `AzDoPipelineEnvironment`, `AzDoEnvironmentApproval`, `AzDoEnvironmentPermission`, `AzDoCheckConfiguration`, `AzDoTaskGroup`, `AzDoAgentPool`, `AzDoAgentPoolPermission`, `AzDoAgentQueue`, `AzDoDeploymentGroup`, `AzDoPipelineFolder`, `AzDoPipelineFolderPermission`, `AzDoPipelineAuthorization` |
 | Library / connections | `AzDoVariableGroup`, `AzDoVariableGroupPermission`, `AzDoServiceConnection`, `AzDoServiceConnectionPermission`, `AzDoSecureFile`, `AzDoSecureFilePermission` |
 | Artifacts | `AzDoArtifactFeed`, `AzDoArtifactFeedPermission`, `AzDoArtifactFeedSettings`, `AzDoArtifactFeedView` |
+| Classic Release Management | `AzDoReleaseFolder`, `AzDoReleaseFolderPermission`, `AzDoReleaseDefinitionPermission` |
 | Wiki | `AzDoWiki`, `AzDoWikiPage` |
 | Generic | `AzDoSecurityNamespacePermission` |
 
@@ -65,7 +66,8 @@ error-prone part. Every permission resource below needs a matching `New-ACLToken
 | `AzDoDashboardPermission` | `Dashboards` / `DashboardsPrivileges` | `$/{projectId}/{teamId}/{dashboardId}` | Outstanding |
 | `AzDoDeliveryPlanPermission` | `Plan` | `Plan/{planId}` | Outstanding |
 | `AzDoTaggingPermission` | `Tagging` | `/{projectId}` | Outstanding |
-| `AzDoReleaseDefinitionPermission` | `ReleaseManagement` | `{projectId}/{folderPath}/{definitionId}` | Outstanding |
+| `AzDoReleaseFolderPermission` | `ReleaseManagement` | `{projectId}/{folderPath}` (folder) or `{projectId}` (root) | **Shipped** — see §5.5 |
+| `AzDoReleaseDefinitionPermission` | `ReleaseManagement` | `{projectId}/{folderPath}/{definitionId}` (or `{projectId}/{definitionId}` at the root) | **Shipped** — see §5.5 |
 | `AzDoAnalyticsPermission` | `Analytics` | `$/{projectId}` | Outstanding |
 
 Whenever a namespace is added, add a `New-ACLToken` → `ConvertTo-FormattedToken` →
@@ -212,9 +214,9 @@ Tag merges are **irreversible and project-wide**. The guards matter more than th
 ## 5. Directory / folder hierarchies
 
 Azure DevOps exposes three folder trees that are configuration in their own right — they
-carry ACLs, and objects cannot be created at a path whose folders do not exist. Two of the
-three are now manageable: query folders (§5.2) and pipeline folders (§5.3–5.4) shipped as
-classes `101` and `107`–`108`. Release folders (§5.5) remain outstanding.
+carry ACLs, and objects cannot be created at a path whose folders do not exist. All three
+are now manageable: query folders (§5.2), pipeline folders (§5.3–5.4) and Release folders
+(§5.5), shipped as classes `101`, `107`–`108` and `132`–`133`.
 
 ### 5.1 Why folders need their own resources
 
@@ -275,19 +277,30 @@ Both consequences are now resolved:
    previously could not target a folder — folder-inherited pipeline permissions were
    unmanageable in shipped functionality, not only absent from the roadmap.
 
-### 5.5 Release folders
+### 5.5 Release folders — **shipped** (classes `132`–`134`, #86)
 
-`AzDoReleaseFolder` / `AzDoReleaseFolderPermission` (from #59) are the third tree
-(`_apis/release/folders`, `ReleaseManagement` namespace). Same modelling as 5.3/5.4. Keep
-them with the classic release management phase — there is no reason to build the folder
-resource ahead of the definitions it would contain.
+`AzDoReleaseFolder` (`132`) / `AzDoReleaseFolderPermission` (`133`) are the third tree
+(`_apis/release/folders`, `ReleaseManagement` namespace, on the `vsrm.dev.azure.com` host
+rather than `dev.azure.com`). Same modelling as §5.3/5.4, and `Format-AzDoPipelineFolderPath`
+is reused directly for path normalization since the rules are identical. Creation fails with
+a clear error naming the org setting when classic Release Management creation is disabled,
+rather than surfacing a raw 403/400.
+
+`AzDoReleaseDefinitionPermission` (`134`) shipped alongside the folder resources rather than
+waiting for `AzDoReleaseDefinition` itself: it resolves a definition by name (optionally
+disambiguated by `FolderPath`) through the live `release/definitions` search endpoint, since
+no resource populates the `LiveReleaseDefinitions` cache yet.
+
+`AzDoReleaseDefinition` — the resource managing definitions themselves (stages, artifacts,
+approvers) — is **outstanding**. It is a materially larger surface than the folder and
+permission resources (comparable to `AzDoPipeline`) and is tracked separately; see §7.
 
 ### 5.6 Sequencing (as executed)
 
 `AzDoQueryFolder` and `AzDoPipelineFolder` were independent of each other and shared no
 code beyond conventions. Both landed **before** their permission counterparts, and
-`AzDoQueryFolder` before `AzDoWorkItemQuery`. Apply the same ordering to
-`AzDoReleaseFolder` / `AzDoReleaseFolderPermission` when §5.5 is picked up.
+`AzDoQueryFolder` before `AzDoWorkItemQuery`. The same ordering was applied to
+`AzDoReleaseFolder` → `AzDoReleaseFolderPermission` → `AzDoReleaseDefinitionPermission`.
 
 ---
 
@@ -302,7 +315,7 @@ code beyond conventions. Both landed **before** their permission counterparts, a
 | `AzDoDashboard` / `AzDoDashboardWidget` / `AzDoDashboardPermission` | Team and project dashboards. `Dashboards` namespace needs adding. | Medium | Outstanding |
 | `AzDoDeliveryPlan` | Cross-team roadmap plans; `Plan` namespace. | Medium | Outstanding |
 | `AzDoElasticPool` | VMSS-backed agent pools — increasingly the default for self-hosted compute. Complements the existing `AzDoAgentPool`. | Medium | Outstanding |
-| `AzDoBuildRetentionSettings` | Project-level run/artifact retention (`_apis/build/retention`). | Low | Outstanding |
+| `AzDoBuildRetentionSettings` | Project-level run/artifact retention (`_apis/build/retention`). | Low | **Shipped** (`143`) |
 | `AzDoBoardColumn` / `AzDoBoardSettings` / `AzDoCardRule` | Board columns, swimlanes, card fields and styling. `AzDoTeamSettings` covers backlog/iteration/area defaults and working days, but not the board itself. | Medium | Outstanding |
 | `AzDoWikiPage` | `AzDoWiki` manages the wiki, not its pages or their ordering. | Medium | **Shipped** (`145`) |
 | `AzDoCheckConfiguration` — `queue`/`variablegroup`/`securefile` resource types | Checks were previously limited to `environment`, `repository` and `endpoint`; agent queues, variable groups and secure files can carry checks too (e.g. Branch control on a signing certificate). | Low | **Shipped** (#77) |
@@ -350,15 +363,15 @@ Items from #59 checked against the code:
 | `AzDoCommitStatusPolicy`, `AzDoPullRequestPolicySettings` | **Closed (#74).** `AzDoBranchPolicy` now detects `PolicySettings` drift and supports several policies of the same `PolicyType` in one scope via `PolicyIdentifier`, so a commit status policy is `PolicyType = 'StatusCheck'` with `PolicyIdentifier` set to the status name, and pull request policy settings (merge strategy, comment requirements, work item linking) are `PolicySettings` on the existing policy types. No new resource needed. Deferred: `PolicyIdentifier` only matches a top-level scalar or array settings value, not one nested a level deeper (e.g. a status check's `genre`/`name` pair) — see `Test-AzDoBranchPolicyIdentifierMatch`. |
 | `AzDoTeamFieldValues` | **Likely covered** by `AzDoTeamSettings` (`DefaultAreaPath`, `AreaPaths`). Verify, then drop. |
 | `AzDoWorkItemQuery`, `AzDoQueryFolderPermission` | **Closed.** Split into `AzDoQueryFolder` / `AzDoWorkItemQuery` / `AzDoQueryPermission` and shipped (§3). |
-| `AzDoPipelineRetentionPolicy` | Confirmed gap; listed above as `AzDoBuildRetentionSettings`. |
+| `AzDoPipelineRetentionPolicy` | **Closed.** Shipped as `AzDoBuildRetentionSettings`, class `143` (§6). Out of scope: the classic-era `maximumRetentionPolicy`/`defaultRetentionPolicy` values at `_apis/build/settings`, tied to classic release management (#86). |
 | `AzDoResourceAuthorization` | **Closed.** Shipped as `AzDoPipelineAuthorization` (class `119`, [#78](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/78)) — manages the `pipelinePermissions` REST API (which pipelines may *use* a service connection, agent queue, variable group, secure file, environment or repository), distinct from `AzDoCheckConfiguration` (approval/other checks gating a run) and the per-resource permission resources (who may *administer* the resource). |
 | `AzDoGroupEntitlement` | **Closed.** Shipped as class `109` (§6). |
 | `AzDoPipelineFolder` | **Closed.** Shipped as classes `107`–`108`, together with the `Build` folder ACL token (§5.3–5.4). |
 | `AzDoDeploymentGroupAgent` | **Closed for tags/removal.** Shipped as `AzDoEnvironmentKubernetesResource` (`125`), `AzDoEnvironmentVMResource` (`126`) and `AzDoDeploymentGroupTarget` (`127`) — see §8. VM and deployment-group targets are agent-install-only by design; DSC never registers one, only manages tags and removal of an already-registered target. Kubernetes resources are fully creatable via the REST API. |
 | `AzDoWikiPage` | **Closed.** Shipped as class `145` (#89, §6). |
 | `AzDoElasticPool`, dashboards, delivery plans, analytics | Confirmed gaps, still outstanding. |
-| Classic Release Management (Phase 2 in #59) | Confirmed gap, but **recommend demoting** below Boards/Queries and Process customization. It is a legacy subsystem in maintenance mode, and it is the largest surface on the list (`AzDoReleaseDefinition` alone is comparable in size to `AzDoPipeline`). Value per unit of effort is the lowest of anything proposed. |
-| Test Management (Phase 3 in #59) | Confirmed gap. Genuinely unrepresented, but demand is narrower than queries/dashboards; keep after the §6 gaps. |
+| Classic Release Management (Phase 2 in #59) | **Partially closed** (#86). `AzDoReleaseFolder`, `AzDoReleaseFolderPermission` and `AzDoReleaseDefinitionPermission` shipped as classes `132`–`134`, together with `ReleaseManagement` ACL token support (§2). `AzDoReleaseDefinition` itself — the resource managing a definition's stages, artifacts and approvers — remains outstanding; it is a materially larger surface, comparable in size to `AzDoPipeline`. |
+| Test Management (Phase 3 in #59) | **Closed** (#87). Shipped as `AzDoTestVariable`, `AzDoTestConfiguration`, `AzDoTestPlan` and `AzDoTestSuite` (classes `138`–`141`, §8). Test cases, test points and test runs remain out of scope - they are execution-time state, not desired-state configuration. There is no test-plan security namespace; 'Manage test plans'/'Manage test suites' are CSS (area path) permissions already covered by `AzDoAreaPermission`, so no `AzDoTestPlanPermission` resource was added. |
 | `AzDoBillingSettings`, `AzDoPatPolicy`, `AzDoExtensionPolicy`, `AzDoAuditLogAlert` | **Spiked in [#85](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/85), see [`docs/Spikes/TenantScopedPolicies.md`](Spikes/TenantScopedPolicies.md).** All four verdicts are **unsupported / not built**: `AzDoPatPolicy` and an org-creation-restriction candidate have no documented REST route and the tenant-level halves need a Microsoft Entra tenant-admin identity this module cannot model; `AzDoBillingSettings` is excluded outright because every write is a billing/purchase change; `AzDoExtensionPolicy` has no documented route for the policy toggles (role constraint alone would pass); `AzDoAuditLogAlert` is not a distinct feature and folds into the shipped `AzDoAuditStream` (#69). The org-level "restrict PAT creation" allow-list is a follow-up property for `AzDoOrganizationSettings` once #84 lands, not a tenant policy. |
 
 ---
@@ -401,6 +414,20 @@ independently of that. `AzDoEnvironmentVMResource.tests.ps1` and
 (`Present` → `Test` false, `Set` throws; `Absent` → `Test` true) because installing an agent is
 outside what a CI job can do; the tag-patch path is unit-tested only.
 
+Test management (#87) added 4 more resources, classes `138`–`141`:
+
+| Resource | Notes |
+|---|---|
+| `AzDoTestVariable` | Shared test variables and their allowed values. |
+| `AzDoTestConfiguration` | Named configurations combining test variable values (`'Variable=Value'` pairs, validated against existing variables and their allowed values). |
+| `AzDoTestPlan` | Top-level test plans: area path, iteration, owner (resolved via `Find-AzDoIdentity`), schedule, state and an optional build pipeline id for automated runs. |
+| `AzDoTestSuite` | Static, query-based (`DynamicTestSuite`, WIQL compared with `ConvertTo-NormalizedWiql`) and requirement-based suites beneath a plan's root suite, identified by path the same way `AzDoQueryFolder` treats query folder paths. `SuiteType` is immutable once created. Removal of a suite with children is refused unless `AllowRecursiveDelete` is set. |
+
+This closed Test Management (Phase 3 in #59, §7). No `AzDoTestPlanPermission` resource was
+added - there is no test-plan security namespace, and 'Manage test plans'/'Manage test
+suites' are CSS (area path) permissions `AzDoAreaPermission` already manages. Test cases,
+test points and test runs remain out of scope.
+
 Still outstanding, in the order below:
 
 - **`AzDoProcessLayout`** (§6) — the one remaining piece of process customization, and a
@@ -411,13 +438,15 @@ Still outstanding, in the order below:
   `AzDoDashboardWidget`, `AzDoDashboardPermission`, `AzDoDeliveryPlan`, `AzDoBoardColumn`,
   `AzDoBoardSettings`, `AzDoCardRule`. The `Dashboards` and `Plan` ACL namespaces are
   still unimplemented (§2).
-- **Remaining §6 gaps** — `AzDoElasticPool`, `AzDoBuildRetentionSettings`. `AzDoWikiPage`
-  shipped as class `145` (#89).
+- **Remaining §6 gaps** — `AzDoElasticPool`. `AzDoWikiPage` shipped as class `145` (#89);
+  `AzDoBuildRetentionSettings` shipped as class `143` (issue #88).
 - **Org-scoped pipeline settings** (§7) — **blocked**: there is no organization-scoped
   `_apis/build/generalsettings` route (it returns 404). Needs a spike of the route the portal
   uses before any resource is built (#83).
-- **Test management** (§7), then **classic release management** (§7) with
-  `AzDoReleaseFolder` (§5.5).
+- **`AzDoReleaseDefinition`** (§5.5, §7) — the remaining piece of classic release
+  management; `AzDoReleaseFolder`, `AzDoReleaseFolderPermission` and
+  `AzDoReleaseDefinitionPermission` shipped in #86. Test management (§7) is closed -
+  see §8.
 - **Tenant-scoped items** (§7) — **spiked and closed as unsupported/not-built**, see
   [`docs/Spikes/TenantScopedPolicies.md`](Spikes/TenantScopedPolicies.md) (#85). No
   resources were built; class prefixes `130`–`131` reserved for the spike are unused.
@@ -523,15 +552,17 @@ resources) are done, as is all of process customization except the layout API. W
 remains:
 
 1. **`AzDoProcessLayout`** (§6) — finishes the process customization sub-project.
-2. **`AzDoElasticPool`**, **`AzDoBuildRetentionSettings`** (§6) — low effort each, no ACL
-   dependency.
+2. **`AzDoElasticPool`** (§6) — low effort, no ACL dependency.
+   `AzDoBuildRetentionSettings` shipped as class `143` (issue #88).
 3. **Dashboards and delivery plans** (§6) — `Dashboards` and `Plan` ACL namespaces first
    (§2), then `AzDoDashboard` → `AzDoDashboardWidget` → `AzDoDashboardPermission`, and
    `AzDoDeliveryPlan`.
 4. **Board configuration** (§6) — `AzDoBoardColumn`, `AzDoBoardSettings`, `AzDoCardRule`.
 5. **`AzDoWikiPage`** (§6) — **shipped** (class `145`, #89).
 6. **Org-scoped pipeline settings** (§7) — blocked on a spike; no documented org-scoped route.
-7. Test management, then classic release management, with `AzDoReleaseFolder` (§5.5).
+7. **`AzDoReleaseDefinition`** (§5.5) — the remaining piece of classic release management
+   now that its folders and permissions (#86) have shipped. Test management (§7) is
+   closed - see §8.
 8. **Tenant-scoped items** (§7) — done: spiked in #85 and closed as unsupported/not-built,
    see [`docs/Spikes/TenantScopedPolicies.md`](Spikes/TenantScopedPolicies.md).
 

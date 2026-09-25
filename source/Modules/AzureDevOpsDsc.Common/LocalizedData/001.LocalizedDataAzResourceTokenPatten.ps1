@@ -55,6 +55,15 @@ data LocalizedDataAzResourceTokenPatten
         # path is required: BuildPermission matches pipeline NAMES, so without a marker
         # 'MyProject/Platform' is ambiguous between a folder and a pipeline called 'Platform'.
         BuildFolderPermission   = '^(?<ProjectName>[A-Za-z0-9-_]+)\/(?<FolderPath>\\.+)$'
+        # Release (classic Release Management) Token Patterns. Folder tokens are marked the same
+        # way as Build folders: {projectName}/\{folderPath}. A definition name is free text too,
+        # and a definition can live in a folder, so its token carries a leading '@' immediately
+        # before the definition name to tell the two apart:
+        # {projectName}/@{definitionName} at the root, or
+        # {projectName}/\{folderPath}\@{definitionName} inside a folder.
+        ReleaseDefinitionPermission = '^(?<ProjectName>[A-Za-z0-9-_]+)\/(?<FolderPath>\\.+\\)?@(?<DefinitionName>[A-Za-z0-9-_ ]+)$'
+        ReleaseFolderPermission     = '^(?<ProjectName>[A-Za-z0-9-_]+)\/(?<FolderPath>\\.+)$'
+        ReleaseRootPermission       = '^(?<ProjectName>[A-Za-z0-9-_]+)$'
         # Library (VariableGroup) Token Patterns
         LibraryPermission       = '^Library\/Project\/(?<ProjectName>[A-Za-z0-9-_]+)(\/VariableGroup\/(?<VariableGroupName>[A-Za-z0-9-_ ]+))?(\/SecureFile\/(?<SecureFileName>[A-Za-z0-9-_. ]+))?$'
         # ServiceEndpoints Token Patterns
