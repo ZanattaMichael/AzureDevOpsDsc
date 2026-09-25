@@ -9,6 +9,12 @@ Function Remove-AzDoServiceConnection
         [Parameter()][bool]$AllowAllPipelines = $false,
         [Parameter()][HashTable]$Authorization,
         [Parameter()][HashTable]$Data,
+        # Declared (but unused beyond the sharing warning below, which reads the live
+        # serviceEndpointProjectReferences directly) because GetDesiredStateParameters() splats
+        # every DSC property onto Remove-, including this one - omitting it throws "a parameter
+        # cannot be found that matches parameter name 'SharedNameOverrides'".
+        [Parameter()][string[]]$SharedWithProjects,
+        [Parameter()][HashTable]$SharedNameOverrides,
         [Parameter()][HashTable]$LookupResult,
         [Parameter()][Ensure]$Ensure,
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
@@ -38,6 +44,12 @@ Function Remove-AzDoServiceConnection
         # Already absent — nothing to remove (desired state achieved).
         Write-Verbose "[Remove-AzDoServiceConnection] Service connection '$ConnectionName' not found; already absent."
         return
+    }
+
+    $otherProjects = @($sc.serviceEndpointProjectReferences | Where-Object { $_.projectReference.name -and $_.projectReference.name -ne $ProjectName } | ForEach-Object { $_.projectReference.name })
+    if ($otherProjects.Count -gt 0)
+    {
+        Write-Warning "[Remove-AzDoServiceConnection] Service connection '$ConnectionName' is also shared with project(s): $($otherProjects -join ', '). Removing it from the owning project '$ProjectName' deletes it for all of them."
     }
 
     $params = @{
