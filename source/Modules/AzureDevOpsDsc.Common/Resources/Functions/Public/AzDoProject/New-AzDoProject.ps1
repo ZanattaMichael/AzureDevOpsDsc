@@ -17,7 +17,9 @@ Specifies the description of the Azure DevOps project.
 Specifies the type of source control for the project. Valid values are 'Git' and 'Tfvc'. The default value is 'Git'.
 
 .PARAMETER ProcessTemplate
-Specifies the process template for the project. Valid values are 'Agile', 'Scrum', 'CMMI', and 'Basic'. The default value is 'Agile'.
+Specifies the process template for the project. Accepts any process name known to the
+organization, including the built-in system processes ('Agile', 'Scrum', 'CMMI', 'Basic') and any
+inherited process created from them. An unknown name throws. The default value is 'Agile'.
 
 .PARAMETER Visibility
 Specifies the visibility of the project. Valid values are 'Public' and 'Private'. The default value is 'Private'.
@@ -59,7 +61,6 @@ function New-AzDoProject
         $SourceControlType = 'Git',
 
         [Parameter()]
-        [ValidateSet('Agile', 'Scrum', 'CMMI', 'Basic')]
         [System.String]$ProcessTemplate = 'Agile',
 
         [Parameter()]
@@ -82,7 +83,14 @@ function New-AzDoProject
 
     #
     # Perform a lookup to see if the group exists in Azure DevOps
-    $processTemplateObj = Get-CacheItem -Key $ProcessTemplate -Type 'LiveProcesses'
+    # Resolve-DevOpsProcess falls back to a live lookup: an inherited process created by an
+    # AzDoProcess resource earlier in the same configuration is not in the LiveProcesses cache.
+    $processTemplateObj = Resolve-DevOpsProcess -ProcessName $ProcessTemplate -OrganizationName $OrganizationName
+
+    if ($null -eq $processTemplateObj)
+    {
+        throw "[New-AzDoProject] Process template '$ProcessTemplate' not found."
+    }
 
     #
     # Construct the parameters for the API call

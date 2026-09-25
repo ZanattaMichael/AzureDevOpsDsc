@@ -17,6 +17,9 @@ Describe "ConvertTo-FormattedToken" -Tag "Unit", "ACL", "Helper" {
             . $file.FullName
         }
 
+        # GitBranch/GitTag defer the per-segment hex/UTF-16LE encoding to ConvertTo-GitRefToken.
+        . (Get-FunctionItem 'ConvertTo-GitRefToken.ps1').FullName
+
     }
 
     It "should format GitOrganization token correctly" {
@@ -50,6 +53,46 @@ Describe "ConvertTo-FormattedToken" -Tag "Unit", "ACL", "Helper" {
         $result = ConvertTo-FormattedToken -Token $token
 
         $result | Should -Be 'repoV2/myProject/myRepo'
+    }
+
+    It "should format a GitBranch token, hex/UTF-16LE-encoding the branch name" {
+        $token = @{
+            type = 'GitBranch'
+            projectId = 'myProject'
+            RepoId = 'myRepo'
+            BranchName = 'main'
+        }
+
+        $result = ConvertTo-FormattedToken -Token $token
+
+        $result | Should -Be 'repoV2/myProject/myRepo/refs/heads/6d00610069006e00'
+    }
+
+    It "should format a GitBranch token with a multi-segment (branch folder) name" {
+        $token = @{
+            type = 'GitBranch'
+            projectId = 'myProject'
+            RepoId = 'myRepo'
+            BranchName = 'release/1.0'
+        }
+
+        $result = ConvertTo-FormattedToken -Token $token
+
+        # Each ref segment is encoded separately and rejoined with a literal slash.
+        $result | Should -Match '^repoV2/myProject/myRepo/refs/heads/[0-9a-f]+/[0-9a-f]+$'
+    }
+
+    It "should format a GitTag token, hex/UTF-16LE-encoding the tag name" {
+        $token = @{
+            type = 'GitTag'
+            projectId = 'myProject'
+            RepoId = 'myRepo'
+            TagName = 'v1.0'
+        }
+
+        $result = ConvertTo-FormattedToken -Token $token
+
+        $result | Should -Be ('repoV2/myProject/myRepo/refs/tags/{0}' -f (ConvertTo-GitRefToken -RefName 'v1.0'))
     }
 
     It "should format a project-root query token" {

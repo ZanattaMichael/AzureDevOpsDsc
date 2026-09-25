@@ -5,27 +5,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- AzureDevOpsDscNative
+  - `AzDoProject.ProcessTemplate` no longer restricts a project to the four
+    system processes (`Agile`, `Scrum`, `CMMI`, `Basic`) via `ValidateSet` -
+    any process name known to the organization, including an inherited
+    process, is accepted and resolved against the `LiveProcesses` cache,
+    falling back to a live lookup. `Set` can now change a project's process: `Get-AzDoProject`
+    compares the project's current process against the desired one and, when
+    they differ, resolves both to their system-process ancestor
+    (`Get-AzDoProcessFamilyRootId`) to decide whether Azure DevOps will permit
+    the migration. A compatible change (moving between a system process and
+    one of its inherited children, or between two inherited children of the
+    same parent) is applied via the new `projectprocessmigration` endpoint
+    (`Move-DevOpsProjectProcess`); an incompatible one - crossing unrelated
+    process families - is refused with a clear error in both `Get` and `Set`,
+    since `Get`'s `Error` status still routes to `Set` and the refusal has to
+    be repeated there to hold. Previously, `ProcessTemplate` was listed in
+    `GetDscResourcePropertyNamesWithNoSetSupport()` and `Update-DevOpsProject`
+    took a `ProcessTemplateId` parameter it never referenced, so a process
+    change on an existing project was always a silent no-op ([issue #75](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/75)).
+
+### Fixed
+
+- AzureDevOpsDscNative
+  - Fixed `Get-AzDoProject` throwing "Process template '' not found" instead
+    of naming the process that was actually missing - the "not found" error
+    interpolated an unrelated, always-null variable rather than the
+    `-ProcessTemplate` parameter it was given ([issue #75](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/75)).
+  - Fixed `AzDoProject` failing with "Process template '<name>' not found"
+    when the process was created by an `AzDoProcess` resource earlier in the
+    same configuration. `Get`, `New` and `Set` looked the name up only in the
+    `LiveProcesses` cache, and each resource invocation runs in its own
+    runspace, so a process created by another resource was not in it. They
+    now use `Resolve-DevOpsProcess`, which falls back to a live lookup and
+    caches what it finds ([issue #75](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/75)).
+
 ### Added
 
 - AzureDevOpsDscNative
-  - Added `AzDoWikiPage`, a resource managing the content and sibling order of a
-    single page in a project wiki (#89). Content can be supplied inline or read
-    from a local file via `ContentPath`; comparisons ignore line-ending and
-    trailing-whitespace differences so re-formatted content is not reported as
-    drift, but the configuration's own text is always what gets written back.
-    Updates use the page's ETag as `If-Match`, so a page changed out of band since
-    the last `Get` is caught as a conflict rather than silently overwritten.
-    Reordering a page among its siblings uses the wiki `pagemoves` endpoint and is
-    only attempted when `Order` is configured. Deleting a page also deletes its
-    sub-pages, so removal is refused unless `AllowRecursiveDelete` is set. Code
-    wikis are not supported and are refused with a clear error. The wiki API does
-    not create parent pages, so each parent is declared as its own `AzDoWikiPage`;
-    creating a page whose parent is missing fails naming the parent to declare.
-  - Added the private WikiPage API functions `Get-DevOpsWikiPage`,
-    `Set-DevOpsWikiPage`, `Remove-DevOpsWikiPage` and `Move-DevOpsWikiPage`, the
-    helpers `Format-AzDoWikiPagePath` and `ConvertTo-NormalizedWikiPageContent`,
-    and the shared `Resolve-AzDoWiki` helper (used to resolve a wiki by name from
-    cache, matching `Get-AzDoWiki`'s own lookup, without duplicating it).
+  - Added `docs/Spikes/TenantScopedPolicies.md`, the spike for #85 covering the five
+    tenant-scoped policy candidates (`AzDoPatPolicy`, `AzDoOrganizationCreationPolicy`,
+    `AzDoBillingSettings`, `AzDoExtensionPolicy`, `AzDoAuditLogAlert`). All five fail the
+    spike's build rule and no resources were built: the PAT and org-creation tenant
+    policies have no documented REST route and need a Microsoft Entra tenant-admin
+    identity outside this module's auth model; billing settings are excluded outright
+    because every write is a purchase or billing change; the extension policy toggles
+    have no documented route; and audit log alerting is not a distinct feature, it folds
+    into the shipped `AzDoAuditStream` (#69). `docs/ResourceRoadmap.md` §7/§9 updated
+    with the verdicts and a link to the spike; reserved class prefixes `130`-`131` are
+    left unused.
   - Added `AzDoQueryFolder`, a resource managing folders in a project's shared work
     item query tree. Folders are declared in their own right so that queries can
     depend on them, rather than each query creating its own ancestry - which would
@@ -136,6 +166,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added the helper `Resolve-AzDoProcessWorkItemType`, which resolves a process and
     work item type and enforces the "system processes are read-only" rule in one
     place, and the private API functions for picklists and process work item types.
+  - Added `AzDoWikiPage`, a resource managing the content and sibling order of a
+    single page in a project wiki (#89). Content can be supplied inline or read
+    from a local file via `ContentPath`; comparisons ignore line-ending and
+    trailing-whitespace differences so re-formatted content is not reported as
+    drift, but the configuration's own text is always what gets written back.
+    Updates use the page's ETag as `If-Match`, so a page changed out of band since
+    the last `Get` is caught as a conflict rather than silently overwritten.
+    Reordering a page among its siblings uses the wiki `pagemoves` endpoint and is
+    only attempted when `Order` is configured. Deleting a page also deletes its
+    sub-pages, so removal is refused unless `AllowRecursiveDelete` is set. Code
+    wikis are not supported and are refused with a clear error. The wiki API does
+    not create parent pages, so each parent is declared as its own `AzDoWikiPage`;
+    creating a page whose parent is missing fails naming the parent to declare.
+  - Added the private WikiPage API functions `Get-DevOpsWikiPage`,
+    `Set-DevOpsWikiPage`, `Remove-DevOpsWikiPage` and `Move-DevOpsWikiPage`, the
+    helpers `Format-AzDoWikiPagePath` and `ConvertTo-NormalizedWikiPageContent`,
+    and the shared `Resolve-AzDoWiki` helper (used to resolve a wiki by name from
+    cache, matching `Get-AzDoWiki`'s own lookup, without duplicating it).
   - Added `AzDoProcessField`, managing fields on a work item type. A field exists at
     two levels and the resource manages the second: the definition (name and type)
     is organization-scoped and shared by every work item type using the field, so
@@ -178,10 +226,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     group to well over a hundred for an AAD-backed user. A batch that fails is
     retried one descriptor at a time, so a single unresolvable identity no longer
     costs the whole batch.
+  - Added `BranchName` and `TagName` to `AzDoGitPermission` (#76), letting a
+    permission target a single branch's or tag's own ACL
+    (`refs/heads/{BranchName}` / `refs/tags/{TagName}`) instead of the
+    repository's. The two properties are mutually exclusive and both require
+    `RepositoryName`. Added the `GitBranch`/`GitTag` token forms to
+    `New-ACLToken`, `ConvertTo-FormattedToken` and `Parse-ACLToken` for the
+    `Git Repositories` namespace, addressed by hex/UTF-16LE-encoding each
+    `/`-delimited ref segment - the same encoding Azure DevOps itself uses on
+    the wire. Fixed the `GitBranch` localized token pattern, which was
+    unanchored and matched only a single ref segment, so it silently matched
+    unrelated tokens and could not address a branch folder (`release/1.0`).
+    Added the shared helpers `Format-AzDoGitRefName` (strips a leading
+    `refs/heads/`/`refs/tags/` prefix for comparison) and
+    `ConvertTo-GitRefToken` (the encode/decode round trip), with unit tests
+    covering non-ASCII branch and tag names.
 
 ### Changed
 
 - Documentation
+  - `docs/ResourceRoadmap.md` records that organization-scoped pipeline settings (#83)
+    are blocked. There is no organization-scoped `_apis/build/generalsettings` route: the
+    live organization answers `404 The controller for path '/_apis/build/generalsettings'
+    was not found`. No resource was built, and the next step is a spike of the route the
+    portal uses.
   - `docs/ResourceRoadmap.md` brought back in line with `main`. The 16 resources
     merged in #62 (classes `101`-`116`) were still written up as unbuilt work, and
     the coverage counts in section 1 predated them. Shipped sections are now marked
@@ -191,6 +259,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     rewritten around what is genuinely left.
 
 - AzureDevOpsDscNative
+  - `AzDoCheckConfiguration.ResourceType` now also accepts `queue`, `variablegroup` and
+    `securefile`, so a check (Approval, Branch control, Business Hours, ...) can be attached to
+    an agent queue, a variable group or a secure file, not only an environment, repository or
+    service connection (#77). `queue` resolves to the **project** queue id
+    (`distributedtask/queues`, the `LiveAgentQueues` cache) by name within `ProjectName`, not the
+    org-level agent pool id. The name-to-id resolution that `New-AzDoCheckConfiguration` used to
+    do inline is factored into the new private helper `Resolve-AzDoCheckTargetResource`, shared
+    across all six resource types and covered by its own unit tests. A `BranchControl` check
+    type entry was also added to the `CheckType` map; unlike `Approval`, Branch Control (and
+    Business Hours) share one "Task Check" type id and are distinguished by a
+    `Settings.definitionRef` the caller supplies - see the updated
+    `source/Examples/Resources/AzDoCheckConfiguration.md` for the exact shape.
   - The ten permission resources that still formatted a whole security namespace
     before narrowing to one token now discard the ACLs they cannot be interested in
     first, matching what `Get-AzDoProjectPermission` and `Get-AzDoProcessPermission`
@@ -723,3 +803,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - AzDevOpsProject
   - Added description to the comment-based help.
+
+- AzDoBranchPolicy
+  - Fixed `New-` and `Get-AzDoBranchPolicy` mangling any branch name that starts
+    with one of the characters `r`, `e`, `f`, `s`, `/`, `h`, `a` or `d`. Both built
+    the policy's `refName` with `$BranchName.TrimStart('refs/heads/')`; .NET has no
+    `TrimStart(string)` overload, so PowerShell bound the argument to
+    `TrimStart(char[])`, which strips any leading character in that set rather than
+    the literal prefix. `develop` became `refs/heads/velop`, `feature/login` became
+    `refs/heads/ture/login`, and so on - the policy was silently created on a ref
+    that did not exist, and because `Get()` built the same wrong ref to look it up,
+    `Test()` reported the configuration as compliant while the real branch had no
+    policy at all. Both functions now go through a new shared helper,
+    `Format-AzDoBranchRefName`, which removes a literal `refs/heads/` prefix instead
+    (`-replace '^refs/heads/', ''`) and leaves an already-qualified name unchanged.
+    Fixes #72.
+
+    Deployments that already applied a branch policy through the buggy code may
+    hold a stale policy scoped to a mangled ref (e.g. `refs/heads/velop`). The fix
+    changes the ref `Get()` looks up, so the next `Test()`/`Set()` creates the
+    correct policy alongside the stale one rather than replacing it - review each
+    affected project's branch policies and remove the mangled-ref entries by hand.
