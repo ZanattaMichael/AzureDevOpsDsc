@@ -15,7 +15,9 @@ Specifies the description of the Azure DevOps project.
 Specifies the type of source control for the project. Valid values are 'Git' and 'Tfvc'. The default value is 'Git'.
 
 .PARAMETER ProcessTemplate
-Specifies the process template for the project. Valid values are 'Agile', 'Scrum', 'CMMI', and 'Basic'. The default value is 'Agile'.
+Specifies the process template for the project. Accepts any process name known to the organization,
+including the built-in system processes ('Agile', 'Scrum', 'CMMI', 'Basic') and any inherited
+process created from them. The default value is 'Agile'.
 
 .PARAMETER Visibility
 Specifies the visibility of the project. Valid values are 'Public' and 'Private'. The default value is 'Private'.
@@ -55,7 +57,6 @@ function Remove-AzDoProject
         [System.String] $SourceControlType = 'Git',
 
         [Parameter()]
-        [ValidateSet('Agile', 'Scrum', 'CMMI', 'Basic')]
         [System.String] $ProcessTemplate = 'Agile',
 
         [Parameter()]
