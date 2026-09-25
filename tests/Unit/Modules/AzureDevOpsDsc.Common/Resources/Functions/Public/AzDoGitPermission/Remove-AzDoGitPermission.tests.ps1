@@ -159,4 +159,106 @@ Describe "Remove-AzDoGitPermission" -Tag "Unit", "GitPermission" {
 
     }
 
+    Context 'Branch and Tag scoped permissions' {
+
+        BeforeAll {
+            . (Get-FunctionItem 'Format-AzDoGitRefName.ps1').FullName
+            . (Get-FunctionItem 'ConvertTo-GitRefToken.ps1').FullName
+        }
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                switch ($Type)
+                {
+                    'SecurityNamespaces' { @{ namespaceId = 'namespaceIdValue' } }
+                    'LiveProjects' { @{ id = 'projectIdValue' } }
+                    'LiveRepositories' { @{ id = 'repositoryIdValue' } }
+                    'LiveACLList' {
+                        @(
+                            @{ token = 'repoV2/projectIdValue/repositoryIdValue/refs/heads/6d00610069006e00' }
+                            @{ token = 'repoV2/projectIdValue/repositoryIdValue/refs/tags/{0}' -f (ConvertTo-GitRefToken -RefName 'v1.0') }
+                        )
+                    }
+                    default { $null }
+                }
+            }
+        }
+
+        It "Writes an error and does not call Remove-AzDoPermission when BranchName and TagName are both specified" {
+
+            Mock -CommandName Write-Error -Verifiable
+
+            $branchParams = $params.Clone()
+            $branchParams.BranchName = 'main'
+            $branchParams.TagName = 'v1.0'
+
+            Remove-AzDoGitPermission @branchParams
+
+            Assert-MockCalled -CommandName Remove-AzDoPermission -Exactly 0
+            Assert-VerifiableMock
+
+        }
+
+        It "Removes the branch-scoped ACL matching the hex/UTF-16LE-encoded branch name" {
+
+            $branchParams = $params.Clone()
+            $branchParams.BranchName = 'main'
+
+            Remove-AzDoGitPermission @branchParams
+
+            Assert-MockCalled -CommandName Remove-AzDoPermission -Exactly 1 -ParameterFilter {
+                $TokenName -eq 'repoV2/projectIdValue/repositoryIdValue/refs/heads/6d00610069006e00'
+            }
+
+        }
+
+        It "Removes the tag-scoped ACL matching the hex/UTF-16LE-encoded tag name" {
+
+            $tagParams = $params.Clone()
+            $tagParams.TagName = 'v1.0'
+
+            Remove-AzDoGitPermission @tagParams
+
+            Assert-MockCalled -CommandName Remove-AzDoPermission -Exactly 1 -ParameterFilter {
+                $TokenName -eq ('repoV2/projectIdValue/repositoryIdValue/refs/tags/{0}' -f (ConvertTo-GitRefToken -RefName 'v1.0'))
+            }
+
+        }
+
+        It "Strips a leading refs/heads/ prefix from BranchName before matching" {
+
+            $branchParams = $params.Clone()
+            $branchParams.BranchName = 'refs/heads/main'
+
+            Remove-AzDoGitPermission @branchParams
+
+            Assert-MockCalled -CommandName Remove-AzDoPermission -Exactly 1 -ParameterFilter {
+                $TokenName -eq 'repoV2/projectIdValue/repositoryIdValue/refs/heads/6d00610069006e00'
+            }
+
+        }
+
+        It "Does not call Remove-AzDoPermission when no ACL matches the branch-scoped token" {
+
+            Mock -CommandName Get-CacheItem -MockWith {
+                switch ($Type) {
+                    'SecurityNamespaces' { @{ namespaceId = 'namespaceIdValue' } }
+                    'LiveProjects' { @{ id = 'projectIdValue' } }
+                    'LiveRepositories' { @{ id = 'repositoryIdValue' } }
+                    'LiveACLList' { @(@{ token = 'repoV2/projectIdValue/repositoryIdValue/refs/heads/0000' }) }
+                    default { $null }
+                }
+            }
+
+            $branchParams = $params.Clone()
+            $branchParams.BranchName = 'main'
+
+            Remove-AzDoGitPermission @branchParams
+
+            Assert-MockCalled -CommandName Remove-AzDoPermission -Exactly 0
+
+        }
+
+    }
+
 }
