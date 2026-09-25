@@ -705,3 +705,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - AzDevOpsProject
   - Added description to the comment-based help.
+
+- AzDoBranchPolicy
+  - Fixed `New-` and `Get-AzDoBranchPolicy` mangling any branch name that starts
+    with one of the characters `r`, `e`, `f`, `s`, `/`, `h`, `a` or `d`. Both built
+    the policy's `refName` with `$BranchName.TrimStart('refs/heads/')`; .NET has no
+    `TrimStart(string)` overload, so PowerShell bound the argument to
+    `TrimStart(char[])`, which strips any leading character in that set rather than
+    the literal prefix. `develop` became `refs/heads/velop`, `feature/login` became
+    `refs/heads/ture/login`, and so on - the policy was silently created on a ref
+    that did not exist, and because `Get()` built the same wrong ref to look it up,
+    `Test()` reported the configuration as compliant while the real branch had no
+    policy at all. Both functions now go through a new shared helper,
+    `Format-AzDoBranchRefName`, which removes a literal `refs/heads/` prefix instead
+    (`-replace '^refs/heads/', ''`) and leaves an already-qualified name unchanged.
+    Fixes #72.
+
+    Deployments that already applied a branch policy through the buggy code may
+    hold a stale policy scoped to a mangled ref (e.g. `refs/heads/velop`). The fix
+    changes the ref `Get()` looks up, so the next `Test()`/`Set()` creates the
+    correct policy alongside the stale one rather than replacing it - review each
+    affected project's branch policies and remove the mangled-ref entries by hand.
