@@ -13,7 +13,20 @@ The name of the Azure DevOps project containing the repository to be removed.
 The name of the repository to be removed.
 
 .PARAMETER SourceRepository
-An optional parameter specifying the source repository.
+An optional parameter specifying the source repository. Not used by Remove - accepted only because
+the base class passes every DSC property through.
+
+.PARAMETER SourceType
+An optional parameter specifying the source type. Not used by Remove - accepted only because the
+base class passes every DSC property through.
+
+.PARAMETER ImportServiceConnectionName
+An optional parameter specifying the import service connection name. Not used by Remove - accepted
+only because the base class passes every DSC property through.
+
+.PARAMETER IsDisabled
+An optional parameter specifying the desired disabled state. Not used by Remove - accepted only
+because the base class passes every DSC property through.
 
 .PARAMETER LookupResult
 An optional hashtable parameter for lookup results.
@@ -48,6 +61,17 @@ Function Remove-AzDoGitRepository
         [Parameter()]
         [Alias('Source')]
         [System.String]$SourceRepository,
+
+        [Parameter()]
+        [Alias('SourceKind')]
+        [System.String]$SourceType,
+
+        [Parameter()]
+        [Alias('ServiceConnection')]
+        [System.String]$ImportServiceConnectionName,
+
+        [Parameter()]
+        [System.Boolean]$IsDisabled,
 
         [Parameter()]
         [HashTable]$LookupResult,

@@ -858,3 +858,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     changes the ref `Get()` looks up, so the next `Test()`/`Set()` creates the
     correct policy alongside the stale one rather than replacing it - review each
     affected project's branch policies and remove the mangled-ref entries by hand.
+- AzureDevOpsDscNative
+  - Fixed `AzDoGitRepository`'s `SourceRepository` property being documented but silently
+    ignored: `New-GitRepository` only ever sent `name`/`project.id` to the API, so setting it
+    quietly created an empty repository instead of seeding one from anywhere
+    ([issue #73](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/73)).
+    `SourceRepository` now drives two paths, picked by the new `SourceType` property
+    (`'Import'`/`'Fork'`, inferred from the value's shape - a URL or SSH remote versus a bare
+    or `Project/Repo` name - when not set explicitly):
+    - `Import` clones an external Git URL into the newly-created repository via the Import
+      Requests API (new private function `New-GitImportRequest`), then polls it (new private
+      function `Wait-DevOpsGitImportRequest`, following the `Wait-DevOpsProject` do/while +
+      explicit `$completed` flag pattern) until it reports `completed`, `failed` or `abandoned`.
+      A failed import, an abandoned one, or one that does not finish within the timeout is
+      surfaced as an error rather than left as a silently-empty repository.
+    - `Fork` creates the repository with `parentRepository` set to an existing repository
+      resolved from `SourceRepository` - either a bare name in the same project, or
+      `Project/Repo` to fork from a different one.
+    - A new `ImportServiceConnectionName` property supplies the generic Git service connection
+      used to authenticate an `Import` against a private source; omitted, the source is
+      assumed public.
+    All three properties are creation-time only - they are listed in
+    `GetDscResourcePropertyNamesWithNoSetSupport()` (alongside the pre-existing identity
+    properties `ProjectName`/`RepositoryName`, which must never be added there) so an existing
+    repository is never re-imported or re-forked by `Set()`, and `Test()` never reports drift
+    on them.
+  - Added an `IsDisabled` property to `AzDoGitRepository`. Unlike the source properties above,
+    it is a plain repository attribute the API can change at any time, so it is compared by
+    `Get-AzDoGitRepository` and applied by the new private function `Set-GitRepository`
+    (`PATCH .../_apis/git/repositories/{id}`) on every `Test()`/`Set()`, not just at creation.
