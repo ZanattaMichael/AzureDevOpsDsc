@@ -24,6 +24,21 @@ Describe "AzDoBuildRetentionSettings Integration Tests" -Tag "Integration", "Bui
             Invoke-RestMethod -Uri ("https://dev.azure.com/{0}/{1}/_apis/build/retention?api-version=7.1" -f $ORG_, $PROJECTNAME) -Headers $HDR_ -Method Patch -Body $body -ContentType 'application/json'
         }
 
+        # The retention GET can lag a PATCH by a second or two, so a read straight after a write
+        # polls until it sees the expected value, returning the last value read if it never does.
+        function Wait-TestBuildRetentionRuns
+        {
+            param([int]$Expected, [int]$TimeoutSeconds = 30)
+            $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+            do
+            {
+                $value = (Get-TestBuildRetentionSettings).purgeRuns.value
+                if ($value -eq $Expected) { break }
+                Start-Sleep -Seconds 2
+            } while ((Get-Date) -lt $deadline)
+            return $value
+        }
+
         # Read the org's live min/max first - never hard-code the allowed range.
         $LIVE = Get-TestBuildRetentionSettings
 
@@ -105,7 +120,7 @@ Describe "AzDoBuildRetentionSettings Integration Tests" -Tag "Integration", "Bui
         }
 
         It "Should have applied the bound setting" {
-            (Get-TestBuildRetentionSettings).purgeRuns.value | Should -Be $RUNS_VALUE_2
+            Wait-TestBuildRetentionRuns -Expected $RUNS_VALUE_2 | Should -Be $RUNS_VALUE_2
         }
 
         It "Should leave the unbound setting untouched, read back directly via REST" {
@@ -135,7 +150,7 @@ Describe "AzDoBuildRetentionSettings Integration Tests" -Tag "Integration", "Bui
         }
 
         It "Should have drifted the live value (the drift PATCH took effect)" {
-            (Get-TestBuildRetentionSettings).purgeRuns.value | Should -Be $script:DRIFTED_RUNS_VALUE
+            Wait-TestBuildRetentionRuns -Expected $script:DRIFTED_RUNS_VALUE | Should -Be $script:DRIFTED_RUNS_VALUE
         }
 
         It "Should return False (Test detects the drift)" {
