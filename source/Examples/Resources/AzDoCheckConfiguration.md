@@ -7,7 +7,7 @@ AzDoCheckConfiguration [string] #ResourceName
 {
     ProjectName          = [String]$ProjectName
     TargetResourceName   = [String]$TargetResourceName
-    ResourceType         = [String] {'environment', 'repository', 'endpoint'}
+    ResourceType         = [String] {'environment', 'repository', 'endpoint', 'queue', 'variablegroup', 'securefile'}
     CheckType            = [String]$CheckType
     [ Settings           = [HashTable]$Settings ]
     [ TimeoutInMinutes   = [UInt32]$TimeoutInMinutes ]
@@ -22,7 +22,9 @@ AzDoCheckConfiguration [string] #ResourceName
 
 - **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
 - **TargetResourceName**: The name of the resource to attach the check to (environment name, repository name, or service connection name). This property is mandatory.
-- **ResourceType**: The type of resource. Valid values are `environment`, `repository`, and `endpoint`. This is a key property.
+- **ResourceType**: The type of resource. Valid values are `environment`, `repository`, `endpoint`,
+  `queue` (a project agent queue - resolved by name within `ProjectName`, not the org-level pool),
+  `variablegroup`, and `securefile`. This is a key property.
 - **CheckType**: The type of check to configure (e.g., `Task Check`, `Approval`, `ExclusiveLock`). This is a key property.
 - **Settings**: A hashtable of check-specific configuration settings.
 - **TimeoutInMinutes**: How long the check can run before timing out. Defaults to `43200` (30 days).
@@ -31,7 +33,7 @@ AzDoCheckConfiguration [string] #ResourceName
 
 ## Additional Information
 
-This resource manages pipeline check configurations on Azure DevOps resources such as environments, repositories, and service connections. Checks enforce gates that must pass before a pipeline can access the protected resource.
+This resource manages pipeline check configurations on Azure DevOps resources such as environments, repositories, service connections, agent queues, variable groups and secure files. Checks enforce gates that must pass before a pipeline can access the protected resource.
 
 ## Examples
 
@@ -113,4 +115,43 @@ $params = @{
 }
 
 Invoke-DscPipelineRunner @params
+```
+
+## Example 4: Branch control check on a variable group
+
+Branch control restricts a protected resource to specific source branches. It is a
+"Task Check" under the hood, selected by `Settings.definitionRef` rather than by its own
+`CheckType` GUID.
+
+``` PowerShell
+Configuration ExampleConfig {
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
+
+    Node localhost {
+        AzDoCheckConfiguration ProdSecretsBranchControl {
+            Ensure             = 'Present'
+            ProjectName        = 'MyProject'
+            TargetResourceName = 'ProdSecrets'
+            ResourceType       = 'variablegroup'
+            CheckType          = 'BranchControl'
+            Settings           = @{
+                definitionRef = @{
+                    id      = '86b05a0c-73e6-4f7d-b3cf-e38f3b39a75b'
+                    name    = 'evaluatebranchProtection'
+                    version = '0.0.1'
+                }
+                displayName = 'Branch control'
+                inputs      = @{
+                    allowedBranches          = 'refs/heads/main'
+                    ensureProtectionOfBranch = 'true'
+                    allowUnknownStatusBranch = 'false'
+                }
+            }
+            TimeoutInMinutes = 43200
+            Enabled          = $true
+        }
+    }
+}
+
+Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ```

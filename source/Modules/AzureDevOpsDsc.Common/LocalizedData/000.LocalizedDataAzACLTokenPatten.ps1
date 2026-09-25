@@ -27,7 +27,11 @@ data LocalizedDataAzACLTokenPatten
         OrganizationGit         = '^repoV2$'
         GitProject              = '^(repoV2)\/(?<ProjectId>[A-Za-z0-9-]+)$'
         GitRepository           = '^(repoV2)\/(?<ProjectId>[A-Za-z0-9-]+)\/(?<RepoId>[A-Za-z0-9-]+)$'
-        GitBranch               = '^(repoV2)\/(?<ProjectId>[A-Za-z0-9-]+)\/(?<RepoId>[A-Za-z0-9-]+)\/refs\/heads\/(?<BranchName>[A-Za-z0-9]+)'
+        # Each ref path segment beneath refs/heads (or refs/tags) is hex-encoded UTF-16LE, and a
+        # branch/tag name with a '/' in it (e.g. 'release/1.0') is TWO encoded segments joined by
+        # '/' in the token - so the capture has to span every remaining segment, not just the first.
+        GitBranch               = '^(repoV2)\/(?<ProjectId>[A-Za-z0-9-]+)\/(?<RepoId>[A-Za-z0-9-]+)\/refs\/heads\/(?<BranchName>[0-9a-fA-F]+(?:\/[0-9a-fA-F]+)*)$'
+        GitTag                  = '^(repoV2)\/(?<ProjectId>[A-Za-z0-9-]+)\/(?<RepoId>[A-Za-z0-9-]+)\/refs\/tags\/(?<TagName>[0-9a-fA-F]+(?:\/[0-9a-fA-F]+)*)$'
         # Identity ACL Token Patterns
         GroupPermission         = '^(?<ProjectId>[A-Za-z0-9-_]+)\\(?<GroupId>[A-Za-z0-9-_]+)$'
         ResourcePermission      = '^(?<ProjectId>[A-Za-z0-9-_]+)$'

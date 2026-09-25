@@ -48,7 +48,7 @@ Function New-AzDoBranchPolicy
         $settings['scope'] = @(
             @{
                 repositoryId = $repository.id
-                refName      = 'refs/heads/{0}' -f $BranchName.TrimStart('refs/heads/')
+                refName      = Format-AzDoBranchRefName -BranchName $BranchName
                 matchKind    = 'exact'
             }
         )
