@@ -66,6 +66,34 @@ Describe 'Invoke-AzDevOpsApiRestMethod' -Tag "Unit", "Helper" {
             Assert-MockCalled -CommandName Invoke-RestMethod -Exactly -Times 1
         }
 
+        It 'should not include response headers unless requested' {
+            Mock -CommandName Invoke-RestMethod -MockWith { return @{ success = $true } }
+            $result = Invoke-AzDevOpsApiRestMethod @defaultParameters
+            $result | Should -BeOfType [System.Collections.Hashtable]
+            $result.success | Should -Be $true
+        }
+
+        It 'should merge AdditionalHeaders into the request without needing an Authorization value' {
+            $seenHeaders = $null
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                param ($Uri, $Method, $Headers)
+                $script:seenHeaders = $Headers
+                return @{ success = $true }
+            }
+            Invoke-AzDevOpsApiRestMethod @defaultParameters -AdditionalHeaders @{ 'If-Match' = '"3"' }
+            $script:seenHeaders.'If-Match' | Should -Be '"3"'
+        }
+
+        It 'should return the response body and headers when IncludeResponseHeaders is set' {
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                Set-Variable responseHeaders -Value @{ ETag = @('"3"') } -Scope Global
+                return @{ success = $true }
+            }
+            $result = Invoke-AzDevOpsApiRestMethod @defaultParameters -IncludeResponseHeaders
+            $result.Value.success | Should -Be $true
+            $result.Headers.ETag | Should -Be @('"3"')
+        }
+
         It 'should return results from Invoke-RestMethod' {
             Mock -CommandName Invoke-RestMethod -MockWith { return @{ success = $true } }
             $result = Invoke-AzDevOpsApiRestMethod @defaultParameters

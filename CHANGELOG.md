@@ -385,6 +385,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added the helper `Resolve-AzDoProcessWorkItemType`, which resolves a process and
     work item type and enforces the "system processes are read-only" rule in one
     place, and the private API functions for picklists and process work item types.
+  - Added `AzDoWikiPage`, a resource managing the content and sibling order of a
+    single page in a project wiki (#89). Content can be supplied inline or read
+    from a local file via `ContentPath`; comparisons ignore line-ending and
+    trailing-whitespace differences so re-formatted content is not reported as
+    drift, but the configuration's own text is always what gets written back.
+    Updates use the page's ETag as `If-Match`, so a page changed out of band since
+    the last `Get` is caught as a conflict rather than silently overwritten.
+    Reordering a page among its siblings uses the wiki `pagemoves` endpoint and is
+    only attempted when `Order` is configured. Deleting a page also deletes its
+    sub-pages, so removal is refused unless `AllowRecursiveDelete` is set. Code
+    wikis are not supported and are refused with a clear error. The wiki API does
+    not create parent pages, so each parent is declared as its own `AzDoWikiPage`;
+    creating a page whose parent is missing fails naming the parent to declare.
+  - Added the private WikiPage API functions `Get-DevOpsWikiPage`,
+    `Set-DevOpsWikiPage`, `Remove-DevOpsWikiPage` and `Move-DevOpsWikiPage`, the
+    helpers `Format-AzDoWikiPagePath` and `ConvertTo-NormalizedWikiPageContent`,
+    and the shared `Resolve-AzDoWiki` helper (used to resolve a wiki by name from
+    cache, matching `Get-AzDoWiki`'s own lookup, without duplicating it).
   - Added `AzDoProcessField`, managing fields on a work item type. A field exists at
     two levels and the resource manages the second: the definition (name and type)
     is organization-scoped and shared by every work item type using the field, so

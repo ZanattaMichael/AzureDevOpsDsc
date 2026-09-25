@@ -11,7 +11,7 @@ The module is named **AzureDevOpsDscNative** (see `source/AzureDevOpsDscNative.p
 ```
 C:\Git\AzureDevOpsDsc\
 ├── source\
-│   ├── Classes\                          # DSC resource classes (numbered 001–141)
+│   ├── Classes\                          # DSC resource classes (numbered 001–145)
 │   ├── Enum\                             # PowerShell enums used across the module
 │   └── Modules\
 │       └── AzureDevOpsDsc.Common\
@@ -72,8 +72,9 @@ All DSC resources live in `source\Classes\` with numeric prefixes controlling lo
 | `132`–`134` | `AzDoReleaseFolder`, `AzDoReleaseFolderPermission`, `AzDoReleaseDefinitionPermission` | Classic Release Management; `ReleaseManagement` namespace, `vsrm.dev.azure.com` host |
 | `138`–`141` | `AzDoTestVariable`, `AzDoTestConfiguration`, `AzDoTestPlan`, `AzDoTestSuite` | Test management (test plan REST API 7.1); no test-plan security namespace exists, so there is no `AzDoTestPlanPermission` |
 | `143.AzDoBuildRetentionSettings.ps1` | `AzDoBuildRetentionSettings` | Project run/artifact retention (`_apis/build/retention`) |
+| `145.AzDoWikiPage.ps1` | `AzDoWikiPage` | Wiki page content and sibling order; project wikis only |
 
-There are currently **77** `[DscResource()]` classes. `docs/ResourceRoadmap.md` is the plan of record for what is implemented and what is still outstanding.
+There are currently **78** `[DscResource()]` classes. `docs/ResourceRoadmap.md` is the plan of record for what is implemented and what is still outstanding.
 
 The `Construct()` method (in `AzDevOpsDscResourceBase`) runs at `new()` time, reads `ModuleSettings.clixml`, and sets `$Global:DSCAZDO_AuthenticationToken` and `$Global:DSCAZDO_OrganizationName`.
 
