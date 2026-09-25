@@ -14,6 +14,14 @@ The name of the Git repository within the Azure DevOps project.
 .PARAMETER isInherited
 Indicates whether the permissions are inherited.
 
+.PARAMETER BranchName
+Optional. Targets a single branch's ACL instead of the repository's own ACL. Requires
+RepositoryName and is mutually exclusive with TagName.
+
+.PARAMETER TagName
+Optional. Targets a single tag's ACL instead of the repository's own ACL. Requires RepositoryName
+and is mutually exclusive with BranchName.
+
 .PARAMETER Permissions
 A hashtable array of permissions to be applied.
 
@@ -45,6 +53,12 @@ Function New-AzDoGitPermission
         [Parameter(Mandatory = $true)]
         [bool]$isInherited,
 
+        [Parameter(Mandatory = $false)]
+        [string]$BranchName,
+
+        [Parameter(Mandatory = $false)]
+        [string]$TagName,
+
         [Parameter()]
         [HashTable[]]$Permissions,
 
@@ -70,25 +84,50 @@ Function New-AzDoGitPermission
         return
     }
 
+    # BranchName and TagName are mutually exclusive - 'refs/heads' and 'refs/tags' are different
+    # tokens, so there is no single ACL to add permissions to when both are given.
+    $hasBranch = -not [String]::IsNullOrWhiteSpace($BranchName)
+    $hasTag    = -not [String]::IsNullOrWhiteSpace($TagName)
+
+    if ($hasBranch -and $hasTag)
+    {
+        Write-Warning "[New-AzDoGitPermission] BranchName and TagName are mutually exclusive. STOPPING."
+        return
+    }
+
     #
     # Security Namespace ID
 
     $SecurityNamespace = Get-CacheItem -Key 'Git Repositories' -Type 'SecurityNamespaces'
     $Project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
+    $Repository = Get-CacheItem -Key "$ProjectName\$RepositoryName" -Type 'LiveRepositories'
 
-    if (($null -eq $SecurityNamespace) -or ($null -eq $Project))
+    if (($null -eq $SecurityNamespace) -or ($null -eq $Project) -or ($null -eq $Repository))
     {
-        Write-Warning "[New-AzDoGitPermission] Security Namespace or Project not found."
+        Write-Warning "[New-AzDoGitPermission] Security Namespace, Project or Repository not found."
         return
     }
 
     #
     # Serialize the ACLs
 
+    # Branch/tag tokens are matched exactly (one specific ref), so setting one branch's permission
+    # never disturbs the repository's own ACL or any other branch's/tag's ACL - see
+    # LocalizedDataAzSerializationPatten.GitBranch/.GitTag.
+    $DescriptorMatchToken = if ($hasBranch) {
+        $normalizedBranchName = Format-AzDoGitRefName -RefName $BranchName
+        $LocalizedDataAzSerializationPatten.GitBranch -f $Repository.id, (ConvertTo-GitRefToken -RefName $normalizedBranchName)
+    } elseif ($hasTag) {
+        $normalizedTagName = Format-AzDoGitRefName -RefName $TagName
+        $LocalizedDataAzSerializationPatten.GitTag -f $Repository.id, (ConvertTo-GitRefToken -RefName $normalizedTagName)
+    } else {
+        $LocalizedDataAzSerializationPatten.GitRepository -f $Project.id
+    }
+
     $serializeACLParams = @{
         ReferenceACLs = $LookupResult.propertiesChanged
         DescriptorACLList = Get-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'
-        DescriptorMatchToken = ($LocalizedDataAzSerializationPatten.GitRepository -f $Project.id)
+        DescriptorMatchToken = $DescriptorMatchToken
     }
 
     $params = @{
