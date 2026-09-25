@@ -231,6 +231,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     group to well over a hundred for an AAD-backed user. A batch that fails is
     retried one descriptor at a time, so a single unresolvable identity no longer
     costs the whole batch.
+  - Added `AzDoPipelineAuthorization` (class `119`, [#78](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/78)),
+    a resource managing which pipeline definitions may use a protected resource -
+    a service connection, agent queue, variable group, secure file, environment or
+    repository - through the `pipelinePermissions` REST API (the "Pipeline
+    permissions" tab in the Azure DevOps portal). This is distinct from a
+    resource's security-namespace ACLs, which control who may *administer* it, and
+    from `AzDoCheckConfiguration`, which gates a run with an approval rather than
+    deciding whether a pipeline may reach the resource at all. `AuthorizedPipelines`
+    is additive by default; `ExclusiveList` also revokes a pipeline authorized in
+    the portal but absent from the list. Added the private API functions
+    `Get-DevOpsPipelinePermission` and `Set-DevOpsPipelinePermission`, and the
+    helpers `Resolve-AzDoPipelineAuthorizationResource` (name-to-id, including the
+    `"{projectId}.{repositoryId}"` composite id `repository` uses) and
+    `Resolve-AzDoPipelineAuthorizationTargets` (pipeline folder path to id).
   - Added `BranchName` and `TagName` to `AzDoGitPermission` (#76), letting a
     permission target a single branch's or tag's own ACL
     (`refs/heads/{BranchName}` / `refs/tags/{TagName}`) instead of the
@@ -264,6 +278,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     rewritten around what is genuinely left.
 
 - AzureDevOpsDscNative
+  - `AzDoBranchPolicy` now detects drift in `PolicySettings`, not just `isEnabled`/
+    `isBlocking` - raising a stated approver count or changing a stated build
+    definition id is now caught by `Test()` like any other property. Only the keys
+    the configuration states are compared, normalized through the new
+    `ConvertTo-NormalizedPolicySettingValue` (used for comparison only; what gets
+    written back is always the configuration's own value), so an int the API reads
+    back as a double, or a nested settings object read back as a `PSCustomObject`,
+    is not read as drift ([issue #74](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/74)).
+  - Fixed `Get-AzDoBranchPolicy` reporting `Unchanged` for a policy mutated outside
+    of DSC (directly via the REST API or the portal) as long as that policy stayed
+    in the `LiveBranchPolicies` cache. A cache hit was used for comparison as-is,
+    with no re-check against the API; a live refresh is now stale only until some
+    unrelated `Set()`/`New()`/`Remove()` happened to touch that cache entry. `Get-`
+    now re-fetches a cached policy by id through the new `Get-DevOpsBranchPolicy`
+    and prefers that live copy for comparison, falling back to the cached value if
+    the refresh call fails so a transient API error does not turn into a false
+    "not found".
+  - `AzDoBranchPolicy` now supports several policies of the same `PolicyType` on
+    one branch (two build validation policies pointing at different pipelines,
+    several status checks) via the new optional `PolicyIdentifier` property, which
+    names a value expected among that policy's settings (a build definition id, a
+    status check name, a reviewer's display name) to tell the policies apart. Left
+    unset, behaviour is unchanged: the first policy of that type found in scope is
+    used, as before. The resource still has exactly one `[DscProperty(Key)]`
+    (`ProjectName`); `PolicyIdentifier` is a second, optional discriminator, not a
+    key.
+  - `AzDoBranchPolicy` no longer hardcodes its scope to one repository and one
+    exact ref. `RepositoryName` can be left empty for a cross-repository scope,
+    `BranchName` can be left empty for a repository-wide scope (used by policy
+    types with no ref, such as the repository settings policies), and the new
+    `MatchKind` property (`Exact`, the default, or `Prefix`) scopes to every branch
+    whose name starts with `BranchName` rather than to one branch. The live lookup
+    now fetches every policy of the matching type in scope and matches client-side
+    through the new `Test-AzDoBranchPolicyScopeMatch`, since the API's per-ref
+    filter cannot express a prefix, repository-wide or cross-repository scope. A
+    `Set()` that only changes `PolicySettings` now carries the policy's existing
+    `scope` over instead of dropping it, since the API replaces the whole
+    `settings` object (which `scope` lives inside) on every PUT.
   - `AzDoCheckConfiguration.ResourceType` now also accepts `queue`, `variablegroup` and
     `securefile`, so a check (Approval, Branch control, Business Hours, ...) can be attached to
     an agent queue, a variable group or a secure file, not only an environment, repository or

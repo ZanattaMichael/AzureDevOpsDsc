@@ -43,6 +43,7 @@ function Get-AzDoCacheObjects
         'LiveGroups',
         'LiveIterations',
         'LiveNotificationSubscriptions',
+        'LivePipelineAuthorizations',
         'LivePipelineEnvironments',
         'LivePipelines',
         'LivePolicyTypes',
