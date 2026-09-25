@@ -109,10 +109,7 @@ Function New-AzDoBranchPolicy
 
         if (-not [string]::IsNullOrWhiteSpace($BranchName))
         {
-            # A literal-prefix strip, not TrimStart('refs/heads/') - TrimStart treats its argument
-            # as a set of characters to trim, not a literal prefix, and corrupts a branch name
-            # that happens to start with any of those characters.
-            $scopeEntry.refName = if ($BranchName -like 'refs/heads/*') { $BranchName } else { 'refs/heads/{0}' -f $BranchName }
+            $scopeEntry.refName = Format-AzDoBranchRefName -BranchName $BranchName
         }
 
         $settings['scope'] = @($scopeEntry)

@@ -29,6 +29,8 @@ Describe "Get-AzDoBranchPolicy" -Tag "Unit", "BranchPolicy" {
         . (Get-FunctionItem 'Test-AzDoBranchPolicyScopeMatch.ps1').FullName
         . (Get-FunctionItem 'Test-AzDoBranchPolicyIdentifierMatch.ps1').FullName
         . (Get-FunctionItem 'Get-DevOpsBranchPolicy.ps1').FullName
+        # Not mocked - Get-AzDoBranchPolicy calls the real implementation to build refName.
+        . (Get-FunctionItem 'Format-AzDoBranchRefName.ps1').FullName
         # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
         Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
     }
@@ -334,6 +336,68 @@ Describe "Get-AzDoBranchPolicy" -Tag "Unit", "BranchPolicy" {
 
             $result = Get-AzDoBranchPolicy -ProjectName 'TestProject' -RepositoryName 'TestRepo' `
                 -BranchName 'main' -PolicyType 'MinimumReviewerCount'
+
+            $result.status | Should -Be 'NotFound'
+        }
+    }
+
+    # Regression for the TrimStart(char[]) bug (issue #72): TrimStart('refs/heads/') strips any
+    # leading character in {r, e, f, s, /, h, a, d}, not the literal prefix, so 'develop' became
+    # 'refs/heads/velop'. The live lookup matches candidates against the desired refName rather than
+    # passing it to the API, so the regression shows as the right policy being found (or not).
+    Context "when the desired refName is built for the live scope match" {
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                param ($Key, $Type)
+                if ($Type -eq 'LiveRepositories') { return @{ id = 'repo-1'; name = 'TestRepo' } }
+                return $null
+            }
+            Mock -CommandName Add-CacheItem -MockWith { }
+        }
+
+        It "matches the policy scoped to '<RefName>' for BranchName '<BranchName>'" -TestCases @(
+            @{ BranchName = 'develop';            RefName = 'refs/heads/develop' }
+            @{ BranchName = 'feature/login';      RefName = 'refs/heads/feature/login' }
+            @{ BranchName = 'release/1.0';        RefName = 'refs/heads/release/1.0' }
+            @{ BranchName = 'hotfix';             RefName = 'refs/heads/hotfix' }
+            @{ BranchName = 'refs/heads/develop'; RefName = 'refs/heads/develop' }
+            @{ BranchName = 'refs/heads/main';    RefName = 'refs/heads/main' }
+        ) {
+            param ($BranchName, $RefName)
+
+            # The mock body does not see the test-case parameter, so hand it over via script scope.
+            $script:mockScopeRefName = $RefName
+            Mock -CommandName List-DevOpsBranchPolicies -MockWith {
+                return @(
+                    @{
+                        id       = 'policy-exact'
+                        type     = @{ displayName = 'Minimum number of reviewers' }
+                        settings = @{ }
+                        scope    = @(@{ repositoryId = 'repo-1'; refName = $script:mockScopeRefName; matchKind = 'exact' })
+                    }
+                )
+            }
+
+            $result = Get-AzDoBranchPolicy -ProjectName 'TestProject' -RepositoryName 'TestRepo' `
+                -BranchName $BranchName -PolicyType 'MinimumReviewerCount'
+
+            $result.liveCache.id | Should -Be 'policy-exact'
+        }
+
+        It "does not match a policy on the mangled 'refs/heads/velop' for BranchName 'develop'" {
+            Mock -CommandName List-DevOpsBranchPolicies -MockWith {
+                return @(
+                    @{
+                        id       = 'policy-mangled'
+                        type     = @{ displayName = 'Minimum number of reviewers' }
+                        settings = @{ }
+                        scope    = @(@{ repositoryId = 'repo-1'; refName = 'refs/heads/velop'; matchKind = 'exact' })
+                    }
+                )
+            }
+
+            $result = Get-AzDoBranchPolicy -ProjectName 'TestProject' -RepositoryName 'TestRepo' `
+                -BranchName 'develop' -PolicyType 'MinimumReviewerCount'
 
             $result.status | Should -Be 'NotFound'
         }

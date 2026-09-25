@@ -170,12 +170,9 @@ Function Get-AzDoBranchPolicy
             }
             $lookupDisplayName = if ($policyDisplayNameAliases.ContainsKey($PolicyType)) { $policyDisplayNameAliases[$PolicyType] } else { $PolicyType }
 
-            # A literal-prefix strip, not TrimStart('refs/heads/') - TrimStart treats its argument
-            # as a set of characters to trim, not a literal prefix, and corrupts a branch name that
-            # happens to start with any of those characters (e.g. 'feature/refs-cleanup').
             $desiredRefName = if ($hasBranch)
             {
-                if ($BranchName -like 'refs/heads/*') { $BranchName } else { 'refs/heads/{0}' -f $BranchName }
+                Format-AzDoBranchRefName -BranchName $BranchName
             }
             else
             {
