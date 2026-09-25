@@ -12,6 +12,11 @@ Function New-DevOpsServiceConnection
         [Parameter()][bool]$IsReady = $true,
         [Parameter()][hashtable]$Authorization = @{},
         [Parameter()][hashtable]$Data = @{},
+        # Full project reference array for an endpoint shared across projects (issue #79). Each
+        # entry is @{ projectReference = @{ id; name }; name; description }. Defaults to a single
+        # reference for the owning project - the shape this function always sent before sharing
+        # support existed - when the caller has no sharing to configure.
+        [Parameter()][Object[]]$ProjectReferences,
         [Parameter()][string]$ApiVersion = '7.1-preview.4'
     )
     # The Azure DevOps service endpoint API requires 'url' at the top-level body,
@@ -43,6 +48,19 @@ Function New-DevOpsServiceConnection
         $Authorization = @{ scheme = $scheme; parameters = $parameters }
     }
 
+    # NOTE: the if/else is wrapped in @(...) because PowerShell unrolls a one-element array
+    # emitted from an if/else expression the same way it unrolls a one-element array returned
+    # from a function (CLAUDE.md gotcha #7). Without the outer @(), a single project reference
+    # collapses to a bare hashtable and ConvertTo-Json writes a JSON object instead of an array,
+    # which the API rejects ("At least one project reference required to create an endpoint").
+    $serviceEndpointProjectReferences = @(if ($ProjectReferences) { $ProjectReferences } else {
+        @{
+            projectReference = @{ id = $ProjectId; name = $ProjectName }
+            name             = $ServiceConnectionName
+            description      = $Description
+        }
+    })
+
     $params = @{
         Uri         = '{0}/{1}/_apis/serviceendpoint/endpoints?api-version={2}' -f $ApiUri.TrimEnd('/'), $ProjectName, $ApiVersion
         Method      = 'POST'
@@ -56,13 +74,7 @@ Function New-DevOpsServiceConnection
             isReady       = $IsReady
             authorization = $Authorization
             data          = $endpointData
-            serviceEndpointProjectReferences = @(
-                @{
-                    projectReference = @{ id = $ProjectId; name = $ProjectName }
-                    name             = $ServiceConnectionName
-                    description      = $Description
-                }
-            )
+            serviceEndpointProjectReferences = $serviceEndpointProjectReferences
         } | ConvertTo-Json -Depth 10
     }
     try   { return Invoke-AzDevOpsApiRestMethod @params }
