@@ -66,4 +66,20 @@ Describe "Remove-AzDoCheckConfiguration" -Tag "Unit", "CheckConfiguration" {
             Assert-MockCalled -CommandName Remove-DevOpsCheckConfiguration -Times 0
         }
     }
+
+    Context "removes a check on any ResourceType generically" {
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith { return @{ id = 'check-id' } }
+        }
+
+        It "calls Remove-DevOpsCheckConfiguration for ResourceType '<_>'" -ForEach @('queue', 'variablegroup', 'securefile') {
+            $resourceType = $_
+            Remove-AzDoCheckConfiguration -ProjectName 'TestProject' -TargetResourceName 'TestTarget' `
+                -ResourceType $resourceType -CheckType 'Approval'
+            Assert-MockCalled -CommandName Remove-DevOpsCheckConfiguration -Times 1
+            Assert-MockCalled -CommandName Remove-CacheItem -ParameterFilter {
+                $Key -eq "TestProject\$resourceType\TestTarget\Approval" -and $Type -eq 'LiveCheckConfigurations'
+            } -Times 1
+        }
+    }
 }

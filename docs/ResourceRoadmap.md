@@ -46,7 +46,10 @@ before (or with) the first of them.
 `ServiceEndpoints`, `AgentPool`, `DistributedTask`, `WorkItemQueryFolders`.
 `Parse-ACLToken.ps1` mirrors that set and falls through to a `Generic` type for anything
 else. `Build` now covers both the definition and the folder token form, and `Library` both
-the variable group and the secure file form.
+the variable group and the secure file form. `Git Repositories` now covers the branch
+(`refs/heads/{encoded}`) and tag (`refs/tags/{encoded}`) token forms in addition to the
+project and repository forms — see `AzDoGitPermission`'s `BranchName`/`TagName` properties
+below.
 
 `AzDoSecurityNamespacePermission` is the escape hatch — it takes a caller-supplied `Token`
 string — but it gives the user no help constructing that token, which is the hard and
@@ -55,6 +58,7 @@ error-prone part. Every permission resource below needs a matching `New-ACLToken
 
 | New resource | Namespace | Token shape | Status |
 |---|---|---|---|
+| `AzDoGitPermission` (`BranchName`/`TagName`) | `Git Repositories` | `repoV2/{projectId}/{repoId}/refs/heads\|tags/{hex(UTF-16LE(segment))}` per `/`-delimited ref segment | **Shipped** — see [#76](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/76) |
 | `AzDoQueryPermission` | `WorkItemQueryFolders` | `$/{projectId}/{queryFolderId}[/{childFolderId}...]` | **Shipped** |
 | `AzDoSecureFilePermission` | `Library` | `Library/Project/{projectId}/SecureFile/{secureFileId}` | **Shipped** |
 | `AzDoPipelineFolderPermission` | `Build` | `{projectId}/{folderPath}` | **Shipped** — see §5.4 |
@@ -300,6 +304,7 @@ code beyond conventions. Both landed **before** their permission counterparts, a
 | `AzDoBuildRetentionSettings` | Project-level run/artifact retention (`_apis/build/retention`). | Low | Outstanding |
 | `AzDoBoardColumn` / `AzDoBoardSettings` / `AzDoCardRule` | Board columns, swimlanes, card fields and styling. `AzDoTeamSettings` covers backlog/iteration/area defaults and working days, but not the board itself. | Medium | Outstanding |
 | `AzDoWikiPage` | `AzDoWiki` manages the wiki, not its pages or their ordering. | Medium | Outstanding |
+| `AzDoCheckConfiguration` — `queue`/`variablegroup`/`securefile` resource types | Checks were previously limited to `environment`, `repository` and `endpoint`; agent queues, variable groups and secure files can carry checks too (e.g. Branch control on a signing certificate). | Low | **Shipped** (#77) |
 
 ### Process customization — mostly closed
 
@@ -351,7 +356,7 @@ Items from #59 checked against the code:
 | `AzDoWikiPage`, `AzDoElasticPool`, `AzDoDeploymentGroupAgent`, dashboards, delivery plans, analytics | Confirmed gaps, still outstanding. |
 | Classic Release Management (Phase 2 in #59) | Confirmed gap, but **recommend demoting** below Boards/Queries and Process customization. It is a legacy subsystem in maintenance mode, and it is the largest surface on the list (`AzDoReleaseDefinition` alone is comparable in size to `AzDoPipeline`). Value per unit of effort is the lowest of anything proposed. |
 | Test Management (Phase 3 in #59) | Confirmed gap. Genuinely unrepresented, but demand is narrower than queries/dashboards; keep after the §6 gaps. |
-| `AzDoBillingSettings`, `AzDoPatPolicy`, `AzDoExtensionPolicy`, `AzDoAuditLogAlert` | Confirmed gaps, tenant-scoped. Note that several of these APIs are undocumented/preview and may not be stable enough to build a resource on — spike each before committing. |
+| `AzDoBillingSettings`, `AzDoPatPolicy`, `AzDoExtensionPolicy`, `AzDoAuditLogAlert` | **Spiked in [#85](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/85), see [`docs/Spikes/TenantScopedPolicies.md`](Spikes/TenantScopedPolicies.md).** All four verdicts are **unsupported / not built**: `AzDoPatPolicy` and an org-creation-restriction candidate have no documented REST route and the tenant-level halves need a Microsoft Entra tenant-admin identity this module cannot model; `AzDoBillingSettings` is excluded outright because every write is a billing/purchase change; `AzDoExtensionPolicy` has no documented route for the policy toggles (role constraint alone would pass); `AzDoAuditLogAlert` is not a distinct feature and folds into the shipped `AzDoAuditStream` (#69). The org-level "restrict PAT creation" allow-list is a follow-up property for `AzDoOrganizationSettings` once #84 lands, not a tenant policy. |
 
 ---
 
@@ -389,9 +394,9 @@ Still outstanding, in the order below:
   uses before any resource is built (#83).
 - **Test management** (§7), then **classic release management** (§7) with
   `AzDoReleaseFolder` (§5.5).
-- **Tenant-scoped items** (§7) — `AzDoBillingSettings`, `AzDoPatPolicy`,
-  `AzDoExtensionPolicy`, `AzDoAuditLogAlert`. Spike each first; several of these APIs are
-  undocumented or preview.
+- **Tenant-scoped items** (§7) — **spiked and closed as unsupported/not-built**, see
+  [`docs/Spikes/TenantScopedPolicies.md`](Spikes/TenantScopedPolicies.md) (#85). No
+  resources were built; class prefixes `130`–`131` reserved for the spike are unused.
 
 ---
 
@@ -412,7 +417,8 @@ remains:
 5. **`AzDoWikiPage`** (§6).
 6. **Org-scoped pipeline settings** (§7) — blocked on a spike; no documented org-scoped route.
 7. Test management, then classic release management, with `AzDoReleaseFolder` (§5.5).
-8. **Tenant-scoped items** (§7), each spiked before it is committed to.
+8. **Tenant-scoped items** (§7) — done: spiked in #85 and closed as unsupported/not-built,
+   see [`docs/Spikes/TenantScopedPolicies.md`](Spikes/TenantScopedPolicies.md).
 
 Per-resource checklist (from `CLAUDE.md`): class in `source/Classes/` with the next numeric
 prefix (continue from `117`), public functions under
