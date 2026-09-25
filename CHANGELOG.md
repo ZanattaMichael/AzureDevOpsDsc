@@ -41,6 +41,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     runspace, so a process created by another resource was not in it. They
     now use `Resolve-DevOpsProcess`, which falls back to a live lookup and
     caches what it finds ([issue #75](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/75)).
+  - Fixed `AzDoServiceConnection` refusing to create a connection whose `Data`
+    carries `url`. `New-DevOpsServiceConnection` lifted `Data.url` to the
+    endpoint's top-level `url` but also left it inside `data`, which accepts only
+    the inputs the connection type declares, so the API answered
+    `400 Following fields in the service connection are not expected: url`.
+    `url` is now sent once, at the top level.
 
 ### Added
 
@@ -772,12 +778,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     copies for the duration of the job and restores them in an `always()` step, in
     the same way (and with the same record format) as `integration-tests-v3.yml`,
     and repeats the single-copy assertion in the test step itself.
-  - Fixed `AzDoServiceConnection` refusing to create a connection whose `Data`
-    carries `url`. `New-DevOpsServiceConnection` lifted `Data.url` to the
-    endpoint's top-level `url` but also left it inside `data`, which accepts only
-    the inputs the connection type declares, so the API answered
-    `400 Following fields in the service connection are not expected: url`.
-    `url` is now sent once, at the top level.
   - Fixed every live `dsc resource get/set/test` call in the DSC v3 integration
     suite failing with `Cannot convert the "System.Object[]" value ... to type
     "System.Management.Automation.PSModuleInfo"` - 25 failures across the
