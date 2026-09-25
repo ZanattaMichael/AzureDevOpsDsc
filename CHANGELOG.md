@@ -56,6 +56,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     into the shipped `AzDoAuditStream` (#69). `docs/ResourceRoadmap.md` §7/§9 updated
     with the verdicts and a link to the spike; reserved class prefixes `130`-`131` are
     left unused.
+  - Added `AzDoQueryFolder`, a resource managing folders in a project's shared work
+    item query tree. Folders are declared in their own right so that queries can
+    depend on them, rather than each query creating its own ancestry - which would
+    let two queries in the same folder race to create it and make `Test()` results
+    depend on apply order. Deleting a query folder in Azure DevOps deletes its whole
+    subtree, so removal of a folder that still has children is refused unless
+    `AllowRecursiveDelete` is set.
+  - Added `AzDoWorkItemQuery`, a resource managing shared work item queries,
+    including the WIQL statement, query type, display columns and sort order.
+    Changes are applied in place with PATCH rather than by delete-and-recreate,
+    because recreating a query changes its id and would silently break any
+    dashboard widget, delivery plan or ACL token referencing it. Queries deleted
+    earlier are restored from the query recycle bin instead of failing with a name
+    conflict.
+  - Added the private Queries API functions `Get-DevOpsQuery`, `New-DevOpsQuery`,
+    `Update-DevOpsQuery` and `Remove-DevOpsQuery`.
+  - Added `AzDoQueryPermission`, a resource managing the ACL on a work item query
+    folder via the `WorkItemQueryFolders` security namespace. Permissions are set
+    on folders and inherited by the queries beneath them; omitting `QueryPath`
+    targets the project's query root. Removing the ACL on the query root is
+    refused, since that token has no parent to inherit from.
+  - Added `WorkItemQueryFolders` support to `New-ACLToken`, `ConvertTo-FormattedToken`
+    and `Parse-ACLToken`, with the token patterns in the localized data files. The
+    token addresses folders by GUID (`$/{projectId}/{folderId}/...`); because the
+    project id is a GUID too, the folder chain is extracted from the remainder of
+    the token so the project is not read as the first folder.
+  - Added the helper `ConvertTo-NormalizedWiql`, which makes WIQL drift detection
+    work. The Queries API does not return the WIQL it was given - it re-indents,
+    re-wraps, re-cases and appends a semicolon - so comparing the raw strings would
+    report drift on every `Test()`, forever, even when nothing had changed.
   - `AzDoServiceConnection` can now share the service connection it manages with
     other projects (#79), via two new properties: `SharedWithProjects` (the project
     names to share with, in addition to the owning `ProjectName`) and
@@ -97,36 +127,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     resolving each project through `Resolve-AzDoProject` and de-duplicating and
     dropping blanks so a repeated or empty entry in `SharedWithProjects` cannot
     produce a malformed reference.
-  - Added `AzDoQueryFolder`, a resource managing folders in a project's shared work
-    item query tree. Folders are declared in their own right so that queries can
-    depend on them, rather than each query creating its own ancestry - which would
-    let two queries in the same folder race to create it and make `Test()` results
-    depend on apply order. Deleting a query folder in Azure DevOps deletes its whole
-    subtree, so removal of a folder that still has children is refused unless
-    `AllowRecursiveDelete` is set.
-  - Added `AzDoWorkItemQuery`, a resource managing shared work item queries,
-    including the WIQL statement, query type, display columns and sort order.
-    Changes are applied in place with PATCH rather than by delete-and-recreate,
-    because recreating a query changes its id and would silently break any
-    dashboard widget, delivery plan or ACL token referencing it. Queries deleted
-    earlier are restored from the query recycle bin instead of failing with a name
-    conflict.
-  - Added the private Queries API functions `Get-DevOpsQuery`, `New-DevOpsQuery`,
-    `Update-DevOpsQuery` and `Remove-DevOpsQuery`.
-  - Added `AzDoQueryPermission`, a resource managing the ACL on a work item query
-    folder via the `WorkItemQueryFolders` security namespace. Permissions are set
-    on folders and inherited by the queries beneath them; omitting `QueryPath`
-    targets the project's query root. Removing the ACL on the query root is
-    refused, since that token has no parent to inherit from.
-  - Added `WorkItemQueryFolders` support to `New-ACLToken`, `ConvertTo-FormattedToken`
-    and `Parse-ACLToken`, with the token patterns in the localized data files. The
-    token addresses folders by GUID (`$/{projectId}/{folderId}/...`); because the
-    project id is a GUID too, the folder chain is extracted from the remainder of
-    the token so the project is not read as the first folder.
-  - Added the helper `ConvertTo-NormalizedWiql`, which makes WIQL drift detection
-    work. The Queries API does not return the WIQL it was given - it re-indents,
-    re-wraps, re-cases and appends a semicolon - so comparing the raw strings would
-    report drift on every `Test()`, forever, even when nothing had changed.
   - Added the helpers `Format-AzDoQueryPath`, which normalizes the several ways a
     query path can be written (backslashes, leading/trailing and doubled separators)
     into one canonical form, and `Resolve-AzDoQueryPath`, which walks a query path
