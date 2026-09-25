@@ -105,6 +105,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     rewrite in one run.
   - Added the private API function `Update-WITTags` (tag rename/merge) and the
     helper `Get-AzDoTagMisalignment`, the pure matching logic behind the resource.
+  - Extended `AzDoOrganizationSettings` with five more *Organization settings -> Policies*
+    properties: `EnableIPConditionalAccessPolicyValidation`, `LogAuditEvents`,
+    `AllowTeamAdminsToInviteUsers`, `EnableRequestAccess` (with `RequestAccessUrl`) and
+    `EnableArtifactsFeedUpstreamProtection` (#84). Unlike the resource's original five
+    properties, which read/write `_apis/settings/entries/host`, these are backed by the
+    organization policy API, added as the new `Get-/Set-DevOpsOrganizationPolicy` private
+    helpers and a single `Get-DevOpsOrganizationPolicyMap` mapping properties to policy names.
+    Policies are written with a JSON-patch array to `_apis/OrganizationPolicy/Policies/{policyName}`,
+    and read in one call from the policy page's data provider (`_apis/Contribution/HierarchyQuery`,
+    falling back to the page's `__rt=fps` data route). For identities the page routes answer with
+    no data, each policy is read from that same policy route with a GET, which needs a
+    `defaultValue` query parameter (405 without it), on the organization host and then on
+    `vssps.dev.azure.com`; the defaults are declared per policy in the map. A failed policy read is an error
+    only when a policy property is configured, so a configuration of the original five properties
+    does not depend on it. The policy properties are tri-state strings (`'true'`, `'false'`,
+    or `''` for unmanaged) rather than booleans: the resource base class passes every
+    property, so an unset boolean would have switched the policy off. `LimitUserVisibility`
+    was left out: it is a preview-feature flag rather than a confirmed organization policy, and
+    is documented as excluded in `docs/ResourceRoadmap.md`. Setting `LogAuditEvents` to `'false'`
+    now warns that any `AzDoAuditStream` on the organization will receive nothing while auditing
+    is off. This closes out the `AzDoOrganizationPolicy` item in `docs/ResourceRoadmap.md` §7.
   - Added `AzDoSecureFile`, a resource managing the secure files a project makes
     available to its pipelines (certificates, keystores, provisioning profiles).
     Azure DevOps never returns a secure file's content, so `Test()` confirms the

@@ -8,6 +8,12 @@ Function New-AzDoOrganizationSettings
         [Parameter()][bool]$EnableOAuthAuthentication,
         [Parameter()][bool]$EnableSSHAuthentication,
         [Parameter()][bool]$DisallowAadGuestUserPolicy,
+        [Parameter()][string]$EnableIPConditionalAccessPolicyValidation,
+        [Parameter()][string]$LogAuditEvents,
+        [Parameter()][string]$AllowTeamAdminsToInviteUsers,
+        [Parameter()][string]$EnableRequestAccess,
+        [Parameter()][string]$RequestAccessUrl,
+        [Parameter()][string]$EnableArtifactsFeedUpstreamProtection,
         [Parameter()][HashTable]$LookupResult,
         [Parameter()][Ensure]$Ensure,
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
