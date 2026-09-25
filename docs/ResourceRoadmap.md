@@ -400,6 +400,40 @@ Still outstanding, in the order below:
 
 ---
 
+## 8a. DSC v3 export (#92)
+
+DSC v3's PowerShell adapter can call a parameterless static `Export()` on a class-based
+resource to generate its configuration from live state instead of it being hand-written.
+See USAGE.md, "Onboarding an Existing Organization with Export", for how it is dispatched
+and how to run it.
+
+**Shipped** — first increment ([#92](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/92)):
+
+| Resource | Notes |
+|---|---|
+| `AzDoProject` | Exports `Ensure`, `ProjectName`, `ProjectDescription`, `Visibility`. Skips projects that are not `wellFormed`. |
+| `AzDoGitRepository` | Exports `Ensure`, `ProjectName`, `RepositoryName`. Skips disabled repositories. |
+
+Both reuse the shared `AzDevOpsDscResourceBase::ExportDscResourceInstances()` plumbing and the
+`Protect-AzDoExportedSecretProperty` secret-redaction helper; neither resource has secret
+properties today.
+
+Still outstanding — every other resource has no `Export-<ResourceName>` function yet, so
+calling `Export()` on it throws `"export is not implemented for <ResourceName>"`. Adding one
+is additive per resource (no shared-plumbing changes needed) and should follow the existing
+`Get-`/list-cache pattern each resource already has. Not yet attempted:
+
+- Permission resources (`AzDoAreaPermission`, `AzDoIterationPermission`, `AzDoPipelinePermission`,
+  `AzDoProjectPermission`, `AzDoQueryPermission`, `AzDoSecureFilePermission`,
+  `AzDoPipelineFolderPermission`) — exporting an ACL means walking every relevant token and
+  reverse-parsing it with `Parse-ACLToken`, which is more work per resource than a plain list.
+- The work item query, tag hygiene, secure file, pipeline folder, entitlement and inherited
+  process resources (classes `101`–`116`).
+- A `dsc resource export` CLI-level integration test (`tests/Integration/V3/`) — deferred:
+  `dsc resource export`'s output shape (a DSC configuration document, distinct from the single
+  JSON object `get`/`set`/`test` return) needs to be confirmed against the runner's actual `dsc`
+  version before `V3TestHelpers.ps1`'s `Invoke-DscV3Resource` is extended to parse it.
+
 ## 9. Suggested order of work
 
 Steps 1–6 of the original plan (`WorkItemQueryFolders` ACL support, the three query
