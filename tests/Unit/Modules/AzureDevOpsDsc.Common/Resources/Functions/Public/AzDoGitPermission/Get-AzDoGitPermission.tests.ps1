@@ -244,4 +244,109 @@ Describe 'Get-AzDoGitPermission Tests' -Tag "Unit", "GitPermission" {
         $script:formattedTokens[0] | Should -Be 'repoV2/123/123'
     }
 
+    Context 'Branch and Tag scoped lookups' {
+
+        BeforeAll {
+            # Get-AzDoGitPermission calls these directly (not through a mocked command), so they
+            # are not picked up by Find-MockedFunctions and need loading explicitly.
+            . (Get-FunctionItem 'Format-AzDoGitRefName.ps1').FullName
+            . (Get-FunctionItem 'ConvertTo-GitRefToken.ps1').FullName
+        }
+
+        It 'Returns Error when BranchName and TagName are both specified' {
+            $result = Get-AzDoGitPermission -ProjectName 'TestProject' -RepositoryName 'TestRepository' -isInherited $true -BranchName 'main' -TagName 'v1.0'
+
+            $result.status | Should -Be 'Error'
+            $result.reason | Should -Be 'BranchName and TagName are mutually exclusive.'
+        }
+
+        It 'Returns Error when BranchName is specified without RepositoryName' {
+            $result = Get-AzDoGitPermission -ProjectName 'TestProject' -isInherited $true -BranchName 'main'
+
+            $result.status | Should -Be 'Error'
+            $result.reason | Should -Be 'BranchName/TagName requires RepositoryName.'
+        }
+
+        It 'Returns Error when TagName is specified without RepositoryName' {
+            $result = Get-AzDoGitPermission -ProjectName 'TestProject' -isInherited $true -TagName 'v1.0'
+
+            $result.status | Should -Be 'Error'
+            $result.reason | Should -Be 'BranchName/TagName requires RepositoryName.'
+        }
+
+        It 'Scopes the ACL lookup token to the hex/UTF-16LE-encoded branch ref' {
+            $script:capturedToken = $null
+            Mock -CommandName Get-DevOpsACL -MockWith {
+                $script:capturedToken = $Token
+                return @(@{ token = $Token; Permission = 'Allow' })
+            }
+
+            $null = Get-AzDoGitPermission -ProjectName 'TestProject' -RepositoryName 'TestRepository' -isInherited $true -BranchName 'main' -Permissions @(@{ 'Permission' = 'Allow' })
+
+            $script:capturedToken | Should -Be 'repoV2/123/123/refs/heads/6d00610069006e00'
+        }
+
+        It 'Scopes the ACL lookup token to the hex/UTF-16LE-encoded tag ref' {
+            $script:capturedToken = $null
+            Mock -CommandName Get-DevOpsACL -MockWith {
+                $script:capturedToken = $Token
+                return @(@{ token = $Token; Permission = 'Allow' })
+            }
+
+            $null = Get-AzDoGitPermission -ProjectName 'TestProject' -RepositoryName 'TestRepository' -isInherited $true -TagName 'v1.0' -Permissions @(@{ 'Permission' = 'Allow' })
+
+            $script:capturedToken | Should -Be ('repoV2/123/123/refs/tags/{0}' -f (ConvertTo-GitRefToken -RefName 'v1.0'))
+        }
+
+        It 'Strips a leading refs/heads/ prefix from BranchName before building the token' {
+            $script:capturedToken = $null
+            Mock -CommandName Get-DevOpsACL -MockWith {
+                $script:capturedToken = $Token
+                return @(@{ token = $Token; Permission = 'Allow' })
+            }
+
+            $null = Get-AzDoGitPermission -ProjectName 'TestProject' -RepositoryName 'TestRepository' -isInherited $true -BranchName 'refs/heads/main' -Permissions @(@{ 'Permission' = 'Allow' })
+
+            $script:capturedToken | Should -Be 'repoV2/123/123/refs/heads/6d00610069006e00'
+        }
+
+        It 'Scopes a multi-segment branch name (branch folder) correctly' {
+            $script:capturedToken = $null
+            Mock -CommandName Get-DevOpsACL -MockWith {
+                $script:capturedToken = $Token
+                return @(@{ token = $Token; Permission = 'Allow' })
+            }
+
+            $null = Get-AzDoGitPermission -ProjectName 'TestProject' -RepositoryName 'TestRepository' -isInherited $true -BranchName 'release/1.0' -Permissions @(@{ 'Permission' = 'Allow' })
+
+            $script:capturedToken | Should -Be ('repoV2/123/123/refs/heads/{0}' -f (ConvertTo-GitRefToken -RefName 'release/1.0'))
+        }
+
+        It 'Drops a formatted ACL whose decoded BranchName does not match, even if the raw token slipped past the first filter' {
+            # Defence in depth: the pre-format filter already narrows on the exact raw token, but
+            # this re-check on the decoded BranchName is what actually protects against reading a
+            # different branch's ACL as this one's current state (see the comment above the real
+            # filter in Get-AzDoGitPermission.ps1).
+            $aclToken = 'repoV2/123/123/refs/heads/6d00610069006e00'
+            Mock -CommandName Get-DevOpsACL -MockWith {
+                return @(@{ token = $aclToken; Permission = 'Allow' })
+            }
+            Mock -CommandName ConvertTo-FormattedACL -MockWith {
+                return @( @{ Token = @{ Type = 'GitBranch'; RepoId = 123; BranchName = 'some-other-branch' }; Permission = 'Allow' } )
+            }
+            $script:seenDifferenceACLs = $null
+            Mock -CommandName Test-ACLListforChanges -MockWith {
+                $script:seenDifferenceACLs = $DifferenceACLs
+                return @{ propertiesChanged = @(); status = 'Unchanged'; reason = 'No change' }
+            }
+
+            $null = Get-AzDoGitPermission -ProjectName 'TestProject' -RepositoryName 'TestRepository' -isInherited $true -BranchName 'main' -Permissions @(@{ 'Permission' = 'Allow' })
+
+            # A filtered-to-nothing Where-Object emits $null, not an empty array - @($null) would
+            # wrongly report Count 1 (the single-element-array-unwrap gotcha in reverse), so this
+            # checks for emptiness directly instead.
+            $script:seenDifferenceACLs | Should -BeNullOrEmpty
+        }
+    }
+
 }

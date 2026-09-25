@@ -108,4 +108,128 @@ Describe 'Set-AzDoGitPermission' -Tag "Unit", "GitPermission" {
         Assert-VerifiableMock
     }
 
+    Context 'Branch and Tag scoped permissions' {
+
+        BeforeAll {
+            . (Get-FunctionItem 'Format-AzDoGitRefName.ps1').FullName
+            . (Get-FunctionItem 'ConvertTo-GitRefToken.ps1').FullName
+        }
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                switch ($Type) {
+                    'SecurityNamespaces' { @{ namespaceId = 'SampleNamespaceId' } }
+                    'LiveProjects'       { @{ id = 'projectIdValue' } }
+                    'LiveRepositories'   { @{ id = 'repositoryIdValue' } }
+                    default              { $null }
+                }
+            }
+        }
+
+        It 'Stops without calling Set-AzDoPermission when LookupResult.reason is the mutual-exclusion refusal' {
+            $branchParams = $params.Clone()
+            $branchParams.LookupResult = @{ reason = 'BranchName and TagName are mutually exclusive.' }
+
+            Mock -CommandName Write-Warning -Verifiable
+
+            Set-AzDoGitPermission @branchParams
+
+            Assert-MockCalled -CommandName Set-AzDoPermission -Exactly 0
+            Assert-VerifiableMock
+        }
+
+        It 'Stops without calling Set-AzDoPermission when LookupResult.reason is the RepositoryName-required refusal' {
+            $branchParams = $params.Clone()
+            $branchParams.LookupResult = @{ reason = 'BranchName/TagName requires RepositoryName.' }
+
+            Mock -CommandName Write-Warning -Verifiable
+
+            Set-AzDoGitPermission @branchParams
+
+            Assert-MockCalled -CommandName Set-AzDoPermission -Exactly 0
+            Assert-VerifiableMock
+        }
+
+        It 'Stops without calling Set-AzDoPermission when BranchName and TagName are both specified directly' {
+            $branchParams = $params.Clone()
+            $branchParams.BranchName = 'main'
+            $branchParams.TagName = 'v1.0'
+
+            Mock -CommandName Write-Warning -Verifiable
+
+            Set-AzDoGitPermission @branchParams
+
+            Assert-MockCalled -CommandName Set-AzDoPermission -Exactly 0
+            Assert-VerifiableMock
+        }
+
+        It 'Writes an error and returns when the Repository is not found for a branch-scoped call' {
+            Mock -CommandName Get-CacheItem -MockWith {
+                switch ($Type) {
+                    'SecurityNamespaces' { @{ namespaceId = 'SampleNamespaceId' } }
+                    'LiveProjects'       { @{ id = 'projectIdValue' } }
+                    'LiveRepositories'   { $null }
+                    default              { $null }
+                }
+            }
+            Mock -CommandName Write-Error -Verifiable
+
+            $branchParams = $params.Clone()
+            $branchParams.BranchName = 'main'
+
+            Set-AzDoGitPermission @branchParams
+
+            Assert-MockCalled -CommandName Set-AzDoPermission -Exactly 0
+            Assert-VerifiableMock
+        }
+
+        It 'Builds a branch-scoped DescriptorMatchToken using the hex/UTF-16LE-encoded branch name' {
+            $script:capturedToken = $null
+            Mock -CommandName ConvertTo-ACLHashtable -MockWith {
+                $script:capturedToken = $DescriptorMatchToken
+                return 'SerializedACLs'
+            }
+
+            $branchParams = $params.Clone()
+            $branchParams.BranchName = 'main'
+
+            Set-AzDoGitPermission @branchParams
+
+            $expected = '^repoV2\/[A-Za-z0-9-]+\/repositoryIdValue\/refs\/heads\/6d00610069006e00$'
+            $script:capturedToken | Should -Be $expected
+        }
+
+        It 'Builds a tag-scoped DescriptorMatchToken using the hex/UTF-16LE-encoded tag name' {
+            $script:capturedToken = $null
+            Mock -CommandName ConvertTo-ACLHashtable -MockWith {
+                $script:capturedToken = $DescriptorMatchToken
+                return 'SerializedACLs'
+            }
+
+            $tagParams = $params.Clone()
+            $tagParams.TagName = 'v1.0'
+
+            Set-AzDoGitPermission @tagParams
+
+            $expected = '^repoV2\/[A-Za-z0-9-]+\/repositoryIdValue\/refs\/tags\/{0}$' -f (ConvertTo-GitRefToken -RefName 'v1.0')
+            $script:capturedToken | Should -Be $expected
+        }
+
+        It 'Strips a leading refs/heads/ prefix from BranchName before building the token' {
+            $script:capturedToken = $null
+            Mock -CommandName ConvertTo-ACLHashtable -MockWith {
+                $script:capturedToken = $DescriptorMatchToken
+                return 'SerializedACLs'
+            }
+
+            $branchParams = $params.Clone()
+            $branchParams.BranchName = 'refs/heads/main'
+
+            Set-AzDoGitPermission @branchParams
+
+            $expected = '^repoV2\/[A-Za-z0-9-]+\/repositoryIdValue\/refs\/heads\/6d00610069006e00$'
+            $script:capturedToken | Should -Be $expected
+        }
+    }
+
 }

@@ -15,7 +15,11 @@ Specifies the description of the Azure DevOps project.
 Specifies the source control type for the project. Valid values are 'Git' and 'Tfvc'. The default value is 'Git'.
 
 .PARAMETER ProcessTemplate
-Specifies the process template for the project. Valid values are 'Agile', 'Scrum', 'CMMI', and 'Basic'. The default value is 'Agile'.
+Specifies the process template for the project. Accepts any process name known to the organization
+(system or inherited); unknown names throw. The default value is 'Agile'. Changing this on an
+existing project is only applied when Get-AzDoProject determined the migration is supported (the
+current and desired processes share a system-process ancestor) - when LookupResult.reason is
+'ProcessMigrationIncompatible' this function refuses the change instead of silently dropping it.
 
 .PARAMETER Visibility
 Specifies the visibility of the project. Valid values are 'Public' and 'Private'. The default value is 'Private'.
@@ -57,7 +61,6 @@ function Set-AzDoProject
         $SourceControlType = 'Git',
 
         [Parameter()]
-        [ValidateSet('Agile', 'Scrum', 'CMMI', 'Basic')]
         [System.String]$ProcessTemplate = 'Agile',
 
         [Parameter()]
@@ -78,9 +81,26 @@ function Set-AzDoProject
     $OrganizationName = (Get-AzDoOrganizationName)
 
     #
+    # Get returning Error still routes here (see AzDevOpsDscResourceBase.GetDscRequiredAction), so
+    # a refusal it decided on has to be repeated here rather than assumed - Get-AzDoProject sets
+    # this reason when the current and desired processes do not share a system-process ancestor.
+    if ($LookupResult.reason -eq 'ProcessMigrationIncompatible')
+    {
+        Write-Error "[Set-AzDoProject] Refusing to change project '$ProjectName' to process '$ProcessTemplate': Azure DevOps only allows moving a project between a system process and its inherited children, or between two inheritors of the same parent."
+        return
+    }
+
+    #
     # Perform a lookup to see if the group exists in Azure DevOps
     $project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
-    $processTemplateObj = Get-CacheItem -Key $ProcessTemplate -Type 'LiveProcesses'
+    # Resolve-DevOpsProcess falls back to a live lookup: an inherited process created by an
+    # AzDoProcess resource earlier in the same configuration is not in the LiveProcesses cache.
+    $processTemplateObj = Resolve-DevOpsProcess -ProcessName $ProcessTemplate -OrganizationName $OrganizationName
+
+    if ($null -eq $processTemplateObj)
+    {
+        throw "[Set-AzDoProject] Process template '$ProcessTemplate' not found."
+    }
 
     #
     # Construct the parameters for the API call
@@ -88,7 +108,6 @@ function Set-AzDoProject
         organization = $OrganizationName
         projectId  = $project.id
         description  = $ProjectDescription
-        processTemplateId = $processTemplateObj.id
         visibility = $Visibility
     }
 
@@ -113,6 +132,16 @@ function Set-AzDoProject
     # Wait for the project to be updated
 
     Wait-DevOpsProject -ProjectURL $projectURL -OrganizationName $OrganizationName
+
+    #
+    # The project properties PATCH above cannot change a project's process - Azure DevOps only
+    # accepts that through the dedicated migration endpoint, and only within the same OOB process
+    # family. Get-AzDoProject already confirmed compatibility before reporting this as a change.
+    if ($LookupResult.propertiesChanged -contains 'ProcessTemplate')
+    {
+        $desiredProcessTypeId = if (-not [String]::IsNullOrWhiteSpace($LookupResult.desiredProcessTypeId)) { $LookupResult.desiredProcessTypeId } else { $processTemplateObj.id }
+        $null = Move-DevOpsProjectProcess -Organization $OrganizationName -ProjectId $project.id -ProcessTypeId $desiredProcessTypeId
+    }
 
     #
     # Only the project caches are stale. Narrowing the refresh skips the group,
