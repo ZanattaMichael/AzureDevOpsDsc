@@ -73,6 +73,37 @@ Describe "New-AzDoBranchPolicy" -Tag "Unit", "BranchPolicy" {
             Assert-MockCalled -CommandName Refresh-CacheObject -Exactly -Times 1
         }
 
+        It "builds a cross-repository scope (no repositoryId) when RepositoryName is not supplied" {
+            New-AzDoBranchPolicy -ProjectName 'TestProject' -BranchName 'main' -PolicyType 'RequiredReviewers'
+            Assert-MockCalled -CommandName New-DevOpsBranchPolicy -Exactly -Times 1 -ParameterFilter {
+                (-not $Settings.scope[0].ContainsKey('repositoryId')) -and ($Settings.scope[0].refName -eq 'refs/heads/main')
+            }
+        }
+
+        It "builds a repository-wide scope (no refName) when BranchName is not supplied" {
+            New-AzDoBranchPolicy -ProjectName 'TestProject' -RepositoryName 'TestRepo' -PolicyType 'RequiredReviewers'
+            Assert-MockCalled -CommandName New-DevOpsBranchPolicy -Exactly -Times 1 -ParameterFilter {
+                ($Settings.scope[0].repositoryId -eq 'mock-repo-id') -and (-not $Settings.scope[0].ContainsKey('refName'))
+            }
+        }
+
+        It "lowercases MatchKind Prefix when building the scope" {
+            New-AzDoBranchPolicy -ProjectName 'TestProject' -RepositoryName 'TestRepo' `
+                -BranchName 'release/' -MatchKind 'Prefix' -PolicyType 'RequiredReviewers'
+            Assert-MockCalled -CommandName New-DevOpsBranchPolicy -Exactly -Times 1 -ParameterFilter {
+                ($Settings.scope[0].matchKind -eq 'prefix') -and ($Settings.scope[0].refName -eq 'refs/heads/release/')
+            }
+        }
+
+        It "uses a configuration-supplied 'scope' key verbatim instead of building one" {
+            $customScope = @(@{ repositoryId = 'custom-repo'; refName = 'refs/heads/custom'; matchKind = 'exact' })
+            New-AzDoBranchPolicy -ProjectName 'TestProject' -RepositoryName 'TestRepo' -BranchName 'main' `
+                -PolicyType 'RequiredReviewers' -PolicySettings @{ scope = $customScope; minimumApproverCount = 2 }
+            Assert-MockCalled -CommandName New-DevOpsBranchPolicy -Exactly -Times 1 -ParameterFilter {
+                ($Settings.scope[0].repositoryId -eq 'custom-repo') -and ($Settings.minimumApproverCount -eq 2)
+            }
+        }
+
         # Regression for the TrimStart(char[]) bug (issue #72): TrimStart('refs/heads/') strips
         # any leading character in {r, e, f, s, /, h, a, d}, not the literal prefix, so 'develop'
         # became 'refs/heads/velop' and 'feature/login' became 'refs/heads/ture/login'.
