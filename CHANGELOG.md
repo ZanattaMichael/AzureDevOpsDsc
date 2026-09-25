@@ -208,6 +208,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     group to well over a hundred for an AAD-backed user. A batch that fails is
     retried one descriptor at a time, so a single unresolvable identity no longer
     costs the whole batch.
+  - Added `AzDoPipelineAuthorization` (class `119`, [#78](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/78)),
+    a resource managing which pipeline definitions may use a protected resource -
+    a service connection, agent queue, variable group, secure file, environment or
+    repository - through the `pipelinePermissions` REST API (the "Pipeline
+    permissions" tab in the Azure DevOps portal). This is distinct from a
+    resource's security-namespace ACLs, which control who may *administer* it, and
+    from `AzDoCheckConfiguration`, which gates a run with an approval rather than
+    deciding whether a pipeline may reach the resource at all. `AuthorizedPipelines`
+    is additive by default; `ExclusiveList` also revokes a pipeline authorized in
+    the portal but absent from the list. Added the private API functions
+    `Get-DevOpsPipelinePermission` and `Set-DevOpsPipelinePermission`, and the
+    helpers `Resolve-AzDoPipelineAuthorizationResource` (name-to-id, including the
+    `"{projectId}.{repositoryId}"` composite id `repository` uses) and
+    `Resolve-AzDoPipelineAuthorizationTargets` (pipeline folder path to id).
   - Added `BranchName` and `TagName` to `AzDoGitPermission` (#76), letting a
     permission target a single branch's or tag's own ACL
     (`refs/heads/{BranchName}` / `refs/tags/{TagName}`) instead of the
