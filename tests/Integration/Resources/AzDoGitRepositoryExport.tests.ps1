@@ -25,7 +25,19 @@ Describe "AzDoGitRepository Export Integration Tests" -Tag "Integration", "GitRe
         }
 
         New-TestProject -ProjectName $PROJECTNAME
-        New-TestGitRepository -ProjectName $PROJECTNAME -RepositoryName $REPOSITORYNAME
+
+        # Create the repository through the resource rather than straight through REST. Get reads
+        # the LiveRepositories cache, which is built when the run authenticates; New adds the
+        # repository to it, whereas a repository created behind its back stays invisible to Get
+        # (and to Test) for the rest of the run, even though Export lists it live.
+        $createParameters = $parameters.Clone()
+        $createParameters.Method   = 'Set'
+        $createParameters.property = @{
+            ProjectName    = $PROJECTNAME
+            RepositoryName = $REPOSITORYNAME
+            Ensure         = 'Present'
+        }
+        Invoke-DscResource @createParameters
     }
 
     AfterAll {
