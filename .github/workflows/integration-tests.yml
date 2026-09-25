@@ -287,6 +287,86 @@ jobs:
           Write-Host "Pester 5.7.1 saved to $pesterRoot"
           "PESTER_MODULE_ROOT=$pesterRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
+      # Move the runner's hand-deployed copies of the three modules out of the user and
+      # machine module directories for the duration of the job.
+      #
+      # The PSModulePath rewrite in the next step is not enough on its own. Every
+      # `shell: pwsh` step is a new pwsh started by the runner - a parent that is not
+      # PowerShell - and such a pwsh re-adds the default module directories to whatever
+      # PSModulePath it inherits, the profile one (<MyDocuments>\PowerShell\Modules) among
+      # them. So the rewrite holds in the step that makes it, and the path is widened
+      # again in every step after it, "Run integration tests" included.
+      #
+      # That profile directory is where scripts/redeploy-module.ps1 deploys
+      # AzureDevOpsDscNative, and the runner carries such a copy. Reached through the
+      # re-added path, Invoke-DscResource loads the resource classes from it instead of
+      # from the build: a pull request that adds a class property then fails with
+      # "The property '<Name>' cannot be found on this object", and one that relaxes a
+      # ValidateSet still gets the old set enforced. Changes to the resource functions
+      # were unaffected, which is why this went unnoticed while pull requests only
+      # touched those.
+      #
+      # integration-tests-v3.yml hit the same path widening through dsc.exe and fixed it
+      # this way, so this step and the restore step at the end are the same code. They
+      # share the record format in RUNNER_TEMP, so either workflow reconciles a shelf the
+      # other left behind.
+      - name: Shelve conflicting profile-scope module copies
+        shell: pwsh
+        run: |
+          # A cancelled run, or a runner that dies mid-job, never reaches the restore
+          # step at the end and would leave a module directory shelved indefinitely.
+          # Records from earlier runs are reconciled here first, so a stranded shelf is
+          # repaired by the next run rather than quietly persisting on this box.
+          foreach ($stale in @(Get-ChildItem -Path $env:RUNNER_TEMP -Filter 'shelved-modules-*.json' -File -ErrorAction SilentlyContinue)) {
+              foreach ($entry in @(Get-Content -LiteralPath $stale.FullName -Raw | ConvertFrom-Json)) {
+                  if ((Test-Path -LiteralPath $entry.To) -and -not (Test-Path -LiteralPath $entry.From)) {
+                      Move-Item -LiteralPath $entry.To -Destination $entry.From -Force
+                      Write-Host "Restored a shelved copy left behind by an earlier run: $($entry.From)"
+                  }
+              }
+              Remove-Item -LiteralPath $stale.FullName -Force -ErrorAction SilentlyContinue
+          }
+
+          # Every root pwsh re-adds for itself. $PSHOME is deliberately absent: these
+          # modules are never installed there, and shelving out of it would mutate the
+          # PowerShell installation rather than a user/machine module directory.
+          $roots = @(
+              Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'PowerShell\Modules'
+              Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'WindowsPowerShell\Modules'
+              Join-Path -Path $env:ProgramFiles -ChildPath 'PowerShell\Modules'
+              Join-Path -Path $env:ProgramFiles -ChildPath 'WindowsPowerShell\Modules'
+          )
+          $names = 'AzureDevOpsDscNative', 'AzureDevOpsDsc.Common', 'DscResource.Common'
+
+          $shelf = Join-Path -Path $env:RUNNER_TEMP -ChildPath "shelved-modules-$($env:GITHUB_RUN_ID)-$($env:GITHUB_RUN_ATTEMPT)"
+          $moved = @()
+          foreach ($root in $roots) {
+              if (-not (Test-Path -LiteralPath $root)) { continue }
+              foreach ($name in $names) {
+                  $from = Join-Path -Path $root -ChildPath $name
+                  if (-not (Test-Path -LiteralPath $from)) { continue }
+
+                  # Flatten the root into the shelf name so two roots holding the same
+                  # module cannot collide on the way out.
+                  $leaf = ($root -replace '[:\\/ ]', '_') + '__' + $name
+                  $to = Join-Path -Path $shelf -ChildPath $leaf
+                  New-Item -Path $shelf -ItemType Directory -Force | Out-Null
+                  Move-Item -LiteralPath $from -Destination $to -Force
+                  $moved += [pscustomobject]@{ From = $from; To = $to }
+                  Write-Host "Shelved $from -> $to"
+              }
+          }
+
+          if ($moved.Count -eq 0) {
+              Write-Host 'No conflicting profile-scope or machine-scope copies found.'
+          }
+
+          # Written unconditionally, so the restore step has a file to read even when
+          # nothing moved and can say so rather than guessing.
+          $record = Join-Path -Path $env:RUNNER_TEMP -ChildPath "shelved-modules-$($env:GITHUB_RUN_ID)-$($env:GITHUB_RUN_ATTEMPT).json"
+          ConvertTo-Json -InputObject @($moved) -Depth 3 | Set-Content -LiteralPath $record -Encoding UTF8
+          "SHELVED_MODULES_RECORD=$record" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
       # Point PSModulePath at exactly one copy of each module the tests load.
       #
       # Initalize-TestFramework.ps1 imports DscResource.Common, AzureDevOpsDsc.Common and
@@ -440,6 +520,20 @@ jobs:
 
           Write-Host "Selection: $($env:SELECTION_REASON)"
 
+          # Re-assert single resolution in this process, which is the one Invoke-DscResource
+          # runs in. The PSModulePath step asserts it in its own pwsh, but each step's pwsh
+          # re-adds the default module directories (see the shelving step), so that check
+          # says nothing about this one. A second copy here means the tests would exercise
+          # classes the build did not produce - fail now, naming it, rather than as
+          # misleading property errors in every test.
+          foreach ($name in 'DscResource.Common', 'AzureDevOpsDsc.Common', 'AzureDevOpsDscNative') {
+              $bases = @(Get-Module -Name $name -ListAvailable | Select-Object -ExpandProperty ModuleBase -Unique)
+              if ($bases.Count -ne 1) {
+                  throw "Module '$name' resolves from $($bases.Count) locations in the test process: $($bases -join ' ; ')"
+              }
+              Write-Host "Test process resolves $name -> $($bases[0])"
+          }
+
           # Narrow the run only on an explicit 'false'. Anything else - an empty string from
           # a job that did not set it, an unexpected value - falls through to the full suite,
           # so a wiring mistake costs time rather than coverage.
@@ -460,3 +554,45 @@ jobs:
           name: integration-test-results-${{ github.run_number }}
           path: C:\Temp\integration-test-results.xml
           if-no-files-found: ignore
+
+      # The runner is persistent and shared with the v3 suite, so anything moved out of a
+      # user or machine module directory has to go back whatever happened to the tests -
+      # hence always(), and hence a move rather than a delete.
+      - name: Restore shelved module copies
+        if: always()
+        shell: pwsh
+        run: |
+          $record = $env:SHELVED_MODULES_RECORD
+          if ([string]::IsNullOrWhiteSpace($record) -or -not (Test-Path -LiteralPath $record)) {
+              Write-Host 'No shelving record for this run - nothing to restore.'
+          }
+          else {
+              $entries = @(Get-Content -LiteralPath $record -Raw | ConvertFrom-Json)
+              if ($entries.Count -eq 0) {
+                  Write-Host 'Nothing was shelved for this run.'
+              }
+              $failures = @()
+              foreach ($entry in $entries) {
+                  if (-not (Test-Path -LiteralPath $entry.To)) {
+                      $failures += "Shelved copy '$($entry.To)' is gone; '$($entry.From)' was not restored."
+                      continue
+                  }
+                  if (Test-Path -LiteralPath $entry.From) {
+                      # Something re-created the original during the job. Overwriting it
+                      # would destroy whatever that was, so leave both in place and say so.
+                      $failures += "'$($entry.From)' exists again; the shelved copy was left at '$($entry.To)'."
+                      continue
+                  }
+                  Move-Item -LiteralPath $entry.To -Destination $entry.From -Force
+                  Write-Host "Restored $($entry.From)"
+              }
+
+              # Reported, not thrown: the tests' own result is what this job is for, and
+              # failing here would mask it. The message names the exact paths to fix.
+              if ($failures.Count -gt 0) {
+                  Write-Warning ("Some shelved module copies were not restored:`n  " + ($failures -join "`n  "))
+              }
+              else {
+                  Remove-Item -LiteralPath $record -Force -ErrorAction SilentlyContinue
+              }
+          }

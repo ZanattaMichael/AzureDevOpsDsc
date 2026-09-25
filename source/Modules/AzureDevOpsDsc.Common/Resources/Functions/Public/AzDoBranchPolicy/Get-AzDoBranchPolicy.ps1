@@ -53,7 +53,7 @@ Function Get-AzDoBranchPolicy
             }
             $lookupDisplayName = if ($policyDisplayNameAliases.ContainsKey($PolicyType)) { $policyDisplayNameAliases[$PolicyType] } else { $PolicyType }
 
-            $allPolicies = List-DevOpsBranchPolicies -ApiUri "https://dev.azure.com/$OrgName" -ProjectName $ProjectName -RepositoryId $repositoryCache.id -RefName ('refs/heads/{0}' -f $BranchName.TrimStart('refs/heads/'))
+            $allPolicies = List-DevOpsBranchPolicies -ApiUri "https://dev.azure.com/$OrgName" -ProjectName $ProjectName -RepositoryId $repositoryCache.id -RefName (Format-AzDoBranchRefName -BranchName $BranchName)
             $policy = $allPolicies | Where-Object { $_.type.displayName -eq $lookupDisplayName } | Select-Object -First 1
             if ($policy) { Add-CacheItem -Key $cacheKey -Value $policy -Type 'LiveBranchPolicies' }
         }

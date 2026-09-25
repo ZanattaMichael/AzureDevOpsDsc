@@ -171,7 +171,7 @@ Each resource links to its example/usage documentation.
 | [AzDoEnvironmentApproval](source/Examples/Resources/AzDoEnvironmentApproval.md) | Manages approval checks on a pipeline environment. |
 | [AzDoEnvironmentKubernetesResource](source/Examples/Resources/AzDoEnvironmentKubernetesResource.md) | Creates and manages Kubernetes namespace resources on a pipeline environment. |
 | [AzDoEnvironmentVMResource](source/Examples/Resources/AzDoEnvironmentVMResource.md) | Manages tags and removal of a virtual machine resource on a pipeline environment; registration is agent-install-only. |
-| [AzDoCheckConfiguration](source/Examples/Resources/AzDoCheckConfiguration.md) | Manages pipeline checks (e.g. Approval) on a protected resource. |
+| [AzDoCheckConfiguration](source/Examples/Resources/AzDoCheckConfiguration.md) | Manages pipeline checks (e.g. Approval, Branch control) on a protected resource (environment, repository, endpoint, queue, variable group or secure file). |
 | [AzDoDeploymentGroup](source/Examples/Resources/AzDoDeploymentGroup.md) | Creates and manages deployment groups. |
 | [AzDoDeploymentGroupTarget](source/Examples/Resources/AzDoDeploymentGroupTarget.md) | Manages tags and removal of a deployment group target; registration is agent-install-only. |
 | [AzDoAgentPool](source/Examples/Resources/AzDoAgentPool.md) | Creates and manages organization agent pools. |
