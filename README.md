@@ -127,8 +127,8 @@ Each resource links to its example/usage documentation.
 | [AzDoOrganizationGroup](source/Examples/Resources/AzDoOrganizationGroup.md) | Creates and manages groups at the organization level. |
 | [AzDoGroupMember](source/Examples/Resources/AzDoGroupMember.md) | Manages membership of users, groups and service principals in a group. |
 | [AzDoTeam](source/Examples/Resources/AzDoTeam.md) | Creates and manages teams within a project. |
-| [AzDoTeamMember](source/Examples/Resources/AzDoTeamMember.md) | Manages membership of a team. |
-| [AzDoTeamSettings](source/Examples/Resources/AzDoTeamSettings.md) | Configures a team's iteration/area paths, working days and bug behaviour. |
+| [AzDoTeamMember](source/Examples/Resources/AzDoTeamMember.md) | Manages membership of a team, optionally granting team administrator rights. |
+| [AzDoTeamSettings](source/Examples/Resources/AzDoTeamSettings.md) | Configures a team's iteration/area paths, working days, bug behaviour and backlog visibility. |
 | [AzDoUserEntitlement](source/Examples/Resources/AzDoUserEntitlement.md) | Adds/removes organization users and manages their access level (license). |
 | [AzDoGroupEntitlement](source/Examples/Resources/AzDoGroupEntitlement.md) | Manages group licensing rules (access levels applied to every member of a group). |
 | [AzDoServicePrincipalEntitlement](source/Examples/Resources/AzDoServicePrincipalEntitlement.md) | Manages service principals and managed identities as organization members. |
@@ -169,14 +169,18 @@ Each resource links to its example/usage documentation.
 | [AzDoPipelineFolder](source/Examples/Resources/AzDoPipelineFolder.md) | Manages the pipeline (build) folder tree. |
 | [AzDoPipelineEnvironment](source/Examples/Resources/AzDoPipelineEnvironment.md) | Creates and manages pipeline environments. |
 | [AzDoEnvironmentApproval](source/Examples/Resources/AzDoEnvironmentApproval.md) | Manages approval checks on a pipeline environment. |
+| [AzDoEnvironmentKubernetesResource](source/Examples/Resources/AzDoEnvironmentKubernetesResource.md) | Creates and manages Kubernetes namespace resources on a pipeline environment. |
+| [AzDoEnvironmentVMResource](source/Examples/Resources/AzDoEnvironmentVMResource.md) | Manages tags and removal of a virtual machine resource on a pipeline environment; registration is agent-install-only. |
 | [AzDoCheckConfiguration](source/Examples/Resources/AzDoCheckConfiguration.md) | Manages pipeline checks (e.g. Approval, Branch control) on a protected resource (environment, repository, endpoint, queue, variable group or secure file). |
+| [AzDoPipelineAuthorization](source/Examples/Resources/AzDoPipelineAuthorization.md) | Manages which pipelines may use a protected resource (service connection, queue, variable group, secure file, environment or repository) via `pipelinePermissions`. |
 | [AzDoDeploymentGroup](source/Examples/Resources/AzDoDeploymentGroup.md) | Creates and manages deployment groups. |
+| [AzDoDeploymentGroupTarget](source/Examples/Resources/AzDoDeploymentGroupTarget.md) | Manages tags and removal of a deployment group target; registration is agent-install-only. |
 | [AzDoAgentPool](source/Examples/Resources/AzDoAgentPool.md) | Creates and manages organization agent pools. |
 | [AzDoAgentQueue](source/Examples/Resources/AzDoAgentQueue.md) | Creates and manages project agent queues. |
 | [AzDoTaskGroup](source/Examples/Resources/AzDoTaskGroup.md) | Creates and manages task groups. |
 | [AzDoVariableGroup](source/Examples/Resources/AzDoVariableGroup.md) | Creates and manages variable groups (library). |
 | [AzDoSecureFile](source/Examples/Resources/AzDoSecureFile.md) | Manages secure files (certificates, keystores) available to pipelines. |
-| [AzDoServiceConnection](source/Examples/Resources/AzDoServiceConnection.md) | Creates and manages service connections (service endpoints). |
+| [AzDoServiceConnection](source/Examples/Resources/AzDoServiceConnection.md) | Creates and manages service connections (service endpoints), optionally shared with other projects. |
 | [AzDoPipelineSettings](source/Examples/Resources/AzDoPipelineSettings.md) | Manages a project's pipeline general settings (job auth scope, settable variables, etc.). |
 | [AzDoBuildRetentionSettings](source/Examples/Resources/AzDoBuildRetentionSettings.md) | Manages a project's run and artifact retention policy (days to keep runs/artifacts/PR runs, runs to retain per protected branch). |
 
