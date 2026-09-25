@@ -22,7 +22,13 @@
     The type of source control for the project. Valid values are 'Git' and 'Tfvc'.
 
 .PARAMETER ProcessTemplate
-    The process template for the project. Valid values are 'Agile', 'Scrum', 'CMMI', and 'Basic'.
+    The process template for the project. Accepts any process name available in the organization,
+    including the built-in system processes ('Agile', 'Scrum', 'CMMI', 'Basic') and any inherited
+    process created from them. Unknown names are rejected at apply time against the live process
+    list. Changing this on an existing project (via Set) is only permitted when the current and
+    desired processes share the same system-process ancestor (for example, moving between a system
+    process and one of its inherited children, or between two inherited children of the same
+    parent) - Azure DevOps does not allow migrating a project across unrelated process families.
 
 .PARAMETER Visibility
     The visibility of the project. Valid values are 'Public' and 'Private'.
@@ -60,7 +66,6 @@ class AzDoProject : AzDevOpsDscResourceBase
     [System.String]$SourceControlType = 'Git'
 
     [DscProperty()]
-    [ValidateSet('Agile', 'Scrum', 'CMMI', 'Basic')]
     [System.String]$ProcessTemplate = 'Agile'
 
     [DscProperty()]
@@ -82,7 +87,7 @@ class AzDoProject : AzDevOpsDscResourceBase
 
     hidden [System.String[]]GetDscResourcePropertyNamesWithNoSetSupport()
     {
-        return @('SourceControlType','ProcessTemplate')
+        return @('SourceControlType')
     }
 
     hidden [Hashtable]GetDscCurrentStateProperties([PSCustomObject]$CurrentResourceObject)

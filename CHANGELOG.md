@@ -5,6 +5,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- AzureDevOpsDscNative
+  - `AzDoProject.ProcessTemplate` no longer restricts a project to the four
+    system processes (`Agile`, `Scrum`, `CMMI`, `Basic`) via `ValidateSet` -
+    any process name known to the organization, including an inherited
+    process, is accepted and resolved against the `LiveProcesses` cache,
+    falling back to a live lookup. `Set` can now change a project's process: `Get-AzDoProject`
+    compares the project's current process against the desired one and, when
+    they differ, resolves both to their system-process ancestor
+    (`Get-AzDoProcessFamilyRootId`) to decide whether Azure DevOps will permit
+    the migration. A compatible change (moving between a system process and
+    one of its inherited children, or between two inherited children of the
+    same parent) is applied via the new `projectprocessmigration` endpoint
+    (`Move-DevOpsProjectProcess`); an incompatible one - crossing unrelated
+    process families - is refused with a clear error in both `Get` and `Set`,
+    since `Get`'s `Error` status still routes to `Set` and the refusal has to
+    be repeated there to hold. Previously, `ProcessTemplate` was listed in
+    `GetDscResourcePropertyNamesWithNoSetSupport()` and `Update-DevOpsProject`
+    took a `ProcessTemplateId` parameter it never referenced, so a process
+    change on an existing project was always a silent no-op ([issue #75](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/75)).
+
+### Fixed
+
+- AzureDevOpsDscNative
+  - Fixed `Get-AzDoProject` throwing "Process template '' not found" instead
+    of naming the process that was actually missing - the "not found" error
+    interpolated an unrelated, always-null variable rather than the
+    `-ProcessTemplate` parameter it was given ([issue #75](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/75)).
+  - Fixed `AzDoProject` failing with "Process template '<name>' not found"
+    when the process was created by an `AzDoProcess` resource earlier in the
+    same configuration. `Get`, `New` and `Set` looked the name up only in the
+    `LiveProcesses` cache, and each resource invocation runs in its own
+    runspace, so a process created by another resource was not in it. They
+    now use `Resolve-DevOpsProcess`, which falls back to a live lookup and
+    caches what it finds ([issue #75](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/75)).
+
 ### Added
 
 - AzureDevOpsDscNative
