@@ -28,6 +28,12 @@ data LocalizedDataAzSerializationPatten
         # Example: repoV2/ProjectId/RepoId
         # Not: repoV2/ProjectId/RepoId/refs/heads/BranchName
         GitRepository = '^repoV2\/{0}\/(?!.*\/refs).*'
+        # Branch/tag ACL tokens - exact match on one specific ref, so setting one branch's
+        # permission never disturbs the repository's own ACL or any other branch/tag's ACL.
+        # Args: {0}=RepoId (the project id has already been resolved into the repo cache key),
+        # {1}=hex/UTF-16LE-encoded ref segments.
+        GitBranch = '^repoV2\/[A-Za-z0-9-]+\/{0}\/refs\/heads\/{1}$'
+        GitTag    = '^repoV2\/[A-Za-z0-9-]+\/{0}\/refs\/tags\/{1}$'
         # Group Permissions
         # Example: 78a5065f-3043-426f-9cc5-785748b18f9d\\242ea4ca-e150-4499-a491-00f4ce1f480e
         GroupPermission = '^{0}\\\\{1}$'
