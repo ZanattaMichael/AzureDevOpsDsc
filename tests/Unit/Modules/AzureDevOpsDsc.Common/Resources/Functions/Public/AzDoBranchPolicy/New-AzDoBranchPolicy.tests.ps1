@@ -20,6 +20,8 @@ Describe "New-AzDoBranchPolicy" -Tag "Unit", "BranchPolicy" {
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
+        # Not mocked - New-AzDoBranchPolicy calls the real implementation to build refName.
+        . (Get-FunctionItem 'Format-AzDoBranchRefName.ps1').FullName
 
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
         Mock -CommandName New-DevOpsBranchPolicy -MockWith { return @{ id = 'new-policy-id' } }
@@ -69,6 +71,57 @@ Describe "New-AzDoBranchPolicy" -Tag "Unit", "BranchPolicy" {
             New-AzDoBranchPolicy -ProjectName 'TestProject' -RepositoryName 'TestRepo' `
                 -BranchName 'main' -PolicyType 'RequiredReviewers'
             Assert-MockCalled -CommandName Refresh-CacheObject -Exactly -Times 1
+        }
+
+        # Regression for the TrimStart(char[]) bug (issue #72): TrimStart('refs/heads/') strips
+        # any leading character in {r, e, f, s, /, h, a, d}, not the literal prefix, so 'develop'
+        # became 'refs/heads/velop' and 'feature/login' became 'refs/heads/ture/login'.
+        It "builds refName 'refs/heads/develop' for a bare branch starting with 'd'" {
+            New-AzDoBranchPolicy -ProjectName 'TestProject' -RepositoryName 'TestRepo' `
+                -BranchName 'develop' -PolicyType 'RequiredReviewers'
+            Assert-MockCalled -CommandName New-DevOpsBranchPolicy -Exactly -Times 1 -ParameterFilter {
+                $Settings.scope[0].refName -eq 'refs/heads/develop'
+            }
+        }
+
+        It "builds refName 'refs/heads/feature/login' for a bare branch with a slash" {
+            New-AzDoBranchPolicy -ProjectName 'TestProject' -RepositoryName 'TestRepo' `
+                -BranchName 'feature/login' -PolicyType 'RequiredReviewers'
+            Assert-MockCalled -CommandName New-DevOpsBranchPolicy -Exactly -Times 1 -ParameterFilter {
+                $Settings.scope[0].refName -eq 'refs/heads/feature/login'
+            }
+        }
+
+        It "builds refName 'refs/heads/release/1.0' for a bare branch starting with 'r'" {
+            New-AzDoBranchPolicy -ProjectName 'TestProject' -RepositoryName 'TestRepo' `
+                -BranchName 'release/1.0' -PolicyType 'RequiredReviewers'
+            Assert-MockCalled -CommandName New-DevOpsBranchPolicy -Exactly -Times 1 -ParameterFilter {
+                $Settings.scope[0].refName -eq 'refs/heads/release/1.0'
+            }
+        }
+
+        It "builds refName 'refs/heads/hotfix' for a bare branch starting with 'h'" {
+            New-AzDoBranchPolicy -ProjectName 'TestProject' -RepositoryName 'TestRepo' `
+                -BranchName 'hotfix' -PolicyType 'RequiredReviewers'
+            Assert-MockCalled -CommandName New-DevOpsBranchPolicy -Exactly -Times 1 -ParameterFilter {
+                $Settings.scope[0].refName -eq 'refs/heads/hotfix'
+            }
+        }
+
+        It "does not double-prefix an already-qualified refs/heads/develop" {
+            New-AzDoBranchPolicy -ProjectName 'TestProject' -RepositoryName 'TestRepo' `
+                -BranchName 'refs/heads/develop' -PolicyType 'RequiredReviewers'
+            Assert-MockCalled -CommandName New-DevOpsBranchPolicy -Exactly -Times 1 -ParameterFilter {
+                $Settings.scope[0].refName -eq 'refs/heads/develop'
+            }
+        }
+
+        It "builds refName 'refs/heads/main' unchanged for the existing fixture" {
+            New-AzDoBranchPolicy -ProjectName 'TestProject' -RepositoryName 'TestRepo' `
+                -BranchName 'refs/heads/main' -PolicyType 'RequiredReviewers'
+            Assert-MockCalled -CommandName New-DevOpsBranchPolicy -Exactly -Times 1 -ParameterFilter {
+                $Settings.scope[0].refName -eq 'refs/heads/main'
+            }
         }
     }
 

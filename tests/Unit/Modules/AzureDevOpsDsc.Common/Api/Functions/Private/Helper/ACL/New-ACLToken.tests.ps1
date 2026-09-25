@@ -59,6 +59,79 @@ Describe 'New-ACLToken Function Tests' -Tag "Unit", "ACL", "Helper" {
         }
     }
 
+    Context 'Git Repositories Namespace - Branch and Tag tokens' {
+
+        BeforeAll {
+            . (Get-FunctionItem 'ConvertTo-GitRefToken.ps1').FullName
+            . (Get-FunctionItem 'ConvertFrom-GitRefToken.ps1').FullName
+            . (Get-FunctionItem 'ConvertTo-FormattedToken.ps1').FullName
+            . (Get-FunctionItem 'Parse-ACLToken.ps1').FullName
+            . (Get-ClassFilePath '000.LocalizedDataAzACLTokenPatten')
+        }
+
+        It 'Should return GitBranch type for a single-segment branch token' {
+            $result = New-ACLToken -SecurityNamespace 'Git Repositories' -TokenName 'MyProject/MyRepo/refs/heads/main'
+            $result.type | Should -Be 'GitBranch'
+            $result.projectId | Should -Be '1234'
+            $result.RepoId | Should -Be '1234'
+            $result.BranchName | Should -Be 'main'
+        }
+
+        It 'Should return GitBranch type for a multi-segment branch token' {
+            $result = New-ACLToken -SecurityNamespace 'Git Repositories' -TokenName 'MyProject/MyRepo/refs/heads/release/1.0'
+            $result.type | Should -Be 'GitBranch'
+            $result.BranchName | Should -Be 'release/1.0'
+        }
+
+        It 'Should return GitTag type for a tag token' {
+            $result = New-ACLToken -SecurityNamespace 'Git Repositories' -TokenName 'MyProject/MyRepo/refs/tags/v1.0'
+            $result.type | Should -Be 'GitTag'
+            $result.projectId | Should -Be '1234'
+            $result.RepoId | Should -Be '1234'
+            $result.TagName | Should -Be 'v1.0'
+        }
+
+        It 'Round-trips a single-segment branch token through the API token form and back' {
+            # New-ACLToken, ConvertTo-FormattedToken and Parse-ACLToken have to agree (CLAUDE.md
+            # gotcha #6): if they disagree, a permission written by Set() never matches the ACL
+            # read back by Get() and the resource reports drift forever.
+            $structured = New-ACLToken -SecurityNamespace 'Git Repositories' -TokenName 'MyProject/MyRepo/refs/heads/main'
+            $apiToken   = ConvertTo-FormattedToken -Token $structured
+            $apiToken   | Should -Be 'repoV2/1234/1234/refs/heads/6d00610069006e00'
+
+            $parsed = Parse-ACLToken -Token $apiToken -SecurityNamespace 'Git Repositories'
+            $parsed.type | Should -Be 'GitBranch'
+            $parsed.BranchName | Should -Be 'main'
+        }
+
+        It 'Round-trips a multi-segment (branch folder) token through the API token form and back' {
+            $structured = New-ACLToken -SecurityNamespace 'Git Repositories' -TokenName 'MyProject/MyRepo/refs/heads/release/1.0'
+            $apiToken   = ConvertTo-FormattedToken -Token $structured
+
+            $parsed = Parse-ACLToken -Token $apiToken -SecurityNamespace 'Git Repositories'
+            $parsed.type | Should -Be 'GitBranch'
+            $parsed.BranchName | Should -Be 'release/1.0'
+        }
+
+        It 'Round-trips a non-ASCII branch name through the API token form and back' {
+            $structured = New-ACLToken -SecurityNamespace 'Git Repositories' -TokenName 'MyProject/MyRepo/refs/heads/función'
+            $apiToken   = ConvertTo-FormattedToken -Token $structured
+
+            $parsed = Parse-ACLToken -Token $apiToken -SecurityNamespace 'Git Repositories'
+            $parsed.type | Should -Be 'GitBranch'
+            $parsed.BranchName | Should -Be 'función'
+        }
+
+        It 'Round-trips a tag token through the API token form and back' {
+            $structured = New-ACLToken -SecurityNamespace 'Git Repositories' -TokenName 'MyProject/MyRepo/refs/tags/v1.0'
+            $apiToken   = ConvertTo-FormattedToken -Token $structured
+
+            $parsed = Parse-ACLToken -Token $apiToken -SecurityNamespace 'Git Repositories'
+            $parsed.type | Should -Be 'GitTag'
+            $parsed.TagName | Should -Be 'v1.0'
+        }
+    }
+
     Context 'Identity Namespace' {
 
         It 'Should return GitGroupPermission type for valid identity group token' {

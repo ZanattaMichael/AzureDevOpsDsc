@@ -67,6 +67,26 @@ Function New-ACLToken
                 $result.type = 'GitProject'
                 $result.projectId = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
             }
+            elseif ($TokenName -match $LocalizedDataAzResourceTokenPatten.GitBranch)
+            {
+                # Derive the Token Type GitBranch. The ref name is kept exactly as written in the
+                # configuration (human-readable) - it is only hex/UTF-16LE-encoded per segment when
+                # ConvertTo-FormattedToken builds the API-side token string.
+                $result.type = 'GitBranch'
+                $result.projectId = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
+                $repoCacheKey = '{0}\{1}' -f $matches.ProjectName.Trim(), $matches.GitRepoName.Trim()
+                $result.RepoId = (Get-CacheItem -Key $repoCacheKey -Type 'LiveRepositories').id
+                $result.BranchName = $matches.BranchName.Trim()
+            }
+            elseif ($TokenName -match $LocalizedDataAzResourceTokenPatten.GitTag)
+            {
+                # Derive the Token Type GitTag
+                $result.type = 'GitTag'
+                $result.projectId = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
+                $repoCacheKey = '{0}\{1}' -f $matches.ProjectName.Trim(), $matches.GitRepoName.Trim()
+                $result.RepoId = (Get-CacheItem -Key $repoCacheKey -Type 'LiveRepositories').id
+                $result.TagName = $matches.TagName.Trim()
+            }
             elseif ($TokenName -match $LocalizedDataAzResourceTokenPatten.GitRepository)
             {
                 # Derive the Token Type GitRepository

@@ -16,6 +16,16 @@ The name of the Git repository within the Azure DevOps project.
 .PARAMETER isInherited
 A boolean value indicating whether the permissions are inherited.
 
+.PARAMETER BranchName
+Optional. Targets a single branch's ACL ('refs/heads/{BranchName}') instead of the repository's own
+ACL. Requires RepositoryName and is mutually exclusive with TagName. A leading 'refs/heads/' is
+accepted and stripped for comparison only.
+
+.PARAMETER TagName
+Optional. Targets a single tag's ACL ('refs/tags/{TagName}') instead of the repository's own ACL.
+Requires RepositoryName and is mutually exclusive with BranchName. A leading 'refs/tags/' is
+accepted and stripped for comparison only.
+
 .PARAMETER Permissions
 An optional hashtable array of permissions to compare against the retrieved ACLs.
 
@@ -54,6 +64,12 @@ Function Get-AzDoGitPermission
         [Parameter(Mandatory = $true)]
         [bool]$isInherited,
 
+        [Parameter(Mandatory = $false)]
+        [string]$BranchName,
+
+        [Parameter(Mandatory = $false)]
+        [string]$TagName,
+
         [Parameter()]
         [HashTable[]]$Permissions,
 
@@ -88,6 +104,15 @@ Function Get-AzDoGitPermission
         Write-Verbose "[Get-AzDoGitPermission] Repository Name: $RepositoryName"
     }
 
+    # Branch/tag ACLs only exist beneath a repository, and 'refs/heads' and 'refs/tags' are
+    # different tokens - specifying both together is ambiguous, so it is refused rather than
+    # silently preferring one. A leading 'refs/heads/'/'refs/tags/' is accepted in the
+    # configuration but stripped here: see Format-AzDoGitRefName.
+    $hasBranch = -not [String]::IsNullOrWhiteSpace($BranchName)
+    $hasTag    = -not [String]::IsNullOrWhiteSpace($TagName)
+    $normalizedBranchName = if ($hasBranch) { Format-AzDoGitRefName -RefName $BranchName } else { $null }
+    $normalizedTagName    = if ($hasTag)    { Format-AzDoGitRefName -RefName $TagName }    else { $null }
+
     #
     # Construct a hashtable detailing the group
 
@@ -96,8 +121,26 @@ Function Get-AzDoGitPermission
         propertiesChanged = @()
         project = $ProjectName
         repositoryName = $RepositoryName
+        branchName = $BranchName
+        tagName = $TagName
         status = $null
         reason = $null
+    }
+
+    if ($hasBranch -and $hasTag)
+    {
+        Write-Warning "[Get-AzDoGitPermission] BranchName and TagName are mutually exclusive."
+        $getGroupResult.status = [DSCGetSummaryState]::Error
+        $getGroupResult.reason = 'BranchName and TagName are mutually exclusive.'
+        return $getGroupResult
+    }
+
+    if (($hasBranch -or $hasTag) -and -not $RepositoryName)
+    {
+        Write-Warning "[Get-AzDoGitPermission] BranchName/TagName requires RepositoryName."
+        $getGroupResult.status = [DSCGetSummaryState]::Error
+        $getGroupResult.reason = 'BranchName/TagName requires RepositoryName.'
+        return $getGroupResult
     }
 
     Write-Verbose "[Get-AzDoGitPermission] Group result hashtable constructed."
@@ -163,10 +206,13 @@ Function Get-AzDoGitPermission
     # Add to the ACL Lookup Params
     $getGroupResult.namespace = $namespace
 
-    # Token-scope the ACL fetch to this repository's (or the project's) Git token instead of pulling
-    # every ACL in the namespace. Fall back to the full-namespace fetch if the scoped query returns
-    # nothing, so behaviour is never worse than the previous full scan.
-    $aclToken = if ($RepositoryName) { 'repoV2/{0}/{1}' -f $projectCache.id, $repositoryCache.id } else { 'repoV2/{0}' -f $projectCache.id }
+    # Token-scope the ACL fetch to this branch's/tag's, repository's or the project's Git token
+    # instead of pulling every ACL in the namespace. Fall back to the full-namespace fetch if the
+    # scoped query returns nothing, so behaviour is never worse than the previous full scan.
+    $aclToken = if ($hasBranch) { 'repoV2/{0}/{1}/refs/heads/{2}' -f $projectCache.id, $repositoryCache.id, (ConvertTo-GitRefToken -RefName $normalizedBranchName) }
+                elseif ($hasTag) { 'repoV2/{0}/{1}/refs/tags/{2}' -f $projectCache.id, $repositoryCache.id, (ConvertTo-GitRefToken -RefName $normalizedTagName) }
+                elseif ($RepositoryName) { 'repoV2/{0}/{1}' -f $projectCache.id, $repositoryCache.id }
+                else { 'repoV2/{0}' -f $projectCache.id }
     $ACLLookupParams = @{
         OrganizationName        = $OrganizationName
         SecurityDescriptorId    = $namespace.namespaceId
@@ -210,7 +256,21 @@ Function Get-AzDoGitPermission
 
     # Filter the ACLs for the Repository
     # If the Repository is not specified, return the GitProject ACLs
-    if (-not $RepositoryName) {
+    if ($hasBranch) {
+        # Filter the ACLs for this one branch. The full-namespace fallback returns every branch's
+        # ACL for the repository, so the decoded BranchName has to be compared too, not just the
+        # RepoId - otherwise a different branch's ACL would be read as this branch's current state.
+        $DifferenceACLs = $DifferenceACLs | Where-Object {
+            ($_.Token.Type -eq 'GitBranch') -and ($_.Token.RepoId -eq $repositoryCache.id) -and
+            ((Format-AzDoGitRefName -RefName $_.Token.BranchName) -eq $normalizedBranchName)
+        }
+    } elseif ($hasTag) {
+        # Filter the ACLs for this one tag - see the GitBranch case above.
+        $DifferenceACLs = $DifferenceACLs | Where-Object {
+            ($_.Token.Type -eq 'GitTag') -and ($_.Token.RepoId -eq $repositoryCache.id) -and
+            ((Format-AzDoGitRefName -RefName $_.Token.TagName) -eq $normalizedTagName)
+        }
+    } elseif (-not $RepositoryName) {
         # Filter the ACLs for the top-level GitProject
         $DifferenceACLs = $DifferenceACLs | Where-Object {
             ($_.Token.Type -eq 'GitProject') -and ($_.Token.ProjectId -eq $projectCache.id)
@@ -233,7 +293,11 @@ Function Get-AzDoGitPermission
         isInherited         = $isInherited
         OrganizationName    = $OrganizationName
         TokenName           = $(
-                                if (-not $RepositoryName) {
+                                if ($hasBranch) {
+                                    '[{0}]\{1}\refs\heads\{2}' -f $ProjectName, $RepositoryName, $normalizedBranchName
+                                } elseif ($hasTag) {
+                                    '[{0}]\{1}\refs\tags\{2}' -f $ProjectName, $RepositoryName, $normalizedTagName
+                                } elseif (-not $RepositoryName) {
                                     'repoV2\{0}' -f $ProjectName
                                 } else {
                                     '[{0}]\{1}' -f $ProjectName, $RepositoryName
