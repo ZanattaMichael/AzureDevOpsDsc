@@ -227,6 +227,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Documentation
+  - `docs/ResourceRoadmap.md` records that organization-scoped pipeline settings (#83)
+    are blocked. There is no organization-scoped `_apis/build/generalsettings` route: the
+    live organization answers `404 The controller for path '/_apis/build/generalsettings'
+    was not found`. No resource was built, and the next step is a spike of the route the
+    portal uses.
   - `docs/ResourceRoadmap.md` brought back in line with `main`. The 16 resources
     merged in #62 (classes `101`-`116`) were still written up as unbuilt work, and
     the coverage counts in section 1 predated them. Shipped sections are now marked

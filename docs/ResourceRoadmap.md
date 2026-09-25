@@ -343,7 +343,7 @@ Items from #59 checked against the code:
 
 | #59 item | Finding |
 |---|---|
-| `AzDoOrgPipelineSettings`, `...JobAuthorizationScope`, `...ArtifactsRetention` | **Partially covered.** `AzDoPipelineSettings` already exposes `EnforceJobAuthScope`, `EnforceJobAuthScopeForReleases`, `EnforceReferencedRepoScopedToken`, `EnforceSettableVar`, `PublishPipelineMetadata`, `StatusBadgesArePrivate`, `DisableClassicPipelineCreation`, `DisableImpliedYAMLCiTrigger` — but scoped to `ProjectName`. The gap is the **org-scoped** equivalent, not the settings themselves. Extend the existing resource with an org scope, or add one `AzDoOrgPipelineSettings`; do not add six separate resources. |
+| `AzDoOrgPipelineSettings`, `...JobAuthorizationScope`, `...ArtifactsRetention` | **Partially covered.** `AzDoPipelineSettings` already exposes `EnforceJobAuthScope`, `EnforceJobAuthScopeForReleases`, `EnforceReferencedRepoScopedToken`, `EnforceSettableVar`, `PublishPipelineMetadata`, `StatusBadgesArePrivate`, `DisableClassicPipelineCreation`, `DisableImpliedYAMLCiTrigger` — but scoped to `ProjectName`. The gap is the **org-scoped** equivalent, not the settings themselves. **Blocked (#83): there is no organization-scoped REST route.** The public reference documents General Settings only with a `{project}` segment, and the same route without one does not exist — against the live test organization, `GET https://dev.azure.com/{org}/_apis/build/generalsettings` returns 404 `The controller for path '/_apis/build/generalsettings' was not found or does not implement IController`. A first attempt at `AzDoOrgPipelineSettings` built on that route was withdrawn for this reason. The switches are visible in the portal (Organization settings → Pipelines → Settings), so a route exists somewhere, but not a documented one. Before building anything, spike what the portal calls and decide whether an undocumented contract is acceptable. The same spike should check whether the project-scoped GET shows that a switch is locked on by the organization: today `AzDoPipelineSettings` cannot tell, so a project that wants such a switch off reports drift. |
 | `AzDoOrganizationPolicy` | **Overlaps** `AzDoOrganizationSettings` (`AllowPublicProjects`, `AllowExternalGuestAccess`, `EnableOAuthAuthentication`, `EnableSSHAuthentication`, `DisallowAadGuestUserPolicy`). Extend it rather than adding a resource. |
 | `AzDoRepositoryDefaultBranch`, `AzDoForkPolicy` | **Already covered** by `AzDoRepositorySettings` (`DefaultBranch`, `DisableForking`, `AllowSquashMerge`, `AllowRebaseMerge`, `AllowNoFastForward`). Drop both. |
 | `AzDoCommitStatusPolicy`, `AzDoPullRequestPolicySettings` | **Verify against `AzDoBranchPolicy`** before starting — likely expressible as policy types there rather than as new resources. |
@@ -389,8 +389,9 @@ Still outstanding, in the order below:
   `AzDoBoardSettings`, `AzDoCardRule`. The `Dashboards` and `Plan` ACL namespaces are
   still unimplemented (§2).
 - **Remaining §6 gaps** — `AzDoElasticPool`, `AzDoBuildRetentionSettings`, `AzDoWikiPage`.
-- **Org-scoped pipeline settings** (§7) — extend `AzDoPipelineSettings` rather than adding
-  six resources.
+- **Org-scoped pipeline settings** (§7) — **blocked**: there is no organization-scoped
+  `_apis/build/generalsettings` route (it returns 404). Needs a spike of the route the portal
+  uses before any resource is built (#83).
 - **Test management** (§7), then **classic release management** (§7) with
   `AzDoReleaseFolder` (§5.5).
 - **Tenant-scoped items** (§7) — **spiked and closed as unsupported/not-built**, see
@@ -414,7 +415,7 @@ remains:
    `AzDoDeliveryPlan`.
 4. **Board configuration** (§6) — `AzDoBoardColumn`, `AzDoBoardSettings`, `AzDoCardRule`.
 5. **`AzDoWikiPage`** (§6).
-6. **Org-scoped pipeline settings** (§7) — extend `AzDoPipelineSettings`.
+6. **Org-scoped pipeline settings** (§7) — blocked on a spike; no documented org-scoped route.
 7. Test management, then classic release management, with `AzDoReleaseFolder` (§5.5).
 8. **Tenant-scoped items** (§7) — done: spiked in #85 and closed as unsupported/not-built,
    see [`docs/Spikes/TenantScopedPolicies.md`](Spikes/TenantScopedPolicies.md).
