@@ -29,6 +29,12 @@ data LocalizedDataAzResourceTokenPatten
         # Git ACL Token Patterns
         OrganizationGit     = '^azdoorg$'
         GitProject          = '^(repoV2)(\/|\\)(?<ProjectName>[A-Za-z0-9-_]+)'
+        # Branch/tag forms are checked before the bare repository form (which has no trailing
+        # anchor and would otherwise match just the '{Project}\{Repo}' prefix of either one).
+        # The ref name itself is captured as-written (human-readable, e.g. 'release/1.0') - the
+        # per-segment hex/UTF-16LE encoding happens only when building the API-side token.
+        GitBranch           = '^(?<ProjectName>[A-Za-z0-9-_]+)(\/|\\)(?<GitRepoName>[A-Za-z0-9-_]+)(\/|\\)refs(\/|\\)heads(\/|\\)(?<BranchName>.+)$'
+        GitTag              = '^(?<ProjectName>[A-Za-z0-9-_]+)(\/|\\)(?<GitRepoName>[A-Za-z0-9-_]+)(\/|\\)refs(\/|\\)tags(\/|\\)(?<TagName>.+)$'
         GitRepository       = '(?<ProjectName>[A-Za-z0-9-_]+)(\/|\\)(?<GitRepoName>[A-Za-z0-9-_]+)'
         # Identity ACL Token Patterns
         GroupPermission     = '^(?<ProjectId>[A-Za-z0-9-_]+)\\(?<GroupId>[A-Za-z0-9-_]+)$'
