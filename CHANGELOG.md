@@ -56,6 +56,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     into the shipped `AzDoAuditStream` (#69). `docs/ResourceRoadmap.md` §7/§9 updated
     with the verdicts and a link to the spike; reserved class prefixes `130`-`131` are
     left unused.
+  - Added the private helper `Get-AzDoApiUri`, which centralizes resolution of the base
+    URL for each Azure DevOps REST API service (`Core`, `Identity`, `Entitlements`,
+    `Feeds`, `Audit`, `Release`) instead of leaving it inlined per call site. It also
+    accepts an on-premise `-ServerUrl` (Azure DevOps Server collection URL), returning it
+    for every service that has a Server-side equivalent and refusing `Entitlements` and
+    `Audit`, which do not. This is the foundation increment of the Azure DevOps Server
+    support plan tracked in
+    [#91](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/91) (see
+    `docs/AzureDevOpsServerSupport.md`); it is not wired into any existing call site and
+    does not change authentication, so no existing behavior changes.
   - Added `AzDoQueryFolder`, a resource managing folders in a project's shared work
     item query tree. Folders are declared in their own right so that queries can
     depend on them, rather than each query creating its own ancestry - which would

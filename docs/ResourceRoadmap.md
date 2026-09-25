@@ -461,3 +461,14 @@ class resolves them by that convention, so a missing one fails at apply time), e
 `[DscProperty(Key)]`, no DSC property named `Force`, unit tests mirroring the public
 function path, an integration test using the `New-RestAuthHeader` pattern, and a rebuild +
 redeploy before running integration tests.
+
+---
+
+## 10. Cross-cutting — Azure DevOps Server support
+
+Whether this module targets on-premise Azure DevOps Server in addition to Azure DevOps
+Services is tracked as its own cross-cutting effort in
+[#91](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/91), not as a per-resource
+item here. See [`docs/AzureDevOpsServerSupport.md`](AzureDevOpsServerSupport.md) for the
+increment plan; the decision of whether to build it out is the repository owner's and is
+recorded there as pending.
