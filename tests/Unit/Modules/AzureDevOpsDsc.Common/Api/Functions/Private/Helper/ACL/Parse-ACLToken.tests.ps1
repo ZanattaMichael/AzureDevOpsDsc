@@ -39,6 +39,9 @@ Describe 'Parse-ACLToken' -Tag "Unit", "ACL", "Helper" {
             ReleaseDefinitionPermission = '^(?<ProjectId>[A-Za-z0-9-]+)(\/(?<FolderPath>.+?))?\/(?<DefinitionId>[0-9]+)$'
             ReleaseFolderPermission     = '^(?<ProjectId>[A-Za-z0-9-]+)\/(?<FolderPath>(?![0-9]+$).+)$'
             ReleaseRootPermission       = '^(?<ProjectId>[A-Za-z0-9-]+)$'
+            TaggingPermission       = '^\/(?<ProjectId>[A-Za-z0-9-]+)$'
+            AnalyticsPermission     = '^\$\/(?<ProjectId>[A-Za-z0-9-]+)$'
+            AnalyticsViewsPermission = '^\$\/Shared\/(?<ProjectId>[A-Za-z0-9-]+)$'
         }
 
         # If there were any Mock commands needed, they should be added here using the complete syntax.
@@ -213,5 +216,51 @@ Describe 'Parse-ACLToken' -Tag "Unit", "ACL", "Helper" {
         $token = "unknown:test"
         $SecurityNamespace = "Identity"
         { Parse-ACLToken -Token $token -SecurityNamespace $SecurityNamespace } | Should -Throw "Token '$token' is not recognized."
+    }
+
+    It 'Should parse a Tagging token correctly' {
+        $projectId = [guid]::NewGuid().ToString()
+        $result = Parse-ACLToken -Token "/$projectId" -SecurityNamespace 'Tagging'
+        $result.type | Should -Be 'Tagging'
+        $result.ProjectId | Should -Be $projectId
+    }
+
+    It 'Should return TaggingUnknown for a token that does not match the shape' {
+        $result = Parse-ACLToken -Token 'not-a-tagging-token/extra' -SecurityNamespace 'Tagging'
+        $result.type | Should -Be 'TaggingUnknown'
+    }
+
+    It 'Should parse an Analytics token correctly' {
+        $projectId = [guid]::NewGuid().ToString()
+        $result = Parse-ACLToken -Token "`$/$projectId" -SecurityNamespace 'Analytics'
+        $result.type | Should -Be 'Analytics'
+        $result.ProjectId | Should -Be $projectId
+    }
+
+    It 'Should return AnalyticsUnknown for a token that does not match the shape' {
+        $result = Parse-ACLToken -Token 'not-an-analytics-token' -SecurityNamespace 'Analytics'
+        $result.type | Should -Be 'AnalyticsUnknown'
+    }
+
+    It 'Should parse an AnalyticsViews token correctly' {
+        $projectId = [guid]::NewGuid().ToString()
+        $result = Parse-ACLToken -Token "`$/Shared/$projectId" -SecurityNamespace 'AnalyticsViews'
+        $result.type | Should -Be 'AnalyticsViews'
+        $result.ProjectId | Should -Be $projectId
+    }
+
+    It 'Should return AnalyticsViewsUnknown for a token that does not match the shape' {
+        $result = Parse-ACLToken -Token 'not-a-views-token' -SecurityNamespace 'AnalyticsViews'
+        $result.type | Should -Be 'AnalyticsViewsUnknown'
+    }
+
+    It 'Should still fall back to Generic for a namespace it does not natively recognise' {
+        # Backward compatibility: any namespace outside the explicit switch (e.g. one used only
+        # via AzDoSecurityNamespacePermission) must keep resolving to the Generic passthrough.
+        Mock -CommandName Write-Warning
+        $token = 'SomeArbitraryToken/123'
+        $result = Parse-ACLToken -Token $token -SecurityNamespace 'SomeUnhandledNamespace'
+        $result.type | Should -Be 'Generic'
+        $result.TokenValue | Should -Be $token
     }
 }

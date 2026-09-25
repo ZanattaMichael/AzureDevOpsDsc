@@ -89,6 +89,21 @@ Function ConvertTo-FormattedToken {
             $string = '$PROJECT:vstfs:///Classification/TeamProject/{0}' -f $Token.ProjectId
             break
         }
+        # Tagging permissions — '/{projectId}'
+        {$_.type -eq 'Tagging'} {
+            $string = '/{0}' -f $Token.ProjectId
+            break
+        }
+        # Analytics permissions — '$/{projectId}'
+        {$_.type -eq 'Analytics'} {
+            $string = '$/{0}' -f $Token.ProjectId
+            break
+        }
+        # AnalyticsViews permissions — '$/Shared/{projectId}'
+        {$_.type -eq 'AnalyticsViews'} {
+            $string = '$/Shared/{0}' -f $Token.ProjectId
+            break
+        }
         # Process permissions — org-wide root
         {$_.type -eq 'ProcessRoot'} {
             $string = '$PROCESS'

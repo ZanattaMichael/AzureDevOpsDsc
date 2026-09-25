@@ -162,6 +162,9 @@ Each resource links to its example/usage documentation.
 | [AzDoQueryPermission](source/Examples/Resources/AzDoQueryPermission.md) | Manages permissions on work item query folders. |
 | [AzDoReleaseFolderPermission](source/Examples/Resources/AzDoReleaseFolderPermission.md) | Manages permissions on classic Release folders, which definitions inherit. |
 | [AzDoReleaseDefinitionPermission](source/Examples/Resources/AzDoReleaseDefinitionPermission.md) | Manages permissions on a single classic Release definition. |
+| [AzDoTaggingPermission](source/Examples/Resources/AzDoTaggingPermission.md) | Manages permissions for creating work item tags. |
+| [AzDoAnalyticsPermission](source/Examples/Resources/AzDoAnalyticsPermission.md) | Manages Analytics read/administer/staging permissions. |
+| [AzDoAnalyticsViewsPermission](source/Examples/Resources/AzDoAnalyticsViewsPermission.md) | Manages read/write/delete permissions on shared Analytics views. |
 
 ### Pipelines, environments and agents
 
