@@ -225,6 +225,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     rewritten around what is genuinely left.
 
 - AzureDevOpsDscNative
+  - `AzDoCheckConfiguration.ResourceType` now also accepts `queue`, `variablegroup` and
+    `securefile`, so a check (Approval, Branch control, Business Hours, ...) can be attached to
+    an agent queue, a variable group or a secure file, not only an environment, repository or
+    service connection (#77). `queue` resolves to the **project** queue id
+    (`distributedtask/queues`, the `LiveAgentQueues` cache) by name within `ProjectName`, not the
+    org-level agent pool id. The name-to-id resolution that `New-AzDoCheckConfiguration` used to
+    do inline is factored into the new private helper `Resolve-AzDoCheckTargetResource`, shared
+    across all six resource types and covered by its own unit tests. A `BranchControl` check
+    type entry was also added to the `CheckType` map; unlike `Approval`, Branch Control (and
+    Business Hours) share one "Task Check" type id and are distinguished by a
+    `Settings.definitionRef` the caller supplies - see the updated
+    `source/Examples/Resources/AzDoCheckConfiguration.md` for the exact shape.
   - The ten permission resources that still formatted a whole security namespace
     before narrowing to one token now discard the ACLs they cannot be interested in
     first, matching what `Get-AzDoProjectPermission` and `Get-AzDoProcessPermission`
