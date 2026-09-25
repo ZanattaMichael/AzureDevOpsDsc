@@ -15,8 +15,8 @@ explicitly.
 
 ## 1. Current coverage (verified)
 
-76 class files exist, `001`–`116`; 65 of them carry `[DscResource()]` (the other 11 are the
-auth and base classes). By subsystem:
+77 class files exist, `001`–`119` (`117`–`118` reserved); 66 of them carry
+`[DscResource()]` (the other 11 are the auth and base classes). By subsystem:
 
 | Subsystem | Resources |
 |---|---|
@@ -28,7 +28,7 @@ auth and base classes). By subsystem:
 | Work item queries | `AzDoQueryFolder`, `AzDoWorkItemQuery`, `AzDoQueryPermission` |
 | Process customization | `AzDoPicklist`, `AzDoProcessWorkItemType`, `AzDoProcessField`, `AzDoProcessState`, `AzDoProcessRule`, `AzDoProcessBehavior` |
 | Teams | `AzDoTeam`, `AzDoTeamMember`, `AzDoTeamSettings` |
-| Pipelines | `AzDoPipeline`, `AzDoPipelinePermission`, `AzDoPipelineSettings`, `AzDoPipelineEnvironment`, `AzDoEnvironmentApproval`, `AzDoEnvironmentPermission`, `AzDoCheckConfiguration`, `AzDoTaskGroup`, `AzDoAgentPool`, `AzDoAgentPoolPermission`, `AzDoAgentQueue`, `AzDoDeploymentGroup`, `AzDoPipelineFolder`, `AzDoPipelineFolderPermission` |
+| Pipelines | `AzDoPipeline`, `AzDoPipelinePermission`, `AzDoPipelineSettings`, `AzDoPipelineEnvironment`, `AzDoEnvironmentApproval`, `AzDoEnvironmentPermission`, `AzDoCheckConfiguration`, `AzDoTaskGroup`, `AzDoAgentPool`, `AzDoAgentPoolPermission`, `AzDoAgentQueue`, `AzDoDeploymentGroup`, `AzDoPipelineFolder`, `AzDoPipelineFolderPermission`, `AzDoPipelineAuthorization` |
 | Library / connections | `AzDoVariableGroup`, `AzDoVariableGroupPermission`, `AzDoServiceConnection`, `AzDoServiceConnectionPermission`, `AzDoSecureFile`, `AzDoSecureFilePermission` |
 | Artifacts | `AzDoArtifactFeed`, `AzDoArtifactFeedPermission`, `AzDoArtifactFeedSettings`, `AzDoArtifactFeedView` |
 | Wiki | `AzDoWiki` |
@@ -295,6 +295,7 @@ code beyond conventions. Both landed **before** their permission counterparts, a
 
 | Resource | Why it matters | Effort | Status |
 |---|---|---|---|
+| `AzDoServiceConnection` / `AzDoVariableGroup` cross-project sharing | Both objects can be shared with other projects instead of copied per project (#79). `AzDoServiceConnection` has `SharedWithProjects`/`SharedNameOverrides`, backed by the helper `Resolve-AzDoSharedProjectReferences`: the documented share endpoint for added projects and a per-project DELETE for dropped ones. ACL tokens are unaffected, since they anchor to the owning project and the connection's own id. Variable groups are not covered: Azure DevOps Services answers `"Sharing of variable group is not allowed."` to the POST, PUT and the documented `PATCH .../distributedtask/variablegroups?variableGroupId=` share call alike, so there is no route to build on. | Low | **Shipped** (service connections); variable groups blocked by the service |
 | `AzDoSecureFile` / `AzDoSecureFilePermission` | Certificates, keystores and signing files used by pipelines. They share the `Library` namespace with `AzDoVariableGroup`, so most of the ACL token work already existed. | Low | **Shipped** (`105`–`106`) |
 | `AzDoGroupEntitlement` | Group-based license rules. `AzDoUserEntitlement` covers only per-user licensing. | Low | **Shipped** (`109`) |
 | `AzDoServicePrincipalEntitlement` | Workload identities / service principals as org members, closing the inconsistency with the existing `ServicePrincipalToken` and `WorkloadIdentityFederationToken` auth. | Low | **Shipped** (`110`) |
@@ -344,16 +345,17 @@ Items from #59 checked against the code:
 | #59 item | Finding |
 |---|---|
 | `AzDoOrgPipelineSettings`, `...JobAuthorizationScope`, `...ArtifactsRetention` | **Partially covered.** `AzDoPipelineSettings` already exposes `EnforceJobAuthScope`, `EnforceJobAuthScopeForReleases`, `EnforceReferencedRepoScopedToken`, `EnforceSettableVar`, `PublishPipelineMetadata`, `StatusBadgesArePrivate`, `DisableClassicPipelineCreation`, `DisableImpliedYAMLCiTrigger` — but scoped to `ProjectName`. The gap is the **org-scoped** equivalent, not the settings themselves. **Blocked (#83): there is no organization-scoped REST route.** The public reference documents General Settings only with a `{project}` segment, and the same route without one does not exist — against the live test organization, `GET https://dev.azure.com/{org}/_apis/build/generalsettings` returns 404 `The controller for path '/_apis/build/generalsettings' was not found or does not implement IController`. A first attempt at `AzDoOrgPipelineSettings` built on that route was withdrawn for this reason. The switches are visible in the portal (Organization settings → Pipelines → Settings), so a route exists somewhere, but not a documented one. Before building anything, spike what the portal calls and decide whether an undocumented contract is acceptable. The same spike should check whether the project-scoped GET shows that a switch is locked on by the organization: today `AzDoPipelineSettings` cannot tell, so a project that wants such a switch off reports drift. |
-| `AzDoOrganizationPolicy` | **Overlaps** `AzDoOrganizationSettings` (`AllowPublicProjects`, `AllowExternalGuestAccess`, `EnableOAuthAuthentication`, `EnableSSHAuthentication`, `DisallowAadGuestUserPolicy`). Extend it rather than adding a resource. |
+| `AzDoOrganizationPolicy` | **Closed (#84).** Implemented as five more properties on `AzDoOrganizationSettings` rather than a new resource: `EnableIPConditionalAccessPolicyValidation`, `LogAuditEvents`, `AllowTeamAdminsToInviteUsers`, `EnableRequestAccess` (+ `RequestAccessUrl`) and `EnableArtifactsFeedUpstreamProtection`, written through `PATCH _apis/OrganizationPolicy/Policies/{policyName}` and read from the policy page's data provider, or per policy from the same route's GET (which needs `defaultValue`) when the page routes return nothing, separate from the original five properties' `_apis/settings/entries/host` mechanism. The policy properties are tri-state strings (`''` = unmanaged). `LimitUserVisibility` was left out — it verified as a preview-feature flag, not a confirmed organization policy. Microsoft Entra tenant-level policies (PAT restrictions, organization-creation restrictions) are out of scope here and tracked in #85. |
 | `AzDoRepositoryDefaultBranch`, `AzDoForkPolicy` | **Already covered** by `AzDoRepositorySettings` (`DefaultBranch`, `DisableForking`, `AllowSquashMerge`, `AllowRebaseMerge`, `AllowNoFastForward`). Drop both. |
-| `AzDoCommitStatusPolicy`, `AzDoPullRequestPolicySettings` | **Verify against `AzDoBranchPolicy`** before starting — likely expressible as policy types there rather than as new resources. |
+| `AzDoCommitStatusPolicy`, `AzDoPullRequestPolicySettings` | **Closed (#74).** `AzDoBranchPolicy` now detects `PolicySettings` drift and supports several policies of the same `PolicyType` in one scope via `PolicyIdentifier`, so a commit status policy is `PolicyType = 'StatusCheck'` with `PolicyIdentifier` set to the status name, and pull request policy settings (merge strategy, comment requirements, work item linking) are `PolicySettings` on the existing policy types. No new resource needed. Deferred: `PolicyIdentifier` only matches a top-level scalar or array settings value, not one nested a level deeper (e.g. a status check's `genre`/`name` pair) — see `Test-AzDoBranchPolicyIdentifierMatch`. |
 | `AzDoTeamFieldValues` | **Likely covered** by `AzDoTeamSettings` (`DefaultAreaPath`, `AreaPaths`). Verify, then drop. |
 | `AzDoWorkItemQuery`, `AzDoQueryFolderPermission` | **Closed.** Split into `AzDoQueryFolder` / `AzDoWorkItemQuery` / `AzDoQueryPermission` and shipped (§3). |
 | `AzDoPipelineRetentionPolicy` | Confirmed gap; listed above as `AzDoBuildRetentionSettings`. |
-| `AzDoResourceAuthorization` | **Partially covered** by `AzDoCheckConfiguration` and the per-resource permission resources. Scope it precisely before starting. |
+| `AzDoResourceAuthorization` | **Closed.** Shipped as `AzDoPipelineAuthorization` (class `119`, [#78](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/78)) — manages the `pipelinePermissions` REST API (which pipelines may *use* a service connection, agent queue, variable group, secure file, environment or repository), distinct from `AzDoCheckConfiguration` (approval/other checks gating a run) and the per-resource permission resources (who may *administer* the resource). |
 | `AzDoGroupEntitlement` | **Closed.** Shipped as class `109` (§6). |
 | `AzDoPipelineFolder` | **Closed.** Shipped as classes `107`–`108`, together with the `Build` folder ACL token (§5.3–5.4). |
-| `AzDoWikiPage`, `AzDoElasticPool`, `AzDoDeploymentGroupAgent`, dashboards, delivery plans, analytics | Confirmed gaps, still outstanding. |
+| `AzDoDeploymentGroupAgent` | **Closed for tags/removal.** Shipped as `AzDoEnvironmentKubernetesResource` (`125`), `AzDoEnvironmentVMResource` (`126`) and `AzDoDeploymentGroupTarget` (`127`) — see §8. VM and deployment-group targets are agent-install-only by design; DSC never registers one, only manages tags and removal of an already-registered target. Kubernetes resources are fully creatable via the REST API. |
+| `AzDoWikiPage`, `AzDoElasticPool`, dashboards, delivery plans, analytics | Confirmed gaps, still outstanding. |
 | Classic Release Management (Phase 2 in #59) | Confirmed gap, but **recommend demoting** below Boards/Queries and Process customization. It is a legacy subsystem in maintenance mode, and it is the largest surface on the list (`AzDoReleaseDefinition` alone is comparable in size to `AzDoPipeline`). Value per unit of effort is the lowest of anything proposed. |
 | Test Management (Phase 3 in #59) | **Closed** (#87). Shipped as `AzDoTestVariable`, `AzDoTestConfiguration`, `AzDoTestPlan` and `AzDoTestSuite` (classes `138`–`141`, §8). Test cases, test points and test runs remain out of scope - they are execution-time state, not desired-state configuration. There is no test-plan security namespace; 'Manage test plans'/'Manage test suites' are CSS (area path) permissions already covered by `AzDoAreaPermission`, so no `AzDoTestPlanPermission` resource was added. |
 | `AzDoBillingSettings`, `AzDoPatPolicy`, `AzDoExtensionPolicy`, `AzDoAuditLogAlert` | **Spiked in [#85](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/85), see [`docs/Spikes/TenantScopedPolicies.md`](Spikes/TenantScopedPolicies.md).** All four verdicts are **unsupported / not built**: `AzDoPatPolicy` and an org-creation-restriction candidate have no documented REST route and the tenant-level halves need a Microsoft Entra tenant-admin identity this module cannot model; `AzDoBillingSettings` is excluded outright because every write is a billing/purchase change; `AzDoExtensionPolicy` has no documented route for the policy toggles (role constraint alone would pass); `AzDoAuditLogAlert` is not a distinct feature and folds into the shipped `AzDoAuditStream` (#69). The org-level "restrict PAT creation" allow-list is a follow-up property for `AzDoOrganizationSettings` once #84 lands, not a tenant policy. |
@@ -377,6 +379,26 @@ Merged to `main` in [#62](https://github.com/ZanattaMichael/AzureDevOpsDsc/pull/
 This closed §3, §4, §5.2, §5.3, §5.4 and most of §6, and added `WorkItemQueryFolders`,
 the `SecureFile` form of `Library` and the folder form of `Build` to the ACL token helpers
 (§2).
+
+Added in [#82](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/82) — 3 new
+resources, classes `125`–`127`:
+
+| Resource | Notes |
+|---|---|
+| `AzDoEnvironmentKubernetesResource` | Environment Kubernetes namespace resource, addressed via a service connection. Fully creatable/removable through the REST API. The issue's `ResourceName` property is exposed as `KubernetesResourceName` (reserved elsewhere in the module). The Kubernetes provider API has no Update call, so any drift (including Tags-only drift) is resolved by delete-then-recreate, which changes the resource's id — Tags drift is never silently ignored. |
+| `AzDoEnvironmentVMResource` | Tags and removal of an already-registered environment VM resource. Registration is agent-install-only (`config.cmd`/`config.sh`); this resource never creates one. `Present` with no agent registered under `MachineName` makes `Get` report `Error`/`AgentNotRegistered` and `Set` **throw** (not `Write-Error`) with an install-the-agent message, since an `Error` status still routes to `Set`. `Absent` with nothing registered is the desired state. |
+| `AzDoDeploymentGroupTarget` | Tags and removal of an already-registered deployment group target. Same agent-install-only, throw-on-`Set` design as `AzDoEnvironmentVMResource`, for deployment groups instead of pipeline environments. |
+
+Live-organization integration coverage: `AzDoEnvironmentKubernetesResource.tests.ps1` creates a
+synthetic Kubernetes-type service connection with a placeholder kubeconfig and exercises
+create/no-drift/tag-drift-and-fix/remove; if the organization's `providers/kubernetes` endpoint
+validates cluster reachability before accepting the resource, the affected assertions report via
+`Set-ItResult -Skipped` (never `-Skip`) rather than being silently omitted, and unit tests
+(`tests/Unit/.../AzDoEnvironmentKubernetesResource/`) cover the lookup/drift/remediation logic
+independently of that. `AzDoEnvironmentVMResource.tests.ps1` and
+`AzDoDeploymentGroupTarget.tests.ps1` can only exercise the unregistered-machine paths in CI
+(`Present` → `Test` false, `Set` throws; `Absent` → `Test` true) because installing an agent is
+outside what a CI job can do; the tag-patch path is unit-tested only.
 
 Test management (#87) added 4 more resources, classes `138`–`141`:
 
@@ -414,6 +436,97 @@ Still outstanding, in the order below:
 
 ---
 
+## 8a. DSC v3 export (#92)
+
+DSC v3's PowerShell adapter can call a parameterless static `Export()` on a class-based
+resource to generate its configuration from live state instead of it being hand-written.
+See USAGE.md, "Onboarding an Existing Organization with Export", for how it is dispatched
+and how to run it.
+
+**Shipped** — first increment ([#92](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/92)):
+
+| Resource | Notes |
+|---|---|
+| `AzDoProject` | Exports `Ensure`, `ProjectName`, `ProjectDescription`, `Visibility`. Skips projects that are not `wellFormed`. |
+| `AzDoGitRepository` | Exports `Ensure`, `ProjectName`, `RepositoryName`. Skips disabled repositories. |
+
+Both reuse the shared `AzDevOpsDscResourceBase::ExportDscResourceInstances()` plumbing and the
+`Protect-AzDoExportedSecretProperty` secret-redaction helper; neither resource has secret
+properties today.
+
+Still outstanding — every other resource has no `Export-<ResourceName>` function yet, so
+calling `Export()` on it throws `"export is not implemented for <ResourceName>"`. Adding one
+is additive per resource (no shared-plumbing changes needed) and should follow the existing
+`Get-`/list-cache pattern each resource already has. Not yet attempted:
+
+- Permission resources (`AzDoAreaPermission`, `AzDoIterationPermission`, `AzDoPipelinePermission`,
+  `AzDoProjectPermission`, `AzDoQueryPermission`, `AzDoSecureFilePermission`,
+  `AzDoPipelineFolderPermission`) — exporting an ACL means walking every relevant token and
+  reverse-parsing it with `Parse-ACLToken`, which is more work per resource than a plain list.
+- The work item query, tag hygiene, secure file, pipeline folder, entitlement and inherited
+  process resources (classes `101`–`116`).
+- A `dsc resource export` CLI-level integration test (`tests/Integration/V3/`) — deferred:
+  `dsc resource export`'s output shape (a DSC configuration document, distinct from the single
+  JSON object `get`/`set`/`test` return) needs to be confirmed against the runner's actual `dsc`
+  version before `V3TestHelpers.ps1`'s `Invoke-DscV3Resource` is extended to parse it.
+
+---
+
+## 8b. `AzDoPipeline` — GitHub/Bitbucket repositories and pipeline variables (issue #81) — **shipped**
+
+`AzDoPipeline` (class `068`) gained three properties rather than a new class, since the
+existing resource already owned the pipeline/build-definition object these extend:
+
+- **`RepositoryType`** (`TfsGit` default, `GitHub`, `GitHubEnterprise`, `Bitbucket`). The
+  classic Build Definitions API (what this resource reads, compares and updates) and the
+  Pipelines create API disagree on the string for each type
+  (`TfsGit`/`GitHub`/`GitHubEnterprise`/`Bitbucket` vs.
+  `azureReposGit`/`gitHub`/`gitHubEnterprise`/`bitbucket`); `Convert-AzDoPipelineRepositoryType`
+  translates for the create call only. `TfsGit` addresses the repository by `id`/`name`; the
+  other three address it by `owner/repo` (as both `id` and `name` on the build definition)
+  plus a service connection `id`, and `Get-AzDoPipelineRepositoryUrl` supplies the clone URL
+  the definition records.
+- **`ServiceConnectionName`**, resolved to a connection id by the new helper
+  `Resolve-AzDoServiceConnection` (cache-first, live-fallback — the same pattern
+  `AzDoServiceConnection` itself uses). Mandatory only when `RepositoryType` is not `TfsGit`;
+  `New`/`Set` guard on this explicitly, because an `Error` status from `Get` still reaches
+  `Set` (see `CLAUDE.md`'s "Error still calls Set" gotcha) and the refusal has to be repeated
+  there.
+- **`Variables`** (`Hashtable[]`, shaped `@{ Name; Value; IsSecret; AllowOverride }`), written
+  through the new private API function `Set-DevOpsPipelineVariables`. Pipeline variables live
+  on the classic build definition's `variables` map, not on the Pipelines resource, and a
+  `PUT` has to send the whole definition back — so this reads the definition, replaces only
+  the named variables in its map, and writes it back untouched otherwise. Only the variables
+  listed in the configuration are managed; pre-existing variables not named there are left
+  alone.
+
+**Updates go through the build definition.** The Pipelines API (`_apis/pipelines`) creates
+and lists pipelines but has no update verb — a `PATCH` or `PUT` to `_apis/pipelines/{id}` is
+refused with `405`. `Set-DevOpsPipeline` therefore reads the pipeline's build definition,
+changes the managed fields (name, folder, YAML path, default branch, and the repository only
+when its type, name or service connection differs) and writes the whole definition back with a
+`PUT`. The create call takes no default branch either, so `New-AzDoPipeline` follows the create
+with the same update.
+
+**Secret variables are write-only.** Azure DevOps never returns a secret variable's value in
+any API response, so `Get-AzDoPipeline` cannot compare one and must not report drift based on
+a value it can never see: drift detection for a secret variable is limited to its presence and
+its `IsSecret`/`AllowOverride` flags. `New`/`Set` always write the value the configuration
+currently holds, on every call, whether or not it actually changed on the far end — there is no
+way from this side to tell.
+
+**Live coverage gap.** The CI organization has no GitHub or Bitbucket service connection
+configured, so `GitHub`, `GitHubEnterprise` and `Bitbucket` — and the
+`Resolve-AzDoServiceConnection` resolution path they exercise — are covered by unit tests only
+(`tests/Unit/Modules/AzureDevOpsDsc.Common/Api/Functions/Private/Helper/Resolve-AzDoServiceConnection.tests.ps1`,
+`Convert-AzDoPipelineRepositoryType.tests.ps1`, `Get-AzDoPipelineRepositoryUrl.tests.ps1`,
+`Set-DevOpsPipeline.tests.ps1`, and the `AzDoPipeline` Get/New/Set unit tests).
+The integration suite exercises `Variables` (create, update, secret rotation, no-drift `Test`)
+only against a `TfsGit` pipeline, in
+`tests/Integration/Resources/AzDoPipeline.Variables.tests.ps1`. Adding a GitHub/Bitbucket
+service connection to the live test organization would close this gap; nothing in the code
+depends on staying that way.
+
 ## 9. Suggested order of work
 
 Steps 1–6 of the original plan (`WorkItemQueryFolders` ACL support, the three query
@@ -442,3 +555,55 @@ class resolves them by that convention, so a missing one fails at apply time), e
 `[DscProperty(Key)]`, no DSC property named `Force`, unit tests mirroring the public
 function path, an integration test using the `New-RestAuthHeader` pattern, and a rebuild +
 redeploy before running integration tests.
+
+---
+
+## 10. Cross-cutting — Azure DevOps Server support
+
+Whether this module targets on-premise Azure DevOps Server in addition to Azure DevOps
+Services is tracked as its own cross-cutting effort in
+[#91](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/91), not as a per-resource
+item here. See [`docs/AzureDevOpsServerSupport.md`](AzureDevOpsServerSupport.md) for the
+increment plan; the decision of whether to build it out is the repository owner's and is
+recorded there as pending.
+
+---
+
+## 11. Team administration and backlog visibility (#80) — **shipped**
+
+Two properties added to existing Teams resources rather than new classes, since both are
+facets of objects those resources already own:
+
+- **`AzDoTeamMember.IsTeamAdmin`** (`Boolean`, optional, default `$false`) — grants or
+  revokes the "Manage membership" bit on the team's own token (`{ProjectId}\{TeamId}`) in
+  the `Identity` security namespace. The bit is never hardcoded: `Get-DevOpsTeamAdministrator`
+  and `Set-DevOpsTeamAdministrator` both resolve it from the `Identity` namespace's
+  `actions` (the `SecurityNamespaces` cache) by name each time, so a namespace revision
+  cannot silently target the wrong permission. Because an `accesscontrollists` write with
+  `merge=false` replaces the *entire* ACL for the submitted token, `Set-DevOpsTeamAdministrator`
+  reads the team's whole live ACL first and rewrites only the target member's ACE, carrying
+  every other identity's entry through unchanged; an ACE that becomes zero-permission after a
+  revoke is removed entirely rather than left as an empty entry. `Remove-AzDoTeamMember`
+  always attempts the revoke on removal, regardless of the `IsTeamAdmin` value supplied, so a
+  removed member cannot retain admin rights it no longer appears to hold in the team's own
+  membership UI; a failure to revoke is logged as a warning and does not block the membership
+  removal itself.
+- **`AzDoTeamSettings.BacklogVisibilities`** (`Hashtable`, optional) — a map of backlog
+  category reference name (for example `Microsoft.EpicCategory`, `Microsoft.FeatureCategory`,
+  `Microsoft.RequirementCategory`) to a boolean, applied through
+  `PATCH .../_apis/work/teamsettings`'s `backlogVisibilities` dictionary. Drift is reported
+  only for the categories the configuration states, per the "only compare what the
+  configuration states" convention (§`CLAUDE.md`) — a category the live team has hidden but
+  the configuration never mentions is left alone, and a category absent from the live
+  dictionary is treated as hidden (`$false`) by default when the configuration states it
+  should be visible.
+
+**Deferred**: accepting a backlog *behavior* name (as shown in the Backlogs configuration
+page in the Azure DevOps UI, e.g. "Epics", "Features", "Stories/Requirements") as an
+alternative to the category reference name it maps to. There is no reliable mapping table in
+this codebase or in the classic `_apis/process/processes` cache between a process's backlog
+behavior names and the fixed `Microsoft.*Category` reference names `backlogVisibilities`
+actually keys on — the mapping is process-specific for inherited processes with renamed or
+added backlog levels, and building it correctly would need the same `work/processes` view
+that `Resolve-AzDoProcessWorkItemType` already reads for a different reason (§6). Configurations
+target `BacklogVisibilities` by category reference name for now.

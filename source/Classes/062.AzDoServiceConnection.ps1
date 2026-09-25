@@ -26,6 +26,17 @@
 .PARAMETER Data
     A hashtable of additional data parameters specific to the connection type.
 
+.PARAMETER SharedWithProjects
+    Additional projects, beyond ProjectName, that the service connection is also shared with.
+    Compared only when the configuration states it, so a connection shared by hand outside this
+    resource is left alone. Add and remove drift against the live
+    'serviceEndpointProjectReferences' is detected and corrected by Set.
+
+.PARAMETER SharedNameOverrides
+    Optional hashtable of ProjectName -> the name the service connection is shown under in that
+    project, e.g. @{ Fabrikam = 'shared-azure-sub' }. Only consulted for projects named in
+    SharedWithProjects; the owning project's reference always uses ConnectionName.
+
 #>
 
 [DscResource()]
@@ -51,6 +62,12 @@ class AzDoServiceConnection : AzDevOpsDscResourceBase
 
     [DscProperty()]
     [HashTable]$Data
+
+    [DscProperty()]
+    [System.String[]]$SharedWithProjects
+
+    [DscProperty()]
+    [HashTable]$SharedNameOverrides
 
     AzDoServiceConnection()
     {
@@ -80,6 +97,8 @@ class AzDoServiceConnection : AzDevOpsDscResourceBase
         $properties.AllowAllPipelines = $CurrentResourceObject.AllowAllPipelines
         $properties.Authorization    = $CurrentResourceObject.Authorization
         $properties.Data             = $CurrentResourceObject.Data
+        $properties.SharedWithProjects  = $CurrentResourceObject.SharedWithProjects
+        $properties.SharedNameOverrides = $CurrentResourceObject.SharedNameOverrides
         $properties.LookupResult     = $CurrentResourceObject.LookupResult
         $properties.Ensure           = $CurrentResourceObject.Ensure
         Write-Verbose "[AzDoServiceConnection] Current state properties: $($properties | Out-String)"

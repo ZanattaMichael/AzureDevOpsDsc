@@ -16,9 +16,9 @@ Describe 'Get-AzDoCacheObjects' -Tag "Unit", "Helper" {
         }
     }
 
-    It 'Returns an array with 35 elements' {
+    It 'Returns an array with 39 elements' {
         $result = Get-AzDoCacheObjects
-        $result.Length | Should -Be 35
+        $result.Length | Should -Be 39
     }
 
     It 'Contains all legacy and Live* cache types' {
@@ -39,12 +39,16 @@ Describe 'Get-AzDoCacheObjects' -Tag "Unit", "Helper" {
             'LiveBranchPolicies',
             'LiveCheckConfigurations',
             'LiveDeploymentGroups',
+            'LiveDeploymentGroupTargets',
             'LiveEnvironmentApprovals',
+            'LiveEnvironmentKubernetesResources',
+            'LiveEnvironmentVMResources',
             'LiveExtensions',
             'LiveGroupMembers',
             'LiveGroups',
             'LiveIterations',
             'LiveNotificationSubscriptions',
+            'LivePipelineAuthorizations',
             'LivePipelineEnvironments',
             'LivePipelines',
             'LivePolicyTypes',

@@ -5,6 +5,12 @@ Retrieves an Azure DevOps Git repository from the live and local cache.
 .DESCRIPTION
 The Get-AzDoGitRepository function attempts to retrieve an Azure DevOps Git repository based on the provided project and repository names. It first checks the live cache for the repository and returns the repository object if found. If the repository is not found in the live cache, it returns a status indicating that the repository was not found.
 
+'SourceRepository', 'SourceType' and 'ImportServiceConnectionName' seed a repository only at
+creation time (see 'GetDscResourcePropertyNamesWithNoSetSupport()' on the 'AzDoGitRepository'
+class) and are never compared here - an existing repository never drifts against them. 'IsDisabled'
+is a plain repository property the API can update at any time, so it is the only property compared
+against the live repository.
+
 .PARAMETER ProjectName
 The name of the Azure DevOps project.
 
@@ -12,7 +18,17 @@ The name of the Azure DevOps project.
 The name of the Azure DevOps Git repository.
 
 .PARAMETER SourceRepository
-(Optional) The source repository name.
+(Optional) Create-time only - not compared. See DESCRIPTION.
+
+.PARAMETER SourceType
+(Optional) Create-time only - not compared. See DESCRIPTION.
+
+.PARAMETER ImportServiceConnectionName
+(Optional) Create-time only - not compared. See DESCRIPTION.
+
+.PARAMETER IsDisabled
+(Optional) The desired disabled state of the repository. Compared against the live repository's
+'isDisabled' value.
 
 .PARAMETER LookupResult
 (Optional) A hashtable to store lookup results.
@@ -52,6 +68,17 @@ Function Get-AzDoGitRepository
         [System.String]$SourceRepository,
 
         [Parameter()]
+        [Alias('SourceKind')]
+        [System.String]$SourceType,
+
+        [Parameter()]
+        [Alias('ServiceConnection')]
+        [System.String]$ImportServiceConnectionName,
+
+        [Parameter()]
+        [System.Boolean]$IsDisabled,
+
+        [Parameter()]
         [HashTable]$LookupResult,
 
         [Parameter()]
@@ -68,7 +95,6 @@ Function Get-AzDoGitRepository
     $getRepositoryResult = @{
         #Reasons = $()
         Ensure = [Ensure]::Absent
-        liveCache = $livegroup
         propertiesChanged = @()
         status = $null
     }
@@ -87,7 +113,24 @@ Function Get-AzDoGitRepository
     if ($repository)
     {
         Write-Verbose "[Get-AzDoGitRepository] The Repository '$RepositoryName' was found in the Live Cache."
-        $getRepositoryResult.status = [DSCGetSummaryState]::Unchanged
+
+        $getRepositoryResult.liveCache    = $repository
+        $getRepositoryResult.RepositoryId = $repository.id
+
+        # Only 'IsDisabled' is ever compared on an existing repository - see DESCRIPTION.
+        $currentIsDisabled = [System.Boolean]$repository.isDisabled
+
+        if ($PSBoundParameters.ContainsKey('IsDisabled') -and ($currentIsDisabled -ne $IsDisabled))
+        {
+            Write-Verbose "[Get-AzDoGitRepository] 'IsDisabled' drift detected: current '$currentIsDisabled', desired '$IsDisabled'."
+            $getRepositoryResult.status = [DSCGetSummaryState]::Changed
+            $getRepositoryResult.propertiesChanged += 'IsDisabled'
+        }
+        else
+        {
+            $getRepositoryResult.status = [DSCGetSummaryState]::Unchanged
+        }
+
         return $getRepositoryResult
 
     }

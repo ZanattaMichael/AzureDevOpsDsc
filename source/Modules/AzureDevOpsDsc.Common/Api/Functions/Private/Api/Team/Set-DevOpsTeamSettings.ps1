@@ -20,6 +20,7 @@ Function Set-DevOpsTeamSettings
         [Parameter()][string[]]$AreaPaths,
         [Parameter()][string[]]$WorkingDays,
         [Parameter()][ValidateSet('', 'asRequirements', 'asTasks', 'off')][string]$BugsBehavior,
+        [Parameter()][HashTable]$BacklogVisibilities,
         [Parameter()][string]$ApiVersion = '7.1'
     )
 
@@ -63,6 +64,13 @@ Function Set-DevOpsTeamSettings
         if ($PSBoundParameters.ContainsKey('BugsBehavior') -and $BugsBehavior)
         {
             $settingsBody.bugsBehavior = $BugsBehavior
+        }
+        if ($PSBoundParameters.ContainsKey('BacklogVisibilities') -and $BacklogVisibilities)
+        {
+            # Sent as only the categories the configuration states - the service merges this into
+            # the team's existing backlogVisibilities dictionary rather than replacing it wholesale,
+            # so a category the configuration does not mention is left at its current value.
+            $settingsBody.backlogVisibilities = $BacklogVisibilities
         }
         if ($settingsBody.Count -gt 0 -and $PSCmdlet.ShouldProcess($TeamId, 'Update team iteration settings'))
         {
