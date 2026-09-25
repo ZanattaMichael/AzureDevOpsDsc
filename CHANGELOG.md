@@ -41,10 +41,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     runspace, so a process created by another resource was not in it. They
     now use `Resolve-DevOpsProcess`, which falls back to a live lookup and
     caches what it finds ([issue #75](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/75)).
+  - Fixed `AzDoServiceConnection` refusing to create a connection whose `Data`
+    carries `url`. `New-DevOpsServiceConnection` lifted `Data.url` to the
+    endpoint's top-level `url` but also left it inside `data`, which accepts only
+    the inputs the connection type declares, so the API answered
+    `400 Following fields in the service connection are not expected: url`.
+    `url` is now sent once, at the top level.
 
 ### Added
 
 - AzureDevOpsDscNative
+  - `AzDoPipeline` now supports GitHub, GitHub Enterprise and Bitbucket repositories, and
+    pipeline variables ([#81](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/81)):
+    - Added the `RepositoryType` property (`TfsGit` default, `GitHub`, `GitHubEnterprise`,
+      `Bitbucket`) and the `ServiceConnectionName` property, required for the three
+      non-`TfsGit` types and resolved to a connection id via the new helper
+      `Resolve-AzDoServiceConnection`. Added `Convert-AzDoPipelineRepositoryType`, which
+      translates the resource's repository type names (the Build Definitions API's) into the
+      Pipelines API's for the create call, and `Get-AzDoPipelineRepositoryUrl`, which gives the
+      clone URL the build definition records when the repository changes.
+    - Added the `Variables` property (an array of `@{ Name; Value; IsSecret; AllowOverride }`
+      hashtables) and the private API function `Set-DevOpsPipelineVariables`, which reads the
+      build definition, replaces only the named variables in its `variables` map, and writes
+      the whole definition back. Only the variables listed in the configuration are managed;
+      other variables already on the pipeline are left untouched.
+    - Secret variable values are write-only: Azure DevOps never returns one, so drift
+      detection for a secret variable compares only its presence and its
+      `IsSecret`/`AllowOverride` flags, never its value; `New`/`Set` always write the value
+      the configuration currently holds.
+    - The live CI organization has no GitHub or Bitbucket service connection, so the
+      `GitHub`/`GitHubEnterprise`/`Bitbucket` repository types and the
+      `ServiceConnectionName` resolution path are covered by unit tests only. The integration
+      suite exercises `Variables` (create, update, secret rotation, no-drift `Test`) against a
+      `TfsGit` pipeline in `tests/Integration/Resources/AzDoPipeline.Variables.tests.ps1`. See
+      `docs/ResourceRoadmap.md` §8b.
   - Added `docs/Spikes/TenantScopedPolicies.md`, the spike for #85 covering the five
     tenant-scoped policy candidates (`AzDoPatPolicy`, `AzDoOrganizationCreationPolicy`,
     `AzDoBillingSettings`, `AzDoExtensionPolicy`, `AzDoAuditLogAlert`). All five fail the
@@ -56,6 +86,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     into the shipped `AzDoAuditStream` (#69). `docs/ResourceRoadmap.md` §7/§9 updated
     with the verdicts and a link to the spike; reserved class prefixes `130`-`131` are
     left unused.
+  - Added the private helper `Get-AzDoApiUri`, which centralizes resolution of the base
+    URL for each Azure DevOps REST API service (`Core`, `Identity`, `Entitlements`,
+    `Feeds`, `Audit`, `Release`) instead of leaving it inlined per call site. It also
+    accepts an on-premise `-ServerUrl` (Azure DevOps Server collection URL), returning it
+    for every service that has a Server-side equivalent and refusing `Entitlements` and
+    `Audit`, which do not. This is the foundation increment of the Azure DevOps Server
+    support plan tracked in
+    [#91](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/91) (see
+    `docs/AzureDevOpsServerSupport.md`); it is not wired into any existing call site and
+    does not change authentication, so no existing behavior changes.
   - Added `AzDoQueryFolder`, a resource managing folders in a project's shared work
     item query tree. Folders are declared in their own right so that queries can
     depend on them, rather than each query creating its own ancestry - which would
@@ -63,6 +103,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     depend on apply order. Deleting a query folder in Azure DevOps deletes its whole
     subtree, so removal of a folder that still has children is refused unless
     `AllowRecursiveDelete` is set.
+  - Added DSC v3 `Export()` support (#92), starting with `AzDoProject` and
+    `AzDoGitRepository`. Each supporting class gets its own parameterless static
+    `Export()` (matching how DSC v3's PowerShell adapter reflects for and invokes an
+    export method), delegating to a shared `AzDevOpsDscResourceBase::ExportDscResourceInstances()`
+    helper that dispatches to a resource's `Export-<ResourceName>` function by the same
+    naming convention as `Get`/`New`/`Set`/`Remove`, and converts each returned hashtable
+    into a typed instance. This lets an existing organization be onboarded from its live
+    state instead of a hand-written configuration - see USAGE.md, "Onboarding an Existing
+    Organization with Export". A resource with no exporter fails clearly ("export is not
+    implemented for `<ResourceName>`") rather than returning nothing. Any property a
+    resource declares secret is replaced in exported output with a fixed placeholder and a
+    warning naming the resource and property, via the new shared
+    `Protect-AzDoExportedSecretProperty` helper. `Export-AzDoProject` and
+    `Export-AzDoGitRepository` emit only the properties their resources can `Set`, in the
+    exact form `Get` reports them, so `Export()` followed by `Test()` reports
+    `InDesiredState = $true` with no further editing. Other resources are not yet
+    exportable; see `docs/ResourceRoadmap.md`.
   - Added `AzDoWorkItemQuery`, a resource managing shared work item queries,
     including the WIQL statement, query type, display columns and sort order.
     Changes are applied in place with PATCH rather than by delete-and-recreate,
@@ -70,6 +127,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     dashboard widget, delivery plan or ACL token referencing it. Queries deleted
     earlier are restored from the query recycle bin instead of failing with a name
     conflict.
+  - Added `AzDoEnvironmentKubernetesResource`, `AzDoEnvironmentVMResource` and
+    `AzDoDeploymentGroupTarget` (classes `125`-`127`), closing the deployment-target
+    gap tracked as `AzDoDeploymentGroupAgent` in the resource roadmap (#82).
+    `AzDoEnvironmentKubernetesResource` creates and manages a Kubernetes namespace
+    resource on a pipeline environment via a service connection; because its
+    provider API has no Update call, any drift - including Tags - is corrected by
+    deleting and recreating the resource, which changes its id, rather than by
+    silently ignoring it. The property the issue named `ResourceName` is exposed as
+    `KubernetesResourceName` instead, since `ResourceName` is reserved elsewhere in
+    this module. `AzDoEnvironmentVMResource` and `AzDoDeploymentGroupTarget` manage
+    tags and removal of an already-registered VM resource or deployment group
+    target; both are agent-install-only by design (there is no REST call that
+    registers one), so `Present` against a machine with no agent registered makes
+    `Get` return an `Error` status and `Set` **throw** a clear install-the-agent
+    message rather than silently doing nothing, while `Absent` against the same
+    unregistered machine is treated as the desired state.
+  - Added the private API helpers `New-/List-/Remove-DevOpsEnvironmentKubernetesResource(s)`,
+    `List-/Set-/Remove-DevOpsEnvironmentVMResource(s)` and
+    `List-/Set-/Remove-DevOpsDeploymentGroupTarget(s)`, plus the
+    `LiveEnvironmentKubernetesResources`, `LiveEnvironmentVMResources` and
+    `LiveDeploymentGroupTargets` cache types. The Kubernetes provider has no list
+    operation, so `List-DevOpsEnvironmentKubernetesResources` reads the
+    environment's resource references and then each Kubernetes resource by id.
   - Added the private Queries API functions `Get-DevOpsQuery`, `New-DevOpsQuery`,
     `Update-DevOpsQuery` and `Remove-DevOpsQuery`.
   - Added `AzDoQueryPermission`, a resource managing the ACL on a work item query
@@ -86,6 +166,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     work. The Queries API does not return the WIQL it was given - it re-indents,
     re-wraps, re-cases and appends a semicolon - so comparing the raw strings would
     report drift on every `Test()`, forever, even when nothing had changed.
+  - `AzDoServiceConnection` can now share the service connection it manages with
+    other projects (#79), via two new properties: `SharedWithProjects` (the project
+    names to share with, in addition to the owning `ProjectName`) and
+    `SharedNameOverrides` (a per-project display name, for when the shared copy
+    should not carry the same name as the original). `New-AzDoServiceConnection`
+    sends the full `serviceEndpointProjectReferences` array, resolved through the new
+    helper `Resolve-AzDoSharedProjectReferences`, with the create (POST) call.
+    `Set-AzDoServiceConnection` sends the update (PUT) only the references the
+    connection already has, because the update call edits existing references but
+    does not share with a new project, and shares with each added project through
+    the new `Add-DevOpsServiceConnectionProjectReferences`, which calls the
+    documented share endpoint (`PATCH .../serviceendpoint/endpoints/{id}`) with the
+    added references and their `SharedNameOverrides` names. Dropping a project from
+    `SharedWithProjects` unshares it individually (`DELETE .../{id}?projectIds=...`)
+    rather than deleting and recreating the connection, which would have changed its
+    id and broken any ACL token or pipeline reference to it. Comparison only happens
+    when `SharedWithProjects` is bound (checked by value, not
+    `$PSBoundParameters.ContainsKey(...)`, since `Invoke-DscResource` always binds
+    every DSC property and the class properties have no default initializer, so
+    `$null` is what "not configured" looks like), so a configuration that never
+    mentions sharing leaves whatever sharing exists (however it got there) alone.
+    Removing the connection from its owning project still removes it everywhere it
+    is shared - Azure DevOps has no "orphan and promote" operation for this - so
+    `Remove-AzDoServiceConnection` now warns, naming the other projects, before doing
+    so rather than deleting silently, and declares
+    `SharedWithProjects`/`SharedNameOverrides` so the base class's blanket property
+    splat onto `Remove-` does not fail with an unknown-parameter error. ACL tokens
+    are anchored to the owning project and the connection's own id, so permissions
+    are unaffected by sharing.
+  - Variable group sharing, also asked for in #79, is not included. Azure DevOps
+    Services answers `"Sharing of variable group is not allowed."` to the create
+    (POST), the update (PUT) and the documented share call (`PATCH
+    .../distributedtask/variablegroups?variableGroupId={id}`) alike, so there is no
+    route a resource could use. `AzDoVariableGroup` is unchanged, and
+    `docs/ResourceRoadmap.md` records the gap as blocked by the service.
+  - Added the private helper `Resolve-AzDoSharedProjectReferences`, used by
+    `AzDoServiceConnection`, which turns `ProjectName` + `SharedWithProjects` +
+    `SharedNameOverrides` into the project-reference array the API expects,
+    resolving each project through `Resolve-AzDoProject` and de-duplicating and
+    dropping blanks so a repeated or empty entry in `SharedWithProjects` cannot
+    produce a malformed reference.
   - Added the helpers `Format-AzDoQueryPath`, which normalizes the several ways a
     query path can be written (backslashes, leading/trailing and doubled separators)
     into one canonical form, and `Resolve-AzDoQueryPath`, which walks a query path
@@ -105,6 +226,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     rewrite in one run.
   - Added the private API function `Update-WITTags` (tag rename/merge) and the
     helper `Get-AzDoTagMisalignment`, the pure matching logic behind the resource.
+  - Extended `AzDoOrganizationSettings` with five more *Organization settings -> Policies*
+    properties: `EnableIPConditionalAccessPolicyValidation`, `LogAuditEvents`,
+    `AllowTeamAdminsToInviteUsers`, `EnableRequestAccess` (with `RequestAccessUrl`) and
+    `EnableArtifactsFeedUpstreamProtection` (#84). Unlike the resource's original five
+    properties, which read/write `_apis/settings/entries/host`, these are backed by the
+    organization policy API, added as the new `Get-/Set-DevOpsOrganizationPolicy` private
+    helpers and a single `Get-DevOpsOrganizationPolicyMap` mapping properties to policy names.
+    Policies are written with a JSON-patch array to `_apis/OrganizationPolicy/Policies/{policyName}`,
+    and read in one call from the policy page's data provider (`_apis/Contribution/HierarchyQuery`,
+    falling back to the page's `__rt=fps` data route). For identities the page routes answer with
+    no data, each policy is read from that same policy route with a GET, which needs a
+    `defaultValue` query parameter (405 without it), on the organization host and then on
+    `vssps.dev.azure.com`; the defaults are declared per policy in the map. A failed policy read is an error
+    only when a policy property is configured, so a configuration of the original five properties
+    does not depend on it. The policy properties are tri-state strings (`'true'`, `'false'`,
+    or `''` for unmanaged) rather than booleans: the resource base class passes every
+    property, so an unset boolean would have switched the policy off. `LimitUserVisibility`
+    was left out: it is a preview-feature flag rather than a confirmed organization policy, and
+    is documented as excluded in `docs/ResourceRoadmap.md`. Setting `LogAuditEvents` to `'false'`
+    now warns that any `AzDoAuditStream` on the organization will receive nothing while auditing
+    is off. This closes out the `AzDoOrganizationPolicy` item in `docs/ResourceRoadmap.md` §7.
   - Added `AzDoSecureFile`, a resource managing the secure files a project makes
     available to its pipelines (certificates, keystores, provisioning profiles).
     Azure DevOps never returns a secure file's content, so `Test()` confirms the
@@ -226,6 +368,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     group to well over a hundred for an AAD-backed user. A batch that fails is
     retried one descriptor at a time, so a single unresolvable identity no longer
     costs the whole batch.
+  - Added `AzDoPipelineAuthorization` (class `119`, [#78](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/78)),
+    a resource managing which pipeline definitions may use a protected resource -
+    a service connection, agent queue, variable group, secure file, environment or
+    repository - through the `pipelinePermissions` REST API (the "Pipeline
+    permissions" tab in the Azure DevOps portal). This is distinct from a
+    resource's security-namespace ACLs, which control who may *administer* it, and
+    from `AzDoCheckConfiguration`, which gates a run with an approval rather than
+    deciding whether a pipeline may reach the resource at all. `AuthorizedPipelines`
+    is additive by default; `ExclusiveList` also revokes a pipeline authorized in
+    the portal but absent from the list. Added the private API functions
+    `Get-DevOpsPipelinePermission` and `Set-DevOpsPipelinePermission`, and the
+    helpers `Resolve-AzDoPipelineAuthorizationResource` (name-to-id, including the
+    `"{projectId}.{repositoryId}"` composite id `repository` uses) and
+    `Resolve-AzDoPipelineAuthorizationTargets` (pipeline folder path to id).
   - Added `BranchName` and `TagName` to `AzDoGitPermission` (#76), letting a
     permission target a single branch's or tag's own ACL
     (`refs/heads/{BranchName}` / `refs/tags/{TagName}`) instead of the
@@ -241,6 +397,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `refs/heads/`/`refs/tags/` prefix for comparison) and
     `ConvertTo-GitRefToken` (the encode/decode round trip), with unit tests
     covering non-ASCII branch and tag names.
+  - Added `IsTeamAdmin` to `AzDoTeamMember` (#80), granting or revoking the
+    "Manage membership" bit on the team's own token (`{ProjectId}\{TeamId}`) in the
+    `Identity` security namespace, rather than a hardcoded bit - the namespace's
+    `actions` are read from the `SecurityNamespaces` cache each time so a namespace
+    revision cannot silently target the wrong permission. `Set-DevOpsTeamAdministrator`
+    reads the team's whole ACL first and rewrites only the target member's ACE,
+    because a `merge=false` `accesscontrollists` write replaces the entire list for
+    that token and would otherwise drop every other member's entry. Removing a
+    member always attempts to revoke the ACE first (regardless of the `IsTeamAdmin`
+    value supplied), so a removed member is not left administering a team it no
+    longer shows up in; a failure to revoke is logged as a warning and does not
+    block the removal itself.
+  - Added the private API functions `Get-DevOpsTeamAdministrator` and
+    `Set-DevOpsTeamAdministrator` behind `AzDoTeamMember`'s `IsTeamAdmin` property.
+  - Added `BacklogVisibilities` to `AzDoTeamSettings` (#80), a hashtable of backlog
+    category reference names (for example `Microsoft.EpicCategory`) to a boolean,
+    applied via `PATCH .../_apis/work/teamsettings`'s `backlogVisibilities`
+    dictionary. Drift is only ever reported for the categories the configuration
+    states - a category the live team has hidden but the configuration never
+    mentions is left alone, matching the "only compare what the configuration
+    states" convention. Accepting a backlog *behavior* name (as shown in the
+    Backlogs configuration UI) as well as the category reference name is deferred;
+    see `docs/ResourceRoadmap.md`.
+
+### Fixed
+
+- AzureDevOpsDscNative
+  - Fixed `Set-DevOpsServiceConnection` failing every service connection update.
+    The update body carried no top-level `url` (`400 "Value cannot be null.
+    Parameter name: endpoint.Url"`) and sent a flat `Authorization` hashtable as-is,
+    where `New-DevOpsServiceConnection` already did both. It now sends `Data.url` as
+    the top-level `url`, falling back to the existing connection's `url`, and nests
+    credential values under `authorization.parameters` the same way `New-` does. The
+    `url` is sent top-level only, not also inside `data`: the update's audit record
+    rejects the repeated key with `AuditLogEntryContainsDuplicateDataKeyException`
+    (`key=url`). `Set-AzDoServiceConnection` also throws, after caching the update,
+    when sharing with or unsharing from a project fails, instead of writing an error
+    the DSC caller never sees; and when `SharedWithProjects` is not configured it
+    keeps the projects the connection is already shared with in the update (#79).
+  - Fixed `Set-AzDoServiceConnection` failing every update with a missing
+    mandatory `ConnectionType` parameter. `ConnectionType` is one of the class's
+    no-Set-support properties, so the base class removes it before calling `Set-`,
+    and the function declared it as mandatory. It is now optional, and when it is
+    absent the existing connection's type is sent. This affected every
+    `AzDoServiceConnection` update, not only sharing (#79).
 
 ### Changed
 
@@ -259,6 +460,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     rewritten around what is genuinely left.
 
 - AzureDevOpsDscNative
+  - `AzDoBranchPolicy` now detects drift in `PolicySettings`, not just `isEnabled`/
+    `isBlocking` - raising a stated approver count or changing a stated build
+    definition id is now caught by `Test()` like any other property. Only the keys
+    the configuration states are compared, normalized through the new
+    `ConvertTo-NormalizedPolicySettingValue` (used for comparison only; what gets
+    written back is always the configuration's own value), so an int the API reads
+    back as a double, or a nested settings object read back as a `PSCustomObject`,
+    is not read as drift ([issue #74](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/74)).
+  - Fixed `Get-AzDoBranchPolicy` reporting `Unchanged` for a policy mutated outside
+    of DSC (directly via the REST API or the portal) as long as that policy stayed
+    in the `LiveBranchPolicies` cache. A cache hit was used for comparison as-is,
+    with no re-check against the API; a live refresh is now stale only until some
+    unrelated `Set()`/`New()`/`Remove()` happened to touch that cache entry. `Get-`
+    now re-fetches a cached policy by id through the new `Get-DevOpsBranchPolicy`
+    and prefers that live copy for comparison, falling back to the cached value if
+    the refresh call fails so a transient API error does not turn into a false
+    "not found".
+  - `AzDoBranchPolicy` now supports several policies of the same `PolicyType` on
+    one branch (two build validation policies pointing at different pipelines,
+    several status checks) via the new optional `PolicyIdentifier` property, which
+    names a value expected among that policy's settings (a build definition id, a
+    status check name, a reviewer's display name) to tell the policies apart. Left
+    unset, behaviour is unchanged: the first policy of that type found in scope is
+    used, as before. The resource still has exactly one `[DscProperty(Key)]`
+    (`ProjectName`); `PolicyIdentifier` is a second, optional discriminator, not a
+    key.
+  - `AzDoBranchPolicy` no longer hardcodes its scope to one repository and one
+    exact ref. `RepositoryName` can be left empty for a cross-repository scope,
+    `BranchName` can be left empty for a repository-wide scope (used by policy
+    types with no ref, such as the repository settings policies), and the new
+    `MatchKind` property (`Exact`, the default, or `Prefix`) scopes to every branch
+    whose name starts with `BranchName` rather than to one branch. The live lookup
+    now fetches every policy of the matching type in scope and matches client-side
+    through the new `Test-AzDoBranchPolicyScopeMatch`, since the API's per-ref
+    filter cannot express a prefix, repository-wide or cross-repository scope. A
+    `Set()` that only changes `PolicySettings` now carries the policy's existing
+    `scope` over instead of dropping it, since the API replaces the whole
+    `settings` object (which `scope` lives inside) on every PUT.
   - `AzDoCheckConfiguration.ResourceType` now also accepts `queue`, `variablegroup` and
     `securefile`, so a check (Approval, Branch control, Business Hours, ...) can be attached to
     an agent queue, a variable group or a secure file, not only an environment, repository or
@@ -604,6 +843,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     copies for the duration of the job and restores them in an `always()` step, in
     the same way (and with the same record format) as `integration-tests-v3.yml`,
     and repeats the single-copy assertion in the test step itself.
+  - Fixed `AzDoPipeline` never being able to update a pipeline
+    ([#81](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/81)). `Set-DevOpsPipeline`
+    sent a `PATCH` to `_apis/pipelines/{id}`, which the Pipelines API refuses with
+    `405 Method Not Allowed` - it has no update verb. This was masked because `Get` compared
+    nothing and always reported `Unchanged`, so `Set` was never reached. A YAML pipeline is a
+    build definition underneath, so `Set-DevOpsPipeline` now reads that definition, changes
+    the name, folder, YAML path, default branch and (only when its type, name or service
+    connection differs) the repository, and writes the whole definition back with a `PUT`;
+    everything else on the definition is sent back as it was read. It throws on a failed
+    read or write rather than returning nothing.
+  - Fixed a newly created `AzDoPipeline` reporting drift on the first `Test()`. The Pipelines
+    API create call takes no default branch, so `New-AzDoPipeline` now applies the configured
+    name, folder, YAML path and default branch through `Set-DevOpsPipeline` straight after the
+    create, having cached the new pipeline first so a failure there is retried as an update
+    rather than a second create. `Set-AzDoPipeline` likewise caches the updated pipeline in
+    the shape the Pipelines API lists (which the pipeline permission resources read) before
+    writing any `Variables`.
   - Fixed every live `dsc resource get/set/test` call in the DSC v3 integration
     suite failing with `Cannot convert the "System.Object[]" value ... to type
     "System.Management.Automation.PSModuleInfo"` - 25 failures across the
@@ -824,3 +1080,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     changes the ref `Get()` looks up, so the next `Test()`/`Set()` creates the
     correct policy alongside the stale one rather than replacing it - review each
     affected project's branch policies and remove the mangled-ref entries by hand.
+- AzureDevOpsDscNative
+  - Fixed `AzDoGitRepository`'s `SourceRepository` property being documented but silently
+    ignored: `New-GitRepository` only ever sent `name`/`project.id` to the API, so setting it
+    quietly created an empty repository instead of seeding one from anywhere
+    ([issue #73](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/73)).
+    `SourceRepository` now drives two paths, picked by the new `SourceType` property
+    (`'Import'`/`'Fork'`, inferred from the value's shape - a URL or SSH remote versus a bare
+    or `Project/Repo` name - when not set explicitly):
+    - `Import` clones an external Git URL into the newly-created repository via the Import
+      Requests API (new private function `New-GitImportRequest`), then polls it (new private
+      function `Wait-DevOpsGitImportRequest`, following the `Wait-DevOpsProject` do/while +
+      explicit `$completed` flag pattern) until it reports `completed`, `failed` or `abandoned`.
+      A failed import, an abandoned one, or one that does not finish within the timeout is
+      surfaced as an error rather than left as a silently-empty repository.
+    - `Fork` creates the repository with `parentRepository` set to an existing repository
+      resolved from `SourceRepository` - either a bare name in the same project, or
+      `Project/Repo` to fork from a different one.
+    - A new `ImportServiceConnectionName` property supplies the generic Git service connection
+      used to authenticate an `Import` against a private source; omitted, the source is
+      assumed public.
+    All three properties are creation-time only - they are listed in
+    `GetDscResourcePropertyNamesWithNoSetSupport()` (alongside the pre-existing identity
+    properties `ProjectName`/`RepositoryName`, which must never be added there) so an existing
+    repository is never re-imported or re-forked by `Set()`, and `Test()` never reports drift
+    on them.
+  - Added an `IsDisabled` property to `AzDoGitRepository`. Unlike the source properties above,
+    it is a plain repository attribute the API can change at any time, so it is compared by
+    `Get-AzDoGitRepository` and applied by the new private function `Set-GitRepository`
+    (`PATCH .../_apis/git/repositories/{id}`) on every `Test()`/`Set()`, not just at creation.

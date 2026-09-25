@@ -67,9 +67,11 @@ All DSC resources live in `source\Classes\` with numeric prefixes controlling lo
 | `107`–`108` | `AzDoPipelineFolder`, `AzDoPipelineFolderPermission` | Pipeline folder tree; `Build` namespace (folder token form) |
 | `109`–`110` | `AzDoGroupEntitlement`, `AzDoServicePrincipalEntitlement` | Licensing at scale |
 | `111`–`116` | `AzDoPicklist`, `AzDoProcessWorkItemType`, `AzDoProcessField`, `AzDoProcessState`, `AzDoProcessRule`, `AzDoProcessBehavior` | Inherited-process customization |
+| `119.AzDoPipelineAuthorization.ps1` | `AzDoPipelineAuthorization` | `pipelinePermissions` API — which pipelines may use a protected resource |
+| `125`–`127` | `AzDoEnvironmentKubernetesResource`, `AzDoEnvironmentVMResource`, `AzDoDeploymentGroupTarget` | Environment/deployment-group targets. VM and deployment-group targets are agent-install-only - DSC owns tags/removal, never registration. |
 | `145.AzDoWikiPage.ps1` | `AzDoWikiPage` | Wiki page content and sibling order; project wikis only |
 
-There are currently **66** `[DscResource()]` classes. `docs/ResourceRoadmap.md` is the plan of record for what is implemented and what is still outstanding.
+There are currently **70** `[DscResource()]` classes. `docs/ResourceRoadmap.md` is the plan of record for what is implemented and what is still outstanding.
 
 The `Construct()` method (in `AzDevOpsDscResourceBase`) runs at `new()` time, reads `ModuleSettings.clixml`, and sets `$Global:DSCAZDO_AuthenticationToken` and `$Global:DSCAZDO_OrganizationName`.
 
@@ -299,6 +301,10 @@ A few conventions that are easy to get wrong:
   `New`/`Set` parameter set, so a DSC property named `Force` is always true by the time the
   function sees it. A guard property needs another name — `AllowRecursiveDelete`,
   `AllowDestructiveRemove`.
+- **`ResourceName` is reserved.** `AzDevOpsApiDscResourceBase` builds the `Get-`/`New-`/`Set-`/`Remove-`
+  function names from its own `ResourceName` property, so a DSC property with that name makes the
+  base class call `Get-<its value>`. Name the target `TargetResourceName` instead, as
+  `AzDoCheckConfiguration` and `AzDoPipelineAuthorization` do.
 - **Exactly one `[DscProperty(Key)]`.** More than one throws at runtime. Other identifying
   properties are `[DscProperty(Mandatory)]`.
 - **Only compare what the configuration states.** Use `$PSBoundParameters.ContainsKey(...)` rather

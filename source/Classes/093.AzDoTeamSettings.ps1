@@ -23,6 +23,12 @@
 .PARAMETER BugsBehavior
     How bugs are shown on backlogs and boards. Valid values are asRequirements, asTasks and off.
 
+.PARAMETER BacklogVisibilities
+    Which backlog levels the team's backlogs and boards show, as a hashtable of backlog category
+    reference name to boolean, e.g. @{ 'Microsoft.EpicCategory' = $true; 'Microsoft.FeatureCategory' = $false }.
+    Only the categories present in this hashtable are compared and applied; any category the
+    configuration does not mention is left at whatever the team currently has.
+
 #>
 [DscResource()]
 class AzDoTeamSettings : AzDevOpsDscResourceBase
@@ -36,6 +42,7 @@ class AzDoTeamSettings : AzDevOpsDscResourceBase
     [DscProperty()][System.String[]]$AreaPaths
     [DscProperty()][System.String[]]$WorkingDays
     [DscProperty()][ValidateSet('', 'asRequirements', 'asTasks', 'off')][System.String]$BugsBehavior
+    [DscProperty()][HashTable]$BacklogVisibilities
 
     AzDoTeamSettings() { $this.Construct() }
     [void] Set() { ([AzDevOpsDscResourceBase]$this).Set() }
@@ -54,6 +61,7 @@ class AzDoTeamSettings : AzDevOpsDscResourceBase
         $properties.AreaPaths            = $CurrentResourceObject.AreaPaths
         $properties.WorkingDays          = $CurrentResourceObject.WorkingDays
         $properties.BugsBehavior         = $CurrentResourceObject.BugsBehavior
+        $properties.BacklogVisibilities  = $CurrentResourceObject.BacklogVisibilities
         $properties.LookupResult         = $CurrentResourceObject.LookupResult
         $properties.Ensure               = $CurrentResourceObject.Ensure
         return $properties

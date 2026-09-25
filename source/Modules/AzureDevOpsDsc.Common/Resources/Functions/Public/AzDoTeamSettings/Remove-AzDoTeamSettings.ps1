@@ -11,6 +11,7 @@ Function Remove-AzDoTeamSettings
         [Parameter()][string[]]$AreaPaths,
         [Parameter()][string[]]$WorkingDays,
         [Parameter()][ValidateSet('', 'asRequirements', 'asTasks', 'off')][string]$BugsBehavior,
+        [Parameter()][HashTable]$BacklogVisibilities,
         [Parameter()][HashTable]$LookupResult,
         [Parameter()][Ensure]$Ensure,
         [Parameter()][System.Management.Automation.SwitchParameter]$Force

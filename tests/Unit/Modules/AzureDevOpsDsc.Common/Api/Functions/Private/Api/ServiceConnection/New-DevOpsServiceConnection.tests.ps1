@@ -28,8 +28,48 @@ Describe 'New-DevOpsServiceConnection' -Tag "Unit", "ServiceConnection", "API" {
         $result | Should -Not -BeNullOrEmpty
     }
 
+    It 'Sends Data.url as the endpoint url and leaves it out of data' {
+        New-DevOpsServiceConnection -ApiUri 'https://dev.azure.com/myorg' -ProjectId 'proj-id' -ProjectName 'TestProject' -ServiceConnectionName 'TestSC' -ServiceConnectionType 'kubernetes' -Data @{ Url = 'https://cluster.example.com'; authorizationType = 'Kubeconfig' }
+        Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -ParameterFilter {
+            $sent = $Body | ConvertFrom-Json
+            $sent.url -eq 'https://cluster.example.com' -and
+            $sent.data.authorizationType -eq 'Kubeconfig' -and
+            -not ($sent.data.PSObject.Properties.Name -contains 'url')
+        } -Times 1 -Exactly
+    }
+
+    It 'Leaves the caller''s Data hashtable unchanged' {
+        $data = @{ url = 'https://cluster.example.com'; authorizationType = 'Kubeconfig' }
+        New-DevOpsServiceConnection -ApiUri 'https://dev.azure.com/myorg' -ProjectId 'proj-id' -ProjectName 'TestProject' -ServiceConnectionName 'TestSC' -ServiceConnectionType 'kubernetes' -Data $data
+        $data.ContainsKey('url') | Should -BeTrue
+    }
+
     It 'Throws when the API call fails' {
         Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { throw 'API error' }
         { New-DevOpsServiceConnection -ApiUri 'https://dev.azure.com/myorg' -ProjectId 'proj-id' -ProjectName 'TestProject' -ServiceConnectionName 'TestSC' -ServiceConnectionType 'generic' } | Should -Throw
+    }
+
+    Context 'serviceEndpointProjectReferences JSON shape (CLAUDE.md gotcha #7)' {
+
+        It 'Serializes the default single project reference as a JSON array, not an object' {
+            New-DevOpsServiceConnection -ApiUri 'https://dev.azure.com/myorg' -ProjectId 'proj-id' -ProjectName 'TestProject' -ServiceConnectionName 'TestSC' -ServiceConnectionType 'generic'
+
+            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -ParameterFilter {
+                $Body -match '"serviceEndpointProjectReferences"\s*:\s*\['
+            }
+        }
+
+        It 'Serializes two explicit project references as a JSON array' {
+            $refs = @(
+                @{ projectReference = @{ id = 'p1'; name = 'TestProject' }; name = 'TestSC' },
+                @{ projectReference = @{ id = 'p2'; name = 'Fabrikam' }; name = 'shared-conn' }
+            )
+            New-DevOpsServiceConnection -ApiUri 'https://dev.azure.com/myorg' -ProjectId 'proj-id' -ProjectName 'TestProject' -ServiceConnectionName 'TestSC' -ServiceConnectionType 'generic' -ProjectReferences $refs
+
+            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -ParameterFilter {
+                $Body -match '"serviceEndpointProjectReferences"\s*:\s*\[' -and (($Body | ConvertFrom-Json).serviceEndpointProjectReferences | Measure-Object).Count -eq 2
+            }
+        }
+
     }
 }

@@ -4,8 +4,13 @@ Creates a new Azure DevOps Git repository within a specified project.
 
 .DESCRIPTION
 The New-AzDoGitRepository function creates a new Git repository in an Azure DevOps project.
-It uses the provided project name and repository name to create the repository.
-Optionally, a source repository can be specified to initialize the new repository.
+
+When 'SourceRepository' is supplied, the repository is seeded at creation time as either a fork of
+an existing Azure DevOps repository (using the native 'parentRepository' support on the create
+call) or an import from an external Git URL (via the asynchronous Import Requests API, polled to
+completion) - see 'SourceType'. This only ever happens here, at creation time: it is never repeated
+by Set-AzDoGitRepository, and a failed import is surfaced as an error rather than left as a
+silently-empty repository.
 
 .PARAMETER ProjectName
 The name of the Azure DevOps project where the new repository will be created.
@@ -14,7 +19,20 @@ The name of the Azure DevOps project where the new repository will be created.
 The name of the new Git repository to be created.
 
 .PARAMETER SourceRepository
-(Optional) The name of the source repository to initialize the new repository.
+(Optional) Seeds the repository at creation time. Its meaning depends on 'SourceType': a Git URL
+(or SSH remote) for an import, or 'Project/Repo' (or just 'Repo' for a repository in this project)
+for a fork.
+
+.PARAMETER SourceType
+(Optional) 'Import' or 'Fork'. When omitted and 'SourceRepository' is set, it is inferred: a URL or
+an SSH remote (e.g. 'git@host:owner/repo.git') defaults to 'Import', anything else to 'Fork'.
+
+.PARAMETER ImportServiceConnectionName
+(Optional) The name of a generic Git service connection (in this project) holding the credentials
+needed to import from a private 'SourceRepository' URL. Only used when importing.
+
+.PARAMETER IsDisabled
+(Optional) When $true, disables the repository once it (and any import) has finished being created.
 
 .PARAMETER LookupResult
 (Optional) A hashtable to store lookup results.
@@ -28,12 +46,17 @@ The name of the new Git repository to be created.
 .EXAMPLE
 PS> New-AzDoGitRepository -ProjectName "MyProject" -RepositoryName "MyRepo"
 
-Creates a new Git repository named "MyRepo" in the "MyProject" Azure DevOps project.
+Creates a new, empty Git repository named "MyRepo" in the "MyProject" Azure DevOps project.
 
 .EXAMPLE
-PS> New-AzDoGitRepository -ProjectName "MyProject" -RepositoryName "MyRepo" -SourceRepository "TemplateRepo"
+PS> New-AzDoGitRepository -ProjectName "MyProject" -RepositoryName "MyRepo" -SourceRepository "https://github.com/MyUser/MyRepo.git"
 
-Creates a new Git repository named "MyRepo" in the "MyProject" Azure DevOps project, initialized with the contents of "TemplateRepo".
+Creates "MyRepo" and imports the contents of the public GitHub repository at that URL.
+
+.EXAMPLE
+PS> New-AzDoGitRepository -ProjectName "MyProject" -RepositoryName "MyRepo" -SourceRepository "TemplateProject/TemplateRepo" -SourceType Fork
+
+Creates "MyRepo" as a fork of "TemplateRepo" in the "TemplateProject" project.
 
 .NOTES
 This function requires the Azure DevOps organization name to be set in the global variable (Get-AzDoOrganizationName).
@@ -58,6 +81,17 @@ Function New-AzDoGitRepository
         [System.String]$SourceRepository,
 
         [Parameter()]
+        [Alias('SourceKind')]
+        [System.String]$SourceType,
+
+        [Parameter()]
+        [Alias('ServiceConnection')]
+        [System.String]$ImportServiceConnectionName,
+
+        [Parameter()]
+        [System.Boolean]$IsDisabled = $false,
+
+        [Parameter()]
         [HashTable]$LookupResult,
 
         [Parameter()]
@@ -71,6 +105,7 @@ Function New-AzDoGitRepository
     Write-Verbose "[New-AzDoGitRepository] Creating new repository '$($RepositoryName)' in project '$($ProjectName)'"
 
     $OrganizationName = Get-AzDoOrganizationName
+    $ApiUri  = 'https://dev.azure.com/{0}/' -f $OrganizationName
     $project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
 
     # If not in cache, fall back to a live API lookup
@@ -87,22 +122,140 @@ Function New-AzDoGitRepository
         return
     }
 
-    # Define parameters for creating a new DevOps group
-    $params = @{
-        ApiUri = 'https://dev.azure.com/{0}/' -f $OrganizationName
-        Project = $project
-        RepositoryName = $RepositoryName
-        SourceRepository = $SourceRepository
+    # Resolve how (if at all) the repository should be seeded. This only ever happens here, at
+    # creation time - 'SourceRepository'/'SourceType'/'ImportServiceConnectionName' are listed in
+    # the class's 'GetDscResourcePropertyNamesWithNoSetSupport()' and are never passed to Set().
+    $effectiveSourceType = $null
+    $parentRepository    = $null
+
+    if (![System.String]::IsNullOrWhiteSpace($SourceRepository))
+    {
+        if (![System.String]::IsNullOrWhiteSpace($SourceType))
+        {
+            $effectiveSourceType = $SourceType
+        }
+        else
+        {
+            # A URL (any scheme) or an SSH remote (e.g. 'git@host:owner/repo.git') is an import;
+            # anything else - a bare repository name, or 'Project/Repo' - is a fork of an existing
+            # Azure DevOps repository.
+            $looksLikeUrl = ($SourceRepository -match '^[a-zA-Z][a-zA-Z0-9+.-]*://') -or ($SourceRepository -match '^[^@\s/]+@[^:\s]+:')
+            $effectiveSourceType = if ($looksLikeUrl) { 'Import' } else { 'Fork' }
+        }
+
+        Write-Verbose "[New-AzDoGitRepository] SourceRepository '$SourceRepository' resolved to SourceType '$effectiveSourceType'."
     }
 
+    if ($effectiveSourceType -eq 'Fork')
+    {
+        # 'SourceRepository' is 'Project/Repo', or just 'Repo' for a repository in this project.
+        if ($SourceRepository -match '^(?<project>[^/]+)/(?<repo>.+)$')
+        {
+            $sourceProjectName = $Matches.project
+            $sourceRepoName    = $Matches.repo
+        }
+        else
+        {
+            $sourceProjectName = $ProjectName
+            $sourceRepoName    = $SourceRepository
+        }
 
-    # Create a new repository
+        $sourceProject = if ($sourceProjectName -eq $ProjectName) { $project } else { Resolve-AzDoProject -ProjectName $sourceProjectName }
+
+        if ($null -eq $sourceProject)
+        {
+            Write-Error "[New-AzDoGitRepository] Fork source project '$sourceProjectName' not found. Skipping change."
+            return
+        }
+
+        $sourceRepo = Get-CacheItem -Key "$sourceProjectName\$sourceRepoName" -Type 'LiveRepositories'
+        if ($null -eq $sourceRepo)
+        {
+            $allSourceRepos = List-DevOpsGitRepository -OrganizationName $OrganizationName -ProjectName $sourceProjectName
+            $sourceRepo     = $allSourceRepos | Where-Object { $_.name -eq $sourceRepoName } | Select-Object -First 1
+        }
+
+        if ($null -eq $sourceRepo)
+        {
+            Write-Error "[New-AzDoGitRepository] Fork source repository '$sourceRepoName' not found in project '$sourceProjectName'. Skipping change."
+            return
+        }
+
+        $parentRepository = @{
+            id      = $sourceRepo.id
+            project = @{ id = $sourceProject.id }
+        }
+    }
+
+    # Define parameters for creating the repository
+    $params = @{
+        ApiUri         = $ApiUri
+        Project        = $project
+        RepositoryName = $RepositoryName
+    }
+
+    if ($parentRepository)
+    {
+        $params.ParentRepository = $parentRepository
+    }
+
+    # Create the (possibly forked) repository
     $value = New-GitRepository @params
 
     if ($null -eq $value)
     {
         Write-Error "[New-AzDoGitRepository] New-GitRepository returned null for repository '$RepositoryName' in project '$ProjectName'. Check authentication token and organization settings."
         return
+    }
+
+    if ($effectiveSourceType -eq 'Import')
+    {
+        $serviceEndpointId = $null
+
+        if (![System.String]::IsNullOrWhiteSpace($ImportServiceConnectionName))
+        {
+            $serviceConnection = Get-CacheItem -Key "$ProjectName\$ImportServiceConnectionName" -Type 'LiveServiceConnections'
+            if ($null -eq $serviceConnection)
+            {
+                $allServiceConnections = List-DevOpsServiceConnections -ApiUri $ApiUri -ProjectName $ProjectName
+                $serviceConnection     = $allServiceConnections | Where-Object { $_.name -eq $ImportServiceConnectionName } | Select-Object -First 1
+            }
+
+            if ($null -eq $serviceConnection)
+            {
+                Write-Error "[New-AzDoGitRepository] Import service connection '$ImportServiceConnectionName' not found in project '$ProjectName'. Repository '$RepositoryName' was created empty."
+                return
+            }
+
+            $serviceEndpointId = $serviceConnection.id
+        }
+
+        Write-Verbose "[New-AzDoGitRepository] Importing '$SourceRepository' into repository '$RepositoryName'."
+
+        $importParams = @{
+            ApiUri     = $ApiUri
+            Project    = $project
+            Repository = $value
+            SourceUrl  = $SourceRepository
+        }
+        if ($serviceEndpointId) { $importParams.ServiceEndpointId = $serviceEndpointId }
+
+        $importRequest = New-GitImportRequest @importParams
+
+        if ($null -eq $importRequest)
+        {
+            Write-Error "[New-AzDoGitRepository] New-GitImportRequest returned null for repository '$RepositoryName'. Repository was created empty - import was not started."
+            return
+        }
+
+        $null = Wait-DevOpsGitImportRequest -ApiUri $ApiUri -Project $project -Repository $value -ImportRequestId $importRequest.importRequestId
+    }
+
+    if ($IsDisabled)
+    {
+        Write-Verbose "[New-AzDoGitRepository] Disabling repository '$RepositoryName' as requested."
+        $disabledRepo = Set-GitRepository -ApiUri $ApiUri -Project $project -Repository $value -IsDisabled $true
+        if ($disabledRepo) { $value = $disabledRepo }
     }
 
     # Add the repository to the LiveRepositories cache and write to verbose log

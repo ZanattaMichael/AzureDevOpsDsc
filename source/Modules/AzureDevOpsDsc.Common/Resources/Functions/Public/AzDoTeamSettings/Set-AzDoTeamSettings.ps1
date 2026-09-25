@@ -11,6 +11,7 @@ Function Set-AzDoTeamSettings
         [Parameter()][string[]]$AreaPaths,
         [Parameter()][string[]]$WorkingDays,
         [Parameter()][ValidateSet('', 'asRequirements', 'asTasks', 'off')][string]$BugsBehavior,
+        [Parameter()][HashTable]$BacklogVisibilities,
         [Parameter()][HashTable]$LookupResult,
         [Parameter()][Ensure]$Ensure,
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
@@ -41,7 +42,7 @@ Function Set-AzDoTeamSettings
     }
 
     $params = @{ ApiUri = $ApiUri; ProjectId = $project.id; TeamId = $team.id }
-    foreach ($name in 'BacklogIterationPath', 'DefaultIterationPath', 'IterationPaths', 'DefaultAreaPath', 'AreaPaths', 'WorkingDays', 'BugsBehavior')
+    foreach ($name in 'BacklogIterationPath', 'DefaultIterationPath', 'IterationPaths', 'DefaultAreaPath', 'AreaPaths', 'WorkingDays', 'BugsBehavior', 'BacklogVisibilities')
     {
         if ($PSBoundParameters.ContainsKey($name)) { $params[$name] = $PSBoundParameters[$name] }
     }
