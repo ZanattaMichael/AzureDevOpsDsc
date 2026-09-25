@@ -45,6 +45,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - AzureDevOpsDscNative
+  - Added `docs/Spikes/TenantScopedPolicies.md`, the spike for #85 covering the five
+    tenant-scoped policy candidates (`AzDoPatPolicy`, `AzDoOrganizationCreationPolicy`,
+    `AzDoBillingSettings`, `AzDoExtensionPolicy`, `AzDoAuditLogAlert`). All five fail the
+    spike's build rule and no resources were built: the PAT and org-creation tenant
+    policies have no documented REST route and need a Microsoft Entra tenant-admin
+    identity outside this module's auth model; billing settings are excluded outright
+    because every write is a purchase or billing change; the extension policy toggles
+    have no documented route; and audit log alerting is not a distinct feature, it folds
+    into the shipped `AzDoAuditStream` (#69). `docs/ResourceRoadmap.md` §7/§9 updated
+    with the verdicts and a link to the spike; reserved class prefixes `130`-`131` are
+    left unused.
   - Added `AzDoQueryFolder`, a resource managing folders in a project's shared work
     item query tree. Folders are declared in their own right so that queries can
     depend on them, rather than each query creating its own ancestry - which would
