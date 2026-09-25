@@ -23,6 +23,15 @@ Function Set-DevOpsServiceConnection
     )
     $endpointUrl = if ($Data.url) { $Data.url } elseif ($Data.Url) { $Data.Url } elseif ($Url) { $Url } else { '' }
 
+    # The url goes top-level only. Sending it inside 'data' as well makes the update fail with
+    # AuditLogEntryContainsDuplicateDataKeyException (key=url), because the modify audit records
+    # both. -ne is case-insensitive, so 'Url' is dropped too.
+    $dataBody = @{}
+    foreach ($key in $Data.Keys)
+    {
+        if ($key -ne 'url') { $dataBody[$key] = $Data[$key] }
+    }
+
     # Same reshaping as New-DevOpsServiceConnection: the API wants credential values nested
     # under authorization.parameters, with only 'scheme' at the top level.
     if ($Authorization.Count -gt 0 -and -not $Authorization.ContainsKey('parameters'))
@@ -60,7 +69,7 @@ Function Set-DevOpsServiceConnection
             isShared      = $IsShared
             isReady       = $IsReady
             authorization = $Authorization
-            data          = $Data
+            data          = $dataBody
             serviceEndpointProjectReferences = $serviceEndpointProjectReferences
         } | ConvertTo-Json -Depth 10
     }

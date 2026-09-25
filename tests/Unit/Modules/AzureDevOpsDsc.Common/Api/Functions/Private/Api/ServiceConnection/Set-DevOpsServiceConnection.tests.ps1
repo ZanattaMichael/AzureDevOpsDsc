@@ -67,6 +67,17 @@ Describe 'Set-DevOpsServiceConnection' -Tag "Unit", "ServiceConnection", "API" {
             }
         }
 
+        It 'Does not repeat the url inside data - the modify audit rejects a duplicate url key' {
+            Set-DevOpsServiceConnection -ApiUri 'https://dev.azure.com/myorg' -ProjectId 'proj-id' -ProjectName 'TestProject' -ServiceConnectionId 'sc-id' -ServiceConnectionName 'TestSC' -ServiceConnectionType 'generic' -Data @{ Url = 'https://data.example.com'; other = 'kept' }
+
+            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -ParameterFilter {
+                $sent = $Body | ConvertFrom-Json
+                $sent.url -eq 'https://data.example.com' -and
+                    @($sent.data.PSObject.Properties.Name | Where-Object { $_ -eq 'url' }).Count -eq 0 -and
+                    $sent.data.other -eq 'kept'
+            }
+        }
+
         It 'Falls back to the -Url parameter when Data has no url' {
             Set-DevOpsServiceConnection -ApiUri 'https://dev.azure.com/myorg' -ProjectId 'proj-id' -ProjectName 'TestProject' -ServiceConnectionId 'sc-id' -ServiceConnectionName 'TestSC' -ServiceConnectionType 'generic' -Url 'https://existing.example.com'
 

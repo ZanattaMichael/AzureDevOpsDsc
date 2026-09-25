@@ -8,12 +8,6 @@ Function Remove-AzDoVariableGroup
         [Parameter()][string]$VariableGroupType = 'Vsts',
         [Parameter()][HashTable]$Variables,
         [Parameter()][bool]$AllowAccess = $false,
-        # Declared (but unused beyond the sharing warning below, which reads the live
-        # variableGroupProjectReferences directly) because GetDesiredStateParameters() splats
-        # every DSC property onto Remove-, including this one - omitting it throws "a parameter
-        # cannot be found that matches parameter name 'SharedWithProjects'".
-        [Parameter()][string[]]$SharedWithProjects,
-        [Parameter()][HashTable]$SharedNameOverrides,
         [Parameter()][HashTable]$LookupResult,
         [Parameter()][Ensure]$Ensure,
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
@@ -41,12 +35,6 @@ Function Remove-AzDoVariableGroup
         # Already absent — nothing to remove (desired state achieved).
         Write-Verbose "[Remove-AzDoVariableGroup] Variable group '$VariableGroupName' not found; already absent."
         return
-    }
-
-    $otherProjects = @($vg.variableGroupProjectReferences | Where-Object { $_.projectReference.name -and $_.projectReference.name -ne $ProjectName } | ForEach-Object { $_.projectReference.name })
-    if ($otherProjects.Count -gt 0)
-    {
-        Write-Warning "[Remove-AzDoVariableGroup] Variable group '$VariableGroupName' is also shared with project(s): $($otherProjects -join ', '). Removing it from the owning project '$ProjectName' deletes it for all of them."
     }
 
     $params = @{

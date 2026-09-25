@@ -24,12 +24,9 @@ Describe 'New-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
 
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
         Mock -CommandName New-DevOpsVariableGroup   -MockWith { return @{ id = 'new-vg-id'; name = 'TestVG' } }
-        Mock -CommandName Set-DevOpsVariableGroupProjectReferences
         Mock -CommandName Add-CacheItem
         Mock -CommandName Export-CacheObject
         Mock -CommandName Refresh-CacheObject
-        Mock -CommandName Resolve-AzDoSharedProjectReferences
-        Mock -CommandName Write-Error
 
     }
 
@@ -91,105 +88,6 @@ Describe 'New-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
             Assert-MockCalled -CommandName New-DevOpsVariableGroup -Exactly 1 -ParameterFilter {
                 $Type -eq 'AzureKeyVault'
             }
-        }
-
-    }
-
-    Context 'When SharedWithProjects is not specified' {
-
-        It 'Should not resolve project references' {
-            New-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG'
-
-            Assert-MockCalled -CommandName Resolve-AzDoSharedProjectReferences -Exactly 0
-        }
-
-        It 'Should not attempt to share the group' {
-            New-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG'
-
-            Assert-MockCalled -CommandName Set-DevOpsVariableGroupProjectReferences -Exactly 0
-        }
-
-    }
-
-    Context 'When SharedWithProjects is specified' {
-
-        BeforeEach {
-            Mock -CommandName Resolve-AzDoSharedProjectReferences -MockWith {
-                @(
-                    @{ projectReference = @{ id = 'p1'; name = 'TestProject' }; name = 'TestVG' },
-                    @{ projectReference = @{ id = 'p2'; name = 'Fabrikam' }; name = 'shared-settings' }
-                )
-            }
-        }
-
-        It 'Should resolve project references with the owning project and shares' {
-            New-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @('Fabrikam') -SharedNameOverrides @{ Fabrikam = 'shared-settings' }
-
-            Assert-MockCalled -CommandName Resolve-AzDoSharedProjectReferences -Exactly 1 -ParameterFilter {
-                $ProjectName -eq 'TestProject' -and
-                $DefaultName -eq 'TestVG' -and
-                $SharedWithProjects -contains 'Fabrikam'
-            }
-        }
-
-        It 'Should never pass more than the owning reference to New-DevOpsVariableGroup - the create endpoint rejects extra references ("Sharing of variable group is not allowed")' {
-            New-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @('Fabrikam')
-
-            Assert-MockCalled -CommandName New-DevOpsVariableGroup -Exactly 1 -ParameterFilter {
-                $null -eq $ProjectReferences
-            }
-        }
-
-        It 'Should share the newly created group with the resolved references via the dedicated share call' {
-            New-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @('Fabrikam')
-
-            Assert-MockCalled -CommandName Set-DevOpsVariableGroupProjectReferences -Exactly 1 -ParameterFilter {
-                $VariableGroupId -eq 'new-vg-id' -and $ProjectReferences.Count -eq 2
-            }
-        }
-
-        It 'Should write an error and not create the group when the resolve throws' {
-            Mock -CommandName Resolve-AzDoSharedProjectReferences -MockWith { throw "Project 'Fabrikam' was not found; cannot share with it." }
-
-            New-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @('Fabrikam')
-
-            Assert-MockCalled -CommandName Write-Error -Exactly 1
-            Assert-MockCalled -CommandName New-DevOpsVariableGroup -Exactly 0
-        }
-
-        It 'Should throw when the share call fails, so a DSC Set() reports the failure instead of silently succeeding' {
-            Mock -CommandName Set-DevOpsVariableGroupProjectReferences -MockWith { throw 'share rejected' }
-
-            { New-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @('Fabrikam') } |
-                Should -Throw "*was created but could not be shared*share rejected*"
-        }
-
-        It 'Should still cache the created group when the share call fails' {
-            Mock -CommandName Set-DevOpsVariableGroupProjectReferences -MockWith { throw 'share rejected' }
-
-            { New-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @('Fabrikam') } |
-                Should -Throw
-
-            Assert-MockCalled -CommandName Add-CacheItem -Exactly 1 -ParameterFilter {
-                $Key -eq 'TestProject\TestVG' -and $Type -eq 'LiveVariableGroups'
-            }
-            Assert-MockCalled -CommandName Export-CacheObject -Exactly 1
-        }
-
-    }
-
-    Context 'When SharedWithProjects resolves to only the owning project' {
-
-        BeforeEach {
-            Mock -CommandName Resolve-AzDoSharedProjectReferences -MockWith {
-                @( @{ projectReference = @{ id = 'p1'; name = 'TestProject' }; name = 'TestVG' } )
-            }
-        }
-
-        It 'Should not call the share endpoint when there is nothing extra to share' {
-            New-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @()
-
-            Assert-MockCalled -CommandName Set-DevOpsVariableGroupProjectReferences -Exactly 0
         }
 
     }

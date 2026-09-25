@@ -33,28 +33,4 @@ Describe 'Set-DevOpsVariableGroup' -Tag "Unit", "VariableGroup", "API" {
         { Set-DevOpsVariableGroup -ApiUri 'https://dev.azure.com/myorg' -ProjectName 'TestProject' -VariableGroupId 1 -VariableGroupName 'TestVG' } | Should -Throw
     }
 
-    Context 'variableGroupProjectReferences JSON shape (CLAUDE.md gotcha #7)' {
-
-        It 'Serializes the default single project reference as a JSON array, not an object' {
-            Set-DevOpsVariableGroup -ApiUri 'https://dev.azure.com/myorg' -ProjectName 'TestProject' -VariableGroupId 1 -VariableGroupName 'TestVG'
-
-            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -ParameterFilter {
-                $Body -match '"variableGroupProjectReferences"\s*:\s*\['
-            }
-        }
-
-        It 'Serializes two explicit project references as a JSON array' {
-            $refs = @(
-                @{ projectReference = @{ id = 'p1'; name = 'TestProject' }; name = 'TestVG' },
-                @{ projectReference = @{ id = 'p2'; name = 'Fabrikam' }; name = 'shared-settings' }
-            )
-            Set-DevOpsVariableGroup -ApiUri 'https://dev.azure.com/myorg' -ProjectName 'TestProject' -VariableGroupId 1 -VariableGroupName 'TestVG' -ProjectReferences $refs
-
-            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -ParameterFilter {
-                $Body -match '"variableGroupProjectReferences"\s*:\s*\[' -and (($Body | ConvertFrom-Json).variableGroupProjectReferences | Measure-Object).Count -eq 2
-            }
-        }
-
-    }
-
 }

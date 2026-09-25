@@ -28,9 +28,6 @@ Describe 'Set-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
         Mock -CommandName Export-CacheObject
         Mock -CommandName Refresh-CacheObject
         Mock -CommandName Write-Error
-        Mock -CommandName Resolve-AzDoSharedProjectReferences
-        Mock -CommandName Remove-DevOpsVariableGroup
-        Mock -CommandName Set-DevOpsVariableGroupProjectReferences
 
     }
 
@@ -93,105 +90,6 @@ Describe 'Set-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
             Set-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'MissingVG'
 
             Assert-MockCalled -CommandName Add-CacheItem -Exactly 0
-        }
-
-    }
-
-    Context 'When SharedWithProjects removes a previously shared project' {
-
-        BeforeEach {
-            Mock -CommandName Get-CacheItem -MockWith {
-                return @{
-                    id                              = 'vg-id'
-                    name                             = 'TestVG'
-                    variableGroupProjectReferences = @(
-                        @{ projectReference = @{ id = 'proj-id'; name = 'TestProject' }; name = 'TestVG' },
-                        @{ projectReference = @{ id = 'fab-id'; name = 'Fabrikam' }; name = 'TestVG' }
-                    )
-                }
-            }
-            Mock -CommandName Resolve-AzDoSharedProjectReferences -MockWith {
-                @( @{ projectReference = @{ id = 'proj-id'; name = 'TestProject' }; name = 'TestVG' } )
-            }
-        }
-
-        It 'Should not pass ProjectReferences to Set-DevOpsVariableGroup - the update endpoint rejects extra references ("Sharing of variable group is not allowed")' {
-            Set-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @()
-
-            Assert-MockCalled -CommandName Set-DevOpsVariableGroup -Exactly 1 -ParameterFilter {
-                $null -eq $ProjectReferences
-            }
-        }
-
-        It 'Should not use the DELETE-based unshare call - sharing is applied via the dedicated share endpoint instead' {
-            Set-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @()
-
-            Assert-MockCalled -CommandName Remove-DevOpsVariableGroup -Exactly 0
-        }
-
-        It 'Should call the dedicated share endpoint with the full resolved reference list (including the drop of Fabrikam)' {
-            Set-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @()
-
-            Assert-MockCalled -CommandName Set-DevOpsVariableGroupProjectReferences -Exactly 1 -ParameterFilter {
-                $VariableGroupId -eq 'vg-id' -and $ProjectReferences.Count -eq 1
-            }
-        }
-
-    }
-
-    Context 'When the share call fails' {
-
-        BeforeEach {
-            Mock -CommandName Get-CacheItem -MockWith {
-                return @{ id = 'vg-id'; name = 'TestVG' }
-            }
-            Mock -CommandName Resolve-AzDoSharedProjectReferences -MockWith {
-                @(
-                    @{ projectReference = @{ id = 'proj-id'; name = 'TestProject' }; name = 'TestVG' },
-                    @{ projectReference = @{ id = 'fab-id'; name = 'Fabrikam' }; name = 'TestVG' }
-                )
-            }
-            Mock -CommandName Set-DevOpsVariableGroupProjectReferences -MockWith { throw 'share rejected' }
-        }
-
-        It 'Should throw, so a DSC Set() reports the failure instead of silently succeeding' {
-            { Set-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @('Fabrikam') } |
-                Should -Throw "*could not be shared*share rejected*"
-        }
-
-        It 'Should still cache the update that did succeed before throwing' {
-            { Set-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @('Fabrikam') } |
-                Should -Throw
-
-            Assert-MockCalled -CommandName Add-CacheItem -Exactly 1 -ParameterFilter {
-                $Key -eq 'TestProject\TestVG' -and $Type -eq 'LiveVariableGroups'
-            }
-            Assert-MockCalled -CommandName Export-CacheObject -Exactly 1
-        }
-
-    }
-
-    Context 'When SharedWithProjects is not specified' {
-
-        BeforeEach {
-            Mock -CommandName Get-CacheItem -MockWith {
-                return @{
-                    id                              = 'vg-id'
-                    name                             = 'TestVG'
-                    variableGroupProjectReferences = @(
-                        @{ projectReference = @{ id = 'proj-id'; name = 'TestProject' }; name = 'TestVG' },
-                        @{ projectReference = @{ id = 'fab-id'; name = 'Fabrikam' }; name = 'TestVG' }
-                    )
-                }
-            }
-        }
-
-        It 'Should not touch sharing at all' {
-            Set-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG'
-
-            Assert-MockCalled -CommandName Resolve-AzDoSharedProjectReferences -Exactly 0
-            Assert-MockCalled -CommandName Remove-DevOpsVariableGroup -Exactly 0
-            Assert-MockCalled -CommandName Set-DevOpsVariableGroupProjectReferences -Exactly 0
         }
 
     }

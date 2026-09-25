@@ -23,19 +23,6 @@
 .PARAMETER AllowAccess
     Whether all pipelines can access this variable group. Defaults to $false.
 
-.PARAMETER SharedWithProjects
-    Additional projects, beyond ProjectName, that the variable group is also shared with. Compared
-    only when the configuration states it, so a variable group shared by hand outside this
-    resource is left alone. Add and remove drift against the live
-    'variableGroupProjectReferences' is detected and corrected by Set.
-    Known limitation: Azure DevOps Services currently refuses the share call with
-    "Sharing of variable group is not allowed.", in which case Set throws that error.
-
-.PARAMETER SharedNameOverrides
-    Optional hashtable of ProjectName -> the name the variable group is shown under in that
-    project, e.g. @{ Fabrikam = 'shared-settings' }. Only consulted for projects named in
-    SharedWithProjects; the owning project's reference always uses VariableGroupName.
-
 #>
 
 [DscResource()]
@@ -59,12 +46,6 @@ class AzDoVariableGroup : AzDevOpsDscResourceBase
 
     [DscProperty()]
     [System.Boolean]$AllowAccess = $false
-
-    [DscProperty()]
-    [System.String[]]$SharedWithProjects
-
-    [DscProperty()]
-    [HashTable]$SharedNameOverrides
 
     AzDoVariableGroup()
     {
@@ -100,8 +81,6 @@ class AzDoVariableGroup : AzDevOpsDscResourceBase
         $properties.VariableGroupType = $CurrentResourceObject.VariableGroupType
         $properties.Variables         = $CurrentResourceObject.Variables
         $properties.AllowAccess       = $CurrentResourceObject.AllowAccess
-        $properties.SharedWithProjects  = $CurrentResourceObject.SharedWithProjects
-        $properties.SharedNameOverrides = $CurrentResourceObject.SharedNameOverrides
         $properties.LookupResult      = $CurrentResourceObject.LookupResult
         $properties.Ensure            = $CurrentResourceObject.Ensure
 

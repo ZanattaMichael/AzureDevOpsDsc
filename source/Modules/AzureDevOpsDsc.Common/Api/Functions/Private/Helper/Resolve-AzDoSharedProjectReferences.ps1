@@ -1,14 +1,16 @@
 <#
 .SYNOPSIS
-Builds the project reference array used to share a variable group or service connection with
-additional projects.
+Builds the project reference array used to share a service connection with additional projects.
 
 .DESCRIPTION
-Variable groups and service connections both model cross-project sharing the same way: an array
-of project references, each carrying the id/name of a project the object is visible in plus the
-name (and description) it is shown under there. This resolves the owning project plus every
-project in SharedWithProjects to that shape, ready to send as 'variableGroupProjectReferences' or
-'serviceEndpointProjectReferences'.
+Service connections model cross-project sharing as an array of project references, each carrying
+the id/name of a project the object is visible in plus the name (and description) it is shown
+under there. This resolves the owning project plus every project in SharedWithProjects to that
+shape, ready to send as 'serviceEndpointProjectReferences'.
+
+Variable groups use the same shape ('variableGroupProjectReferences'), but Azure DevOps Services
+refuses to share them ("Sharing of variable group is not allowed."), so no variable group caller
+exists.
 
 The owning project's reference always uses DefaultName - only the additional (shared) projects
 can be given a different display name via SharedNameOverrides, matching how the Azure DevOps UI

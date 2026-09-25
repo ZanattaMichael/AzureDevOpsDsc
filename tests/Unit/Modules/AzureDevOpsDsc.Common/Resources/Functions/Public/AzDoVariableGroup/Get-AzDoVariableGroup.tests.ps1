@@ -23,7 +23,6 @@ Describe 'Get-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
         . (Get-ClassFilePath 'DSCGetSummaryState')
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
-        . (Get-FunctionItem 'Test-AzDoArrayDrift.ps1')
 
         # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
         Mock -CommandName List-DevOpsVariableGroups -MockWith { return $null }
@@ -95,115 +94,6 @@ Describe 'Get-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
             $result.status | Should -Be 'Unchanged'
         }
 
-    }
-
-    Context 'When SharedWithProjects is not supplied' {
-
-        BeforeEach {
-            Mock -CommandName Get-CacheItem -MockWith {
-                return @{
-                    id                              = 'vg-1'
-                    name                             = 'TestVG'
-                    variableGroupProjectReferences = @(
-                        @{ projectReference = @{ id = 'p1'; name = 'TestProject' }; name = 'TestVG' },
-                        @{ projectReference = @{ id = 'p2'; name = 'Fabrikam' }; name = 'TestVG' }
-                    )
-                }
-            }
-        }
-
-        It 'Should leave sharing untouched (Unchanged) even though the live group is shared' {
-            $result = Get-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG'
-            $result.status | Should -Be 'Unchanged'
-            $result.propertiesChanged | Should -Not -Contain 'SharedWithProjects'
-        }
-    }
-
-    Context 'When SharedWithProjects is supplied and matches the live sharing' {
-
-        BeforeEach {
-            Mock -CommandName Get-CacheItem -MockWith {
-                return @{
-                    id                              = 'vg-1'
-                    name                             = 'TestVG'
-                    variableGroupProjectReferences = @(
-                        @{ projectReference = @{ id = 'p1'; name = 'TestProject' }; name = 'TestVG' },
-                        @{ projectReference = @{ id = 'p2'; name = 'Fabrikam' }; name = 'TestVG' }
-                    )
-                }
-            }
-        }
-
-        It 'Should return Unchanged' {
-            $result = Get-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @('Fabrikam')
-            $result.status | Should -Be 'Unchanged'
-        }
-    }
-
-    Context 'When SharedWithProjects drifts from the live sharing' {
-
-        BeforeEach {
-            Mock -CommandName Get-CacheItem -MockWith {
-                return @{
-                    id                              = 'vg-1'
-                    name                             = 'TestVG'
-                    variableGroupProjectReferences = @(
-                        @{ projectReference = @{ id = 'p1'; name = 'TestProject' }; name = 'TestVG' }
-                    )
-                }
-            }
-        }
-
-        It 'Should return Changed with SharedWithProjects flagged when a share is missing' {
-            $result = Get-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @('Fabrikam')
-            $result.status | Should -Be 'Changed'
-            $result.propertiesChanged | Should -Contain 'SharedWithProjects'
-        }
-
-        It 'Should return Changed with SharedWithProjects flagged when a share should be removed' {
-            Mock -CommandName Get-CacheItem -MockWith {
-                return @{
-                    id                              = 'vg-1'
-                    name                             = 'TestVG'
-                    variableGroupProjectReferences = @(
-                        @{ projectReference = @{ id = 'p1'; name = 'TestProject' }; name = 'TestVG' },
-                        @{ projectReference = @{ id = 'p2'; name = 'Fabrikam' }; name = 'TestVG' }
-                    )
-                }
-            }
-            $result = Get-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -SharedWithProjects @()
-            $result.status | Should -Be 'Changed'
-            $result.propertiesChanged | Should -Contain 'SharedWithProjects'
-        }
-    }
-
-    Context 'When SharedNameOverrides drifts from the live reference name' {
-
-        BeforeEach {
-            Mock -CommandName Get-CacheItem -MockWith {
-                return @{
-                    id                              = 'vg-1'
-                    name                             = 'TestVG'
-                    variableGroupProjectReferences = @(
-                        @{ projectReference = @{ id = 'p1'; name = 'TestProject' }; name = 'TestVG' },
-                        @{ projectReference = @{ id = 'p2'; name = 'Fabrikam' }; name = 'old-name' }
-                    )
-                }
-            }
-        }
-
-        It 'Should return Changed with SharedNameOverrides flagged' {
-            $result = Get-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' `
-                -SharedWithProjects @('Fabrikam') -SharedNameOverrides @{ Fabrikam = 'shared-settings' }
-            $result.status | Should -Be 'Changed'
-            $result.propertiesChanged | Should -Contain 'SharedNameOverrides'
-        }
-
-        It 'Should return Unchanged when the override matches the live reference name' {
-            $result = Get-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' `
-                -SharedWithProjects @('Fabrikam') -SharedNameOverrides @{ Fabrikam = 'old-name' }
-            $result.status | Should -Be 'Unchanged'
-        }
     }
 
 }
