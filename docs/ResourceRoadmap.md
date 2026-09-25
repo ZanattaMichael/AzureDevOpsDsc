@@ -456,6 +456,63 @@ is additive per resource (no shared-plumbing changes needed) and should follow t
   JSON object `get`/`set`/`test` return) needs to be confirmed against the runner's actual `dsc`
   version before `V3TestHelpers.ps1`'s `Invoke-DscV3Resource` is extended to parse it.
 
+---
+
+## 8b. `AzDoPipeline` — GitHub/Bitbucket repositories and pipeline variables (issue #81) — **shipped**
+
+`AzDoPipeline` (class `068`) gained three properties rather than a new class, since the
+existing resource already owned the pipeline/build-definition object these extend:
+
+- **`RepositoryType`** (`TfsGit` default, `GitHub`, `GitHubEnterprise`, `Bitbucket`). The
+  classic Build Definitions API (what this resource reads, compares and updates) and the
+  Pipelines create API disagree on the string for each type
+  (`TfsGit`/`GitHub`/`GitHubEnterprise`/`Bitbucket` vs.
+  `azureReposGit`/`gitHub`/`gitHubEnterprise`/`bitbucket`); `Convert-AzDoPipelineRepositoryType`
+  translates for the create call only. `TfsGit` addresses the repository by `id`/`name`; the
+  other three address it by `owner/repo` (as both `id` and `name` on the build definition)
+  plus a service connection `id`, and `Get-AzDoPipelineRepositoryUrl` supplies the clone URL
+  the definition records.
+- **`ServiceConnectionName`**, resolved to a connection id by the new helper
+  `Resolve-AzDoServiceConnection` (cache-first, live-fallback — the same pattern
+  `AzDoServiceConnection` itself uses). Mandatory only when `RepositoryType` is not `TfsGit`;
+  `New`/`Set` guard on this explicitly, because an `Error` status from `Get` still reaches
+  `Set` (see `CLAUDE.md`'s "Error still calls Set" gotcha) and the refusal has to be repeated
+  there.
+- **`Variables`** (`Hashtable[]`, shaped `@{ Name; Value; IsSecret; AllowOverride }`), written
+  through the new private API function `Set-DevOpsPipelineVariables`. Pipeline variables live
+  on the classic build definition's `variables` map, not on the Pipelines resource, and a
+  `PUT` has to send the whole definition back — so this reads the definition, replaces only
+  the named variables in its map, and writes it back untouched otherwise. Only the variables
+  listed in the configuration are managed; pre-existing variables not named there are left
+  alone.
+
+**Updates go through the build definition.** The Pipelines API (`_apis/pipelines`) creates
+and lists pipelines but has no update verb — a `PATCH` or `PUT` to `_apis/pipelines/{id}` is
+refused with `405`. `Set-DevOpsPipeline` therefore reads the pipeline's build definition,
+changes the managed fields (name, folder, YAML path, default branch, and the repository only
+when its type, name or service connection differs) and writes the whole definition back with a
+`PUT`. The create call takes no default branch either, so `New-AzDoPipeline` follows the create
+with the same update.
+
+**Secret variables are write-only.** Azure DevOps never returns a secret variable's value in
+any API response, so `Get-AzDoPipeline` cannot compare one and must not report drift based on
+a value it can never see: drift detection for a secret variable is limited to its presence and
+its `IsSecret`/`AllowOverride` flags. `New`/`Set` always write the value the configuration
+currently holds, on every call, whether or not it actually changed on the far end — there is no
+way from this side to tell.
+
+**Live coverage gap.** The CI organization has no GitHub or Bitbucket service connection
+configured, so `GitHub`, `GitHubEnterprise` and `Bitbucket` — and the
+`Resolve-AzDoServiceConnection` resolution path they exercise — are covered by unit tests only
+(`tests/Unit/Modules/AzureDevOpsDsc.Common/Api/Functions/Private/Helper/Resolve-AzDoServiceConnection.tests.ps1`,
+`Convert-AzDoPipelineRepositoryType.tests.ps1`, `Get-AzDoPipelineRepositoryUrl.tests.ps1`,
+`Set-DevOpsPipeline.tests.ps1`, and the `AzDoPipeline` Get/New/Set unit tests).
+The integration suite exercises `Variables` (create, update, secret rotation, no-drift `Test`)
+only against a `TfsGit` pipeline, in
+`tests/Integration/Resources/AzDoPipeline.Variables.tests.ps1`. Adding a GitHub/Bitbucket
+service connection to the live test organization would close this gap; nothing in the code
+depends on staying that way.
+
 ## 9. Suggested order of work
 
 Steps 1–6 of the original plan (`WorkItemQueryFolders` ACL support, the three query
