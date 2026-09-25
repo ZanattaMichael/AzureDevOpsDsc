@@ -41,6 +41,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     runspace, so a process created by another resource was not in it. They
     now use `Resolve-DevOpsProcess`, which falls back to a live lookup and
     caches what it finds ([issue #75](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/75)).
+  - Fixed `AzDoServiceConnection` refusing to create a connection whose `Data`
+    carries `url`. `New-DevOpsServiceConnection` lifted `Data.url` to the
+    endpoint's top-level `url` but also left it inside `data`, which accepts only
+    the inputs the connection type declares, so the API answered
+    `400 Following fields in the service connection are not expected: url`.
+    `url` is now sent once, at the top level.
 
 ### Added
 
@@ -97,6 +103,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     dashboard widget, delivery plan or ACL token referencing it. Queries deleted
     earlier are restored from the query recycle bin instead of failing with a name
     conflict.
+  - Added `AzDoEnvironmentKubernetesResource`, `AzDoEnvironmentVMResource` and
+    `AzDoDeploymentGroupTarget` (classes `125`-`127`), closing the deployment-target
+    gap tracked as `AzDoDeploymentGroupAgent` in the resource roadmap (#82).
+    `AzDoEnvironmentKubernetesResource` creates and manages a Kubernetes namespace
+    resource on a pipeline environment via a service connection; because its
+    provider API has no Update call, any drift - including Tags - is corrected by
+    deleting and recreating the resource, which changes its id, rather than by
+    silently ignoring it. The property the issue named `ResourceName` is exposed as
+    `KubernetesResourceName` instead, since `ResourceName` is reserved elsewhere in
+    this module. `AzDoEnvironmentVMResource` and `AzDoDeploymentGroupTarget` manage
+    tags and removal of an already-registered VM resource or deployment group
+    target; both are agent-install-only by design (there is no REST call that
+    registers one), so `Present` against a machine with no agent registered makes
+    `Get` return an `Error` status and `Set` **throw** a clear install-the-agent
+    message rather than silently doing nothing, while `Absent` against the same
+    unregistered machine is treated as the desired state.
+  - Added the private API helpers `New-/List-/Remove-DevOpsEnvironmentKubernetesResource(s)`,
+    `List-/Set-/Remove-DevOpsEnvironmentVMResource(s)` and
+    `List-/Set-/Remove-DevOpsDeploymentGroupTarget(s)`, plus the
+    `LiveEnvironmentKubernetesResources`, `LiveEnvironmentVMResources` and
+    `LiveDeploymentGroupTargets` cache types. The Kubernetes provider has no list
+    operation, so `List-DevOpsEnvironmentKubernetesResources` reads the
+    environment's resource references and then each Kubernetes resource by id.
   - Added the private Queries API functions `Get-DevOpsQuery`, `New-DevOpsQuery`,
     `Update-DevOpsQuery` and `Remove-DevOpsQuery`.
   - Added `AzDoQueryPermission`, a resource managing the ACL on a work item query

@@ -354,7 +354,8 @@ Items from #59 checked against the code:
 | `AzDoResourceAuthorization` | **Closed.** Shipped as `AzDoPipelineAuthorization` (class `119`, [#78](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/78)) — manages the `pipelinePermissions` REST API (which pipelines may *use* a service connection, agent queue, variable group, secure file, environment or repository), distinct from `AzDoCheckConfiguration` (approval/other checks gating a run) and the per-resource permission resources (who may *administer* the resource). |
 | `AzDoGroupEntitlement` | **Closed.** Shipped as class `109` (§6). |
 | `AzDoPipelineFolder` | **Closed.** Shipped as classes `107`–`108`, together with the `Build` folder ACL token (§5.3–5.4). |
-| `AzDoWikiPage`, `AzDoElasticPool`, `AzDoDeploymentGroupAgent`, dashboards, delivery plans, analytics | Confirmed gaps, still outstanding. |
+| `AzDoDeploymentGroupAgent` | **Closed for tags/removal.** Shipped as `AzDoEnvironmentKubernetesResource` (`125`), `AzDoEnvironmentVMResource` (`126`) and `AzDoDeploymentGroupTarget` (`127`) — see §8. VM and deployment-group targets are agent-install-only by design; DSC never registers one, only manages tags and removal of an already-registered target. Kubernetes resources are fully creatable via the REST API. |
+| `AzDoWikiPage`, `AzDoElasticPool`, dashboards, delivery plans, analytics | Confirmed gaps, still outstanding. |
 | Classic Release Management (Phase 2 in #59) | Confirmed gap, but **recommend demoting** below Boards/Queries and Process customization. It is a legacy subsystem in maintenance mode, and it is the largest surface on the list (`AzDoReleaseDefinition` alone is comparable in size to `AzDoPipeline`). Value per unit of effort is the lowest of anything proposed. |
 | Test Management (Phase 3 in #59) | Confirmed gap. Genuinely unrepresented, but demand is narrower than queries/dashboards; keep after the §6 gaps. |
 | `AzDoBillingSettings`, `AzDoPatPolicy`, `AzDoExtensionPolicy`, `AzDoAuditLogAlert` | **Spiked in [#85](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/85), see [`docs/Spikes/TenantScopedPolicies.md`](Spikes/TenantScopedPolicies.md).** All four verdicts are **unsupported / not built**: `AzDoPatPolicy` and an org-creation-restriction candidate have no documented REST route and the tenant-level halves need a Microsoft Entra tenant-admin identity this module cannot model; `AzDoBillingSettings` is excluded outright because every write is a billing/purchase change; `AzDoExtensionPolicy` has no documented route for the policy toggles (role constraint alone would pass); `AzDoAuditLogAlert` is not a distinct feature and folds into the shipped `AzDoAuditStream` (#69). The org-level "restrict PAT creation" allow-list is a follow-up property for `AzDoOrganizationSettings` once #84 lands, not a tenant policy. |
@@ -378,6 +379,26 @@ Merged to `main` in [#62](https://github.com/ZanattaMichael/AzureDevOpsDsc/pull/
 This closed §3, §4, §5.2, §5.3, §5.4 and most of §6, and added `WorkItemQueryFolders`,
 the `SecureFile` form of `Library` and the folder form of `Build` to the ACL token helpers
 (§2).
+
+Added in [#82](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/82) — 3 new
+resources, classes `125`–`127`:
+
+| Resource | Notes |
+|---|---|
+| `AzDoEnvironmentKubernetesResource` | Environment Kubernetes namespace resource, addressed via a service connection. Fully creatable/removable through the REST API. The issue's `ResourceName` property is exposed as `KubernetesResourceName` (reserved elsewhere in the module). The Kubernetes provider API has no Update call, so any drift (including Tags-only drift) is resolved by delete-then-recreate, which changes the resource's id — Tags drift is never silently ignored. |
+| `AzDoEnvironmentVMResource` | Tags and removal of an already-registered environment VM resource. Registration is agent-install-only (`config.cmd`/`config.sh`); this resource never creates one. `Present` with no agent registered under `MachineName` makes `Get` report `Error`/`AgentNotRegistered` and `Set` **throw** (not `Write-Error`) with an install-the-agent message, since an `Error` status still routes to `Set`. `Absent` with nothing registered is the desired state. |
+| `AzDoDeploymentGroupTarget` | Tags and removal of an already-registered deployment group target. Same agent-install-only, throw-on-`Set` design as `AzDoEnvironmentVMResource`, for deployment groups instead of pipeline environments. |
+
+Live-organization integration coverage: `AzDoEnvironmentKubernetesResource.tests.ps1` creates a
+synthetic Kubernetes-type service connection with a placeholder kubeconfig and exercises
+create/no-drift/tag-drift-and-fix/remove; if the organization's `providers/kubernetes` endpoint
+validates cluster reachability before accepting the resource, the affected assertions report via
+`Set-ItResult -Skipped` (never `-Skip`) rather than being silently omitted, and unit tests
+(`tests/Unit/.../AzDoEnvironmentKubernetesResource/`) cover the lookup/drift/remediation logic
+independently of that. `AzDoEnvironmentVMResource.tests.ps1` and
+`AzDoDeploymentGroupTarget.tests.ps1` can only exercise the unregistered-machine paths in CI
+(`Present` → `Test` false, `Set` throws; `Absent` → `Test` true) because installing an agent is
+outside what a CI job can do; the tag-patch path is unit-tested only.
 
 Still outstanding, in the order below:
 
