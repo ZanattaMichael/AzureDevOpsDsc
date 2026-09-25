@@ -355,6 +355,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `refs/heads/`/`refs/tags/` prefix for comparison) and
     `ConvertTo-GitRefToken` (the encode/decode round trip), with unit tests
     covering non-ASCII branch and tag names.
+  - Added `IsTeamAdmin` to `AzDoTeamMember` (#80), granting or revoking the
+    "Manage membership" bit on the team's own token (`{ProjectId}\{TeamId}`) in the
+    `Identity` security namespace, rather than a hardcoded bit - the namespace's
+    `actions` are read from the `SecurityNamespaces` cache each time so a namespace
+    revision cannot silently target the wrong permission. `Set-DevOpsTeamAdministrator`
+    reads the team's whole ACL first and rewrites only the target member's ACE,
+    because a `merge=false` `accesscontrollists` write replaces the entire list for
+    that token and would otherwise drop every other member's entry. Removing a
+    member always attempts to revoke the ACE first (regardless of the `IsTeamAdmin`
+    value supplied), so a removed member is not left administering a team it no
+    longer shows up in; a failure to revoke is logged as a warning and does not
+    block the removal itself.
+  - Added the private API functions `Get-DevOpsTeamAdministrator` and
+    `Set-DevOpsTeamAdministrator` behind `AzDoTeamMember`'s `IsTeamAdmin` property.
+  - Added `BacklogVisibilities` to `AzDoTeamSettings` (#80), a hashtable of backlog
+    category reference names (for example `Microsoft.EpicCategory`) to a boolean,
+    applied via `PATCH .../_apis/work/teamsettings`'s `backlogVisibilities`
+    dictionary. Drift is only ever reported for the categories the configuration
+    states - a category the live team has hidden but the configuration never
+    mentions is left alone, matching the "only compare what the configuration
+    states" convention. Accepting a backlog *behavior* name (as shown in the
+    Backlogs configuration UI) as well as the category reference name is deferred;
+    see `docs/ResourceRoadmap.md`.
 
 ### Fixed
 

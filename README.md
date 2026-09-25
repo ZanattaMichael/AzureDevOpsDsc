@@ -127,8 +127,8 @@ Each resource links to its example/usage documentation.
 | [AzDoOrganizationGroup](source/Examples/Resources/AzDoOrganizationGroup.md) | Creates and manages groups at the organization level. |
 | [AzDoGroupMember](source/Examples/Resources/AzDoGroupMember.md) | Manages membership of users, groups and service principals in a group. |
 | [AzDoTeam](source/Examples/Resources/AzDoTeam.md) | Creates and manages teams within a project. |
-| [AzDoTeamMember](source/Examples/Resources/AzDoTeamMember.md) | Manages membership of a team. |
-| [AzDoTeamSettings](source/Examples/Resources/AzDoTeamSettings.md) | Configures a team's iteration/area paths, working days and bug behaviour. |
+| [AzDoTeamMember](source/Examples/Resources/AzDoTeamMember.md) | Manages membership of a team, optionally granting team administrator rights. |
+| [AzDoTeamSettings](source/Examples/Resources/AzDoTeamSettings.md) | Configures a team's iteration/area paths, working days, bug behaviour and backlog visibility. |
 | [AzDoUserEntitlement](source/Examples/Resources/AzDoUserEntitlement.md) | Adds/removes organization users and manages their access level (license). |
 | [AzDoGroupEntitlement](source/Examples/Resources/AzDoGroupEntitlement.md) | Manages group licensing rules (access levels applied to every member of a group). |
 | [AzDoServicePrincipalEntitlement](source/Examples/Resources/AzDoServicePrincipalEntitlement.md) | Manages service principals and managed identities as organization members. |
