@@ -17,6 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `PublishCodeCoverageResults@1` removed. The Deploy stage no longer requires a
     `dsccommunity` organization; it runs only on a `v*` tag with the pipeline
     variable `PublishRelease` set to `true`.
+  - The integration workflows now cope with more than one runner carrying the
+    `AZDO-AGENT` label. The v2 and v3 live-organization jobs share one
+    concurrency group, so they no longer run against the organization at the same
+    time and delete each other's test objects in their pre-run teardown. Moving
+    stale module copies aside before a run no longer strands them: the shelf moved
+    from `RUNNER_TEMP` (emptied between jobs) to `%LOCALAPPDATA%`, its record is
+    written after every move rather than once at the end, and a copy the runner's
+    account cannot move is reported and skipped instead of aborting the step.
+    `tests/Integration/README.md` lists what an `AZDO-AGENT` machine needs.
 - AzureDevOpsDscNative
   - `AzDoProject.ProcessTemplate` no longer restricts a project to the four
     system processes (`Agile`, `Scrum`, `CMMI`, `Basic`) via `ValidateSet` -
