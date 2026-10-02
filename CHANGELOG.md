@@ -51,9 +51,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     took a `ProcessTemplateId` parameter it never referenced, so a process
     change on an existing project was always a silent no-op ([issue #75](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/75)).
 
+- Performance
+  - `Set()` now runs the resource's `Get` function once instead of twice:
+    `SetToDesiredState()` reads the current state and passes it to a new
+    `GetDscRequiredAction([Hashtable])` overload rather than reading it again.
+  - The fixed 2-second sleep after every `Set()` is gone. `GetPostSetWaitTimeMs()`
+    now defaults to `0`; a resource whose API needs time before a write is
+    readable overrides it.
+  - Caches are loaded on first use. `Construct()` no longer initializes every
+    cache type (with `-Debug` forced on) each time a resource is instantiated;
+    `Get-CacheObject` already imports a cache when it is first read. A missing
+    cache file is now reported as verbose output rather than a warning, since
+    it is the normal state for a cache nothing has written yet.
+
 ### Fixed
 
 - AzureDevOpsDscNative
+  - `Invoke-AzDevOpsApiRestMethod` retry and rate-limit handling:
+    - A 429 without a `Retry-After` header stored the retry interval
+      (milliseconds) in a field read as seconds, so the next attempt slept for
+      250 seconds. It now backs off exponentially in milliseconds.
+    - `Retry-After` was read with a string indexer that PowerShell 7's
+      `HttpResponseHeaders` does not have, so it was never found. It is now read
+      from any header shape, as seconds or an HTTP date.
+    - Non-transient errors (400, 401, 403, 404, 409 and other 4xx except 408 and
+      429) are no longer retried; they throw on the first failure. Network
+      errors, 408, 429 and 5xx are still retried, and there is no sleep after the
+      final failed attempt.
+    - `X-RateLimit-Remaining`, `X-RateLimit-Reset` and `Retry-After` are now read
+      from successful responses, so the "close to throttled" slow-down acts on
+      what Azure DevOps reports; a `Retry-After` wait is honoured once instead of
+      before every request until the next success.
+    - `APIRateLimit.xRateLimitRemaining` defaults to `-1` (not reported) rather
+      than `0`, which read as an exhausted budget and added an extra wait after
+      every 429.
+    - With `-NoAuthentication`, the caller's own `Authorization` header was
+      cleared after the first attempt, so every retry was sent unauthenticated.
+      The header is now cleared only when the function added it. The
+      authentication header check also tested a non-existent `Authentication`
+      key; the module token header is now set explicitly before every request.
   - Fixed `Get-AzDoProject` throwing "Process template '' not found" instead
     of naming the process that was actually missing - the "not found" error
     interpolated an unrelated, always-null variable rather than the

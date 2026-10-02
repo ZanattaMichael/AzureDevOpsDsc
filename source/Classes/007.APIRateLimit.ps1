@@ -13,6 +13,7 @@
 
     [Int]$xRateLimitRemaining
         The number of remaining API requests allowed in the current rate limit window.
+        -1 when the response did not report it, so an unknown value is not read as an exhausted one.
 
     [Int]$xRateLimitReset
         The time (in Unix epoch format) when the rate limit will reset.
@@ -34,7 +35,7 @@ class APIRateLimit
 {
 
     [Int]$retryAfter = 0
-    [Int]$xRateLimitRemaining = 0
+    [Int]$xRateLimitRemaining = -1
     [Int]$xRateLimitReset = 0
 
     # Constructor
