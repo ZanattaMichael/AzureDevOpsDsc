@@ -1,0 +1,72 @@
+$currentFile = $MyInvocation.MyCommand.Path
+
+Describe "New-AzDoReleaseFolderPermission" -Tag "Unit", "ReleaseFolder", "Permission" {
+
+    BeforeAll {
+
+        if ($null -eq $currentFile) {
+            $currentFile = Join-Path -Path $PSScriptRoot -ChildPath 'New-AzDoReleaseFolderPermission.tests.ps1'
+        }
+
+        $files = Get-FunctionItem (Find-MockedFunctions -TestFilePath $currentFile)
+        ForEach ($file in $files) { . $file.FullName }
+
+        . (Get-ClassFilePath 'Ensure')
+        . (Get-ClassFilePath '000.CacheItem')
+        . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1').FullName
+
+        Mock -CommandName Write-Verbose
+        Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
+        Mock -CommandName ConvertTo-ACLHashtable -MockWith { return @{ mockSerialized = $true } }
+        Mock -CommandName Set-AzDoPermission
+        Mock -CommandName Remove-CacheItem
+    }
+
+    Context "when the namespace and token resolve" {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith { return @{ namespaceId = 'release-ns' } }
+        }
+
+        It "writes the ACL and invalidates the cache" {
+            $lookupResult = @{ aclToken = 'proj-id-1/Platform'; propertiesChanged = @(); DifferenceACLs = @() }
+            New-AzDoReleaseFolderPermission -ProjectName 'TestProject' -FolderPath '\Platform' -isInherited $true -LookupResult $lookupResult
+
+            Assert-MockCalled -CommandName Set-AzDoPermission -Exactly -Times 1
+            Assert-MockCalled -CommandName Remove-CacheItem -Exactly -Times 1 -ParameterFilter { $Key -eq 'release-ns' -and $Type -eq 'LiveACLList' }
+        }
+
+        It "clears ACEs when targeting the project release root" {
+            $lookupResult = @{ aclToken = 'proj-id-1'; propertiesChanged = @(); DifferenceACLs = @() }
+            New-AzDoReleaseFolderPermission -ProjectName 'TestProject' -isInherited $true -LookupResult $lookupResult
+
+            Assert-MockCalled -CommandName Set-AzDoPermission -Exactly -Times 1 -ParameterFilter { $ClearACEs -eq $true }
+        }
+    }
+
+    Context "when the security namespace cannot be found" {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith { return $null }
+        }
+
+        It "throws rather than reporting success" {
+            $lookupResult = @{ aclToken = 'proj-id-1/Platform' }
+            { New-AzDoReleaseFolderPermission -ProjectName 'TestProject' -FolderPath '\Platform' -isInherited $true -LookupResult $lookupResult } | Should -Throw
+            Assert-MockCalled -CommandName Set-AzDoPermission -Exactly -Times 0
+        }
+    }
+
+    Context "when no ACL token was resolved" {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith { return @{ namespaceId = 'release-ns' } }
+        }
+
+        It "throws rather than reporting success" {
+            $lookupResult = @{ aclToken = $null }
+            { New-AzDoReleaseFolderPermission -ProjectName 'TestProject' -FolderPath '\Platform' -isInherited $true -LookupResult $lookupResult } | Should -Throw
+            Assert-MockCalled -CommandName Set-AzDoPermission -Exactly -Times 0
+        }
+    }
+}

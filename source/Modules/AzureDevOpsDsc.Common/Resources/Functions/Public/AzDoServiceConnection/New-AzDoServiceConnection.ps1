@@ -9,6 +9,8 @@ Function New-AzDoServiceConnection
         [Parameter()][bool]$AllowAllPipelines = $false,
         [Parameter()][HashTable]$Authorization,
         [Parameter()][HashTable]$Data,
+        [Parameter()][string[]]$SharedWithProjects,
+        [Parameter()][HashTable]$SharedNameOverrides,
         [Parameter()][HashTable]$LookupResult,
         [Parameter()][Ensure]$Ensure,
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
@@ -33,6 +35,23 @@ Function New-AzDoServiceConnection
         Description           = $Description
         Authorization         = if ($Authorization) { $Authorization } else { @{} }
         Data                  = if ($Data)          { $Data }          else { @{} }
+    }
+
+    # Checked by value, not $PSBoundParameters.ContainsKey(...): Invoke-DscResource always binds
+    # every DSC property (including SharedWithProjects), so ContainsKey is always true through
+    # that path. The class property has no default initializer, so $null reliably means "not
+    # configured" while @() means "configured empty" - in every call path, DSC-splatted or direct.
+    if ($null -ne $SharedWithProjects)
+    {
+        try
+        {
+            $params.ProjectReferences = @(Resolve-AzDoSharedProjectReferences -ProjectName $ProjectName -SharedWithProjects $SharedWithProjects -SharedNameOverrides $SharedNameOverrides -DefaultName $ConnectionName -Description $Description)
+        }
+        catch
+        {
+            Write-Error "[New-AzDoServiceConnection] $_"
+            return
+        }
     }
 
     $value = New-DevOpsServiceConnection @params

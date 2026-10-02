@@ -7,7 +7,8 @@ name: DSC v3 Integration Tests
 # Deliberately a separate workflow from integration-tests.yml. The v2 suite takes the
 # better part of an hour; running the v3 suite inside it means waiting out v2 to learn
 # anything about v3. Split, the two can be dispatched, gated and re-run independently.
-# Both target the same single self-hosted runner, so they queue rather than contend.
+# Both target the AZDO-AGENT runners and share one concurrency group, so they queue
+# rather than contend even when more than one runner is online.
 #
 # One-time repository setup required (repository scope, NOT an Environment) - the same
 # variable and secret integration-tests.yml uses:
@@ -16,11 +17,15 @@ name: DSC v3 Integration Tests
 #      Leave AZURE_DEVOPS_PAT empty to use Managed Identity instead
 #      (only valid when AZDO-AGENT runs on an Azure VM/Arc machine).
 
-# Like the v2 suite, this never fires automatically on push or pull request - it hits a
-# live organization on the project's single self-hosted runner, so it runs only when
-# dispatched manually or called by publish.yml as a release gate. A `pull_request`
-# trigger would be the wrong tool for gating PRs in any case: its `branches:` filter
-# matches the BASE branch, so it would fire on every PR targeting main.
+# This never fires automatically on push or pull request - it hits a live organization
+# on the project's self-hosted runners, so it runs only when dispatched manually
+# or called by publish.yml as a release gate.
+#
+# The v2 suite (integration-tests.yml) temporarily does run on pull requests whose head
+# branch is prefixed `resource-add/`. Note that a `branches:` filter cannot express that
+# on `pull_request`, because it matches the BASE branch rather than the head - v2 gates
+# on `github.head_ref` in a job-level condition instead. Copy that pattern here if this
+# suite ever needs the same treatment.
 on:
   workflow_dispatch:
     inputs:
@@ -58,8 +63,21 @@ jobs:
     name: Run DSC v3 Integration Tests
     runs-on: AZDO-AGENT
 
-    # AZDO-AGENT is the project's only self-hosted runner and the v2 suite queues behind
-    # this job. A hung dsc invocation would otherwise hold it for the 6-hour default.
+    # AZDO-AGENT is a label, not a machine: more than one runner carries it, so this job
+    # and the v2 suite can otherwise start at the same time on different machines.
+    # Both drive the same live organization, and each run's pre-run teardown deletes
+    # test objects the other is still using. This group serialises every live-organization
+    # job across both workflows, wherever it is scheduled.
+    #
+    # GitHub keeps at most one job waiting per group: a newer waiting job cancels the
+    # older waiting one (never the one running). A release gate cancelled that way fails
+    # the publish run safely, before anything is published - re-run it.
+    concurrency:
+      group: azdo-live-organization
+      cancel-in-progress: false
+
+    # The v2 suite waits behind this job on the lock above, so a hung dsc invocation
+    # would otherwise hold it for the 6-hour default.
     # Full v3 runs so far take ~24 minutes end to end.
     timeout-minutes: 60
 
@@ -88,18 +106,93 @@ jobs:
       # `#Requires -Modules @{ ModuleName="Pester"; ModuleVersion="5.0.0" }`, so without
       # this the script refuses to start and the suite never runs at all. Pinned to the
       # same version the unit test and publish workflows install.
+      #
+      # Saved into a workspace-local folder rather than installed with `-Scope CurrentUser`,
+      # for the same reason integration-tests.yml does it: CurrentUser resolves to the
+      # runner's profile module directory, which on this persistent runner also carries a
+      # hand-installed DscResource.Common - so Pester living there forces that whole
+      # directory onto PSModulePath, giving DscResource.Common a second location and
+      # tripping the duplicate assertion below. Keeping Pester under ./output/TestModules
+      # lets the profile directory be dropped entirely.
       - name: Install Pester
         shell: pwsh
         run: |
-          Install-Module -Name Pester -RequiredVersion 5.7.1 -Force -SkipPublisherCheck -Scope CurrentUser
-          $pester = Get-Module -Name Pester -ListAvailable |
-              Where-Object Version -ge ([version]'5.0.0') |
-              Sort-Object Version -Descending |
-              Select-Object -First 1
-          if (-not $pester) {
-              throw "Pester 5.x is not available after install - Invoke-V3Tests.ps1 cannot run."
+          $pesterRoot = Join-Path -Path (Resolve-Path -Path .\output).Path -ChildPath 'TestModules'
+          New-Item -Path $pesterRoot -ItemType Directory -Force | Out-Null
+
+          # PSResourceGet is what build.ps1's bootstrap already uses on this runner; fall
+          # back to Save-Module so this step does not depend on which one is present.
+          if (Get-Command -Name Save-PSResource -ErrorAction SilentlyContinue) {
+              Save-PSResource -Name Pester -Version 5.7.1 -Path $pesterRoot -TrustRepository -SkipDependencyCheck
           }
-          Write-Host "Pester $($pester.Version) available at $($pester.ModuleBase)"
+          else {
+              Save-Module -Name Pester -RequiredVersion 5.7.1 -Path $pesterRoot -Force
+          }
+
+          $manifest = Join-Path -Path $pesterRoot -ChildPath 'Pester\5.7.1\Pester.psd1'
+          if (-not (Test-Path -Path $manifest)) {
+              throw "Pester 5.7.1 was not saved to '$pesterRoot' - Invoke-V3Tests.ps1 cannot run. Found: $((Get-ChildItem -Path $pesterRoot -Recurse -Filter 'Pester.psd1' | Select-Object -ExpandProperty FullName) -join ' ; ')"
+          }
+          Write-Host "Pester 5.7.1 saved to $pesterRoot"
+          "PESTER_MODULE_ROOT=$pesterRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      # Curating PSModulePath (the step below) is necessary but provably not sufficient
+      # for this suite, and this step is the other half.
+      #
+      # `dsc.exe` runs the PowerShell adapter in a child pwsh that it launches itself.
+      # When pwsh starts from a parent that is not PowerShell it PREPENDS the default
+      # module directories - the user profile, the shared machine directory and
+      # $PSHOME\Modules - to whatever PSModulePath it inherited. So the profile directory
+      # this workflow carefully drops from PSModulePath comes straight back inside the
+      # adapter's own session, ahead of the built module, and no amount of path rewriting
+      # in the job's steps can reach across that boundary.
+      #
+      # That is enough to break `dsc resource get/set/test`. The adapter imports the built
+      # module by .psm1 path (giving a module whose Version reads 0.0), and the first
+      # command that only the profile copy exports auto-loads that copy as a SECOND loaded
+      # module of the same name. `Invoke-DscCacheRefresh`'s fast path then does
+      # `Get-Module -Name <module>` and hands the result to a [PSModuleInfo] parameter,
+      # which throws on an array:
+      #   Cannot convert the "System.Object[]" value ... to type "System.Management.Automation.PSModuleInfo"
+      # `dsc resource list` keeps working throughout, because the slow path it takes
+      # de-duplicates with `Sort-Object Version -Descending | Select-Object -First 1`.
+      # That asymmetry is the signature of this failure: discovery fine, every live call
+      # dead.
+      #
+      # So no copy may exist there at all. The module under test is only ever the build in
+      # this job's workspace - nothing is installed into a standard module folder, and this
+      # workflow never moves or deletes anything outside its workspace - so a copy found
+      # there is a runner problem, and this step fails naming it rather than working
+      # around it.
+      - name: Refuse module copies in standard module folders
+        shell: pwsh
+        run: |
+          # $PSHOME is deliberately absent: these modules are never installed there.
+          $roots = @(
+              Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'PowerShell\Modules'
+              Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'WindowsPowerShell\Modules'
+              Join-Path -Path $env:ProgramFiles -ChildPath 'PowerShell\Modules'
+              Join-Path -Path $env:ProgramFiles -ChildPath 'WindowsPowerShell\Modules'
+          )
+          $names = 'AzureDevOpsDscNative', 'AzureDevOpsDsc.Common', 'DscResource.Common'
+
+          $found = @(
+              foreach ($root in $roots) {
+                  foreach ($name in $names) {
+                      $path = Join-Path -Path $root -ChildPath $name
+                      if (Test-Path -LiteralPath $path) { $path }
+                  }
+              }
+          )
+
+          if ($found.Count -gt 0) {
+              throw ("Runner '$($env:RUNNER_NAME)' has copies of the module installed in standard " +
+                     "module folders. The tests load the module only from this job's build, and a " +
+                     "copy in one of these folders is loaded instead of it. This workflow does not " +
+                     "move or delete files outside its workspace - remove these from the runner:`n  " +
+                     ($found -join "`n  "))
+          }
+          Write-Host 'No copies of the module in standard module folders.'
 
       # Point PSModulePath at exactly one copy of each module the tests load. See the
       # equivalent step in integration-tests.yml for the full rationale: a module
@@ -117,16 +210,27 @@ jobs:
                   Select-Object -ExpandProperty FullName
           )
 
-          # Keep the runner's default user/system module paths (Pester, base modules) but
-          # drop anything under this repo's ./output and any stale C:\Temp\DSCModule copies,
-          # so nothing outside the freshly built module can provide a second copy.
+          # Where the previous step saved Pester. Resolved from the same expression rather
+          # than $env:PESTER_MODULE_ROOT so this step still works when re-run standalone.
+          $pesterRoot = Join-Path -Path $outputPath -ChildPath 'TestModules'
+
+          # Keep the runner's system module paths (base modules) but drop anything under
+          # this repo's ./output, any stale C:\Temp\DSCModule copies, and the user profile
+          # module directory, so nothing outside the freshly built module can provide a
+          # second copy of the modules asserted below. Hand-installed copies of these
+          # modules have lived in the profile directory on runners before, and supplied a
+          # second copy - which is exactly what happened before this drop was added here.
+          $profileModuleRoot = Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'PowerShell\Modules'
           $keep = $env:PSModulePath -split ';' | Where-Object {
               $_ -and
               $_ -notlike "$outputPath*" -and
-              $_ -notlike 'C:\Temp\DSCModule*'
+              $_ -notlike 'C:\Temp\DSCModule*' -and
+              $_.TrimEnd('\') -ne $profileModuleRoot.TrimEnd('\')
           }
 
-          $ordered = @($builtModulePath) + $nestedModulePaths + $keep
+          # ./output/TestModules is re-added explicitly after the ./output filter, since
+          # that filter would otherwise remove the very directory Pester was just saved to.
+          $ordered = @($builtModulePath) + $nestedModulePaths + @($pesterRoot) + $keep
           $env:PSModulePath = ($ordered | Where-Object { $_ } | Select-Object -Unique) -join ';'
 
           # Persist for subsequent steps via $GITHUB_ENV
@@ -146,6 +250,67 @@ jobs:
                   throw "Module '$name' resolves from $($bases.Count) locations, which makes the DSC PowerShell adapter throw on a [PSModuleInfo] cast: $($bases -join ' ; ')"
               }
               Write-Host "Resolved $name -> $($bases[0])"
+          }
+
+          # Pester moved off the profile module directory with this path rewrite, so check
+          # it is still reachable here rather than letting Invoke-V3Tests.ps1 fail its
+          # #Requires later. Not part of the strict loop above: Windows ships Pester 3.4.0
+          # under C:\Program Files\WindowsPowerShell\Modules, so Pester legitimately
+          # resolves from more than one location and the 5.x copy simply has to win.
+          $pester5 = Get-Module -Name Pester -ListAvailable |
+              Where-Object Version -ge ([version]'5.0.0') |
+              Sort-Object Version -Descending |
+              Select-Object -First 1
+          if (-not $pester5) {
+              throw "Pester 5.x is not resolvable on the rewritten PSModulePath - Invoke-V3Tests.ps1 would refuse to start."
+          }
+          Write-Host "Resolved Pester $($pester5.Version) -> $($pester5.ModuleBase)"
+
+      # The assertion above runs in this job's own pwsh, which is the one process whose
+      # PSModulePath the workflow controls. The adapter's session is not that process -
+      # see the module-folder check for why - so the same question is asked again here in a
+      # pwsh launched the way `dsc.exe` launches one: through a native parent, so the
+      # default module directories get prepended exactly as they will at test time.
+      # cmd.exe is that native parent; starting pwsh from this step's pwsh directly would
+      # suppress the very behaviour being checked and the probe would always pass.
+      - name: Verify the adapter's child pwsh resolves one copy of each module
+        shell: pwsh
+        run: |
+          $probe = Join-Path -Path $env:RUNNER_TEMP -ChildPath 'probe-child-psmodulepath.ps1'
+          @'
+          $names = 'DscResource.Common', 'AzureDevOpsDsc.Common', 'AzureDevOpsDscNative'
+          Write-Host 'PSModulePath as the child pwsh sees it:'
+          $env:PSModulePath -split ';' | Where-Object { $_ } | ForEach-Object { Write-Host "  $_" }
+
+          $bad = @()
+          foreach ($name in $names) {
+              $bases = @(Get-Module -Name $name -ListAvailable | Select-Object -ExpandProperty ModuleBase -Unique)
+              if ($bases.Count -eq 1) {
+                  Write-Host "OK   $name -> $($bases[0])"
+              }
+              else {
+                  Write-Host "FAIL $name -> $($bases.Count) location(s): $($bases -join ' ; ')"
+                  $bad += $name
+              }
+          }
+          if ($bad.Count -gt 0) { exit 1 }
+          exit 0
+          '@ | Set-Content -LiteralPath $probe -Encoding UTF8
+
+          # A non-zero exit from the probe is the answer this step is after, not a
+          # terminating error to be swallowed by pwsh's native command handling.
+          $PSNativeCommandUseErrorActionPreference = $false
+          # Built as a string rather than inlined, so the quoting around a path with
+          # spaces is cmd.exe's to read and not something PowerShell has to escape twice.
+          $childCommand = 'pwsh -NoProfile -NonInteractive -File "' + $probe + '"'
+          & cmd.exe /c $childCommand
+          if ($LASTEXITCODE -ne 0) {
+              throw "A pwsh started from a native parent - which is how dsc.exe starts the " +
+                    "PowerShell adapter - resolves one of these modules from more than one " +
+                    "location. The adapter would load two modules of the same name and throw " +
+                    "casting Get-Module's array to [PSModuleInfo]. See the probe output above " +
+                    "for which module and where its copies are, and remove the extra copy " +
+                    "from the runner."
           }
 
       - name: Write test framework configuration
@@ -175,7 +340,7 @@ jobs:
           Write-Host "TestFrameworkConfiguration.json written."
 
       # A directory of this suite's own, deliberately not the 'AzureDevOpsDscCache' the
-      # v2 workflow uses. Both suites run on the same self-hosted runner against the same
+      # v2 workflow uses. Both suites can run on the same self-hosted machine against the same
       # organization, so a shared directory means one suite reads cache files the other
       # exported - and the module imports whatever is on disk at startup. That is worth
       # avoiding on its own, but it also matters for what the two suites are for: v2 and

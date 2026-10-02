@@ -9,7 +9,7 @@ AzDoProject [string] #ResourceName
     [ Ensure                 = [String] {'Present', 'Absent'} ]
     [ ProjectDescription     = [String]$ProjectDescription ]
     [ SourceControlType      = [String] {'Git', 'Tfvc'} ]
-    [ ProcessTemplate        = [String] {'Agile', 'Scrum', 'CMMI', 'Basic'} ]
+    [ ProcessTemplate        = [String]$ProcessTemplate ]
     [ Visibility             = [String] {'Public', 'Private'} ]
 }
 ```
@@ -21,7 +21,7 @@ AzDoProject [string] #ResourceName
 - **ProjectName**: The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
 - **ProjectDescription**: A description for the Azure DevOps project.
 - **SourceControlType**: The type of source control (`Git` or `Tfvc`). Defaults to `Git`.
-- **ProcessTemplate**: The process template to use (`Agile`, `Scrum`, `CMMI`, `Basic`). Defaults to `Agile`.
+- **ProcessTemplate**: The process template to use. Accepts any process name known to the organization, including the built-in system processes (`Agile`, `Scrum`, `CMMI`, `Basic`) and any inherited process created from them. Defaults to `Agile`. Changing this on an existing project is only allowed when the current and desired processes share the same system-process ancestor - Azure DevOps rejects migrations across unrelated process families.
 - **Visibility**: The visibility of the project (`Public` or `Private`). Defaults to `Private`.
 - **Ensure**: Specifies whether the project should exist. Valid values are `Present` and `Absent`.
 

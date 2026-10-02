@@ -55,6 +55,21 @@ Describe "Set-AzDoTeamSettings" -Tag "Unit", "TeamSettings" {
                 $BugsBehavior -eq 'off'
             }
         }
+
+        It "forwards BacklogVisibilities to Set-DevOpsTeamSettings" {
+            Set-AzDoTeamSettings -ProjectName 'TestProject' -TeamName 'TestTeam' `
+                -BacklogVisibilities @{ 'Microsoft.EpicCategory' = $false }
+            Assert-MockCalled -CommandName Set-DevOpsTeamSettings -Exactly -Times 1 -ParameterFilter {
+                $BacklogVisibilities -is [HashTable] -and $BacklogVisibilities['Microsoft.EpicCategory'] -eq $false
+            }
+        }
+
+        It "does not pass BacklogVisibilities to Set-DevOpsTeamSettings when not supplied" {
+            Set-AzDoTeamSettings -ProjectName 'TestProject' -TeamName 'TestTeam' -BugsBehavior 'asTasks'
+            Assert-MockCalled -CommandName Set-DevOpsTeamSettings -Exactly -Times 1 -ParameterFilter {
+                $null -eq $BacklogVisibilities
+            }
+        }
     }
 
     Context "when the project cannot be resolved" {

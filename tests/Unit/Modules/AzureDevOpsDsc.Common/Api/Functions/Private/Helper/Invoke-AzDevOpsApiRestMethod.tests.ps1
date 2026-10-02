@@ -66,6 +66,34 @@ Describe 'Invoke-AzDevOpsApiRestMethod' -Tag "Unit", "Helper" {
             Assert-MockCalled -CommandName Invoke-RestMethod -Exactly -Times 1
         }
 
+        It 'should not include response headers unless requested' {
+            Mock -CommandName Invoke-RestMethod -MockWith { return @{ success = $true } }
+            $result = Invoke-AzDevOpsApiRestMethod @defaultParameters
+            $result | Should -BeOfType [System.Collections.Hashtable]
+            $result.success | Should -Be $true
+        }
+
+        It 'should merge AdditionalHeaders into the request without needing an Authorization value' {
+            $seenHeaders = $null
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                param ($Uri, $Method, $Headers)
+                $script:seenHeaders = $Headers
+                return @{ success = $true }
+            }
+            Invoke-AzDevOpsApiRestMethod @defaultParameters -AdditionalHeaders @{ 'If-Match' = '"3"' }
+            $script:seenHeaders.'If-Match' | Should -Be '"3"'
+        }
+
+        It 'should return the response body and headers when IncludeResponseHeaders is set' {
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                Set-Variable responseHeaders -Value @{ ETag = @('"3"') } -Scope Global
+                return @{ success = $true }
+            }
+            $result = Invoke-AzDevOpsApiRestMethod @defaultParameters -IncludeResponseHeaders
+            $result.Value.success | Should -Be $true
+            $result.Headers.ETag | Should -Be @('"3"')
+        }
+
         It 'should return results from Invoke-RestMethod' {
             Mock -CommandName Invoke-RestMethod -MockWith { return @{ success = $true } }
             $result = Invoke-AzDevOpsApiRestMethod @defaultParameters
@@ -174,6 +202,55 @@ Describe 'Invoke-AzDevOpsApiRestMethod' -Tag "Unit", "Helper" {
             }
             Assert-MockCalled -CommandName Start-Sleep -Times 1
 
+        }
+    }
+
+    Context 'Binary request bodies' {
+
+        # Regression guard. HttpBody was [System.String] and HttpContentType was restricted to
+        # the two JSON types, which made every raw-byte endpoint unreachable through this
+        # wrapper: the call died at parameter binding. New-DevOpsSecureFile did exactly that,
+        # and because its failure surfaced as a non-terminating Write-Error the DSC Set()
+        # reported no error while creating nothing. Both halves are pinned here.
+
+        It 'accepts application/octet-stream as a content type' {
+            $contentType = (Get-Command Invoke-AzDevOpsApiRestMethod).Parameters['HttpContentType']
+            $validateSet = $contentType.Attributes |
+                Where-Object { $_ -is [System.Management.Automation.ValidateSetAttribute] }
+
+            $validateSet.ValidValues | Should -Contain 'application/octet-stream'
+        }
+
+        It 'does not coerce the body to a string' {
+            # A [byte[]] cannot be transformed to [System.String], so a typed parameter would
+            # fail to bind rather than merely mangle the content.
+            (Get-Command Invoke-AzDevOpsApiRestMethod).Parameters['HttpBody'].ParameterType |
+                Should -Be ([System.Object])
+        }
+
+        It 'passes a byte array through to Invoke-RestMethod unchanged' {
+            $bytes = [System.Text.Encoding]::ASCII.GetBytes('dsc integration test content')
+            $script:capturedBody        = $null
+            $script:capturedContentType = $null
+
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                $script:capturedBody        = $Body
+                $script:capturedContentType = $ContentType
+                return @{ id = 1 }
+            }
+
+            $parameters = $defaultParameters.Clone()
+            $parameters.HttpMethod      = 'Post'
+            $parameters.HttpBody        = $bytes
+            $parameters.HttpContentType = 'application/octet-stream'
+
+            $null = Invoke-AzDevOpsApiRestMethod @parameters
+
+            $script:capturedContentType | Should -Be 'application/octet-stream'
+            $script:capturedBody        | Should -BeOfType [System.Byte]
+            $script:capturedBody.Count  | Should -Be $bytes.Count
+            [System.Text.Encoding]::ASCII.GetString($script:capturedBody) |
+                Should -Be 'dsc integration test content'
         }
     }
 }

@@ -12,6 +12,8 @@ AzDoServiceConnection [string] #ResourceName
     [ AllowAllPipelines = [Boolean]$AllowAllPipelines ]
     [ Authorization     = [HashTable]$Authorization ]
     [ Data              = [HashTable]$Data ]
+    [ SharedWithProjects  = [String[]]$SharedWithProjects ]
+    [ SharedNameOverrides = [HashTable]$SharedNameOverrides ]
     [ Ensure            = [String] {'Present', 'Absent'} ]
 }
 ```
@@ -27,11 +29,29 @@ AzDoServiceConnection [string] #ResourceName
 - **AllowAllPipelines**: Whether all pipelines can use this service connection. Defaults to `$false`.
 - **Authorization**: A hashtable of authorization parameters specific to the connection type.
 - **Data**: A hashtable of additional data parameters specific to the connection type.
+- **SharedWithProjects**: Names of other projects to share this service connection with, in
+  addition to `ProjectName`. Sharing is only compared and enforced when this property is
+  set; a configuration that omits it leaves any existing sharing untouched. Dropping a
+  project from this list unshares the connection from it without deleting it.
+- **SharedNameOverrides**: A hashtable of `ProjectName = DisplayName` giving the service
+  connection a different name in a shared project. Only takes effect for names in
+  `SharedWithProjects`; the owning project's reference always uses `ConnectionName`.
 - **Ensure**: Specifies whether the service connection should exist. Valid values are `Present` and `Absent`.
 
 ## Additional Information
 
 This resource manages service connections in Azure DevOps, enabling pipelines to connect to external services such as Azure subscriptions, GitHub repositories, or Kubernetes clusters.
+
+Removing a shared service connection from its owning project removes it from every project
+it is shared with — Azure DevOps has no operation to hand ownership to another project
+instead. `Remove-AzDoServiceConnection` warns and names the other projects when this
+applies, but still proceeds; unshare the projects you want to keep it available to first
+(set `SharedWithProjects` to just the ones that should keep it, or empty it out) if that is
+not what you want.
+
+Permissions set via `AzDoServiceConnectionPermission` are unaffected by sharing: the ACL
+token is anchored to the owning project and the service connection's own id, regardless of
+how many other projects it is shared with.
 
 ## Examples
 
@@ -78,7 +98,39 @@ $properties = @{
 Invoke-DscResource -Name 'AzDoServiceConnection' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using Dsc.PipelineRunner
+## Example 3: Sharing a service connection with another project
+
+``` PowerShell
+Configuration ExampleSharedConfig {
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
+
+    Node localhost {
+        AzDoServiceConnection ShareServiceConnection {
+            Ensure              = 'Present'
+            ProjectName         = 'MyProject'
+            ConnectionName      = 'MyAzureConnection'
+            ConnectionType      = 'AzureRM'
+            Authorization       = @{
+                tenantId           = '00000000-0000-0000-0000-000000000000'
+                servicePrincipalId = '00000000-0000-0000-0000-000000000001'
+                authenticationType = 'spnKey'
+            }
+            Data                = @{
+                subscriptionId   = '00000000-0000-0000-0000-000000000002'
+                subscriptionName = 'My Azure Subscription'
+            }
+            SharedWithProjects  = @('OtherProject')
+            SharedNameOverrides = @{
+                OtherProject = 'MyAzureConnection (from MyProject)'
+            }
+        }
+    }
+}
+
+Start-DscConfiguration -Path ./ExampleSharedConfig -Wait -Verbose
+```
+
+## Example 4: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}

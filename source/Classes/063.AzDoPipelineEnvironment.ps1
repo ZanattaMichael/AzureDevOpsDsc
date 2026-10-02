@@ -1,6 +1,20 @@
 <#
 .SYNOPSIS
     DSC resource for managing Azure DevOps deployment environments.
+.DESCRIPTION
+    This resource manages pipeline environments in Azure DevOps. Environments represent deployment
+    targets (e.g., Development, Staging, Production) and can be configured with approval gates and
+    checks using the AzDoEnvironmentApproval and AzDoCheckConfiguration resources.
+
+.PARAMETER ProjectName
+    The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+
+.PARAMETER EnvironmentName
+    The name of the pipeline environment. This is a key property.
+
+.PARAMETER Description
+    An optional description for the environment.
+
 #>
 [DscResource()]
 class AzDoPipelineEnvironment : AzDevOpsDscResourceBase

@@ -63,4 +63,19 @@ Describe "Get-AzDoCheckConfiguration" -Tag "Unit", "CheckConfiguration" {
             $result.status | Should -Be 'NotFound'
         }
     }
+
+    Context "the check configuration cache key is generic across ResourceType" {
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith { return @{ id = 'check-id' } }
+        }
+
+        It "queries the cache with a composite key for ResourceType '<_>'" -ForEach @('queue', 'variablegroup', 'securefile') {
+            $resourceType = $_
+            Get-AzDoCheckConfiguration -ProjectName 'TestProject' -TargetResourceName 'TestTarget' `
+                -ResourceType $resourceType -CheckType 'Approval'
+            Assert-MockCalled -CommandName Get-CacheItem -ParameterFilter {
+                $Key -eq "TestProject\$resourceType\TestTarget\Approval" -and $Type -eq 'LiveCheckConfigurations'
+            } -Times 1
+        }
+    }
 }

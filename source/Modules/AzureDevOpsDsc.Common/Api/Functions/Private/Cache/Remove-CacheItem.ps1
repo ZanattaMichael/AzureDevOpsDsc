@@ -38,6 +38,15 @@ Function Remove-CacheItem
 
     Write-Verbose "[Remove-CacheItem] Removing the cache item with the key: '$Key'."
 
+    # An absent or empty cache is not an error - there is simply nothing to remove. Without
+    # this guard $cache.Count is $null, '0 .. $null' evaluates to 0..0, and the indexing below
+    # fails with "Cannot index into a null array". AzDoSecureFile's Remove hit exactly that.
+    if ($null -eq $cache -or $cache.Count -eq 0)
+    {
+        Write-Verbose "[Remove-CacheItem] Cache '$Type' is empty - nothing to remove."
+        return
+    }
+
     # If the cache has a length of 1, and the key matches, remove the cache
     if ($cache.Count -eq 1 -and $cache[0].Key -eq $Key)
     {
@@ -46,8 +55,17 @@ Function Remove-CacheItem
         return
     }
 
-    # Remove the item from the cache
-    0 .. $cache.Count | Where-Object { $cache[$_].Key -eq $Key } | ForEach-Object { $cache.RemoveAt($_) }
+    # Walk backwards so each RemoveAt leaves the indexes still to be examined unchanged.
+    # The previous form - '0 .. $cache.Count | ... | ForEach-Object { $cache.RemoveAt($_) }' -
+    # was wrong twice over: the range is inclusive, so it indexed one past the end, and
+    # removing by index while later indexes were still pending shifted them underneath it.
+    for ($index = $cache.Count - 1; $index -ge 0; $index--)
+    {
+        if ($cache[$index].Key -eq $Key)
+        {
+            $cache.RemoveAt($index)
+        }
+    }
 
     # Update the memory cache
     Set-Variable -Name "AzDo$Type" -Value $cache -Scope Global

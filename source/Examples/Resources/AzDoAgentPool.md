@@ -21,6 +21,7 @@ AzDoAgentPool [string] #ResourceName
 - **PoolType**: The type of agent pool. Valid values are `automation` and `deployment`. Defaults to `automation`.
 - **AutoProvision**: Whether to automatically provision the agent pool to new projects. Defaults to `$false`.
 - **AutoUpdate**: Whether to automatically update agents in the pool. Defaults to `$true`.
+- **IsHosted**: Whether the pool is a Microsoft-hosted pool. Microsoft-hosted pools cannot be created or removed through this resource, so this is only meaningful when reading existing pools. Defaults to `$false`.
 - **Ensure**: Specifies whether the agent pool should exist. Valid values are `Present` and `Absent`.
 
 ## Additional Information

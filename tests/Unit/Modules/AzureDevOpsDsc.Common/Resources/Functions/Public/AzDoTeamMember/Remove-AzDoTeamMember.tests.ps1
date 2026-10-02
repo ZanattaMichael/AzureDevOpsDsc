@@ -33,11 +33,24 @@ Describe "Remove-AzDoTeamMember" -Tag "Unit", "TeamMember" {
             principalName = 'user@example.com'
         }
 
+        $mockMemberWithAclIdentity = @{
+            descriptor    = 'aad.member-descriptor-002'
+            principalName = 'admin@example.com'
+            ACLIdentity   = @{ descriptor = 'Microsoft.TeamFoundation.Identity;S-1-9-cached' }
+        }
+
+        $mockProject = @{ id = 'project-id-001'; name = 'TestProject' }
+
         Mock -CommandName Write-Verbose
+        Mock -CommandName Write-Warning
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
         Mock -CommandName Remove-DevOpsTeamMember
         Mock -CommandName Remove-CacheItem
         Mock -CommandName Export-CacheObject
+        Mock -CommandName Get-DevOpsDescriptorIdentity -MockWith {
+            return [PSCustomObject]@{ descriptor = 'Microsoft.TeamFoundation.Identity;S-1-9-live' }
+        }
+        Mock -CommandName Set-DevOpsTeamAdministrator
         # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
         Mock -CommandName Resolve-AzDoProject -MockWith { Get-CacheItem -Key $ProjectName -Type 'LiveProjects' }
         Mock -CommandName List-DevOpsTeams -MockWith { return $null }
@@ -48,6 +61,10 @@ Describe "Remove-AzDoTeamMember" -Tag "Unit", "TeamMember" {
     Context "when team and member are found in cache (member from LiveGroups)" {
 
         BeforeEach {
+            Mock -CommandName Get-CacheItem -ParameterFilter {
+                $Type -eq 'LiveProjects'
+            } -MockWith { return $null }
+
             Mock -CommandName Get-CacheItem -ParameterFilter {
                 $Key -eq 'TestProject\TestTeam' -and $Type -eq 'LiveTeams'
             } -MockWith { return $mockTeam }
@@ -87,6 +104,10 @@ Describe "Remove-AzDoTeamMember" -Tag "Unit", "TeamMember" {
     Context "when member is not in LiveGroups but is found in LiveUsers" {
 
         BeforeEach {
+            Mock -CommandName Get-CacheItem -ParameterFilter {
+                $Type -eq 'LiveProjects'
+            } -MockWith { return $null }
+
             Mock -CommandName Get-CacheItem -ParameterFilter {
                 $Key -eq 'TestProject\TestTeam' -and $Type -eq 'LiveTeams'
             } -MockWith { return $mockTeam }
@@ -140,6 +161,79 @@ Describe "Remove-AzDoTeamMember" -Tag "Unit", "TeamMember" {
         It "treats a missing team and member as already absent (no removal, no throw)" {
             { Remove-AzDoTeamMember -ProjectName 'TestProject' -TeamName 'TestTeam' -MemberName 'user@example.com' } | Should -Not -Throw
             Assert-MockCalled -CommandName Remove-DevOpsTeamMember -Exactly -Times 0
+        }
+    }
+
+    Context "when revoking team-administrator rights on removal" {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -ParameterFilter {
+                $Key -eq 'TestProject' -and $Type -eq 'LiveProjects'
+            } -MockWith { return $mockProject }
+
+            Mock -CommandName Get-CacheItem -ParameterFilter {
+                $Key -eq 'TestProject\TestTeam' -and $Type -eq 'LiveTeams'
+            } -MockWith { return $mockTeam }
+
+            Mock -CommandName Get-CacheItem -ParameterFilter {
+                $Key -eq 'admin@example.com' -and $Type -eq 'LiveGroups'
+            } -MockWith { return $mockMemberWithAclIdentity }
+        }
+
+        It "always attempts the revoke, even when IsTeamAdmin is false" {
+            Remove-AzDoTeamMember -ProjectName 'TestProject' -TeamName 'TestTeam' -MemberName 'admin@example.com' -IsTeamAdmin $false
+            Assert-MockCalled -CommandName Set-DevOpsTeamAdministrator -Exactly -Times 1 -ParameterFilter {
+                $ProjectId -eq 'project-id-001' -and $TeamId -eq 'team-id-001' -and
+                $MemberDescriptor -eq 'Microsoft.TeamFoundation.Identity;S-1-9-cached' -and $IsTeamAdmin -eq $false
+            }
+        }
+
+        It "always attempts the revoke, even when IsTeamAdmin was true" {
+            Remove-AzDoTeamMember -ProjectName 'TestProject' -TeamName 'TestTeam' -MemberName 'admin@example.com' -IsTeamAdmin $true
+            Assert-MockCalled -CommandName Set-DevOpsTeamAdministrator -Exactly -Times 1 -ParameterFilter {
+                $IsTeamAdmin -eq $false
+            }
+        }
+
+        It "uses the member's cached ACLIdentity descriptor rather than resolving it live" {
+            Remove-AzDoTeamMember -ProjectName 'TestProject' -TeamName 'TestTeam' -MemberName 'admin@example.com'
+            Assert-MockCalled -CommandName Get-DevOpsDescriptorIdentity -Exactly -Times 0
+        }
+
+        It "still removes the membership after a successful revoke" {
+            Remove-AzDoTeamMember -ProjectName 'TestProject' -TeamName 'TestTeam' -MemberName 'admin@example.com'
+            Assert-MockCalled -CommandName Remove-DevOpsTeamMember -Exactly -Times 1
+        }
+
+        It "resolves the member's ACL descriptor live when no cached ACLIdentity is present" {
+            Mock -CommandName Get-CacheItem -ParameterFilter {
+                $Key -eq 'user@example.com' -and $Type -eq 'LiveGroups'
+            } -MockWith { return $mockMember }
+
+            Remove-AzDoTeamMember -ProjectName 'TestProject' -TeamName 'TestTeam' -MemberName 'user@example.com'
+            Assert-MockCalled -CommandName Get-DevOpsDescriptorIdentity -Exactly -Times 1
+            Assert-MockCalled -CommandName Set-DevOpsTeamAdministrator -Exactly -Times 1 -ParameterFilter {
+                $MemberDescriptor -eq 'Microsoft.TeamFoundation.Identity;S-1-9-live'
+            }
+        }
+
+        It "logs a warning instead of throwing when Set-DevOpsTeamAdministrator fails, and still removes the membership" {
+            Mock -CommandName Set-DevOpsTeamAdministrator -MockWith { throw 'ACL write failed' }
+
+            { Remove-AzDoTeamMember -ProjectName 'TestProject' -TeamName 'TestTeam' -MemberName 'admin@example.com' } | Should -Not -Throw
+            Assert-MockCalled -CommandName Write-Warning -Exactly -Times 1
+            Assert-MockCalled -CommandName Remove-DevOpsTeamMember -Exactly -Times 1
+        }
+
+        It "skips the revoke without throwing when the ACL descriptor cannot be resolved, and still removes the membership" {
+            Mock -CommandName Get-CacheItem -ParameterFilter {
+                $Key -eq 'user@example.com' -and $Type -eq 'LiveGroups'
+            } -MockWith { return $mockMember }
+            Mock -CommandName Get-DevOpsDescriptorIdentity -MockWith { return $null }
+
+            { Remove-AzDoTeamMember -ProjectName 'TestProject' -TeamName 'TestTeam' -MemberName 'user@example.com' } | Should -Not -Throw
+            Assert-MockCalled -CommandName Set-DevOpsTeamAdministrator -Exactly -Times 0
+            Assert-MockCalled -CommandName Remove-DevOpsTeamMember -Exactly -Times 1
         }
     }
 }

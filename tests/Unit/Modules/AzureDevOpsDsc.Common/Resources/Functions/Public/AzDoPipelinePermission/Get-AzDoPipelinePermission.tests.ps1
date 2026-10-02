@@ -22,7 +22,16 @@ Describe "Get-AzDoPipelinePermission" -Tag "Unit", "PipelinePermission" {
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
-        Mock -CommandName Get-DevOpsACL -MockWith { return @(@{ Token = 'mock' }) }
+        # Get-DevOpsACL returns the API's RAW ACL objects: token is a plain wire-format string,
+        # and the parsed .Token shape only exists after ConvertTo-FormattedACL. Get- filters on the
+        # raw token before formatting - formatting resolves every ACE through Find-Identity - so the
+        # fixture carries real tokens, with a decoy for another object to exercise that filter.
+        Mock -CommandName Get-DevOpsACL -MockWith {
+            return @(
+                @{ token = 'mock-project-id/mock-pipeline-id' }
+                @{ token = 'mock-project-id/other-pipeline-id' }
+            )
+        }
         Mock -CommandName ConvertTo-FormattedACL -MockWith { return @() }
         Mock -CommandName ConvertTo-ACL -MockWith { return @{} }
         Mock -CommandName Test-ACLListforChanges -MockWith {

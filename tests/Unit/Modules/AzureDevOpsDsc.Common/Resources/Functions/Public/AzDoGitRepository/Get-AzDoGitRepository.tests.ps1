@@ -91,4 +91,62 @@ Describe "Get-AzDoGitRepository Tests" -Tag "Unit", "GitRepository" {
             $result.Ensure | Should -Be "Absent"
         }
     }
+
+    Context "When comparing IsDisabled against an existing repository" {
+
+        It "should report Unchanged when IsDisabled matches the live repository (both false, default)" {
+            Mock -CommandName Get-CacheItem -MockWith {
+                return @{ RepositoryName = 'TestRepository'; id = 'repo-id'; isDisabled = $false }
+            } -ParameterFilter { $Type -eq 'LiveRepositories' }
+
+            $result = Get-AzDoGitRepository -ProjectName 'TestProject' -RepositoryName 'TestRepository' -IsDisabled $false
+
+            $result.status | Should -Be "Unchanged"
+            $result.propertiesChanged | Should -BeNullOrEmpty
+        }
+
+        It "should report Changed when the live repository is enabled but IsDisabled is desired" {
+            Mock -CommandName Get-CacheItem -MockWith {
+                return @{ RepositoryName = 'TestRepository'; id = 'repo-id'; isDisabled = $false }
+            } -ParameterFilter { $Type -eq 'LiveRepositories' }
+
+            $result = Get-AzDoGitRepository -ProjectName 'TestProject' -RepositoryName 'TestRepository' -IsDisabled $true
+
+            $result.status | Should -Be "Changed"
+            $result.propertiesChanged | Should -Contain 'IsDisabled'
+        }
+
+        It "should report Changed when the live repository is disabled but IsDisabled is not desired" {
+            Mock -CommandName Get-CacheItem -MockWith {
+                return @{ RepositoryName = 'TestRepository'; id = 'repo-id'; isDisabled = $true }
+            } -ParameterFilter { $Type -eq 'LiveRepositories' }
+
+            $result = Get-AzDoGitRepository -ProjectName 'TestProject' -RepositoryName 'TestRepository' -IsDisabled $false
+
+            $result.status | Should -Be "Changed"
+            $result.propertiesChanged | Should -Contain 'IsDisabled'
+        }
+
+        It "should not compare IsDisabled when the caller does not pass it" {
+            Mock -CommandName Get-CacheItem -MockWith {
+                return @{ RepositoryName = 'TestRepository'; id = 'repo-id'; isDisabled = $true }
+            } -ParameterFilter { $Type -eq 'LiveRepositories' }
+
+            $result = Get-AzDoGitRepository -ProjectName 'TestProject' -RepositoryName 'TestRepository'
+
+            $result.status | Should -Be "Unchanged"
+        }
+
+        It "should never report drift on SourceRepository/SourceType/ImportServiceConnectionName for an existing repository" {
+            Mock -CommandName Get-CacheItem -MockWith {
+                return @{ RepositoryName = 'TestRepository'; id = 'repo-id'; isDisabled = $false }
+            } -ParameterFilter { $Type -eq 'LiveRepositories' }
+
+            $result = Get-AzDoGitRepository -ProjectName 'TestProject' -RepositoryName 'TestRepository' `
+                -SourceRepository 'https://github.com/MyUser/MyRepo.git' -SourceType 'Import' -ImportServiceConnectionName 'GitHub-Import' -IsDisabled $false
+
+            $result.status | Should -Be "Unchanged"
+            $result.propertiesChanged | Should -BeNullOrEmpty
+        }
+    }
 }

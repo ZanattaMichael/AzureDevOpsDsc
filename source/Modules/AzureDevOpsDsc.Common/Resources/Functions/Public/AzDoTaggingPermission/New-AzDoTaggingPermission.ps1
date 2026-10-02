@@ -1,0 +1,45 @@
+Function New-AzDoTaggingPermission
+{
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)][string]$ProjectName,
+        [Parameter(Mandatory = $true)][string]$GroupName,
+        [Parameter(Mandatory = $true)][bool]$isInherited,
+        [Parameter()][HashTable[]]$Permissions,
+        [Parameter()][HashTable]$LookupResult,
+        [Parameter()][Ensure]$Ensure,
+        [Parameter()][System.Management.Automation.SwitchParameter]$Force
+    )
+
+    Write-Verbose "[New-AzDoTaggingPermission] Started."
+
+    $OrganizationName  = Get-AzDoOrganizationName
+    $SecurityNamespace = Get-CacheItem -Key 'Tagging' -Type 'SecurityNamespaces'
+    $Project           = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
+
+    if (-not $Project)
+    {
+        Write-Verbose "[New-AzDoTaggingPermission] Project '$ProjectName' not in cache — falling back to live API lookup."
+        $Project = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
+        if ($Project) { Add-CacheItem -Key $ProjectName -Value $Project -Type 'LiveProjects' }
+    }
+
+    if ((-not $SecurityNamespace) -or (-not $Project))
+    {
+        throw "[New-AzDoTaggingPermission] Security namespace or project not found. Cannot converge on '$ProjectName'."
+    }
+
+    $serializeACLParams = @{
+        ReferenceACLs        = $LookupResult.propertiesChanged
+        DescriptorACLList    = Get-CacheItem -Key $SecurityNamespace.namespaceId -Type 'LiveACLList'
+        DescriptorMatchToken = ($LocalizedDataAzSerializationPatten.TaggingPermission -f $Project.id)
+    }
+
+    $params = @{
+        OrganizationName    = $OrganizationName
+        SecurityNamespaceID = $SecurityNamespace.namespaceId
+        SerializedACLs      = ConvertTo-ACLHashtable @serializeACLParams
+    }
+
+    Set-AzDoPermission @params
+}

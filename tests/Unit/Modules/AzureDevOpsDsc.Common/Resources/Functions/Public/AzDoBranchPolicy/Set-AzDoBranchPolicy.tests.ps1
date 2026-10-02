@@ -60,6 +60,61 @@ Describe "Set-AzDoBranchPolicy" -Tag "Unit", "BranchPolicy" {
         }
     }
 
+    Context "when PolicySettings is supplied without a 'scope' key" {
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                param ($Key, $Type)
+                switch ($Type) {
+                    'LiveBranchPolicies' {
+                        return @{
+                            id       = 'existing-policy-id'
+                            settings = @{ scope = @(@{ repositoryId = 'repo-1'; refName = 'refs/heads/release/'; matchKind = 'prefix' }) }
+                        }
+                    }
+                    'LivePolicyTypes' { return @{ id = 'mock-type-id' } }
+                    default { return $null }
+                }
+            }
+        }
+
+        It "carries the cached policy's existing scope over rather than dropping it" {
+            Set-AzDoBranchPolicy -ProjectName 'TestProject' -RepositoryName 'TestRepo' -BranchName 'release/' `
+                -MatchKind 'Prefix' -PolicyType 'RequiredReviewers' -PolicySettings @{ minimumApproverCount = 2 }
+
+            Assert-MockCalled -CommandName Set-DevOpsBranchPolicy -Exactly -Times 1 -ParameterFilter {
+                ($Settings.scope[0].matchKind -eq 'prefix') -and ($Settings.scope[0].refName -eq 'refs/heads/release/') -and ($Settings.minimumApproverCount -eq 2)
+            }
+        }
+    }
+
+    Context "when PolicySettings is supplied with its own 'scope' key" {
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                param ($Key, $Type)
+                switch ($Type) {
+                    'LiveBranchPolicies' {
+                        return @{
+                            id       = 'existing-policy-id'
+                            settings = @{ scope = @(@{ repositoryId = 'repo-1'; refName = 'refs/heads/main'; matchKind = 'exact' }) }
+                        }
+                    }
+                    'LivePolicyTypes' { return @{ id = 'mock-type-id' } }
+                    default { return $null }
+                }
+            }
+        }
+
+        It "uses the configuration-supplied scope verbatim instead of the cached one" {
+            $customScope = @(@{ repositoryId = 'repo-2'; refName = 'refs/heads/develop'; matchKind = 'exact' })
+            Set-AzDoBranchPolicy -ProjectName 'TestProject' -RepositoryName 'TestRepo' -BranchName 'main' `
+                -PolicyType 'RequiredReviewers' -PolicySettings @{ scope = $customScope; minimumApproverCount = 2 }
+
+            Assert-MockCalled -CommandName Set-DevOpsBranchPolicy -Exactly -Times 1 -ParameterFilter {
+                $Settings.scope[0].repositoryId -eq 'repo-2'
+            }
+        }
+    }
+
     Context "when branch policy not found in cache" {
         BeforeEach {
             Mock -CommandName Get-CacheItem -MockWith { return $null }

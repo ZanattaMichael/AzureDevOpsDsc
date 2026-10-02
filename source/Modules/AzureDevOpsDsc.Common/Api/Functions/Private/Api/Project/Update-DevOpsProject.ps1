@@ -47,9 +47,6 @@ function Update-DevOpsProject
         $ProjectDescription,
 
         [Parameter()]
-        [System.String]$ProcessTemplateId,
-
-        [Parameter()]
         [System.String]$Visibility,
 
         [Parameter()]

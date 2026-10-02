@@ -23,6 +23,7 @@ Describe 'Get-AzDoServiceConnection Tests' -Tag "Unit", "ServiceConnection" {
         . (Get-ClassFilePath 'DSCGetSummaryState')
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
+        . (Get-FunctionItem 'Test-AzDoArrayDrift.ps1')
 
         # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
         Mock -CommandName List-DevOpsServiceConnections -MockWith { return $null }
@@ -96,6 +97,115 @@ Describe 'Get-AzDoServiceConnection Tests' -Tag "Unit", "ServiceConnection" {
             $result.status | Should -Be 'Unchanged'
         }
 
+    }
+
+    Context 'When SharedWithProjects is not supplied' {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                return @{
+                    id                                = 'sc-1'
+                    name                               = 'TestSC'
+                    serviceEndpointProjectReferences = @(
+                        @{ projectReference = @{ id = 'p1'; name = 'TestProject' }; name = 'TestSC' },
+                        @{ projectReference = @{ id = 'p2'; name = 'Fabrikam' }; name = 'TestSC' }
+                    )
+                }
+            }
+        }
+
+        It 'Should leave sharing untouched (Unchanged) even though the live connection is shared' {
+            $result = Get-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic'
+            $result.status | Should -Be 'Unchanged'
+            $result.propertiesChanged | Should -Not -Contain 'SharedWithProjects'
+        }
+    }
+
+    Context 'When SharedWithProjects is supplied and matches the live sharing' {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                return @{
+                    id                                = 'sc-1'
+                    name                               = 'TestSC'
+                    serviceEndpointProjectReferences = @(
+                        @{ projectReference = @{ id = 'p1'; name = 'TestProject' }; name = 'TestSC' },
+                        @{ projectReference = @{ id = 'p2'; name = 'Fabrikam' }; name = 'TestSC' }
+                    )
+                }
+            }
+        }
+
+        It 'Should return Unchanged' {
+            $result = Get-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic' -SharedWithProjects @('Fabrikam')
+            $result.status | Should -Be 'Unchanged'
+        }
+    }
+
+    Context 'When SharedWithProjects drifts from the live sharing' {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                return @{
+                    id                                = 'sc-1'
+                    name                               = 'TestSC'
+                    serviceEndpointProjectReferences = @(
+                        @{ projectReference = @{ id = 'p1'; name = 'TestProject' }; name = 'TestSC' }
+                    )
+                }
+            }
+        }
+
+        It 'Should return Changed with SharedWithProjects flagged when a share is missing' {
+            $result = Get-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic' -SharedWithProjects @('Fabrikam')
+            $result.status | Should -Be 'Changed'
+            $result.propertiesChanged | Should -Contain 'SharedWithProjects'
+        }
+
+        It 'Should return Changed with SharedWithProjects flagged when a share should be removed' {
+            Mock -CommandName Get-CacheItem -MockWith {
+                return @{
+                    id                                = 'sc-1'
+                    name                               = 'TestSC'
+                    serviceEndpointProjectReferences = @(
+                        @{ projectReference = @{ id = 'p1'; name = 'TestProject' }; name = 'TestSC' },
+                        @{ projectReference = @{ id = 'p2'; name = 'Fabrikam' }; name = 'TestSC' }
+                    )
+                }
+            }
+            $result = Get-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic' -SharedWithProjects @()
+            $result.status | Should -Be 'Changed'
+            $result.propertiesChanged | Should -Contain 'SharedWithProjects'
+        }
+    }
+
+    Context 'When SharedNameOverrides drifts from the live reference name' {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                return @{
+                    id                                = 'sc-1'
+                    name                               = 'TestSC'
+                    serviceEndpointProjectReferences = @(
+                        @{ projectReference = @{ id = 'p1'; name = 'TestProject' }; name = 'TestSC' },
+                        @{ projectReference = @{ id = 'p2'; name = 'Fabrikam' }; name = 'old-name' }
+                    )
+                }
+            }
+        }
+
+        It 'Should return Changed with SharedNameOverrides flagged' {
+            $result = Get-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic' `
+                -SharedWithProjects @('Fabrikam') -SharedNameOverrides @{ Fabrikam = 'shared-azure-sub' }
+            $result.status | Should -Be 'Changed'
+            $result.propertiesChanged | Should -Contain 'SharedNameOverrides'
+        }
+
+        It 'Should return Unchanged when the override matches the live reference name' {
+            $result = Get-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic' `
+                -SharedWithProjects @('Fabrikam') -SharedNameOverrides @{ Fabrikam = 'old-name' }
+            $result.status | Should -Be 'Unchanged'
+        }
     }
 
 }

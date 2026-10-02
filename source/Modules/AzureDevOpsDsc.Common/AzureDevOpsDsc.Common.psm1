@@ -80,6 +80,9 @@ Export-ModuleMember -Function 'Get-AzDoCacheObjects'
 Export-ModuleMember -Function '*-AzDoProjectGroup'
 Export-ModuleMember -Function 'Test-AzDevOpsProjectName'
 Export-ModuleMember -Function 'ConvertTo-Base64String'
+# Called by [AzDevOpsDscResourceBase]::ExportDscResourceInstances(), which runs in the class
+# module's scope and cannot see this module's unexported functions.
+Export-ModuleMember -Function 'Protect-AzDoExportedSecretProperty'
 
 # Stop processing
 if ($isClass)

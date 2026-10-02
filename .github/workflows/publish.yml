@@ -79,8 +79,8 @@ jobs:
 
   # Release gate: the integration suite must run before anything is published.
   # This reuses integration-tests.yml rather than duplicating it, so the release runs
-  # exactly the suite that is maintained there, on its self-hosted AZDO-AGENT runner.
-  # If the runner is offline the release queues here rather than failing.
+  # exactly the suite that is maintained there, on the self-hosted AZDO-AGENT runners.
+  # If no runner is online the release queues here rather than failing.
   #
   # For a full release (vX.Y.Z) every test must pass. For a prerelease
   # (vX.Y.Z-<suffix>) allowFailures is set, so individual test failures are logged as
@@ -98,8 +98,8 @@ jobs:
       allowFailures: ${{ needs.validate.outputs.isPrerelease == 'true' }}
 
   # Second release gate: the DSC v3 suite, which lives in its own workflow so it can be
-  # dispatched and re-run without waiting out the hour-long v2 suite. Both target the
-  # same self-hosted runner, so they queue rather than contend. allowFailures follows the
+  # dispatched and re-run without waiting out the hour-long v2 suite. Both share the
+  # azdo-live-organization concurrency group, so they queue rather than contend. allowFailures follows the
   # same prerelease rule as the v2 gate.
   integration-tests-v3:
     name: DSC v3 Integration Tests (release gate)

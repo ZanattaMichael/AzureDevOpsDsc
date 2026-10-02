@@ -1,6 +1,29 @@
 <#
 .SYNOPSIS
     DSC resource for managing Azure DevOps environment approval checks.
+.DESCRIPTION
+    This resource configures approval gates on Azure DevOps pipeline environments. When an approval
+    check is configured, deployments to that environment will pause until the required number of
+    approvers have approved the deployment.
+
+.PARAMETER ProjectName
+    The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+
+.PARAMETER EnvironmentName
+    The name of the pipeline environment. This is a key property.
+
+.PARAMETER RequiredApproverCount
+    The minimum number of approvals required. Defaults to 1.
+
+.PARAMETER AllowApproverToSelf
+    Whether the user who triggered the pipeline can approve their own deployment. Defaults to $false.
+
+.PARAMETER TimeoutInMinutes
+    How long the approval check waits before timing out. Defaults to 43200 (30 days).
+
+.PARAMETER Instructions
+    Instructions shown to approvers. Optional.
+
 #>
 
 [DscResource()]

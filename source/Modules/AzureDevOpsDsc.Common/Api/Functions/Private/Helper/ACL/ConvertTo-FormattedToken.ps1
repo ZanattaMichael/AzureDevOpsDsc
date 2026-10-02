@@ -53,6 +53,18 @@ Function ConvertTo-FormattedToken {
             $string = 'repoV2/{0}/{1}' -f $Token.projectId, $Token.RepoId
             break
         }
+        # If the token type is 'GitBranch' — each '/'-delimited ref segment is hex/UTF-16LE
+        # encoded separately by ConvertTo-GitRefToken (a branch folder such as 'release/' falls
+        # out of this for free, since it is just the same per-segment encoding one segment short).
+        {$_.type -eq 'GitBranch'} {
+            $string = 'repoV2/{0}/{1}/refs/heads/{2}' -f $Token.projectId, $Token.RepoId, (ConvertTo-GitRefToken -RefName $Token.BranchName)
+            break
+        }
+        # If the token type is 'GitTag'
+        {$_.type -eq 'GitTag'} {
+            $string = 'repoV2/{0}/{1}/refs/tags/{2}' -f $Token.projectId, $Token.RepoId, (ConvertTo-GitRefToken -RefName $Token.TagName)
+            break
+        }
         # If the token type is 'CSS'
         {$_.type -eq 'CSS'} {
             $string = $(($Token.Identifiers | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_.identifier }) -join ':')
@@ -63,9 +75,33 @@ Function ConvertTo-FormattedToken {
             $string = $(($Token.Identifiers | ForEach-Object { "vstfs:///Classification/Node/{0}" -f $_.identifier }) -join ':')
             break
         }
+        # Work item queries — $/{projectId}, plus one folder id per level beneath it
+        {$_.type -eq 'Query'} {
+            $string = '$/{0}' -f $Token.ProjectId
+            if ($Token.Identifiers)
+            {
+                $string += ($Token.Identifiers | ForEach-Object { '/{0}' -f $_.identifier }) -join ''
+            }
+            break
+        }
         # Project-level permissions
         {$_.type -eq 'Project'} {
             $string = '$PROJECT:vstfs:///Classification/TeamProject/{0}' -f $Token.ProjectId
+            break
+        }
+        # Tagging permissions — '/{projectId}'
+        {$_.type -eq 'Tagging'} {
+            $string = '/{0}' -f $Token.ProjectId
+            break
+        }
+        # Analytics permissions — '$/{projectId}'
+        {$_.type -eq 'Analytics'} {
+            $string = '$/{0}' -f $Token.ProjectId
+            break
+        }
+        # AnalyticsViews permissions — '$/Shared/{projectId}'
+        {$_.type -eq 'AnalyticsViews'} {
+            $string = '$/Shared/{0}' -f $Token.ProjectId
             break
         }
         # Process permissions — org-wide root
@@ -84,10 +120,33 @@ Function ConvertTo-FormattedToken {
                       else                   { $Token.ProjectId }
             break
         }
+        # Build folder permissions — the folder is addressed by path, not by id
+        {$_.type -eq 'BuildFolder'} {
+            $string = '{0}/{1}' -f $Token.ProjectId, $Token.FolderPath
+            break
+        }
+        # ReleaseManagement — project root
+        {$_.type -eq 'ReleaseRoot'} {
+            $string = '{0}' -f $Token.ProjectId
+            break
+        }
+        # ReleaseManagement — folder permissions, addressed by path, not by id
+        {$_.type -eq 'ReleaseFolder'} {
+            $string = '{0}/{1}' -f $Token.ProjectId, $Token.FolderPath
+            break
+        }
+        # ReleaseManagement — definition permissions. The root folder is omitted from the token
+        # rather than written out.
+        {$_.type -eq 'ReleaseDefinition'} {
+            $string = if ($Token.FolderPath) { '{0}/{1}/{2}' -f $Token.ProjectId, $Token.FolderPath, $Token.DefinitionId }
+                      else                   { '{0}/{1}' -f $Token.ProjectId, $Token.DefinitionId }
+            break
+        }
         # Library (VariableGroup) permissions
         {$_.type -eq 'Library'} {
-            $string = if ($Token.VariableGroupId) { 'Library/Project/{0}/VariableGroup/{1}' -f $Token.ProjectId, $Token.VariableGroupId }
-                      else                        { 'Library/Project/{0}' -f $Token.ProjectId }
+            $string = if ($Token.SecureFileId)         { 'Library/Project/{0}/SecureFile/{1}' -f $Token.ProjectId, $Token.SecureFileId }
+                      elseif ($Token.VariableGroupId)  { 'Library/Project/{0}/VariableGroup/{1}' -f $Token.ProjectId, $Token.VariableGroupId }
+                      else                             { 'Library/Project/{0}' -f $Token.ProjectId }
             break
         }
         # ServiceEndpoints permissions

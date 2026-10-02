@@ -28,12 +28,27 @@ data LocalizedDataAzSerializationPatten
         # Example: repoV2/ProjectId/RepoId
         # Not: repoV2/ProjectId/RepoId/refs/heads/BranchName
         GitRepository = '^repoV2\/{0}\/(?!.*\/refs).*'
+        # Branch/tag ACL tokens - exact match on one specific ref, so setting one branch's
+        # permission never disturbs the repository's own ACL or any other branch/tag's ACL.
+        # Args: {0}=RepoId (the project id has already been resolved into the repo cache key),
+        # {1}=hex/UTF-16LE-encoded ref segments.
+        GitBranch = '^repoV2\/[A-Za-z0-9-]+\/{0}\/refs\/heads\/{1}$'
+        GitTag    = '^repoV2\/[A-Za-z0-9-]+\/{0}\/refs\/tags\/{1}$'
         # Group Permissions
         # Example: 78a5065f-3043-426f-9cc5-785748b18f9d\\242ea4ca-e150-4499-a491-00f4ce1f480e
         GroupPermission = '^{0}\\\\{1}$'
         # Project Permissions
         # Example: $PROJECT:vstfs:///Classification/TeamProject/78a5065f-3043-426f-9cc5-785748b18f9d
         ProjectPermission = '^\$PROJECT:vstfs:\/{{3}}Classification\/TeamProject\/{0}$'
+        # Tagging Permissions
+        # Example: /78a5065f-3043-426f-9cc5-785748b18f9d
+        TaggingPermission = '^\/{0}$'
+        # Analytics Permissions
+        # Example: $/78a5065f-3043-426f-9cc5-785748b18f9d
+        AnalyticsPermission = '^\$\/{0}$'
+        # AnalyticsViews Permissions
+        # Example: $/Shared/78a5065f-3043-426f-9cc5-785748b18f9d
+        AnalyticsViewsPermission = '^\$\/Shared\/{0}$'
         # Build/Pipeline Permissions  (ProjectId or ProjectId/PipelineId)
         # Example: 78a5065f-3043-426f-9cc5-785748b18f9d  or  78a5065f.../123
         BuildPermission = '^{0}(\/[0-9]+)?$'

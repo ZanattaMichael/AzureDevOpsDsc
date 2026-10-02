@@ -26,12 +26,22 @@ Describe "Get-AzDoProject" -Tag "Unit", "Project" {
             . $file.FullName
         }
 
+        # Not mocked (the family-root comparison tests exercise the real implementation) -
+        # so Find-MockedFunctions never picks it up. Load it explicitly.
+        . (Get-FunctionItem 'Get-AzDoProcessFamilyRootId.ps1').FullName
+
         # Load the summary state
         . (Get-ClassFilePath 'DSCGetSummaryState')
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-ClassFilePath 'Ensure')
         # Load Get-AzDoCacheObjects
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
+
+        # Resolve-DevOpsProcess runs for real - it wraps the LiveProcesses cache lookup these
+        # tests mock - so Find-MockedFunctions never picks it up. Load it explicitly. Its live
+        # fallback finds nothing unless a test says otherwise.
+        . (Get-FunctionItem 'Resolve-DevOpsProcess.ps1').FullName
+        Mock -CommandName List-DevOpsProcess -MockWith { return @() }
 
         # Define common mock responses
         $mockProject = @{
@@ -99,7 +109,24 @@ Describe "Get-AzDoProject" -Tag "Unit", "Project" {
         }
 
         It "should throw an error" {
-            { Get-AzDoProject -ProjectName 'ExistingProject' -ProjectDescription 'ExistingDescription' -SourceControlType 'Git' -ProcessTemplate 'NonExistentTemplate' -Visibility 'Private' } | Should -Throw
+            { Get-AzDoProject -ProjectName 'ExistingProject' -ProjectDescription 'ExistingDescription' -SourceControlType 'Git' -ProcessTemplate 'NonExistentTemplate' -Visibility 'Private' } | Should -Throw "*Process template 'NonExistentTemplate' not found*"
+        }
+    }
+
+    Context "when the process template was created after the cache was built" {
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -ParameterFilter { $Key -eq 'ExistingProject' -and $Type -eq 'LiveProjects' } -MockWith { return $mockProject }
+            Mock -CommandName Get-CacheItem -ParameterFilter { $Key -eq 'NewInheritedProcess' -and $Type -eq 'LiveProcesses' } -MockWith { return $null }
+            Mock -CommandName List-DevOpsProcess -MockWith {
+                return @([PSCustomObject]@{ id = 'inherited-id'; name = 'NewInheritedProcess' })
+            }
+            Mock -CommandName Add-CacheItem
+        }
+
+        It "should resolve the process live rather than throw" {
+            { Get-AzDoProject -ProjectName 'ExistingProject' -ProjectDescription 'ExistingDescription' -SourceControlType 'Git' -ProcessTemplate 'NewInheritedProcess' -Visibility 'Private' } | Should -Not -Throw "*not found*"
+
+            Assert-MockCalled -CommandName List-DevOpsProcess -Exactly 1
         }
     }
 
@@ -118,6 +145,102 @@ Describe "Get-AzDoProject" -Tag "Unit", "Project" {
             $result.Status | Should -Be 'UnChanged'
             $result.ProjectName | Should -Be 'ExistingProject'
             $result.SourceControlType | Should -Be 'Git'
+        }
+    }
+
+    Context "when the project's process differs and the migration is compatible" {
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -ParameterFilter { $Key -eq 'ExistingProject' -and $Type -eq 'LiveProjects' } -MockWith {
+                return @{
+                    ProjectName       = 'ExistingProject'
+                    description       = 'ExistingDescription'
+                    SourceControlType = 'Git'
+                    Visibility        = 'Private'
+                    id                = 'project-id'
+                }
+            }
+            Mock -CommandName Get-CacheItem -ParameterFilter { $Key -eq 'InheritedProcess' -and $Type -eq 'LiveProcesses' } -MockWith {
+                return @{ ProcessTemplate = 'InheritedProcess'; id = 'desired-process-id' }
+            }
+            Mock -CommandName Get-DevOpsProjectCapabilities -MockWith {
+                return @{ capabilities = @{ processTemplate = @{ templateTypeId = 'current-process-id' } } }
+            }
+            Mock -CommandName Get-DevOpsProcess -MockWith {
+                param($Organization, $ProcessTypeId)
+                return @{ typeId = $ProcessTypeId; parentProcessTypeId = 'shared-family-root'; customizationType = 'inherited' }
+            }
+        }
+
+        It "should return status Changed with ProcessTemplate in propertiesChanged" {
+            $result = Get-AzDoProject -ProjectName 'ExistingProject' -ProjectDescription 'ExistingDescription' -SourceControlType 'Git' -ProcessTemplate 'InheritedProcess' -Visibility 'Private'
+            $result.Status | Should -Be 'Changed'
+            $result.propertiesChanged | Should -Contain 'ProcessTemplate'
+            $result.currentProcessTypeId | Should -Be 'current-process-id'
+            $result.desiredProcessTypeId | Should -Be 'desired-process-id'
+        }
+    }
+
+    Context "when the project's process differs and the migration is incompatible" {
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -ParameterFilter { $Key -eq 'ExistingProject' -and $Type -eq 'LiveProjects' } -MockWith {
+                return @{
+                    ProjectName       = 'ExistingProject'
+                    description       = 'ExistingDescription'
+                    SourceControlType = 'Git'
+                    Visibility        = 'Private'
+                    id                = 'project-id'
+                }
+            }
+            Mock -CommandName Get-CacheItem -ParameterFilter { $Key -eq 'UnrelatedProcess' -and $Type -eq 'LiveProcesses' } -MockWith {
+                return @{ ProcessTemplate = 'UnrelatedProcess'; id = 'desired-process-id' }
+            }
+            Mock -CommandName Get-DevOpsProjectCapabilities -MockWith {
+                return @{ capabilities = @{ processTemplate = @{ templateTypeId = 'current-process-id' } } }
+            }
+            Mock -CommandName Get-DevOpsProcess -MockWith {
+                param($Organization, $ProcessTypeId)
+                if ($ProcessTypeId -eq 'current-process-id')
+                {
+                    return @{ typeId = 'current-process-id'; parentProcessTypeId = 'family-root-A'; customizationType = 'inherited' }
+                }
+                return @{ typeId = $ProcessTypeId; parentProcessTypeId = 'family-root-B'; customizationType = 'inherited' }
+            }
+            Mock -CommandName Write-Error
+        }
+
+        It "should return status Error with reason ProcessMigrationIncompatible" {
+            $result = Get-AzDoProject -ProjectName 'ExistingProject' -ProjectDescription 'ExistingDescription' -SourceControlType 'Git' -ProcessTemplate 'UnrelatedProcess' -Visibility 'Private'
+            $result.status | Should -Be 'Error'
+            $result.reason | Should -Be 'ProcessMigrationIncompatible'
+            $result.propertiesChanged | Should -Not -Contain 'ProcessTemplate'
+        }
+    }
+
+    Context "when the project's process matches the desired process" {
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -ParameterFilter { $Key -eq 'ExistingProject' -and $Type -eq 'LiveProjects' } -MockWith {
+                return @{
+                    ProjectName       = 'ExistingProject'
+                    description       = 'ExistingDescription'
+                    SourceControlType = 'Git'
+                    Visibility        = 'Private'
+                    id                = 'project-id'
+                }
+            }
+            Mock -CommandName Get-CacheItem -ParameterFilter { $Key -eq 'InheritedProcess' -and $Type -eq 'LiveProcesses' } -MockWith {
+                return @{ ProcessTemplate = 'InheritedProcess'; id = 'same-process-id' }
+            }
+            Mock -CommandName Get-DevOpsProjectCapabilities -MockWith {
+                return @{ capabilities = @{ processTemplate = @{ templateTypeId = 'same-process-id' } } }
+            }
+            Mock -CommandName Get-DevOpsProcess
+        }
+
+        It "should return status Unchanged and not need a family-root lookup" {
+            $result = Get-AzDoProject -ProjectName 'ExistingProject' -ProjectDescription 'ExistingDescription' -SourceControlType 'Git' -ProcessTemplate 'InheritedProcess' -Visibility 'Private'
+            $result.Status | Should -Be 'Unchanged'
+            $result.propertiesChanged | Should -Not -Contain 'ProcessTemplate'
+            Assert-MockCalled -CommandName Get-DevOpsProcess -Exactly -Times 0
         }
     }
 }

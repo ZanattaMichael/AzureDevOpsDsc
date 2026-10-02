@@ -95,7 +95,30 @@ AzDoSecurityNamespacePermission/Permissions/Permission
 
 ## Additional Information
 
-This resource provides low-level access to Azure DevOps security namespaces, allowing fine-grained permission control over any object in the system. For most use cases, prefer the higher-level permission resources (e.g., `AzDoGitPermission`, `AzDoPipelinePermission`). Use this resource when you need to control permissions for namespaces not covered by dedicated resources.
+This resource provides low-level access to Azure DevOps security namespaces, allowing fine-grained permission control over any object in the system. It is the escape hatch for namespaces with no dedicated resource.
+
+### Prefer a dedicated resource where one exists
+
+This resource takes a caller-supplied `Token` string, and constructing that token correctly is the hard and error-prone part — the shape differs per namespace, and a wrong token silently targets nothing. The dedicated resources build it for you from readable names:
+
+| Namespace | Dedicated resource |
+|---|---|
+| `Git Repositories` | [AzDoGitPermission](AzDoGitPermission.md) |
+| `CSS` | [AzDoAreaPermission](AzDoAreaPermission.md) |
+| `Iteration` | [AzDoIterationPermission](AzDoIterationPermission.md) |
+| `Project` | [AzDoProjectPermission](AzDoProjectPermission.md) |
+| `Process` | [AzDoProcessPermission](AzDoProcessPermission.md) |
+| `Build` | [AzDoPipelinePermission](AzDoPipelinePermission.md), [AzDoPipelineFolderPermission](AzDoPipelineFolderPermission.md) |
+| `Library` | [AzDoVariableGroupPermission](AzDoVariableGroupPermission.md), [AzDoSecureFilePermission](AzDoSecureFilePermission.md) |
+| `ServiceEndpoints` | [AzDoServiceConnectionPermission](AzDoServiceConnectionPermission.md) |
+| `AgentPool`, `DistributedTask` | [AzDoAgentPoolPermission](AzDoAgentPoolPermission.md), [AzDoEnvironmentPermission](AzDoEnvironmentPermission.md) |
+| `WorkItemQueryFolders` | [AzDoQueryPermission](AzDoQueryPermission.md) |
+
+Use this resource for anything not in that list.
+
+### Permission names come from the namespace
+
+Do not assume a fixed set of action names. Read them from `_apis/securitynamespaces/{namespaceId}` — they differ per namespace and have changed between API versions.
 
 ## Examples
 

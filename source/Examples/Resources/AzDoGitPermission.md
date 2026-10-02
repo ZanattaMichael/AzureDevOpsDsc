@@ -8,12 +8,20 @@ AzDoGitPermission [string] #ResourceName
     ProjectName          = [String]$ProjectName
     [ RepositoryName     = [String]$RepositoryName ]
     [ isInherited        = [Boolean]$isInherited ]
+    [ BranchName         = [String]$BranchName ]
+    [ TagName            = [String]$TagName ]
     [ Permissions        = [HashTable[]]$Permissions ]
     [ Ensure             = [String] {'Present', 'Absent'} ]
 }
 ```
 
 The `RepositoryName` property is optional. If it is not provided, the Git permissions will be applied at the project-level.
+
+`BranchName` and `TagName` are optional and mutually exclusive, and both require `RepositoryName`.
+Setting either one targets that single branch's or tag's own ACL (the `refs/heads/{BranchName}` or
+`refs/tags/{TagName}` token) instead of the repository's ACL. Write the value as a bare ref name,
+e.g. `main` or `release/1.0` - a leading `refs/heads/` (or `refs/tags/`) is accepted and stripped for
+comparison, but the value written back is always what the configuration supplied.
 
 ## Permissions Syntax
 
@@ -67,6 +75,8 @@ AzDoGitPermission/Permissions/Permission
 
 - __ProjectName__: The name of the Azure DevOps project.
 - __RepositoryName__: The name of the Git repository within the project.
+- __BranchName__: Optional. Targets a single branch's ACL (`refs/heads/{BranchName}`) instead of the repository's ACL. Requires `RepositoryName`. Mutually exclusive with `TagName`.
+- __TagName__: Optional. Targets a single tag's ACL (`refs/tags/{TagName}`) instead of the repository's ACL. Requires `RepositoryName`. Mutually exclusive with `BranchName`.
 - __Permissions__: A HashTable that specifies the permissions to be set. Refer to: 'Permissions Syntax'.
 - __Ensure__: Specifies whether the Git repository permissions should be applied. Defaults to 'Present'.
 
@@ -105,7 +115,35 @@ Configuration ExampleConfig {
 Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
 ```
 
-## Example 2: Sample Configuration using Invoke-DSCResource
+## Example 2: Denying force push on a single branch
+
+``` PowerShell
+Configuration ExampleConfig {
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
+
+    Node localhost {
+        AzDoGitPermission DenyForcePushOnMain {
+            Ensure         = 'Present'
+            ProjectName    = 'MyProject'
+            RepositoryName = 'MyRepository'
+            isInherited    = $false
+            BranchName     = 'main'
+            Permissions    = @(
+                @{
+                    Identity   = '[MyProject]\Contributors'
+                    Permission = @{
+                        'ForcePush' = 'Deny'
+                    }
+                }
+            )
+        }
+    }
+}
+
+Start-DscConfiguration -Path ./ExampleConfig -Wait -Verbose
+```
+
+## Example 3: Sample Configuration using Invoke-DSCResource
 
 ``` PowerShell
 # Return the current configuration for AzDoGitPermission
@@ -126,7 +164,7 @@ $properties = @{
 Invoke-DscResource -Name 'AzDoGitPermission' -Method Get -Property $properties -ModuleName 'AzureDevOpsDscNative'
 ```
 
-## Example 3: Sample Configuration using Dsc.PipelineRunner
+## Example 4: Sample Configuration using Dsc.PipelineRunner
 
 ``` YAML
 parameters: {}

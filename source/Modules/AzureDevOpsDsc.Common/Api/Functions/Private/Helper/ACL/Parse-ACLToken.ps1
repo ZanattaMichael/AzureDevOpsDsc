@@ -31,7 +31,25 @@ Function Parse-ACLToken
                 $LocalizedDataAzACLTokenPatten.OrganizationGit { $result.type = 'OrganizationGit'; break }
                 $LocalizedDataAzACLTokenPatten.GitProject      { $result.type = 'GitProject';      break }
                 $LocalizedDataAzACLTokenPatten.GitRepository   { $result.type = 'GitRepository';   break }
-                $LocalizedDataAzACLTokenPatten.GitBranch       { $result.type = 'GitBranch';       break }
+                # Branch/tag tokens carry the ref name as hex/UTF-16LE-encoded segments - decode it
+                # back to the human-readable name here so it round-trips against what New-ACLToken
+                # keeps on the resource side (see ConvertFrom-GitRefToken).
+                $LocalizedDataAzACLTokenPatten.GitBranch {
+                    $result.type       = 'GitBranch'
+                    $result.ProjectId  = $matches.ProjectId
+                    $result.RepoId     = $matches.RepoId
+                    $result.BranchName = ConvertFrom-GitRefToken -EncodedRef $matches.BranchName
+                    $useRegexVariable  = $false
+                    break
+                }
+                $LocalizedDataAzACLTokenPatten.GitTag {
+                    $result.type      = 'GitTag'
+                    $result.ProjectId = $matches.ProjectId
+                    $result.RepoId    = $matches.RepoId
+                    $result.TagName   = ConvertFrom-GitRefToken -EncodedRef $matches.TagName
+                    $useRegexVariable = $false
+                    break
+                }
                 default { throw "Token '$Token' is not recognized." }
             }
         }
@@ -71,11 +89,78 @@ Function Parse-ACLToken
             }
         }
 
+        'WorkItemQueryFolders' {
+            switch -regex ($Token.Trim())
+            {
+                # The namespace root is a bare '$'. AzDoQueryPermission scans every ACL in
+                # the namespace, so it meets this token on any organization - and throwing
+                # here aborted the whole scan, which is what made every AzDoQueryPermission
+                # integration test fail with "Token '$' is not recognized."
+                $LocalizedDataAzACLTokenPatten.QueryRootPermission {
+                    $result.type      = 'QueryRoot'
+                    $useRegexVariable = $false
+                    break
+                }
+
+                $LocalizedDataAzACLTokenPatten.QueryPermission {
+                    $result.type      = 'QueryPermission'
+                    $result.ProjectId = $matches.ProjectId
+
+                    # As in New-ACLToken: the folder ids come from the remainder, because the
+                    # project id is a GUID too and would otherwise be read as the first folder.
+                    $remainder = $matches.Remainder
+                    $result.Identifiers = @()
+
+                    if (-not [String]::IsNullOrEmpty($remainder))
+                    {
+                        $folderMatches = [regex]::Matches($remainder, $LocalizedDataAzACLTokenPatten.QueryFolderIdentifier)
+                        $result.Identifiers = @($folderMatches | ForEach-Object { @{ identifier = $_.Groups['identifiers'].Value } })
+                    }
+
+                    $useRegexVariable = $false
+                    break
+                }
+
+                # Non-throwing, matching Project, Process, Build and Library: every
+                # namespace whose resource enumerates org-wide ACLs has to tolerate a token
+                # shape it does not model, or one unexpected entry fails the whole resource.
+                default
+                {
+                    $result.type      = 'QueryUnknown'
+                    $useRegexVariable = $false
+                }
+            }
+        }
+
         'Project' {
             switch -regex ($Token.Trim())
             {
                 $LocalizedDataAzACLTokenPatten.ProjectPermission { $result.type = 'Project';        break }
                 default                                          { $result.type = 'ProjectUnknown'        }
+            }
+        }
+
+        'Tagging' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.TaggingPermission { $result.type = 'Tagging';        break }
+                default                                          { $result.type = 'TaggingUnknown'        }
+            }
+        }
+
+        'Analytics' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.AnalyticsPermission { $result.type = 'Analytics';        break }
+                default                                            { $result.type = 'AnalyticsUnknown'        }
+            }
+        }
+
+        'AnalyticsViews' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.AnalyticsViewsPermission { $result.type = 'AnalyticsViews';        break }
+                default                                                 { $result.type = 'AnalyticsViewsUnknown'        }
             }
         }
 
@@ -91,8 +176,9 @@ Function Parse-ACLToken
         'Build' {
             switch -regex ($Token.Trim())
             {
-                $LocalizedDataAzACLTokenPatten.BuildPermission { $result.type = 'Build';        break }
-                default                                        { $result.type = 'BuildUnknown'        }
+                $LocalizedDataAzACLTokenPatten.BuildPermission       { $result.type = 'Build';       break }
+                $LocalizedDataAzACLTokenPatten.BuildFolderPermission { $result.type = 'BuildFolder'; break }
+                default                                              { $result.type = 'BuildUnknown'       }
             }
         }
 
@@ -101,6 +187,16 @@ Function Parse-ACLToken
             {
                 $LocalizedDataAzACLTokenPatten.LibraryPermission { $result.type = 'Library';        break }
                 default                                          { $result.type = 'LibraryUnknown'        }
+            }
+        }
+
+        'ReleaseManagement' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.ReleaseDefinitionPermission { $result.type = 'ReleaseDefinition'; break }
+                $LocalizedDataAzACLTokenPatten.ReleaseFolderPermission     { $result.type = 'ReleaseFolder';     break }
+                $LocalizedDataAzACLTokenPatten.ReleaseRootPermission       { $result.type = 'ReleaseRoot';       break }
+                default                                                    { $result.type = 'ReleaseUnknown'          }
             }
         }
 

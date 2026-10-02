@@ -23,6 +23,15 @@ AzDoUserEntitlement [string] #ResourceName
 
 This resource adds and removes organization users and manages their access level via the Member Entitlement Management API. The user must be a resolvable identity in the backing directory (e.g. Microsoft Entra ID) to be added. Adding a user consumes a license of the specified type.
 
+### One user at a time
+
+This resource assigns a license to a **single named user**, which does not scale to an organization. Two companions cover the cases that do:
+
+- [AzDoGroupEntitlement](AzDoGroupEntitlement.md) — a licensing *rule* that applies an access level to every member of a group. This is how licensing is normally administered at scale.
+- [AzDoServicePrincipalEntitlement](AzDoServicePrincipalEntitlement.md) — service principals and managed identities, which are organization members in their own right and are not covered by this resource.
+
+Where a user is covered by both a group rule and a direct assignment, Azure DevOps grants the higher of the two. Removing one does not necessarily remove the user's access.
+
 ## Examples
 
 ## Example 1: Sample Configuration using AzDoUserEntitlement Resource

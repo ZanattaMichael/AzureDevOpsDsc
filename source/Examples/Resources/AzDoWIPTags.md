@@ -19,7 +19,17 @@ AzDoWIPTags [string] #ResourceName
 
 ## Additional Information
 
-This resource manages work item tracking tags in Azure DevOps projects using Desired State Configuration (DSC). It enables the creation and management of tags that can be applied to work items within a specified project.
+This resource manages the work item tag vocabulary in an Azure DevOps project — the tags that exist and are available to apply to work items.
+
+### It does not police the tags that appear beside the vocabulary
+
+`AzDoWIPTags` ensures the tags you declare exist. It does nothing about the ones that accumulate next to them — `Bugfix` beside `Bug`, `frontend` beside `Frontend`, `Tech-Debt` beside `Tech Debt`. Those arrive from people typing tags directly on work items and will not show up as drift here.
+
+[AzDoWIPTagHygiene](AzDoWIPTagHygiene.md) is the companion that finds them and merges them into the canonical vocabulary. It defaults to reporting rather than changing, so it is safe to declare alongside this resource and read the warnings before enabling merges.
+
+### Tag creation is a side effect
+
+Azure DevOps has no API for creating a tag directly. Tags exist only once something is tagged, so this resource creates them by adding a temporary work item carrying the tags and then deleting it — the tags persist project-wide. The `/wit/tags` collection is also eventually consistent, so creation waits for the new tags to become listable before returning; without that, a `Set` could be followed immediately by a `Test` reading a stale list.
 
 ## Examples
 

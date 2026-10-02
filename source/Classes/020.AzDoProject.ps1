@@ -22,7 +22,13 @@
     The type of source control for the project. Valid values are 'Git' and 'Tfvc'.
 
 .PARAMETER ProcessTemplate
-    The process template for the project. Valid values are 'Agile', 'Scrum', 'CMMI', and 'Basic'.
+    The process template for the project. Accepts any process name available in the organization,
+    including the built-in system processes ('Agile', 'Scrum', 'CMMI', 'Basic') and any inherited
+    process created from them. Unknown names are rejected at apply time against the live process
+    list. Changing this on an existing project (via Set) is only permitted when the current and
+    desired processes share the same system-process ancestor (for example, moving between a system
+    process and one of its inherited children, or between two inherited children of the same
+    parent) - Azure DevOps does not allow migrating a project across unrelated process families.
 
 .PARAMETER Visibility
     The visibility of the project. Valid values are 'Public' and 'Private'.
@@ -60,7 +66,6 @@ class AzDoProject : AzDevOpsDscResourceBase
     [System.String]$SourceControlType = 'Git'
 
     [DscProperty()]
-    [ValidateSet('Agile', 'Scrum', 'CMMI', 'Basic')]
     [System.String]$ProcessTemplate = 'Agile'
 
     [DscProperty()]
@@ -79,10 +84,22 @@ class AzDoProject : AzDevOpsDscResourceBase
         return [AzDoProject]$($this.GetDscCurrentStateProperties())
     }
 
+    <#
+        .NOTES
+            Discovered by the DSC v3 PowerShell adapter (Microsoft.Adapter/PowerShell) by
+            reflection on this static, parameterless method - see docs/USAGE.md, "Onboarding an
+            existing organization with export". Delegates to the shared base-class helper, which
+            calls Export-AzDoProject and converts each returned hashtable into an [AzDoProject].
+    #>
+    static [AzDoProject[]] Export()
+    {
+        return [AzDoProject[]]([AzDevOpsDscResourceBase]::ExportDscResourceInstances([AzDoProject]))
+    }
+
 
     hidden [System.String[]]GetDscResourcePropertyNamesWithNoSetSupport()
     {
-        return @('SourceControlType','ProcessTemplate')
+        return @('SourceControlType')
     }
 
     hidden [Hashtable]GetDscCurrentStateProperties([PSCustomObject]$CurrentResourceObject)

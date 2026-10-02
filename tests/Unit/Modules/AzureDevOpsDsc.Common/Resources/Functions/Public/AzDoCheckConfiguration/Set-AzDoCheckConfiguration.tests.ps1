@@ -67,4 +67,29 @@ Describe "Set-AzDoCheckConfiguration" -Tag "Unit", "CheckConfiguration" {
             Assert-MockCalled -CommandName Set-DevOpsCheckConfiguration -Times 0
         }
     }
+
+    Context "updates a check on any ResourceType generically" {
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                return @{ id = 'check-id'; resource = @{ id = 'resource-id' } }
+            }
+        }
+
+        It "calls Set-DevOpsCheckConfiguration for ResourceType '<_>'" -ForEach @('queue', 'variablegroup', 'securefile') {
+            $resourceType = $_
+            Set-AzDoCheckConfiguration -ProjectName 'TestProject' -TargetResourceName 'TestTarget' `
+                -ResourceType $resourceType -CheckType 'Approval'
+            Assert-MockCalled -CommandName Set-DevOpsCheckConfiguration -ParameterFilter {
+                $ResourceType -eq $resourceType -and $ResourceId -eq 'resource-id'
+            } -Times 1
+        }
+
+        It "maps BranchControl to the shared 'Task Check' type id" {
+            Set-AzDoCheckConfiguration -ProjectName 'TestProject' -TargetResourceName 'TestVG' `
+                -ResourceType 'variablegroup' -CheckType 'BranchControl'
+            Assert-MockCalled -CommandName Set-DevOpsCheckConfiguration -ParameterFilter {
+                $CheckTypeId -eq 'fe1de3ee-a436-41b4-bb20-f6eb4cb879a7' -and $CheckTypeName -eq 'Task Check'
+            } -Times 1
+        }
+    }
 }

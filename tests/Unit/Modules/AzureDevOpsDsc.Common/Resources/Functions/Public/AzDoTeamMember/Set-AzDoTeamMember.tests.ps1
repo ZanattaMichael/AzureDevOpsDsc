@@ -43,6 +43,7 @@ Describe "Set-AzDoTeamMember" -Tag "Unit", "TeamMember" {
         Mock -CommandName Add-CacheItem
         Mock -CommandName Export-CacheObject
         # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
+        Mock -CommandName Resolve-AzDoProject -MockWith { Get-CacheItem -Key $ProjectName -Type 'LiveProjects' }
         Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { return $null }
         Mock -CommandName Find-AzDoIdentity -MockWith { return $null }
         Mock -CommandName List-DevOpsTeams -MockWith { return $null }
@@ -92,6 +93,36 @@ Describe "Set-AzDoTeamMember" -Tag "Unit", "TeamMember" {
             Set-AzDoTeamMember -ProjectName 'TestProject' -TeamName 'NonExistentTeam' -MemberName 'user@example.com'
             Assert-VerifiableMock
             Assert-MockCalled -CommandName New-DevOpsTeamMember -Exactly -Times 0
+        }
+    }
+
+    Context "when IsTeamAdmin is bound" {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -ParameterFilter {
+                $Key -eq 'TestProject' -and $Type -eq 'LiveProjects'
+            } -MockWith { return @{ id = 'project-id-001'; name = 'TestProject' } }
+
+            Mock -CommandName Get-CacheItem -ParameterFilter {
+                $Key -eq 'TestProject\TestTeam' -and $Type -eq 'LiveTeams'
+            } -MockWith { return $mockTeam }
+
+            Mock -CommandName Get-CacheItem -ParameterFilter {
+                $Key -eq 'user@example.com' -and $Type -eq 'LiveGroups'
+            } -MockWith { return $mockMember }
+
+            Mock -CommandName Get-DevOpsDescriptorIdentity -MockWith {
+                return [PSCustomObject]@{ descriptor = 'Microsoft.TeamFoundation.Identity;S-1-9-live' }
+            }
+            Mock -CommandName Set-DevOpsTeamAdministrator
+        }
+
+        It "forwards IsTeamAdmin through New-AzDoTeamMember to Set-DevOpsTeamAdministrator" {
+            Set-AzDoTeamMember -ProjectName 'TestProject' -TeamName 'TestTeam' -MemberName 'user@example.com' -IsTeamAdmin $true
+            Assert-MockCalled -CommandName Set-DevOpsTeamAdministrator -Exactly -Times 1 -ParameterFilter {
+                $ProjectId -eq 'project-id-001' -and $TeamId -eq 'team-id-001' -and
+                $MemberDescriptor -eq 'Microsoft.TeamFoundation.Identity;S-1-9-live' -and $IsTeamAdmin -eq $true
+            }
         }
     }
 }

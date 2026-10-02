@@ -1,6 +1,62 @@
 <#
 .SYNOPSIS
     DSC resource for managing Azure DevOps organisation-level settings (singleton).
+.DESCRIPTION
+    This resource manages organization-level security and access settings in Azure DevOps. These
+    settings affect the entire organization and should be managed carefully. Only one instance of
+    this resource should be configured per organization.
+
+.PARAMETER OrganizationName
+    The name of the Azure DevOps organization. This property is mandatory and serves as the key property for the resource. It is not configurable after initial setup.
+
+.PARAMETER AllowPublicProjects
+    Whether users can create public (anonymous-access) projects.
+
+.PARAMETER AllowExternalGuestAccess
+    Whether external guest users (Azure AD guests) can be added to the organization.
+
+.PARAMETER EnableOAuthAuthentication
+    Whether OAuth authentication is enabled for third-party applications.
+
+.PARAMETER EnableSSHAuthentication
+    Whether SSH authentication is enabled for Git operations.
+
+.PARAMETER DisallowAadGuestUserPolicy
+    Whether the Azure AD guest user policy is disallowed.
+
+.PARAMETER EnableIPConditionalAccessPolicyValidation
+    Whether IP Conditional Access policy validation is enforced for this organization (Organization
+    settings -> Policies -> Security -> "Enable IP Conditional Access policy validation"). Backed by the
+    organization policy API, not the host settings entries used by the properties above.
+
+    This and the other organization policy properties take 'true', 'false' or '' (the default). ''
+    leaves the policy unmanaged: it is neither compared nor written. A plain boolean cannot express
+    that, because the resource base class passes every property to Get and Set, so an unset boolean
+    would arrive as $false and switch the policy off. `$true` and `$false` in a configuration are
+    accepted and converted.
+
+.PARAMETER LogAuditEvents
+    Whether organization audit events are logged (Organization settings -> Policies -> Security ->
+    "Log audit events"). Turning this off means an `AzDoAuditStream` on this organization receives
+    nothing; `Set-AzDoOrganizationSettings` warns when this is set to 'false'.
+
+.PARAMETER AllowTeamAdminsToInviteUsers
+    Whether team and project administrators can invite new users (Organization settings -> Policies ->
+    User -> "Allow team and project administrators to invite new users").
+
+.PARAMETER EnableRequestAccess
+    Whether the "Request access" link is shown to users without access (Organization settings ->
+    Policies -> User -> "Request access").
+
+.PARAMETER RequestAccessUrl
+    The URL shown alongside the request-access prompt. Only compared and written when
+    `EnableRequestAccess` is 'true' and this is not empty.
+
+.PARAMETER EnableArtifactsFeedUpstreamProtection
+    Whether additional protections are applied when Artifacts feeds use public package registries as
+    an upstream source (Organization settings -> Policies -> Security -> "Additional protections when
+    using public package registries").
+
 #>
 
 [DscResource()]
@@ -23,6 +79,29 @@ class AzDoOrganizationSettings : AzDevOpsDscResourceBase
 
     [DscProperty()]
     [System.Boolean]$DisallowAadGuestUserPolicy
+
+    [DscProperty()]
+    [ValidateSet('', 'true', 'false')]
+    [System.String]$EnableIPConditionalAccessPolicyValidation
+
+    [DscProperty()]
+    [ValidateSet('', 'true', 'false')]
+    [System.String]$LogAuditEvents
+
+    [DscProperty()]
+    [ValidateSet('', 'true', 'false')]
+    [System.String]$AllowTeamAdminsToInviteUsers
+
+    [DscProperty()]
+    [ValidateSet('', 'true', 'false')]
+    [System.String]$EnableRequestAccess
+
+    [DscProperty()]
+    [System.String]$RequestAccessUrl
+
+    [DscProperty()]
+    [ValidateSet('', 'true', 'false')]
+    [System.String]$EnableArtifactsFeedUpstreamProtection
 
     AzDoOrganizationSettings()
     {
@@ -66,6 +145,13 @@ class AzDoOrganizationSettings : AzDevOpsDscResourceBase
             $properties.EnableOAuthAuthentication  = if ($null -ne $lr.EnableOAuthAuthentication)  { $lr.EnableOAuthAuthentication }  else { $CurrentResourceObject.EnableOAuthAuthentication }
             $properties.EnableSSHAuthentication    = if ($null -ne $lr.EnableSSHAuthentication)    { $lr.EnableSSHAuthentication }    else { $CurrentResourceObject.EnableSSHAuthentication }
             $properties.DisallowAadGuestUserPolicy = if ($null -ne $lr.DisallowAadGuestUserPolicy) { $lr.DisallowAadGuestUserPolicy } else { $CurrentResourceObject.DisallowAadGuestUserPolicy }
+
+            $properties.EnableIPConditionalAccessPolicyValidation = if ($null -ne $lr.EnableIPConditionalAccessPolicyValidation) { $lr.EnableIPConditionalAccessPolicyValidation } else { $CurrentResourceObject.EnableIPConditionalAccessPolicyValidation }
+            $properties.LogAuditEvents                            = if ($null -ne $lr.LogAuditEvents)                            { $lr.LogAuditEvents }                            else { $CurrentResourceObject.LogAuditEvents }
+            $properties.AllowTeamAdminsToInviteUsers              = if ($null -ne $lr.AllowTeamAdminsToInviteUsers)              { $lr.AllowTeamAdminsToInviteUsers }              else { $CurrentResourceObject.AllowTeamAdminsToInviteUsers }
+            $properties.EnableRequestAccess                       = if ($null -ne $lr.EnableRequestAccess)                       { $lr.EnableRequestAccess }                       else { $CurrentResourceObject.EnableRequestAccess }
+            $properties.RequestAccessUrl                          = if ($null -ne $lr.RequestAccessUrl)                          { $lr.RequestAccessUrl }                          else { $CurrentResourceObject.RequestAccessUrl }
+            $properties.EnableArtifactsFeedUpstreamProtection     = if ($null -ne $lr.EnableArtifactsFeedUpstreamProtection)     { $lr.EnableArtifactsFeedUpstreamProtection }     else { $CurrentResourceObject.EnableArtifactsFeedUpstreamProtection }
         }
         else
         {
@@ -74,6 +160,13 @@ class AzDoOrganizationSettings : AzDevOpsDscResourceBase
             $properties.EnableOAuthAuthentication  = $CurrentResourceObject.EnableOAuthAuthentication
             $properties.EnableSSHAuthentication    = $CurrentResourceObject.EnableSSHAuthentication
             $properties.DisallowAadGuestUserPolicy = $CurrentResourceObject.DisallowAadGuestUserPolicy
+
+            $properties.EnableIPConditionalAccessPolicyValidation = $CurrentResourceObject.EnableIPConditionalAccessPolicyValidation
+            $properties.LogAuditEvents                            = $CurrentResourceObject.LogAuditEvents
+            $properties.AllowTeamAdminsToInviteUsers              = $CurrentResourceObject.AllowTeamAdminsToInviteUsers
+            $properties.EnableRequestAccess                       = $CurrentResourceObject.EnableRequestAccess
+            $properties.RequestAccessUrl                          = $CurrentResourceObject.RequestAccessUrl
+            $properties.EnableArtifactsFeedUpstreamProtection     = $CurrentResourceObject.EnableArtifactsFeedUpstreamProtection
         }
 
         Write-Verbose "[AzDoOrganizationSettings] Current state properties: $($properties | Out-String)"

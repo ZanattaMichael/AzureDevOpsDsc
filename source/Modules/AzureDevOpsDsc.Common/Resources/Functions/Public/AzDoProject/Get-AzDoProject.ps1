@@ -15,7 +15,11 @@
     The source control type of the Azure DevOps project. Valid values are 'Git' and 'Tfvc'. Defaults to 'Git'.
 
 .PARAMETER ProcessTemplate
-    The process template used by the Azure DevOps project. Valid values are 'Agile', 'Scrum', 'CMMI', and 'Basic'. Defaults to 'Agile'.
+    The process template used by the Azure DevOps project. Accepts any process name known to the
+    organization (system or inherited); unknown names throw. Defaults to 'Agile'. When the project
+    already exists and is on a different process, this is only reported as a supported change
+    (status Changed) when the current and desired processes share the same system-process
+    ancestor - otherwise status Error is returned with reason 'ProcessMigrationIncompatible'.
 
 .PARAMETER Visibility
     The visibility of the Azure DevOps project. Valid values are 'Public' and 'Private'. Defaults to 'Private'.
@@ -57,7 +61,6 @@ function Get-AzDoProject
         [System.String] $SourceControlType = 'Git',
 
         [Parameter()]
-        [ValidateSet('Agile', 'Scrum', 'CMMI', 'Basic')]
         [System.String] $ProcessTemplate = 'Agile',
 
         [Parameter()]
@@ -87,6 +90,7 @@ function Get-AzDoProject
         Visibility         = $Visibility
         propertiesChanged  = @()
         status             = $null
+        reason             = $null
     }
 
     Write-Verbose "[Get-AzDoProject] Initial result hashtable constructed."
@@ -120,7 +124,9 @@ function Get-AzDoProject
 
     Write-Verbose "[Get-AzDoProject] Project lookup result: $project"
 
-    $processTemplateObj = Get-CacheItem -Key $ProcessTemplate -Type 'LiveProcesses'
+    # Resolve-DevOpsProcess falls back to a live lookup: an inherited process created by an
+    # AzDoProcess resource earlier in the same configuration is not in the LiveProcesses cache.
+    $processTemplateObj = Resolve-DevOpsProcess -ProcessName $ProcessTemplate -OrganizationName $OrganizationName
     Write-Verbose "[Get-AzDoProject] Process template lookup result: $processTemplateObj"
 
     # Test if the project exists. If the project does not exist, return NotFound
@@ -134,7 +140,7 @@ function Get-AzDoProject
     # Test if the process template exists. If the process template does not exist, throw an error.
     if ($null -eq $processTemplateObj)
     {
-        throw "[Get-AzDoProject] Process template '$processTemplateObj' not found."
+        throw "[Get-AzDoProject] Process template '$ProcessTemplate' not found."
     }
 
     Write-Verbose "[Get-AzDoProject] Testing source control type."
@@ -167,6 +173,56 @@ function Get-AzDoProject
         $result.Status = [DSCGetSummaryState]::Changed
         $result.propertiesChanged += 'Visibility'
         Write-Verbose "[Get-AzDoProject] Project visibility has changed."
+    }
+
+    # Test if the project's process has changed. This only runs once both the project and the
+    # desired process template have resolved to real objects with ids - the mocked unit tests for
+    # the other properties don't populate an id, so this intentionally no-ops for them, and a
+    # live cache-miss lookup that still returned an id-less object is treated the same way.
+    if (-not [String]::IsNullOrWhiteSpace($project.id) -and -not [String]::IsNullOrWhiteSpace($processTemplateObj.id))
+    {
+        $projectCapabilities = Get-DevOpsProjectCapabilities -Organization $OrganizationName -ProjectId $project.id
+        $currentProcessTypeId = $projectCapabilities.capabilities.processTemplate.templateTypeId
+
+        if (-not [String]::IsNullOrWhiteSpace($currentProcessTypeId))
+        {
+            $result.currentProcessTypeId = $currentProcessTypeId
+            $result.desiredProcessTypeId = $processTemplateObj.id
+
+            if ($currentProcessTypeId -ne $processTemplateObj.id)
+            {
+                Write-Verbose "[Get-AzDoProject] Project process differs. Current: $currentProcessTypeId, Desired: $($processTemplateObj.id)"
+
+                # The LiveProcesses cache does not carry parentProcessTypeId/customizationType, so
+                # family membership can only be determined with a live per-process lookup.
+                $currentProcessDetail = Get-DevOpsProcess -Organization $OrganizationName -ProcessTypeId $currentProcessTypeId
+                $desiredProcessDetail = Get-DevOpsProcess -Organization $OrganizationName -ProcessTypeId $processTemplateObj.id
+
+                if (($null -ne $currentProcessDetail) -and ($null -ne $desiredProcessDetail))
+                {
+                    $currentFamilyRoot = Get-AzDoProcessFamilyRootId -ProcessDetail $currentProcessDetail
+                    $desiredFamilyRoot = Get-AzDoProcessFamilyRootId -ProcessDetail $desiredProcessDetail
+
+                    if ($currentFamilyRoot -eq $desiredFamilyRoot)
+                    {
+                        $result.Status = [DSCGetSummaryState]::Changed
+                        $result.propertiesChanged += 'ProcessTemplate'
+                        Write-Verbose "[Get-AzDoProject] Project process has changed and the migration is supported."
+                    }
+                    else
+                    {
+                        Write-Error "[Get-AzDoProject] Project '$ProjectName' cannot be migrated to process '$ProcessTemplate': Azure DevOps only allows moving a project between a system process and its inherited children, or between two inheritors of the same parent."
+                        $result.status = [DSCGetSummaryState]::Error
+                        $result.reason = 'ProcessMigrationIncompatible'
+                        return $result
+                    }
+                }
+                else
+                {
+                    Write-Verbose "[Get-AzDoProject] Could not resolve process family details for comparison - skipping."
+                }
+            }
+        }
     }
 
     # Test if the properties have changed. If the properties haven't changed, return Unchanged.

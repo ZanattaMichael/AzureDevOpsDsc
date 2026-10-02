@@ -71,7 +71,15 @@ AzDoPipelinePermission/Permissions/Permission
 
 ## Additional Information
 
-This resource manages security permissions on individual Azure DevOps pipelines (build security namespace), controlling which groups can view, queue, or manage specific pipeline definitions.
+This resource manages security permissions on individual Azure DevOps pipelines (`Build` security namespace), controlling which groups can view, queue or manage specific pipeline definitions.
+
+### Definitions, not folders
+
+This resource targets a pipeline **definition**. A pipeline folder is a different token shape in the same namespace — `{projectId}/{folderPath}` rather than `{projectId}/{definitionId}` — and is managed by [AzDoPipelineFolderPermission](AzDoPipelineFolderPermission.md).
+
+Folder-level permissions are usually the better tool: definitions inherit from the folder they live in, so granting on the folder is how pipeline security is normally administered, and it keeps working as pipelines are added.
+
+> Earlier versions of this module could not express folder-level permissions at all — the `Build` ACL token was only implemented for the definition form. If you previously worked around that by granting on each definition, the folder resource now replaces those declarations.
 
 ## Examples
 

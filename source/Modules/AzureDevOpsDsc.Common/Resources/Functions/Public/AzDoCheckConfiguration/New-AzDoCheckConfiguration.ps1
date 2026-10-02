@@ -15,32 +15,12 @@ Function New-AzDoCheckConfiguration
     )
     Write-Verbose "[New-AzDoCheckConfiguration] Creating check '$CheckType' on $ResourceType '$TargetResourceName'."
 
-    $OrgName = Get-AzDoOrganizationName
-
-    # Resolve the resource ID from the appropriate cache, with live fallback for cache misses
-    $resourceId = switch ($ResourceType)
-    {
-        'environment' {
-            $env = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $TargetResourceName) -Type 'LivePipelineEnvironments'
-            if (-not $env)
-            {
-                Write-Verbose "[New-AzDoCheckConfiguration] Environment '$TargetResourceName' not in cache — falling back to live API lookup."
-                $allEnvs = List-DevOpsPipelineEnvironments -ApiUri "https://dev.azure.com/$OrgName" -ProjectName $ProjectName
-                $env = $allEnvs | Where-Object { $_.name -eq $TargetResourceName } | Select-Object -First 1
-                if ($env) { Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $TargetResourceName) -Value $env -Type 'LivePipelineEnvironments' }
-            }
-            if ($env) { $env.id.ToString() } else { $null }
-        }
-        'repository' {
-            $repo = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $TargetResourceName) -Type 'LiveRepositories'
-            if ($repo) { $repo.id } else { $null }
-        }
-        'endpoint' {
-            $sc = Get-CacheItem -Key ('{0}\{1}' -f $ProjectName, $TargetResourceName) -Type 'LiveServiceConnections'
-            if ($sc) { $sc.id } else { $null }
-        }
-        default { $TargetResourceName }
-    }
+    # Resolve the target resource's id from the appropriate cache, with live fallback for cache
+    # misses. Shared with Set-AzDoCheckConfiguration's callers so the two directions agree; see
+    # Resolve-AzDoCheckTargetResource for the per-ResourceType lookups (queue/variablegroup/
+    # securefile added for #77).
+    $resolved   = Resolve-AzDoCheckTargetResource -ProjectName $ProjectName -ResourceType $ResourceType -TargetResourceName $TargetResourceName
+    $resourceId = $resolved.Id
 
     if (-not $resourceId) { Write-Error "[New-AzDoCheckConfiguration] Resource '$TargetResourceName' not found."; return }
 
@@ -54,6 +34,14 @@ Function New-AzDoCheckConfiguration
         'BusinessHours'     = @{ Id = '9db4e9c1-5588-4ee0-bc64-5d00c5abcfb0'; Name = 'Business Hours' }
         'Task Check'        = @{ Id = '4020e66e-f157-4524-8af1-c5fb8d1e4b12'; Name = 'Task Check' }
         'QueryAzureMonitor' = @{ Id = '9aeb1606-d5b5-4b35-ac09-7a38bfa3fc38'; Name = 'Query Azure Monitor Alerts' }
+        # Branch Control is a definitionRef-based "task check" - the top-level type id below is
+        # shared with Business Hours and other settings-driven checks; the caller's Settings
+        # hashtable must include a matching 'definitionRef' (id '86b05a0c-73e6-4f7d-b3cf-e38f3b39a75b',
+        # name 'evaluatebranchProtection') plus 'inputs.allowedBranches'. Verified against
+        # microsoft/terraform-provider-azuredevops (common_check.go's TaskCheck/BranchProtection
+        # entries and resource_check_branch_control.go), since the Azure DevOps REST docs do not
+        # publish check-type GUIDs.
+        'BranchControl'     = @{ Id = 'fe1de3ee-a436-41b4-bb20-f6eb4cb879a7'; Name = 'Task Check' }
     }
 
     $checkTypeEntry  = if ($checkTypeMap.ContainsKey($CheckType)) { $checkTypeMap[$CheckType] } else { $null }

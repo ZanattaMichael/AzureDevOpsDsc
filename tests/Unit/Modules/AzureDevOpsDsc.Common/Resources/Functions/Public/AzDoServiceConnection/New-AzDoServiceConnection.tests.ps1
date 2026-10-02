@@ -28,6 +28,7 @@ Describe 'New-AzDoServiceConnection Tests' -Tag "Unit", "ServiceConnection" {
         Mock -CommandName Export-CacheObject
         Mock -CommandName Refresh-CacheObject
         Mock -CommandName Write-Error
+        Mock -CommandName Resolve-AzDoSharedProjectReferences
 
         # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
         Mock -CommandName Resolve-AzDoProject -MockWith { Get-CacheItem -Key $ProjectName -Type 'LiveProjects' }
@@ -94,6 +95,49 @@ Describe 'New-AzDoServiceConnection Tests' -Tag "Unit", "ServiceConnection" {
             New-AzDoServiceConnection -ProjectName 'MissingProject' -ConnectionName 'TestSC' -ConnectionType 'Generic'
 
             Assert-MockCalled -CommandName Add-CacheItem -Exactly 0
+        }
+
+    }
+
+    Context 'When SharedWithProjects is specified' {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith {
+                return @{ id = 'proj-id'; name = 'TestProject' }
+            }
+            Mock -CommandName Resolve-AzDoSharedProjectReferences -MockWith {
+                @(
+                    @{ projectReference = @{ id = 'proj-id'; name = 'TestProject' }; name = 'TestSC' },
+                    @{ projectReference = @{ id = 'fab-id'; name = 'Fabrikam' }; name = 'shared-azure-sub' }
+                )
+            }
+        }
+
+        It 'Should resolve project references with the owning project and shares' {
+            New-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic' -SharedWithProjects @('Fabrikam') -SharedNameOverrides @{ Fabrikam = 'shared-azure-sub' }
+
+            Assert-MockCalled -CommandName Resolve-AzDoSharedProjectReferences -Exactly 1 -ParameterFilter {
+                $ProjectName -eq 'TestProject' -and
+                $DefaultName -eq 'TestSC' -and
+                $SharedWithProjects -contains 'Fabrikam'
+            }
+        }
+
+        It 'Should pass the resolved references to New-DevOpsServiceConnection' {
+            New-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic' -SharedWithProjects @('Fabrikam')
+
+            Assert-MockCalled -CommandName New-DevOpsServiceConnection -Exactly 1 -ParameterFilter {
+                $ProjectReferences.Count -eq 2
+            }
+        }
+
+        It 'Should write an error and not create the connection when the resolve throws' {
+            Mock -CommandName Resolve-AzDoSharedProjectReferences -MockWith { throw "Project 'Fabrikam' was not found; cannot share with it." }
+
+            New-AzDoServiceConnection -ProjectName 'TestProject' -ConnectionName 'TestSC' -ConnectionType 'Generic' -SharedWithProjects @('Fabrikam')
+
+            Assert-MockCalled -CommandName Write-Error -Exactly 1
+            Assert-MockCalled -CommandName New-DevOpsServiceConnection -Exactly 0
         }
 
     }

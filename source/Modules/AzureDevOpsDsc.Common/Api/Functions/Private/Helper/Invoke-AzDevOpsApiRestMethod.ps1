@@ -66,15 +66,22 @@ function Invoke-AzDevOpsApiRestMethod
         [Alias('Headers','HttpRequestHeader')]
         $HttpHeaders=@{},
 
+        # Deliberately untyped. It was [System.String], which silently broke any endpoint
+        # taking a non-text body: a [byte[]] cannot be transformed to a string, so the call
+        # failed at parameter binding. Callers passing a JSON string are unaffected, and
+        # Invoke-RestMethod accepts a byte array directly.
         [Parameter()]
-        [System.String]
         [Alias('Body')]
         $HttpBody,
 
+        # 'application/octet-stream' is needed by the endpoints that take raw bytes rather
+        # than JSON - uploading a secure file is one. Restricting this set to the two JSON
+        # types made those endpoints unreachable through this wrapper, which is the only
+        # place that applies authentication, retry and rate-limit handling.
         [Parameter()]
         [System.String]
         [Alias('ContentType')]
-        [ValidateSet('application/json','application/json-patch+json')]
+        [ValidateSet('application/json','application/json-patch+json','application/octet-stream')]
         $HttpContentType = 'application/json',
 
         [Parameter()]
@@ -97,7 +104,23 @@ function Invoke-AzDevOpsApiRestMethod
 
         [Parameter()]
         [Switch]
-        $AzureArcAuthentication
+        $AzureArcAuthentication,
+
+        # Some callers need to read a response header (the Wiki Pages API's ETag, used as the
+        # If-Match value on a later update) that the response body never carries. Without this
+        # switch the function behaves exactly as before - the response body only - so every
+        # existing caller and its unit tests are unaffected.
+        [Parameter()]
+        [Switch]
+        $IncludeResponseHeaders,
+
+        # Non-authentication headers a specific call needs (for example 'If-Match' on a Wiki
+        # Pages update). Kept separate from 'HttpHeaders', whose ValidateScript only accepts an
+        # Authorization header, so a caller adding one custom header does not have to also fake a
+        # valid-looking Authorization value just to pass that check.
+        [Parameter()]
+        [Hashtable]
+        $AdditionalHeaders = @{}
 
     )
 
@@ -108,6 +131,11 @@ function Invoke-AzDevOpsApiRestMethod
         Body                        = $HttpBody
         ContentType                 = $HttpContentType
         ResponseHeadersVariable     = 'responseHeaders'
+    }
+
+    foreach ($additionalHeaderName in $AdditionalHeaders.Keys)
+    {
+        $invokeRestMethodParameters.Headers[$additionalHeaderName] = $AdditionalHeaders[$additionalHeaderName]
     }
 
     Write-Verbose -Message ('[Invoke-AzDevOpsApiRestMethod] Invoking the Azure DevOps API REST method {0}' -f $HttpMethod)
@@ -191,6 +219,16 @@ function Invoke-AzDevOpsApiRestMethod
                     $Global:DSCAZDO_APIRateLimit = $null
 
                     Write-Verbose "[Invoke-AzDevOpsApiRestMethod] No continuation token found. Breaking loop."
+
+                    if ($IncludeResponseHeaders)
+                    {
+                        # Wrap the body and headers together rather than changing what a plain
+                        # call returns - existing callers keep getting the response body as-is.
+                        return [PSCustomObject]@{
+                            Value   = $response
+                            Headers = $responseHeaders
+                        }
+                    }
 
                     return $results
 

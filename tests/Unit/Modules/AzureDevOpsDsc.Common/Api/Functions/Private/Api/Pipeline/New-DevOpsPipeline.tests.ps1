@@ -33,4 +33,41 @@ Describe 'New-DevOpsPipeline' -Tag "Unit", "Pipeline", "API" {
         { New-DevOpsPipeline -ApiUri 'https://dev.azure.com/myorg' -ProjectName 'TestProject' -PipelineName 'TestPipeline' } | Should -Throw
     }
 
+    It 'Builds an Azure Repos (id/name) repository body for the default RepositoryType' {
+        New-DevOpsPipeline -ApiUri 'https://dev.azure.com/myorg' -ProjectName 'TestProject' -PipelineName 'TestPipeline' `
+            -RepositoryId 'repo-id-1' -RepositoryName 'TestRepo'
+        Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -ParameterFilter {
+            $body = $Body | ConvertFrom-Json
+            $body.configuration.repository.type -eq 'azureReposGit' -and
+            $body.configuration.repository.id -eq 'repo-id-1' -and
+            $body.configuration.repository.name -eq 'TestRepo' -and
+            -not ($body.configuration.repository.PSObject.Properties.Name -contains 'fullName') -and
+            -not ($body.configuration.repository.PSObject.Properties.Name -contains 'connection')
+        }
+    }
+
+    It 'Builds an external (fullName/connection.id) repository body for a GitHub RepositoryType' {
+        New-DevOpsPipeline -ApiUri 'https://dev.azure.com/myorg' -ProjectName 'TestProject' -PipelineName 'TestPipeline' `
+            -RepositoryType 'gitHub' -RepositoryName 'owner/repo' -ServiceConnectionId 'conn-id-1'
+        Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -ParameterFilter {
+            $body = $Body | ConvertFrom-Json
+            $body.configuration.repository.type -eq 'gitHub' -and
+            $body.configuration.repository.fullName -eq 'owner/repo' -and
+            $body.configuration.repository.connection.id -eq 'conn-id-1' -and
+            -not ($body.configuration.repository.PSObject.Properties.Name -contains 'id') -and
+            -not ($body.configuration.repository.PSObject.Properties.Name -contains 'name')
+        }
+    }
+
+    It 'Builds an external repository body for a Bitbucket RepositoryType' {
+        New-DevOpsPipeline -ApiUri 'https://dev.azure.com/myorg' -ProjectName 'TestProject' -PipelineName 'TestPipeline' `
+            -RepositoryType 'bitbucket' -RepositoryName 'owner/repo' -ServiceConnectionId 'conn-id-2'
+        Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -ParameterFilter {
+            $body = $Body | ConvertFrom-Json
+            $body.configuration.repository.type -eq 'bitbucket' -and
+            $body.configuration.repository.fullName -eq 'owner/repo' -and
+            $body.configuration.repository.connection.id -eq 'conn-id-2'
+        }
+    }
+
 }

@@ -9,7 +9,21 @@ param(
     # failed, etc. - still exit non-zero, so a broken environment cannot silently pass.
     # The publish workflow passes this on a prerelease tag to let a preview release proceed
     # despite flaky or in-progress tests, without weakening the gate for a full release.
-    [switch]$AllowFailures
+    [switch]$AllowFailures,
+
+    # Base names of the Resources\*.tests.ps1 files to run - 'AzDoProject.Description',
+    # not a path and not a file name. Omit to run the whole suite, which is what a manual
+    # dispatch and the release gate both do.
+    #
+    # The pull request workflow passes the subset that its changed files map to (see
+    # Supporting\Functions\Get-AffectedIntegrationTest.ps1), so a narrow change pays for a
+    # narrow run instead of two hours against a live organization.
+    #
+    # Names rather than paths because the job that computes the selection is not the job
+    # that runs it - a path from another runner's checkout would not resolve here. A name
+    # that does not resolve is a hard error rather than a silent omission: the whole point
+    # of narrowing is defeated if a typo quietly shrinks the run.
+    [String[]]$TestName
 )
 
 #
@@ -77,8 +91,56 @@ Start-Sleep -Seconds 90
 #
 # Trigger the Tests
 
+$resourcesRoot = Join-Path -Path $PSScriptRoot -ChildPath 'Resources'
+
+if ($PSBoundParameters.ContainsKey('TestName') -and $TestName.Count -gt 0)
+{
+    $selectedPaths = [System.Collections.Generic.List[String]]::new()
+    $unresolved    = [System.Collections.Generic.List[String]]::new()
+
+    foreach ($name in $TestName)
+    {
+        if ([String]::IsNullOrWhiteSpace($name)) { continue }
+
+        $candidate = Join-Path -Path $resourcesRoot -ChildPath ("{0}.tests.ps1" -f $name.Trim())
+
+        if (Test-Path -Path $candidate)
+        {
+            $selectedPaths.Add($candidate)
+        }
+        else
+        {
+            $unresolved.Add($name.Trim())
+        }
+    }
+
+    if ($unresolved.Count -gt 0)
+    {
+        Write-Error ("[Invoke-Tests] These -TestName values do not resolve under '{0}': {1}. " -f
+            $resourcesRoot, ($unresolved -join ', ') +
+            'Refusing to run a silently narrowed suite.')
+        exit 1
+    }
+
+    if ($selectedPaths.Count -eq 0)
+    {
+        Write-Error '[Invoke-Tests] -TestName was supplied but resolved to no test files. Refusing to report success on an empty run.'
+        exit 1
+    }
+
+    Write-Host ("[Invoke-Tests] Running {0} selected test file(s): {1}" -f
+        $selectedPaths.Count, (($selectedPaths | Split-Path -Leaf) -join ', '))
+
+    $runPath = @($selectedPaths)
+}
+else
+{
+    Write-Host "[Invoke-Tests] Running the full suite from $resourcesRoot."
+    $runPath = $resourcesRoot
+}
+
 $pesterConfig = New-PesterConfiguration
-$pesterConfig.Run.Path           = "$PSScriptRoot\Resources"
+$pesterConfig.Run.Path           = $runPath
 # PassThru is required to see the result. Without it this script cannot tell whether
 # any test failed, always exits 0, and every caller - including the release gate in
 # the publish workflow - reads a failed run as a successful one.

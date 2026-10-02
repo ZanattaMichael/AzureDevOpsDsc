@@ -34,6 +34,12 @@ Describe "New-AzDoProject" -Tag "Unit", "Project" {
         # Load Get-AzDoCacheObjects
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
 
+        # Resolve-DevOpsProcess runs for real - it wraps the LiveProcesses cache lookup these
+        # tests mock - so Find-MockedFunctions never picks it up. Load it explicitly. Its live
+        # fallback finds nothing unless a test says otherwise.
+        . (Get-FunctionItem 'Resolve-DevOpsProcess.ps1').FullName
+        Mock -CommandName List-DevOpsProcess -MockWith { return @() }
+
         # Define common mock responses
         $mockProcessTemplate = @{
             id = '12345'
@@ -101,7 +107,35 @@ Describe "New-AzDoProject" -Tag "Unit", "Project" {
         }
 
         It "should throw an error if process template is not found" {
-            { New-AzDoProject -ProjectName 'NewProject' -ProjectDescription 'New Project Description' -SourceControlType 'Git' -ProcessTemplate 'NonExistentTemplate' -Visibility 'Private' } | Should -Throw
+            { New-AzDoProject -ProjectName 'NewProject' -ProjectDescription 'New Project Description' -SourceControlType 'Git' -ProcessTemplate 'NonExistentTemplate' -Visibility 'Private' } | Should -Throw "*Process template 'NonExistentTemplate' not found*"
+
+            # The cache miss is confirmed against the live process list before giving up.
+            Assert-MockCalled -CommandName List-DevOpsProcess -Exactly 1 -ParameterFilter { $Organization -eq 'TestOrganization' }
+        }
+    }
+
+    Context "when the process template was created after the cache was built" {
+        BeforeEach {
+            # An inherited process created by an AzDoProcess resource earlier in the same
+            # configuration is not in the LiveProcesses cache yet.
+            Mock -CommandName Get-CacheItem -ParameterFilter { $Key -eq 'NewInheritedProcess' -and $Type -eq 'LiveProcesses' } -MockWith { return $null }
+            Mock -CommandName List-DevOpsProcess -MockWith {
+                return @(
+                    [PSCustomObject]@{ id = 'agile-id'; name = 'Agile' }
+                    [PSCustomObject]@{ id = 'inherited-id'; name = 'NewInheritedProcess' }
+                )
+            }
+            Mock -CommandName Add-CacheItem
+            Mock -CommandName New-DevOpsProject -MockWith { return $mockProjectJob }
+            Mock -CommandName Wait-DevOpsProject
+            Mock -CommandName Refresh-AzDoCache
+        }
+
+        It "should resolve the process live and create the project on it" {
+            { New-AzDoProject -ProjectName 'NewProject' -ProjectDescription 'New Project Description' -SourceControlType 'Git' -ProcessTemplate 'NewInheritedProcess' -Visibility 'Private' } | Should -Not -Throw
+
+            Assert-MockCalled -CommandName New-DevOpsProject -Exactly 1 -ParameterFilter { $processTemplateId -eq 'inherited-id' }
+            Assert-MockCalled -CommandName Add-CacheItem -Exactly 1 -ParameterFilter { $Key -eq 'NewInheritedProcess' -and $Type -eq 'LiveProcesses' }
         }
     }
 

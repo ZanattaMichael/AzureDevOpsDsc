@@ -67,6 +67,26 @@ Function New-ACLToken
                 $result.type = 'GitProject'
                 $result.projectId = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
             }
+            elseif ($TokenName -match $LocalizedDataAzResourceTokenPatten.GitBranch)
+            {
+                # Derive the Token Type GitBranch. The ref name is kept exactly as written in the
+                # configuration (human-readable) - it is only hex/UTF-16LE-encoded per segment when
+                # ConvertTo-FormattedToken builds the API-side token string.
+                $result.type = 'GitBranch'
+                $result.projectId = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
+                $repoCacheKey = '{0}\{1}' -f $matches.ProjectName.Trim(), $matches.GitRepoName.Trim()
+                $result.RepoId = (Get-CacheItem -Key $repoCacheKey -Type 'LiveRepositories').id
+                $result.BranchName = $matches.BranchName.Trim()
+            }
+            elseif ($TokenName -match $LocalizedDataAzResourceTokenPatten.GitTag)
+            {
+                # Derive the Token Type GitTag
+                $result.type = 'GitTag'
+                $result.projectId = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
+                $repoCacheKey = '{0}\{1}' -f $matches.ProjectName.Trim(), $matches.GitRepoName.Trim()
+                $result.RepoId = (Get-CacheItem -Key $repoCacheKey -Type 'LiveRepositories').id
+                $result.TagName = $matches.TagName.Trim()
+            }
             elseif ($TokenName -match $LocalizedDataAzResourceTokenPatten.GitRepository)
             {
                 # Derive the Token Type GitRepository
@@ -162,6 +182,40 @@ Function New-ACLToken
 
         }
 
+        # Work item queries ($/{projectId}/{folderId}/{subfolderId})
+        'WorkItemQueryFolders' {
+
+            if ($TokenName -notmatch $LocalizedDataAzResourceTokenPatten.QueryPermission)
+            {
+                $result.type = 'QueryUnknown'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known Query ACL Token Patterns."
+                break
+            }
+
+            $result.type      = 'Query'
+            $result.ProjectId = $matches.ProjectId
+
+            # The project id is itself a GUID, so the folder ids are extracted from the remainder
+            # of the token rather than from the whole string - otherwise the project would be
+            # picked up as the first folder in the chain.
+            $remainder = $matches.Remainder
+            $result.Identifiers = @()
+
+            if (-not [String]::IsNullOrEmpty($remainder))
+            {
+                $folderMatches = [regex]::Matches($remainder, $LocalizedDataAzResourceTokenPatten.QueryFolderIdentifier)
+
+                foreach ($match in $folderMatches)
+                {
+                    $result.Identifiers += @{
+                        identifier = $match.Groups['identifiers'].Value
+                    }
+                }
+            }
+
+            break;
+        }
+
         # Project-level permissions  ($PROJECT:vstfs:///Classification/TeamProject/{id})
         'Project' {
             if ($TokenName -match $LocalizedDataAzACLTokenPatten.ProjectPermission)
@@ -173,6 +227,51 @@ Function New-ACLToken
             {
                 $result.type = 'ProjectUnknown'
                 Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known Project ACL Token Patterns."
+            }
+            break
+        }
+
+        # Tagging permissions — '/{projectId}'
+        'Tagging' {
+            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.TaggingPermission)
+            {
+                $result.type      = 'Tagging'
+                $result.ProjectId = $matches.ProjectId
+            }
+            else
+            {
+                $result.type = 'TaggingUnknown'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known Tagging ACL Token Patterns."
+            }
+            break
+        }
+
+        # Analytics permissions — '$/{projectId}'
+        'Analytics' {
+            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.AnalyticsPermission)
+            {
+                $result.type      = 'Analytics'
+                $result.ProjectId = $matches.ProjectId
+            }
+            else
+            {
+                $result.type = 'AnalyticsUnknown'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known Analytics ACL Token Patterns."
+            }
+            break
+        }
+
+        # AnalyticsViews permissions — '$/Shared/{projectId}'
+        'AnalyticsViews' {
+            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.AnalyticsViewsPermission)
+            {
+                $result.type      = 'AnalyticsViews'
+                $result.ProjectId = $matches.ProjectId
+            }
+            else
+            {
+                $result.type = 'AnalyticsViewsUnknown'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known AnalyticsViews ACL Token Patterns."
             }
             break
         }
@@ -199,7 +298,18 @@ Function New-ACLToken
 
         # Build / Pipeline permissions — resolve pipeline name to numeric ID for the API token.
         'Build' {
-            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.BuildPermission)
+            # Folder first: the definition pattern matches pipeline names, so it would otherwise
+            # claim a folder path before the folder pattern was reached.
+            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.BuildFolderPermission)
+            {
+                # Folder tokens address the folder by path rather than by id, so there is nothing
+                # to resolve through the cache. The leading separator is a marker for this parse
+                # only - the API token carries the path without it.
+                $result.type       = 'BuildFolder'
+                $result.ProjectId  = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
+                $result.FolderPath = (Format-AzDoPipelineFolderPath -Path $matches.FolderPath).TrimStart('\')
+            }
+            elseif ($TokenName -match $LocalizedDataAzResourceTokenPatten.BuildPermission)
             {
                 $result.type      = 'Build'
                 $result.ProjectId = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
@@ -217,6 +327,46 @@ Function New-ACLToken
             break
         }
 
+        # ReleaseManagement permissions — resolve a definition name to numeric ID; the folder is
+        # addressed by literal path segments, the same as the Build folder form.
+        'ReleaseManagement' {
+            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.ReleaseDefinitionPermission)
+            {
+                $result.type      = 'ReleaseDefinition'
+                $result.ProjectId = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
+
+                if ($matches.FolderPath)
+                {
+                    $result.FolderPath = (Format-AzDoPipelineFolderPath -Path $matches.FolderPath).TrimStart('\')
+                }
+
+                $definitionName = $matches.DefinitionName.Trim()
+                $defCacheKey     = '{0}\{1}' -f $matches.ProjectName.Trim(), $definitionName
+                $defEntry        = Get-CacheItem -Key $defCacheKey -Type 'LiveReleaseDefinitions'
+                $result.DefinitionId = if ($defEntry) { $defEntry.id.ToString() } else { $definitionName }
+            }
+            elseif ($TokenName -match $LocalizedDataAzResourceTokenPatten.ReleaseFolderPermission)
+            {
+                # Folder tokens address the folder by path rather than by id, so there is nothing
+                # to resolve through the cache. The leading separator is a marker for this parse
+                # only - the API token carries the path without it.
+                $result.type       = 'ReleaseFolder'
+                $result.ProjectId  = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
+                $result.FolderPath = (Format-AzDoPipelineFolderPath -Path $matches.FolderPath).TrimStart('\')
+            }
+            elseif ($TokenName -match $LocalizedDataAzResourceTokenPatten.ReleaseRootPermission)
+            {
+                $result.type      = 'ReleaseRoot'
+                $result.ProjectId = Resolve-AzDoProjectIdForToken -ProjectName $matches.ProjectName.Trim()
+            }
+            else
+            {
+                $result.type = 'ReleaseUnknown'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known ReleaseManagement ACL Token Patterns."
+            }
+            break
+        }
+
         # Library / VariableGroup permissions — resolve variable group name to numeric ID.
         'Library' {
             if ($TokenName -match $LocalizedDataAzResourceTokenPatten.LibraryPermission)
@@ -227,6 +377,13 @@ Function New-ACLToken
                     $vgCacheKey             = '{0}\{1}' -f $matches.ProjectName.Trim(), $matches.VariableGroupName.Trim()
                     $vgEntry                = Get-CacheItem -Key $vgCacheKey -Type 'LiveVariableGroups'
                     $result.VariableGroupId = if ($vgEntry) { $vgEntry.id.ToString() } else { $matches.VariableGroupName.Trim() }
+                }
+                # Secure files share the Library namespace with variable groups but carry their
+                # own token segment, so they are resolved the same way.
+                if ($matches.SecureFileName) {
+                    $sfCacheKey           = '{0}\{1}' -f $matches.ProjectName.Trim(), $matches.SecureFileName.Trim()
+                    $sfEntry              = Get-CacheItem -Key $sfCacheKey -Type 'LiveSecureFiles'
+                    $result.SecureFileId  = if ($sfEntry) { $sfEntry.id.ToString() } else { $matches.SecureFileName.Trim() }
                 }
             }
             else

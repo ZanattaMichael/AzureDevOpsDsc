@@ -1,6 +1,23 @@
 <#
 .SYNOPSIS
     DSC resource for managing Azure DevOps audit log streaming.
+.DESCRIPTION
+    This resource manages audit streams that forward Azure DevOps audit events to external SIEM or
+    monitoring systems. Audit streams help organizations meet compliance and security monitoring
+    requirements.
+
+.PARAMETER StreamName
+    The name of the audit stream. This property is mandatory and serves as the key property for the resource.
+
+.PARAMETER ConsumerType
+    The type of audit log consumer. Valid values are AzureMonitorLogs, Splunk, AzureEventGrid, and AzureEventHub.
+
+.PARAMETER ConsumerInputs
+    A hashtable of configuration inputs specific to the consumer type.
+
+.PARAMETER Enabled
+    Whether the audit stream is active. Defaults to $true.
+
 #>
 
 [DscResource()]

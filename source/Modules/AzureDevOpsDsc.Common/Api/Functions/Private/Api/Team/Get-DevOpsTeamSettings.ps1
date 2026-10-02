@@ -28,6 +28,15 @@ Function Get-DevOpsTeamSettings
         Throw "[Get-DevOpsTeamSettings] Failed to retrieve team settings for team '$TeamId': $_"
     }
 
+    # backlogVisibilities comes back from the API as a PSCustomObject (category refName ->
+    # bool); convert it to a Hashtable so callers can index and enumerate it the same way as the
+    # desired-state value they compare it against.
+    $backlogVisibilities = @{}
+    if ($settings.backlogVisibilities)
+    {
+        $settings.backlogVisibilities.psobject.Properties | ForEach-Object { $backlogVisibilities[$_.Name] = [bool]$_.Value }
+    }
+
     return [PSCustomObject]@{
         BacklogIterationPath = $settings.backlogIteration.path
         DefaultIterationPath = $settings.defaultIteration.path
@@ -36,6 +45,7 @@ Function Get-DevOpsTeamSettings
         AreaPaths            = @($fieldValues.values | ForEach-Object { $_.value })
         WorkingDays          = @($settings.workingDays)
         BugsBehavior         = $settings.bugsBehavior
+        BacklogVisibilities  = $backlogVisibilities
         Raw                  = [PSCustomObject]@{ Settings = $settings; FieldValues = $fieldValues; Iterations = $iterations }
     }
 }

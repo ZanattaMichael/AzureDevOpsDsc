@@ -20,11 +20,28 @@ Describe 'Parse-ACLToken' -Tag "Unit", "ACL", "Helper" {
             OrganizationGit         = '^org:(.+)$'
             GitProject              = '^project:(.+)$'
             GitRepository           = '^repo:(.+)$'
-            GitBranch               = '^branch:(.+)$'
+            # Real patterns: GitBranch/GitTag decoding is shape-sensitive (it hex/UTF-16LE
+            # decodes the captured ref segments), so a stand-in pattern would not exercise what
+            # it actually does - mirror the real production regex here instead.
+            GitBranch               = '^(repoV2)\/(?<ProjectId>[A-Za-z0-9-]+)\/(?<RepoId>[A-Za-z0-9-]+)\/refs\/heads\/(?<BranchName>[0-9a-fA-F]+(?:\/[0-9a-fA-F]+)*)$'
+            GitTag                  = '^(repoV2)\/(?<ProjectId>[A-Za-z0-9-]+)\/(?<RepoId>[A-Za-z0-9-]+)\/refs\/tags\/(?<TagName>[0-9a-fA-F]+(?:\/[0-9a-fA-F]+)*)$'
             ResourcePermission      = '^resource:(.+)$'
             GroupPermission         = '^group:(.+)$'
             IterationPathPermission = '^iteration:(.+)$'
             AreaPathPermission      = '^area:(.+)$'
+            # Real patterns: the query branch is shape-sensitive (the project id is a GUID
+            # too), so stand-in patterns would not exercise what it actually does.
+            QueryRootPermission     = '^\$$'
+            QueryPermission         = '^\$\/(?<ProjectId>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})(?<Remainder>(\/[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})*)$'
+            QueryFolderIdentifier   = '\/(?<identifiers>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})'
+            BuildPermission         = '^(?<ProjectId>[A-Za-z0-9-]+)(\/(?<PipelineId>[0-9]+))?$'
+            BuildFolderPermission   = '^(?<ProjectId>[A-Za-z0-9-]+)\/(?<FolderPath>(?![0-9]+$).+)$'
+            ReleaseDefinitionPermission = '^(?<ProjectId>[A-Za-z0-9-]+)(\/(?<FolderPath>.+?))?\/(?<DefinitionId>[0-9]+)$'
+            ReleaseFolderPermission     = '^(?<ProjectId>[A-Za-z0-9-]+)\/(?<FolderPath>(?![0-9]+$).+)$'
+            ReleaseRootPermission       = '^(?<ProjectId>[A-Za-z0-9-]+)$'
+            TaggingPermission       = '^\/(?<ProjectId>[A-Za-z0-9-]+)$'
+            AnalyticsPermission     = '^\$\/(?<ProjectId>[A-Za-z0-9-]+)$'
+            AnalyticsViewsPermission = '^\$\/Shared\/(?<ProjectId>[A-Za-z0-9-]+)$'
         }
 
         # If there were any Mock commands needed, they should be added here using the complete syntax.
@@ -107,9 +124,143 @@ Describe 'Parse-ACLToken' -Tag "Unit", "ACL", "Helper" {
         { Parse-ACLToken -Token $token -SecurityNamespace $SecurityNamespace } | Should -Throw "Token '$token' is not recognized."
     }
 
+    It 'Should parse a project-root Query token' {
+        $projectId = [guid]::NewGuid().ToString()
+        $result = Parse-ACLToken -Token "`$/$projectId" -SecurityNamespace 'WorkItemQueryFolders'
+
+        $result.type | Should -Be 'QueryPermission'
+        $result.ProjectId | Should -Be $projectId
+        $result.Identifiers.Count | Should -Be 0
+    }
+
+    It 'Should parse a nested Query token into its folder chain' {
+        $projectId = [guid]::NewGuid().ToString()
+        $folderId1 = [guid]::NewGuid().ToString()
+        $folderId2 = [guid]::NewGuid().ToString()
+
+        $result = Parse-ACLToken -Token "`$/$projectId/$folderId1/$folderId2" -SecurityNamespace 'WorkItemQueryFolders'
+
+        $result.ProjectId | Should -Be $projectId
+        $result.Identifiers.Count | Should -Be 2
+        $result.Identifiers[0].identifier | Should -Be $folderId1
+        $result.Identifiers[1].identifier | Should -Be $folderId2
+    }
+
+    It 'Should not read the project id as the first folder' {
+        $projectId = [guid]::NewGuid().ToString()
+        $folderId  = [guid]::NewGuid().ToString()
+
+        $result = Parse-ACLToken -Token "`$/$projectId/$folderId" -SecurityNamespace 'WorkItemQueryFolders'
+
+        $result.Identifiers.identifier | Should -Not -Contain $projectId
+    }
+
+    It 'Should parse the namespace root token' {
+        # The WorkItemQueryFolders root ACL is a bare '$'. AzDoQueryPermission enumerates
+        # every ACL in the namespace, so it meets this on any organization.
+        $result = Parse-ACLToken -Token '$' -SecurityNamespace 'WorkItemQueryFolders'
+        $result.type | Should -Be 'QueryRoot'
+    }
+
+    It 'Should not throw for an unrecognized Query token' {
+        # This previously asserted a throw, which is what the integration run disproved:
+        # throwing on one unmodelled token aborted the whole ACL scan and failed every
+        # AzDoQueryPermission test. Project, Process, Build and Library all tag the token
+        # '<Namespace>Unknown' instead, and this namespace now matches them.
+        $result = Parse-ACLToken -Token 'not-a-query-token' -SecurityNamespace 'WorkItemQueryFolders'
+        $result.type | Should -Be 'QueryUnknown'
+    }
+
+    It 'Should parse a Build definition token as a definition' {
+        $result = Parse-ACLToken -Token 'project-id-1/123' -SecurityNamespace 'Build'
+        $result.type | Should -Be 'Build'
+    }
+
+    It 'Should parse a Build folder token as a folder' {
+        $result = Parse-ACLToken -Token 'project-id-1/Platform' -SecurityNamespace 'Build'
+        $result.type | Should -Be 'BuildFolder'
+    }
+
+    It 'Should parse a nested Build folder token as a folder' {
+        $result = Parse-ACLToken -Token 'project-id-1/Platform/Release' -SecurityNamespace 'Build'
+        $result.type | Should -Be 'BuildFolder'
+    }
+
+    It 'Should parse a ReleaseManagement project-root token' {
+        $result = Parse-ACLToken -Token 'project-id-1' -SecurityNamespace 'ReleaseManagement'
+        $result.type | Should -Be 'ReleaseRoot'
+        $result.ProjectId | Should -Be 'project-id-1'
+    }
+
+    It 'Should parse a ReleaseManagement definition token at the root' {
+        $result = Parse-ACLToken -Token 'project-id-1/123' -SecurityNamespace 'ReleaseManagement'
+        $result.type | Should -Be 'ReleaseDefinition'
+        $result.ProjectId | Should -Be 'project-id-1'
+        $result.DefinitionId | Should -Be '123'
+    }
+
+    It 'Should parse a ReleaseManagement definition token inside a folder' {
+        $result = Parse-ACLToken -Token 'project-id-1/Platform/123' -SecurityNamespace 'ReleaseManagement'
+        $result.type | Should -Be 'ReleaseDefinition'
+        $result.FolderPath | Should -Be 'Platform'
+        $result.DefinitionId | Should -Be '123'
+    }
+
+    It 'Should parse a ReleaseManagement folder token as a folder, not a definition' {
+        $result = Parse-ACLToken -Token 'project-id-1/Platform' -SecurityNamespace 'ReleaseManagement'
+        $result.type | Should -Be 'ReleaseFolder'
+        $result.FolderPath | Should -Be 'Platform'
+    }
+
     It 'Should throw for unrecognized Identity token' {
         $token = "unknown:test"
         $SecurityNamespace = "Identity"
         { Parse-ACLToken -Token $token -SecurityNamespace $SecurityNamespace } | Should -Throw "Token '$token' is not recognized."
+    }
+
+    It 'Should parse a Tagging token correctly' {
+        $projectId = [guid]::NewGuid().ToString()
+        $result = Parse-ACLToken -Token "/$projectId" -SecurityNamespace 'Tagging'
+        $result.type | Should -Be 'Tagging'
+        $result.ProjectId | Should -Be $projectId
+    }
+
+    It 'Should return TaggingUnknown for a token that does not match the shape' {
+        $result = Parse-ACLToken -Token 'not-a-tagging-token/extra' -SecurityNamespace 'Tagging'
+        $result.type | Should -Be 'TaggingUnknown'
+    }
+
+    It 'Should parse an Analytics token correctly' {
+        $projectId = [guid]::NewGuid().ToString()
+        $result = Parse-ACLToken -Token "`$/$projectId" -SecurityNamespace 'Analytics'
+        $result.type | Should -Be 'Analytics'
+        $result.ProjectId | Should -Be $projectId
+    }
+
+    It 'Should return AnalyticsUnknown for a token that does not match the shape' {
+        $result = Parse-ACLToken -Token 'not-an-analytics-token' -SecurityNamespace 'Analytics'
+        $result.type | Should -Be 'AnalyticsUnknown'
+    }
+
+    It 'Should parse an AnalyticsViews token correctly' {
+        $projectId = [guid]::NewGuid().ToString()
+        $result = Parse-ACLToken -Token "`$/Shared/$projectId" -SecurityNamespace 'AnalyticsViews'
+        $result.type | Should -Be 'AnalyticsViews'
+        $result.ProjectId | Should -Be $projectId
+    }
+
+    It 'Should return AnalyticsViewsUnknown for a token that does not match the shape' {
+        $result = Parse-ACLToken -Token 'not-a-views-token' -SecurityNamespace 'AnalyticsViews'
+        $result.type | Should -Be 'AnalyticsViewsUnknown'
+    }
+
+    It 'Should still fall back to Generic for a namespace it does not natively recognise' {
+        # Backward compatibility: any namespace outside the explicit switch (e.g. one used only
+        # via AzDoSecurityNamespacePermission) must keep resolving to the Generic passthrough.
+        Mock -CommandName Write-Warning
+        $token = 'SomeArbitraryToken/123'
+        $result = Parse-ACLToken -Token $token -SecurityNamespace 'SomeUnhandledNamespace'
+        $result.type | Should -Be 'Generic'
+        $result.TokenValue | Should -Be $token
     }
 }

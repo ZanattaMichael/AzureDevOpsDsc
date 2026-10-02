@@ -491,4 +491,97 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
         $this.SetToDesiredState()
     }
 
+    <#
+        .NOTES
+            Override in a resource that has secrets (a password, a token, a connection string)
+            among its DscProperty values. Export() replaces every named property's exported value
+            with a fixed placeholder via Protect-AzDoExportedSecretProperty and warns which
+            resource/property it redacted, so a secret is never written into exported configuration.
+            The base implementation returns an empty list: most resources have nothing to redact.
+    #>
+    hidden [System.String[]]GetDscResourceSecretPropertyNames()
+    {
+        return @()
+    }
+
+    <#
+        .SYNOPSIS
+            Shared implementation behind every exporting resource's own 'static [<Class>[]] Export()'.
+
+        .DESCRIPTION
+            A static method cannot see which derived class it was called through (there is no
+            '$this'), so every exporting resource class defines its own parameterless, static
+            Export() method (the shape the DSC v3 PowerShell adapter's reflection-based dispatch
+            requires) that immediately delegates to this one helper, passing its own type:
+
+                static [AzDoProject[]] Export()
+                {
+                    return [AzDoProject[]]([AzDevOpsDscResourceBase]::ExportDscResourceInstances([AzDoProject]))
+                }
+
+            This helper:
+              1. Instantiates $ResourceType once. The class constructor runs the same Construct()
+                 every instance already runs, so $Global:DSCAZDO_AuthenticationToken/
+                 $Global:DSCAZDO_OrganizationName and the Live* caches are initialized exactly as
+                 they are for Get/New/Set/Remove - Export needs nothing else set up.
+              2. Resolves 'Export-<ResourceName>' by the same naming convention
+                 GetResourceFunctionName() uses for Get/New/Set/Remove, and calls it.
+              3. Redacts any property the resource declares secret via
+                 GetDscResourceSecretPropertyNames() before the value ever reaches a returned
+                 instance.
+              4. Converts each returned hashtable into a new, fully-typed instance of
+                 $ResourceType (mirroring the hashtable-to-instance cast every resource's own
+                 Get() already relies on), so the adapter receives real DSC resource instances
+                 whose PSObject Ensure/Get-Set-able properties are shaped just like Get()'s.
+
+            A resource with no 'Export-<ResourceName>' function fails loudly - never silently
+            returns an empty list - because a caller (dsc, or a person) cannot otherwise tell "this
+            organization has none of these" apart from "this resource was never wired up to export
+            it".
+    #>
+    static [System.Object[]] ExportDscResourceInstances([System.Type]$ResourceType)
+    {
+        $instance = $ResourceType::new()
+
+        [System.String]$resourceName = $instance.ResourceName
+        [System.String]$exportFunctionName = "Export-$resourceName"
+
+        $exportCommand = Get-Command -Name $exportFunctionName -ErrorAction SilentlyContinue
+        if ($null -eq $exportCommand)
+        {
+            throw "export is not implemented for $resourceName"
+        }
+
+        [System.String[]]$secretPropertyNames = $instance.GetDscResourceSecretPropertyNames()
+
+        $rawExportedProperties = @(& $exportFunctionName)
+
+        [System.Collections.Generic.List[Object]]$results = [System.Collections.Generic.List[Object]]::new()
+        $writeableProperties = @($ResourceType.GetProperties().Name)
+
+        foreach ($rawProperties in $rawExportedProperties)
+        {
+            if ($null -eq $rawProperties)
+            {
+                continue
+            }
+
+            $protectedProperties = Protect-AzDoExportedSecretProperty -ResourceName $resourceName -SecretPropertyNames $secretPropertyNames -Properties $rawProperties
+
+            $exportedInstance = $ResourceType::new()
+
+            foreach ($propertyName in $protectedProperties.Keys)
+            {
+                if ($writeableProperties -contains $propertyName)
+                {
+                    $exportedInstance.$propertyName = $protectedProperties.$propertyName
+                }
+            }
+
+            $results.Add($exportedInstance)
+        }
+
+        return $results.ToArray()
+    }
+
 }

@@ -14,6 +14,17 @@
 .PARAMETER isInherited
     Specifies whether the permissions are inherited from the parent repository. Default value is $true.
 
+.PARAMETER BranchName
+    Optional. Targets a single branch's ACL (the 'refs/heads/{BranchName}' token) rather than the
+    repository's own ACL. Write it as a bare ref name, e.g. 'main' or 'release/1.0' - a leading
+    'refs/heads/' is accepted and stripped for comparison, but the value stored back is always what
+    the configuration supplied. Requires RepositoryName. Mutually exclusive with TagName.
+
+.PARAMETER TagName
+    Optional. Targets a single tag's ACL (the 'refs/tags/{TagName}' token) rather than the
+    repository's own ACL. Same rules as BranchName. Requires RepositoryName. Mutually exclusive
+    with BranchName.
+
 .PARAMETER PermissionsList
     Specifies the list of permissions to be set for the repository.
 
@@ -57,6 +68,12 @@ class AzDoGitPermission : AzDevOpsDscResourceBase
     [System.Boolean]$isInherited=$true
 
     [DscProperty()]
+    [System.String]$BranchName = $null
+
+    [DscProperty()]
+    [System.String]$TagName = $null
+
+    [DscProperty()]
     [HashTable[]]$Permissions
 
     AzDoGitPermission()
@@ -91,6 +108,8 @@ class AzDoGitPermission : AzDevOpsDscResourceBase
         $properties.ProjectName           = $CurrentResourceObject.ProjectName
         $properties.RepositoryName        = $CurrentResourceObject.RepositoryName
         $properties.isInherited           = $CurrentResourceObject.isInherited
+        $properties.BranchName            = $CurrentResourceObject.BranchName
+        $properties.TagName               = $CurrentResourceObject.TagName
         $properties.Permissions           = $CurrentResourceObject.Permissions
         $properties.lookupResult          = $CurrentResourceObject.lookupResult
         $properties.Ensure                = $CurrentResourceObject.Ensure

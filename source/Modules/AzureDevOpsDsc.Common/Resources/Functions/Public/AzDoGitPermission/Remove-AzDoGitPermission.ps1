@@ -11,6 +11,12 @@ Function Remove-AzDoGitPermission
         [Parameter(Mandatory = $true)]
         [bool]$isInherited,
 
+        [Parameter(Mandatory = $false)]
+        [string]$BranchName,
+
+        [Parameter(Mandatory = $false)]
+        [string]$TagName,
+
         [Parameter()]
         [HashTable[]]$Permissions,
 
@@ -79,10 +85,27 @@ Function Remove-AzDoGitPermission
         return
     }
 
-    #
-    # Filter the ACLs that pertain to the Git Repository
+    # BranchName/TagName are mutually exclusive - there is no single ACL to remove when both are
+    # given.
+    $hasBranch = -not [String]::IsNullOrWhiteSpace($BranchName)
+    $hasTag    = -not [String]::IsNullOrWhiteSpace($TagName)
 
-    $searchString = 'repoV2/{0}/{1}' -f $Project.id, $Repository.id
+    if ($hasBranch -and $hasTag)
+    {
+        Write-Error "[Remove-AzDoGitPermission] BranchName and TagName are mutually exclusive."
+        return
+    }
+
+    #
+    # Filter the ACLs that pertain to the Git Repository, branch or tag
+
+    $searchString = if ($hasBranch) {
+        'repoV2/{0}/{1}/refs/heads/{2}' -f $Project.id, $Repository.id, (ConvertTo-GitRefToken -RefName (Format-AzDoGitRefName -RefName $BranchName))
+    } elseif ($hasTag) {
+        'repoV2/{0}/{1}/refs/tags/{2}' -f $Project.id, $Repository.id, (ConvertTo-GitRefToken -RefName (Format-AzDoGitRefName -RefName $TagName))
+    } else {
+        'repoV2/{0}/{1}' -f $Project.id, $Repository.id
+    }
 
     # Test if the Token exists
     $Filtered = $DescriptorACLList | Where-Object { $_.token -eq $searchString }

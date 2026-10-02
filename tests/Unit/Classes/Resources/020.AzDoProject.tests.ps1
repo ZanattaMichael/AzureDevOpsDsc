@@ -74,14 +74,15 @@ Describe "AzDoProject Class" -Tag "Unit", "Resources" {
             { $project.SourceControlType = 'InvalidValue' } | Should -Throw
         }
 
-        It "Should validate ProcessTemplate" {
+        It "Should accept ProcessTemplate names beyond the system processes" {
             $project = [AzDoProject]::new()
 
-            # Valid value
+            # System process
             { $project.ProcessTemplate = 'Scrum' } | Should -Not -Throw
 
-            # Invalid value
-            { $project.ProcessTemplate = 'InvalidValue' } | Should -Throw
+            # Inherited process - validated against the LiveProcesses cache by Get-AzDoProject, not by the class
+            { $project.ProcessTemplate = 'My Inherited Agile' } | Should -Not -Throw
+            $project.ProcessTemplate | Should -Be 'My Inherited Agile'
         }
 
         It "Should validate Visibility" {

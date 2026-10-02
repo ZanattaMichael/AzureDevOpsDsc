@@ -1,6 +1,20 @@
 <#
 .SYNOPSIS
     DSC resource for managing Azure DevOps project teams.
+.DESCRIPTION
+    This resource manages teams within Azure DevOps projects. Teams group users together and can be
+    assigned area paths and iterations for work item organization. Team members can be managed
+    separately using the AzDoTeamMember resource.
+
+.PARAMETER ProjectName
+    The name of the Azure DevOps project. This property is mandatory and serves as a key property for the resource.
+
+.PARAMETER TeamName
+    The name of the team. This is a key property.
+
+.PARAMETER Description
+    An optional description for the team.
+
 #>
 [DscResource()]
 class AzDoTeam : AzDevOpsDscResourceBase
