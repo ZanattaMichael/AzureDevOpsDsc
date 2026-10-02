@@ -69,8 +69,7 @@ on:
 permissions:
   contents: read
 
-# The suite takes the better part of an hour against a live organization on a single
-# self-hosted runner, so a PR that is pushed to repeatedly must not stack up runs. Each
+# The suite takes the better part of an hour against a live organization, so a PR that is pushed to repeatedly must not stack up runs. Each
 # PR gets its own group and supersedes its own earlier run. Cancelling mid-run can leave
 # resources behind in the organization, which is tolerable here only because
 # Invoke-Tests.ps1 runs a teardown BEFORE the suite as well as after, so the next run
@@ -83,8 +82,8 @@ jobs:
   # Decide which resource test files the change actually needs, so a narrow pull request
   # does not pay for a two-hour run against a live organization.
   #
-  # A separate job, on a hosted runner, for two reasons: the AZDO-AGENT runner is a single
-  # shared machine and should not be occupied to compute a diff, and gating the expensive
+  # A separate job, on a hosted runner, for two reasons: the AZDO-AGENT runners are a small
+  # shared pool and should not be occupied to compute a diff, and gating the expensive
   # job on this one's output makes an unaffected pull request report an honest `skipped`
   # rather than a green run that exercised nothing.
   #
@@ -238,6 +237,19 @@ jobs:
        startsWith(github.head_ref, 'resource-add/'))
     runs-on: AZDO-AGENT
 
+    # AZDO-AGENT is a label, not a machine: more than one runner carries it, so this job
+    # and the v3 suite can otherwise start at the same time on different machines.
+    # Both drive the same live organization, and each run's pre-run teardown deletes
+    # test objects the other is still using. This group serialises every live-organization
+    # job across both workflows, wherever it is scheduled.
+    #
+    # GitHub keeps at most one job waiting per group: a newer waiting job cancels the
+    # older waiting one (never the one running). A release gate cancelled that way fails
+    # the publish run safely, before anything is published - re-run it.
+    concurrency:
+      group: azdo-live-organization
+      cancel-in-progress: false
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -308,23 +320,50 @@ jobs:
       #
       # integration-tests-v3.yml hit the same path widening through dsc.exe and fixed it
       # this way, so this step and the restore step at the end are the same code. They
-      # share the record format in RUNNER_TEMP, so either workflow reconciles a shelf the
-      # other left behind.
+      # share the record format and the shelf under LOCALAPPDATA, so either workflow
+      # reconciles a shelf the other left behind on the same machine.
       - name: Shelve conflicting profile-scope module copies
         shell: pwsh
         run: |
-          # A cancelled run, or a runner that dies mid-job, never reaches the restore
-          # step at the end and would leave a module directory shelved indefinitely.
-          # Records from earlier runs are reconciled here first, so a stranded shelf is
-          # repaired by the next run rather than quietly persisting on this box.
-          foreach ($stale in @(Get-ChildItem -Path $env:RUNNER_TEMP -Filter 'shelved-modules-*.json' -File -ErrorAction SilentlyContinue)) {
+          # The shelf lives under LOCALAPPDATA, not RUNNER_TEMP. The runner empties RUNNER_TEMP
+          # between jobs, so a shelf there that a failed or cancelled run never restored was
+          # deleted along with the only copy of the modules in it.
+          $shelfRoot = Join-Path -Path $env:LOCALAPPDATA -ChildPath 'AzureDevOpsDsc\ShelvedModules'
+          New-Item -Path $shelfRoot -ItemType Directory -Force | Out-Null
+
+          # A cancelled run, or a runner that dies mid-job, never reaches the restore step at
+          # the end. Records from earlier runs are reconciled here first, so a stranded shelf is
+          # repaired by the next run on this machine. RUNNER_TEMP is still read for records
+          # written before the shelf moved.
+          $staleRecords = @(
+              Get-ChildItem -Path $shelfRoot -Filter 'shelved-modules-*.json' -File -ErrorAction SilentlyContinue
+              Get-ChildItem -Path $env:RUNNER_TEMP -Filter 'shelved-modules-*.json' -File -ErrorAction SilentlyContinue
+          )
+          foreach ($stale in $staleRecords) {
+              $unrestored = @()
               foreach ($entry in @(Get-Content -LiteralPath $stale.FullName -Raw | ConvertFrom-Json)) {
                   if ((Test-Path -LiteralPath $entry.To) -and -not (Test-Path -LiteralPath $entry.From)) {
-                      Move-Item -LiteralPath $entry.To -Destination $entry.From -Force
-                      Write-Host "Restored a shelved copy left behind by an earlier run: $($entry.From)"
+                      try {
+                          Move-Item -LiteralPath $entry.To -Destination $entry.From -Force -ErrorAction Stop
+                          Write-Host "Restored a shelved copy left behind by an earlier run: $($entry.From)"
+                      }
+                      catch {
+                          Write-Warning "Could not restore '$($entry.From)' from '$($entry.To)': $($_.Exception.Message)"
+                          $unrestored += $entry
+                      }
+                  }
+                  elseif (Test-Path -LiteralPath $entry.To) {
+                      Write-Warning "'$($entry.From)' exists again; a shelved copy from an earlier run is still at '$($entry.To)'."
+                      $unrestored += $entry
                   }
               }
-              Remove-Item -LiteralPath $stale.FullName -Force -ErrorAction SilentlyContinue
+              # Keep the record while anything in it is still shelved, so nothing is forgotten.
+              if ($unrestored.Count -gt 0) {
+                  ConvertTo-Json -InputObject @($unrestored) -Depth 3 | Set-Content -LiteralPath $stale.FullName -Encoding UTF8
+              }
+              else {
+                  Remove-Item -LiteralPath $stale.FullName -Force -ErrorAction SilentlyContinue
+              }
           }
 
           # Every root pwsh re-adds for itself. $PSHOME is deliberately absent: these
@@ -338,8 +377,18 @@ jobs:
           )
           $names = 'AzureDevOpsDscNative', 'AzureDevOpsDsc.Common', 'DscResource.Common'
 
-          $shelf = Join-Path -Path $env:RUNNER_TEMP -ChildPath "shelved-modules-$($env:GITHUB_RUN_ID)-$($env:GITHUB_RUN_ATTEMPT)"
+          $runKey = "$($env:GITHUB_RUN_ID)-$($env:GITHUB_RUN_ATTEMPT)"
+          $shelf = Join-Path -Path $shelfRoot -ChildPath "shelved-modules-$runKey"
+          $record = Join-Path -Path $shelfRoot -ChildPath "shelved-modules-$runKey.json"
+
+          # The record is written before anything moves and rewritten after every move, and the
+          # restore step learns its path now. Writing it once at the end lost track of every
+          # module moved before a later move threw.
           $moved = @()
+          ConvertTo-Json -InputObject @($moved) -Depth 3 | Set-Content -LiteralPath $record -Encoding UTF8
+          "SHELVED_MODULES_RECORD=$record" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+          $skipped = @()
           foreach ($root in $roots) {
               if (-not (Test-Path -LiteralPath $root)) { continue }
               foreach ($name in $names) {
@@ -351,21 +400,27 @@ jobs:
                   $leaf = ($root -replace '[:\\/ ]', '_') + '__' + $name
                   $to = Join-Path -Path $shelf -ChildPath $leaf
                   New-Item -Path $shelf -ItemType Directory -Force | Out-Null
-                  Move-Item -LiteralPath $from -Destination $to -Force
+                  try {
+                      Move-Item -LiteralPath $from -Destination $to -Force -ErrorAction Stop
+                  }
+                  catch {
+                      # A copy this account cannot move - a machine-scope directory without admin
+                      # rights, or a file another process holds open - is left in place. If it
+                      # would put a second copy on PSModulePath, the single-copy assertion in the
+                      # next step fails and names it.
+                      $skipped += $from
+                      Write-Warning "Could not shelve '$from': $($_.Exception.Message)"
+                      continue
+                  }
                   $moved += [pscustomobject]@{ From = $from; To = $to }
+                  ConvertTo-Json -InputObject @($moved) -Depth 3 | Set-Content -LiteralPath $record -Encoding UTF8
                   Write-Host "Shelved $from -> $to"
               }
           }
 
-          if ($moved.Count -eq 0) {
+          if ($moved.Count -eq 0 -and $skipped.Count -eq 0) {
               Write-Host 'No conflicting profile-scope or machine-scope copies found.'
           }
-
-          # Written unconditionally, so the restore step has a file to read even when
-          # nothing moved and can say so rather than guessing.
-          $record = Join-Path -Path $env:RUNNER_TEMP -ChildPath "shelved-modules-$($env:GITHUB_RUN_ID)-$($env:GITHUB_RUN_ATTEMPT).json"
-          ConvertTo-Json -InputObject @($moved) -Depth 3 | Set-Content -LiteralPath $record -Encoding UTF8
-          "SHELVED_MODULES_RECORD=$record" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       # Point PSModulePath at exactly one copy of each module the tests load.
       #
@@ -572,6 +627,7 @@ jobs:
                   Write-Host 'Nothing was shelved for this run.'
               }
               $failures = @()
+              $unrestored = @()
               foreach ($entry in $entries) {
                   if (-not (Test-Path -LiteralPath $entry.To)) {
                       $failures += "Shelved copy '$($entry.To)' is gone; '$($entry.From)' was not restored."
@@ -581,18 +637,33 @@ jobs:
                       # Something re-created the original during the job. Overwriting it
                       # would destroy whatever that was, so leave both in place and say so.
                       $failures += "'$($entry.From)' exists again; the shelved copy was left at '$($entry.To)'."
+                      $unrestored += $entry
                       continue
                   }
-                  Move-Item -LiteralPath $entry.To -Destination $entry.From -Force
-                  Write-Host "Restored $($entry.From)"
+                  try {
+                      Move-Item -LiteralPath $entry.To -Destination $entry.From -Force -ErrorAction Stop
+                      Write-Host "Restored $($entry.From)"
+                  }
+                  catch {
+                      $failures += "Could not restore '$($entry.From)' from '$($entry.To)': $($_.Exception.Message)"
+                      $unrestored += $entry
+                  }
               }
 
               # Reported, not thrown: the tests' own result is what this job is for, and
-              # failing here would mask it. The message names the exact paths to fix.
+              # failing here would mask it. The message names the exact paths to fix. Anything
+              # still shelved stays in the record, which the next run on this machine retries.
               if ($failures.Count -gt 0) {
                   Write-Warning ("Some shelved module copies were not restored:`n  " + ($failures -join "`n  "))
               }
+              if ($unrestored.Count -gt 0) {
+                  ConvertTo-Json -InputObject @($unrestored) -Depth 3 | Set-Content -LiteralPath $record -Encoding UTF8
+              }
               else {
                   Remove-Item -LiteralPath $record -Force -ErrorAction SilentlyContinue
+                  $shelf = [System.IO.Path]::ChangeExtension($record, $null).TrimEnd('.')
+                  if ((Test-Path -LiteralPath $shelf) -and -not (Get-ChildItem -LiteralPath $shelf -Force)) {
+                      Remove-Item -LiteralPath $shelf -Force -ErrorAction SilentlyContinue
+                  }
               }
           }

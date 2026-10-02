@@ -107,11 +107,34 @@ Actions tab) and `workflow_call` (both gate a release from `publish.yml`). They 
 the v2 suite takes the better part of an hour, so learning anything about v3 from inside it meant
 waiting all of v2 out first.
 
-They target the same self-hosted runner, so they queue rather than contend - but they use **separate
+Both run on the self-hosted runners labelled `AZDO-AGENT`, and their live-organization jobs share
+the `azdo-live-organization` concurrency group, so only one runs at a time even when more than one
+runner is online. They have to: each run's pre-run teardown deletes test objects, so two suites
+running against the same organization at once would delete each other's. They also use **separate
 cache directories** (`AzureDevOpsDscCache` and `AzureDevOpsDscCache-V3`, the latter cleared at the
 start of each run). The module imports whatever cache is on disk at startup, so a shared directory
 would let one suite be answered out of the other's exported state - which is exactly what running
 the same resources through two hosts is supposed to rule out.
+
+### What an `AZDO-AGENT` runner needs
+
+Any machine given the `AZDO-AGENT` label can receive either suite, so each one needs:
+
+- Windows with PowerShell 7 (`pwsh`) and Git, and outbound access to the PowerShell Gallery (the
+  build resolves its dependencies there) and to `dev.azure.com`.
+- A writable `C:\Temp` - both suites write their result XML there.
+- For Managed Identity (an empty `AZURE_DEVOPS_PAT`), an Azure VM or Arc machine with an identity
+  that has access to the organization. With a PAT, any machine works.
+- No copy of `AzureDevOpsDscNative`, `AzureDevOpsDsc.Common` or `DscResource.Common` that the runner's
+  account cannot move. Before testing, each workflow moves any such copy out of the user and
+  machine module directories (into `%LOCALAPPDATA%\AzureDevOpsDsc\ShelvedModules`) and puts it
+  back afterwards, so that only the freshly built module is loaded. A copy the account cannot move
+  - typically under `Program Files` when the runner service is not an administrator - is reported
+  as a warning, and the next step then fails naming it. Remove it, or run the service as an
+  administrator.
+
+A run that dies before its restore step leaves the moved copies in that folder with a record of
+where they came from; the next run on the same machine puts them back first.
 
 ## Features an organization policy can withhold
 
