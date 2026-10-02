@@ -125,16 +125,13 @@ Any machine given the `AZDO-AGENT` label can receive either suite, so each one n
 - A writable `C:\Temp` - both suites write their result XML there.
 - For Managed Identity (an empty `AZURE_DEVOPS_PAT`), an Azure VM or Arc machine with an identity
   that has access to the organization. With a PAT, any machine works.
-- No copy of `AzureDevOpsDscNative`, `AzureDevOpsDsc.Common` or `DscResource.Common` that the runner's
-  account cannot move. Before testing, each workflow moves any such copy out of the user and
-  machine module directories (into `%LOCALAPPDATA%\AzureDevOpsDsc\ShelvedModules`) and puts it
-  back afterwards, so that only the freshly built module is loaded. A copy the account cannot move
-  - typically under `Program Files` when the runner service is not an administrator - is reported
-  as a warning, and the next step then fails naming it. Remove it, or run the service as an
-  administrator.
-
-A run that dies before its restore step leaves the moved copies in that folder with a record of
-where they came from; the next run on the same machine puts them back first.
+- No copy of `AzureDevOpsDscNative`, `AzureDevOpsDsc.Common` or `DscResource.Common` in a standard
+  module folder - the runner account's `Documents\PowerShell\Modules` or
+  `Documents\WindowsPowerShell\Modules`, or the same folders under `Program Files`. Both suites
+  load the module only from the build in their own workspace, and never install, move or delete
+  anything outside it. A copy in one of those folders would be loaded instead of the build, so
+  each workflow fails at its "Refuse module copies in standard module folders" step and names
+  every copy it finds; delete them from the runner.
 
 ## Features an organization policy can withhold
 

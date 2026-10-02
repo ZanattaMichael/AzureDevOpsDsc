@@ -299,76 +299,29 @@ jobs:
           Write-Host "Pester 5.7.1 saved to $pesterRoot"
           "PESTER_MODULE_ROOT=$pesterRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      # Move the runner's hand-deployed copies of the three modules out of the user and
-      # machine module directories for the duration of the job.
+      # The module under test is only ever the build in this job's workspace - nothing is
+      # installed into a standard module folder, and this workflow never moves or deletes
+      # anything outside its workspace. A copy already sitting in one of those folders is
+      # therefore a runner problem, and this step fails naming it rather than working
+      # around it.
       #
-      # The PSModulePath rewrite in the next step is not enough on its own. Every
+      # The PSModulePath rewrite in the next step cannot keep such a copy out. Every
       # `shell: pwsh` step is a new pwsh started by the runner - a parent that is not
       # PowerShell - and such a pwsh re-adds the default module directories to whatever
       # PSModulePath it inherits, the profile one (<MyDocuments>\PowerShell\Modules) among
       # them. So the rewrite holds in the step that makes it, and the path is widened
       # again in every step after it, "Run integration tests" included.
       #
-      # That profile directory is where scripts/redeploy-module.ps1 deploys
-      # AzureDevOpsDscNative, and the runner carries such a copy. Reached through the
-      # re-added path, Invoke-DscResource loads the resource classes from it instead of
-      # from the build: a pull request that adds a class property then fails with
-      # "The property '<Name>' cannot be found on this object", and one that relaxes a
-      # ValidateSet still gets the old set enforced. Changes to the resource functions
-      # were unaffected, which is why this went unnoticed while pull requests only
-      # touched those.
+      # Reached through the re-added path, Invoke-DscResource loads the resource classes
+      # from that copy instead of from the build: a pull request that adds a class property
+      # then fails with "The property '<Name>' cannot be found on this object", and one
+      # that relaxes a ValidateSet still gets the old set enforced.
       #
-      # integration-tests-v3.yml hit the same path widening through dsc.exe and fixed it
-      # this way, so this step and the restore step at the end are the same code. They
-      # share the record format and the shelf under LOCALAPPDATA, so either workflow
-      # reconciles a shelf the other left behind on the same machine.
-      - name: Shelve conflicting profile-scope module copies
+      # integration-tests-v3.yml has the same step, for the same widening through dsc.exe.
+      - name: Refuse module copies in standard module folders
         shell: pwsh
         run: |
-          # The shelf lives under LOCALAPPDATA, not RUNNER_TEMP. The runner empties RUNNER_TEMP
-          # between jobs, so a shelf there that a failed or cancelled run never restored was
-          # deleted along with the only copy of the modules in it.
-          $shelfRoot = Join-Path -Path $env:LOCALAPPDATA -ChildPath 'AzureDevOpsDsc\ShelvedModules'
-          New-Item -Path $shelfRoot -ItemType Directory -Force | Out-Null
-
-          # A cancelled run, or a runner that dies mid-job, never reaches the restore step at
-          # the end. Records from earlier runs are reconciled here first, so a stranded shelf is
-          # repaired by the next run on this machine. RUNNER_TEMP is still read for records
-          # written before the shelf moved.
-          $staleRecords = @(
-              Get-ChildItem -Path $shelfRoot -Filter 'shelved-modules-*.json' -File -ErrorAction SilentlyContinue
-              Get-ChildItem -Path $env:RUNNER_TEMP -Filter 'shelved-modules-*.json' -File -ErrorAction SilentlyContinue
-          )
-          foreach ($stale in $staleRecords) {
-              $unrestored = @()
-              foreach ($entry in @(Get-Content -LiteralPath $stale.FullName -Raw | ConvertFrom-Json)) {
-                  if ((Test-Path -LiteralPath $entry.To) -and -not (Test-Path -LiteralPath $entry.From)) {
-                      try {
-                          Move-Item -LiteralPath $entry.To -Destination $entry.From -Force -ErrorAction Stop
-                          Write-Host "Restored a shelved copy left behind by an earlier run: $($entry.From)"
-                      }
-                      catch {
-                          Write-Warning "Could not restore '$($entry.From)' from '$($entry.To)': $($_.Exception.Message)"
-                          $unrestored += $entry
-                      }
-                  }
-                  elseif (Test-Path -LiteralPath $entry.To) {
-                      Write-Warning "'$($entry.From)' exists again; a shelved copy from an earlier run is still at '$($entry.To)'."
-                      $unrestored += $entry
-                  }
-              }
-              # Keep the record while anything in it is still shelved, so nothing is forgotten.
-              if ($unrestored.Count -gt 0) {
-                  ConvertTo-Json -InputObject @($unrestored) -Depth 3 | Set-Content -LiteralPath $stale.FullName -Encoding UTF8
-              }
-              else {
-                  Remove-Item -LiteralPath $stale.FullName -Force -ErrorAction SilentlyContinue
-              }
-          }
-
-          # Every root pwsh re-adds for itself. $PSHOME is deliberately absent: these
-          # modules are never installed there, and shelving out of it would mutate the
-          # PowerShell installation rather than a user/machine module directory.
+          # $PSHOME is deliberately absent: these modules are never installed there.
           $roots = @(
               Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'PowerShell\Modules'
               Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath 'WindowsPowerShell\Modules'
@@ -377,50 +330,23 @@ jobs:
           )
           $names = 'AzureDevOpsDscNative', 'AzureDevOpsDsc.Common', 'DscResource.Common'
 
-          $runKey = "$($env:GITHUB_RUN_ID)-$($env:GITHUB_RUN_ATTEMPT)"
-          $shelf = Join-Path -Path $shelfRoot -ChildPath "shelved-modules-$runKey"
-          $record = Join-Path -Path $shelfRoot -ChildPath "shelved-modules-$runKey.json"
-
-          # The record is written before anything moves and rewritten after every move, and the
-          # restore step learns its path now. Writing it once at the end lost track of every
-          # module moved before a later move threw.
-          $moved = @()
-          ConvertTo-Json -InputObject @($moved) -Depth 3 | Set-Content -LiteralPath $record -Encoding UTF8
-          "SHELVED_MODULES_RECORD=$record" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
-          $skipped = @()
-          foreach ($root in $roots) {
-              if (-not (Test-Path -LiteralPath $root)) { continue }
-              foreach ($name in $names) {
-                  $from = Join-Path -Path $root -ChildPath $name
-                  if (-not (Test-Path -LiteralPath $from)) { continue }
-
-                  # Flatten the root into the shelf name so two roots holding the same
-                  # module cannot collide on the way out.
-                  $leaf = ($root -replace '[:\\/ ]', '_') + '__' + $name
-                  $to = Join-Path -Path $shelf -ChildPath $leaf
-                  New-Item -Path $shelf -ItemType Directory -Force | Out-Null
-                  try {
-                      Move-Item -LiteralPath $from -Destination $to -Force -ErrorAction Stop
+          $found = @(
+              foreach ($root in $roots) {
+                  foreach ($name in $names) {
+                      $path = Join-Path -Path $root -ChildPath $name
+                      if (Test-Path -LiteralPath $path) { $path }
                   }
-                  catch {
-                      # A copy this account cannot move - a machine-scope directory without admin
-                      # rights, or a file another process holds open - is left in place. If it
-                      # would put a second copy on PSModulePath, the single-copy assertion in the
-                      # next step fails and names it.
-                      $skipped += $from
-                      Write-Warning "Could not shelve '$from': $($_.Exception.Message)"
-                      continue
-                  }
-                  $moved += [pscustomobject]@{ From = $from; To = $to }
-                  ConvertTo-Json -InputObject @($moved) -Depth 3 | Set-Content -LiteralPath $record -Encoding UTF8
-                  Write-Host "Shelved $from -> $to"
               }
-          }
+          )
 
-          if ($moved.Count -eq 0 -and $skipped.Count -eq 0) {
-              Write-Host 'No conflicting profile-scope or machine-scope copies found.'
+          if ($found.Count -gt 0) {
+              throw ("Runner '$($env:RUNNER_NAME)' has copies of the module installed in standard " +
+                     "module folders. The tests load the module only from this job's build, and a " +
+                     "copy in one of these folders is loaded instead of it. This workflow does not " +
+                     "move or delete files outside its workspace - remove these from the runner:`n  " +
+                     ($found -join "`n  "))
           }
+          Write-Host 'No copies of the module in standard module folders.'
 
       # Point PSModulePath at exactly one copy of each module the tests load.
       #
@@ -440,12 +366,10 @@ jobs:
       #   - the self-hosted runner carries stale hand-deployed copies under
       #     C:\Temp\DSCModule (including an old 0.0.1 module under the former name), which
       #     are stripped from the inherited PSModulePath; and
-      #   - the runner's *profile* module directory (<MyDocuments>\PowerShell\Modules) holds
-      #     a hand-installed DscResource.Common 0.24.5, and is also where
-      #     scripts/redeploy-module.ps1 deploys AzureDevOpsDscNative - so it can supply a
-      #     second copy of two of the three modules asserted below. It is dropped as well,
-      #     which is why the step above saves Pester into ./output/TestModules instead of
-      #     installing it there.
+      #   - the runner's *profile* module directory (<MyDocuments>\PowerShell\Modules) is
+      #     where hand-installed copies of these modules have lived on runners before, so
+      #     it is dropped as well. That is why the Pester step saves Pester into
+      #     ./output/TestModules instead of installing it there.
       #
       # ./output/TestModules is re-added explicitly after the ./output filter, since that
       # filter would otherwise remove the very directory Pester was just saved to.
@@ -577,7 +501,7 @@ jobs:
 
           # Re-assert single resolution in this process, which is the one Invoke-DscResource
           # runs in. The PSModulePath step asserts it in its own pwsh, but each step's pwsh
-          # re-adds the default module directories (see the shelving step), so that check
+          # re-adds the default module directories (see the module-folder check), so that check
           # says nothing about this one. A second copy here means the tests would exercise
           # classes the build did not produce - fail now, naming it, rather than as
           # misleading property errors in every test.
@@ -609,61 +533,3 @@ jobs:
           name: integration-test-results-${{ github.run_number }}
           path: C:\Temp\integration-test-results.xml
           if-no-files-found: ignore
-
-      # The runner is persistent and shared with the v3 suite, so anything moved out of a
-      # user or machine module directory has to go back whatever happened to the tests -
-      # hence always(), and hence a move rather than a delete.
-      - name: Restore shelved module copies
-        if: always()
-        shell: pwsh
-        run: |
-          $record = $env:SHELVED_MODULES_RECORD
-          if ([string]::IsNullOrWhiteSpace($record) -or -not (Test-Path -LiteralPath $record)) {
-              Write-Host 'No shelving record for this run - nothing to restore.'
-          }
-          else {
-              $entries = @(Get-Content -LiteralPath $record -Raw | ConvertFrom-Json)
-              if ($entries.Count -eq 0) {
-                  Write-Host 'Nothing was shelved for this run.'
-              }
-              $failures = @()
-              $unrestored = @()
-              foreach ($entry in $entries) {
-                  if (-not (Test-Path -LiteralPath $entry.To)) {
-                      $failures += "Shelved copy '$($entry.To)' is gone; '$($entry.From)' was not restored."
-                      continue
-                  }
-                  if (Test-Path -LiteralPath $entry.From) {
-                      # Something re-created the original during the job. Overwriting it
-                      # would destroy whatever that was, so leave both in place and say so.
-                      $failures += "'$($entry.From)' exists again; the shelved copy was left at '$($entry.To)'."
-                      $unrestored += $entry
-                      continue
-                  }
-                  try {
-                      Move-Item -LiteralPath $entry.To -Destination $entry.From -Force -ErrorAction Stop
-                      Write-Host "Restored $($entry.From)"
-                  }
-                  catch {
-                      $failures += "Could not restore '$($entry.From)' from '$($entry.To)': $($_.Exception.Message)"
-                      $unrestored += $entry
-                  }
-              }
-
-              # Reported, not thrown: the tests' own result is what this job is for, and
-              # failing here would mask it. The message names the exact paths to fix. Anything
-              # still shelved stays in the record, which the next run on this machine retries.
-              if ($failures.Count -gt 0) {
-                  Write-Warning ("Some shelved module copies were not restored:`n  " + ($failures -join "`n  "))
-              }
-              if ($unrestored.Count -gt 0) {
-                  ConvertTo-Json -InputObject @($unrestored) -Depth 3 | Set-Content -LiteralPath $record -Encoding UTF8
-              }
-              else {
-                  Remove-Item -LiteralPath $record -Force -ErrorAction SilentlyContinue
-                  $shelf = [System.IO.Path]::ChangeExtension($record, $null).TrimEnd('.')
-                  if ((Test-Path -LiteralPath $shelf) -and -not (Get-ChildItem -LiteralPath $shelf -Force)) {
-                      Remove-Item -LiteralPath $shelf -Force -ErrorAction SilentlyContinue
-                  }
-              }
-          }

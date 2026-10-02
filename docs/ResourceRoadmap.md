@@ -583,7 +583,7 @@ prefix (continue from `117`), public functions under
 class resolves them by that convention, so a missing one fails at apply time), exactly one
 `[DscProperty(Key)]`, no DSC property named `Force`, unit tests mirroring the public
 function path, an integration test using the `New-RestAuthHeader` pattern, and a rebuild +
-redeploy before running integration tests.
+`scripts/redeploy-module.ps1` before running integration tests.
 
 ---
 

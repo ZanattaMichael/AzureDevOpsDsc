@@ -20,12 +20,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - The integration workflows now cope with more than one runner carrying the
     `AZDO-AGENT` label. The v2 and v3 live-organization jobs share one
     concurrency group, so they no longer run against the organization at the same
-    time and delete each other's test objects in their pre-run teardown. Moving
-    stale module copies aside before a run no longer strands them: the shelf moved
-    from `RUNNER_TEMP` (emptied between jobs) to `%LOCALAPPDATA%`, its record is
-    written after every move rather than once at the end, and a copy the runner's
-    account cannot move is reported and skipped instead of aborting the step.
+    time and delete each other's test objects in their pre-run teardown.
+  - The integration workflows no longer move module copies out of, and back
+    into, the runner's standard module folders around each run - a failed move
+    there stranded copies in `RUNNER_TEMP`, which the runner empties between
+    jobs. They load the module only from their workspace build and now fail,
+    naming each one, if a copy is installed in a standard module folder.
     `tests/Integration/README.md` lists what an `AZDO-AGENT` machine needs.
+  - `scripts/redeploy-module.ps1` no longer copies the build into
+    `Documents\PowerShell\Modules`. It puts `output\builtModule` at the front of
+    `PSModulePath` for the current session and warns about any copy in a
+    standard module folder.
 - AzureDevOpsDscNative
   - `AzDoProject.ProcessTemplate` no longer restricts a project to the four
     system processes (`Agile`, `Scrum`, `CMMI`, `Basic`) via `ValidateSet` -
