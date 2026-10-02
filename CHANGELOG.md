@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Build
+  - `azure-pipelines.yml` brought in line with the GitHub workflows so it runs
+    on current Microsoft-hosted agents: full-history checkout for GitVersion,
+    GitVersion.Tool 5.12.0 run with `DOTNET_ROLL_FORWARD=Major` (hosted images
+    no longer ship .NET 6/7), unit tests run under Pester 5.7.1 as in
+    `unit-tests.yml` instead of the Pester 4 `build.ps1 -tasks test` path,
+    HQRM reported but non-gating, and the retired Codecov bash uploader and
+    `PublishCodeCoverageResults@1` removed. The Deploy stage no longer requires a
+    `dsccommunity` organization; it runs only on a `v*` tag with the pipeline
+    variable `PublishRelease` set to `true`.
+  - The integration workflows now cope with more than one runner carrying the
+    `AZDO-AGENT` label. The v2 and v3 live-organization jobs share one
+    concurrency group, so they no longer run against the organization at the same
+    time and delete each other's test objects in their pre-run teardown.
+  - The integration workflows no longer move module copies out of, and back
+    into, the runner's standard module folders around each run - a failed move
+    there stranded copies in `RUNNER_TEMP`, which the runner empties between
+    jobs. They load the module only from their workspace build and now fail,
+    naming each one, if a copy is installed in a standard module folder.
+    `tests/Integration/README.md` lists what an `AZDO-AGENT` machine needs.
+  - `scripts/redeploy-module.ps1` no longer copies the build into
+    `Documents\PowerShell\Modules`. It puts `output\builtModule` at the front of
+    `PSModulePath` for the current session and warns about any copy in a
+    standard module folder.
 - AzureDevOpsDscNative
   - `AzDoProject.ProcessTemplate` no longer restricts a project to the four
     system processes (`Agile`, `Scrum`, `CMMI`, `Basic`) via `ValidateSet` -

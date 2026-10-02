@@ -107,11 +107,31 @@ Actions tab) and `workflow_call` (both gate a release from `publish.yml`). They 
 the v2 suite takes the better part of an hour, so learning anything about v3 from inside it meant
 waiting all of v2 out first.
 
-They target the same self-hosted runner, so they queue rather than contend - but they use **separate
+Both run on the self-hosted runners labelled `AZDO-AGENT`, and their live-organization jobs share
+the `azdo-live-organization` concurrency group, so only one runs at a time even when more than one
+runner is online. They have to: each run's pre-run teardown deletes test objects, so two suites
+running against the same organization at once would delete each other's. They also use **separate
 cache directories** (`AzureDevOpsDscCache` and `AzureDevOpsDscCache-V3`, the latter cleared at the
 start of each run). The module imports whatever cache is on disk at startup, so a shared directory
 would let one suite be answered out of the other's exported state - which is exactly what running
 the same resources through two hosts is supposed to rule out.
+
+### What an `AZDO-AGENT` runner needs
+
+Any machine given the `AZDO-AGENT` label can receive either suite, so each one needs:
+
+- Windows with PowerShell 7 (`pwsh`) and Git, and outbound access to the PowerShell Gallery (the
+  build resolves its dependencies there) and to `dev.azure.com`.
+- A writable `C:\Temp` - both suites write their result XML there.
+- For Managed Identity (an empty `AZURE_DEVOPS_PAT`), an Azure VM or Arc machine with an identity
+  that has access to the organization. With a PAT, any machine works.
+- No copy of `AzureDevOpsDscNative`, `AzureDevOpsDsc.Common` or `DscResource.Common` in a standard
+  module folder - the runner account's `Documents\PowerShell\Modules` or
+  `Documents\WindowsPowerShell\Modules`, or the same folders under `Program Files`. Both suites
+  load the module only from the build in their own workspace, and never install, move or delete
+  anything outside it. A copy in one of those folders would be loaded instead of the build, so
+  each workflow fails at its "Refuse module copies in standard module folders" step and names
+  every copy it finds; delete them from the runner.
 
 ## Features an organization policy can withhold
 

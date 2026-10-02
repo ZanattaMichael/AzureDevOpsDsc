@@ -211,7 +211,7 @@ Invoke-Pester -Configuration $config
 
 ## Running Integration Tests
 
-Integration tests hit a live Azure DevOps organization and **must run as Administrator** because the deployed module path requires elevated access.
+Integration tests hit a live Azure DevOps organization and **must run as Administrator**. They load the module by name from `PSModulePath`, so run `.\scripts\redeploy-module.ps1` in the same session first (see Build and Deploy).
 
 ### Option A — Official runner (recommended)
 
@@ -234,7 +234,7 @@ Set-Location 'C:\Git\AzureDevOpsDsc\tests\Integration'
 ### Option B — Direct Pester (skip framework init)
 
 ```powershell
-# Only valid if the module is already deployed and the global token is already set
+# Only valid after .\scripts\redeploy-module.ps1 in this session, with the global token already set
 $config = New-PesterConfiguration
 $config.Run.Path = 'C:\Git\AzureDevOpsDsc\tests\Integration\Resources'
 $config.Output.Verbosity = 'Detailed'
@@ -249,16 +249,18 @@ Invoke-Pester -Configuration $config
 # Build the module (uses ModuleBuilder/Sampler)
 .\build.ps1 -Tasks build
 
-# Redeploy to the local PowerShell modules directory after a build
+# Point this session at the build (run again after each build and in each new session)
 .\scripts\redeploy-module.ps1
 ```
 
-The deployed module lands at:
-`<MyDocuments>\PowerShell\Modules\AzureDevOpsDscNative\<version>\`
+The module is never installed into a standard module folder. `scripts\redeploy-module.ps1` puts
+`output\builtModule` and the built module's nested `Modules` folder at the front of
+`$env:PSModulePath` for the current process only, resolving the version from
+`output\builtModule\AzureDevOpsDscNative\` rather than assuming one. It warns about any copy of
+the module in `<MyDocuments>\PowerShell\Modules` or `Program Files`: every new pwsh, and
+`Invoke-DscResource`, finds such a copy ahead of the build, so remove it.
 
-`scripts\redeploy-module.ps1` resolves the version from `output\builtModule\AzureDevOpsDscNative\` rather than assuming one.
-
-After editing source files, always rebuild and redeploy before running integration tests — integration tests exercise the **deployed** module, not the source files.
+After editing source files, always rebuild and re-run the script before running integration tests — integration tests exercise the **built** module, not the source files. CI does the same with its own workspace build and fails if a runner has a copy in a standard module folder.
 
 ---
 
