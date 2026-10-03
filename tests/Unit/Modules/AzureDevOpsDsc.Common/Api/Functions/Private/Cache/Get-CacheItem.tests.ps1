@@ -23,6 +23,7 @@ Describe 'Get-CacheItem' -Tag "Unit", "Cache" {
         }
 
         . (Get-ClassFilePath '000.CacheItem')
+        . (Get-FunctionItem 'Get-CacheKeyIndex.ps1')
 
         Mock -CommandName Get-AzDoCacheObjects -MockWith { return @('Type1', 'Type2') }
         Mock -CommandName Get-CacheObject

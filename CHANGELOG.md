@@ -63,10 +63,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `Get-CacheObject` already imports a cache when it is first read. A missing
     cache file is now reported as verbose output rather than a warning, since
     it is the normal state for a cache nothing has written yet.
+  - Cache lookups no longer copy or scan the whole cache:
+    - `Get-CacheObject` returns the live cache list instead of letting
+      PowerShell unroll it into a copy on every read. An empty cache comes back
+      as an empty list rather than `$null`, and a cache stored as an array is
+      normalized to a `List[CacheItem]` once.
+    - `Add-CacheItem` and `Get-CacheItem` find a key through a new
+      case-insensitive key index (`Get-CacheKeyIndex`) instead of a
+      `Where-Object` scan, so filling a cache is linear rather than quadratic.
+      The index is rebuilt whenever the cache list is replaced or its count
+      changes, and a cache holding a duplicate key falls back to scanning.
+    - `Add-CacheItem` replaces an existing key in place instead of copying the
+      cache through `Remove-CacheItem`.
+    - `Find-Identity` filters the group, user and service-principal caches with
+      `.Where()` instead of copying each one per ACE.
+    - `CacheItem` stamps its creation time with `[datetime]::Now` rather than
+      a `Get-Date` call.
 
 ### Fixed
 
 - AzureDevOpsDscNative
+  - The identity cache initializer (`AzDoAPI_7_IdentitySubjectDescriptors`)
+    re-added every group, user and service principal with the whole cache item
+    as its value, so `.value.ACLIdentity` read `$null` for all of them and every
+    descriptor lookup in `Find-Identity` missed the cache and fell through to
+    the API. The resolved identity is now stamped onto the cached item in place.
   - `Invoke-AzDevOpsApiRestMethod` retry and rate-limit handling:
     - A 429 without a `Retry-After` header stored the retry interval
       (milliseconds) in a field read as seconds, so the next attempt slept for

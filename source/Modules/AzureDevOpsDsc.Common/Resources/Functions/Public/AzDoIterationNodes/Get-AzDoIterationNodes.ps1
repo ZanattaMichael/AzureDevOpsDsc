@@ -100,7 +100,7 @@ Function Get-AzDoIterationNodes {
 
     # Retrieve cached Iteration nodes from cache
     Write-Verbose "[Get-AzDoIterationNodes] Retrieving cached Iteration nodes"
-    $cachedIterationNodes = (Get-CacheObject -CacheType 'LiveIterations' | Where-Object { $_.Key -like "\$ProjectName\Iteration*" }).Value
+    $cachedIterationNodes = ((Get-CacheObject -CacheType 'LiveIterations') | Where-Object { $_.Key -like "\$ProjectName\Iteration*" }).Value
     $cachedIterationNodesPath = $cachedIterationNodes.Path
 
     # Set the cached Iteration nodes in the result object for use by other functions

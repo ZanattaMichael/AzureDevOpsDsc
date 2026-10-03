@@ -120,20 +120,15 @@ function AzDoAPI_7_IdentitySubjectDescriptors
                 isContainer = $identity.isContainer
             }
 
+            # $cacheItem is the cached item itself (Get-CacheObject returns the live list), so this
+            # updates the cache in place. It used to be followed by Add-CacheItem with
+            # 'Value = $cacheItem', which stored the whole CacheItem as the value of a new one:
+            # .value.ACLIdentity then read $null for every group, user and service principal, and
+            # every descriptor search missed the cache. Re-adding the item is also not safe now,
+            # because it would change the list this loop is enumerating.
             $cacheItem.value | Add-Member -MemberType NoteProperty -Name 'ACLIdentity' -Value $ACLIdentity -Force
 
-            $cacheParams = @{
-                Key = $cacheItem.Key
-                Value = $cacheItem
-                Type = $cacheType
-                SuppressWarning = $true
-            }
-
-            # Add to the cache
-            Add-CacheItem @cacheParams
-
-            # Populate the flat descriptor index from the clean in-scope data (avoids the nested/double-wrapped
-            # shape the List cache stores). Persist once after the loops, not per item.
+            # Populate the flat descriptor index too. Persist once after the loops, not per item.
             Add-IdentityDescriptorIndexItem -AclDescriptor $ACLIdentity.descriptor -PrincipalName $cacheItem.value.principalName `
                 -OriginId $cacheItem.value.originId -GraphDescriptor $cacheItem.value.descriptor -AclId $ACLIdentity.id `
                 -SubjectDescriptor $ACLIdentity.subjectDescriptor

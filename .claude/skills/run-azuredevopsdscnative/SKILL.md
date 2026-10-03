@@ -54,7 +54,7 @@ You never need to run `Install-Module` — it would fail against PSGallery.
 .claude/skills/run-azuredevopsdscnative/driver.sh
 ```
 
-Expected on this container: `Passed: 2992  Failed: 28  Skipped: 10  Duration: ~00:01:45`.
+Expected on this container: `Passed: 3008  Failed: 28  Skipped: 10  Duration: ~00:01:45`.
 
 The 28 failures are Linux-only and cluster on:
 - **Cache export/import** (`Export-CacheObject`,
@@ -66,7 +66,7 @@ The 28 failures are Linux-only and cluster on:
   security-namespace lookup that only resolves against Windows-shipped data.
 
 On the `windows-latest` CI runner these all pass. Don't treat the local
-number as a regression signal; treat a delta against 2992/28/10 as one.
+number as a regression signal; treat a delta against 3008/28/10 as one.
 
 ### One file or one subtree
 
@@ -158,4 +158,4 @@ executes `integration-tests.yml`.
 | `The term 'Get-FunctionItem' is not recognized` | You bypassed the bootstrap. Always run `azuredevopsdsc.common.tests.ps1 -LoadModulesOnly` (the driver does this for you) before calling `Invoke-Pester` on the Common suite. |
 | `Unable to find type [AzDevOpsApiDscResourceBase]` on the Classes suite | You tried to run the Classes suite without a built module. Not fixable here — needs `./build.ps1 -Tasks build` on a machine with PSGallery access. Push and let CI run it. |
 | Driver hangs installing pwsh | The proxy has a `403` on the Microsoft package repo. Retry once; the transient case is common right after container start. |
-| Test count deltas from `2992 / 28 / 10` | The Common suite has changed. Compare the failing test-file list (rerun with `--load-only` then a targeted subtree) against the "cluster" list above to see if it's a new Linux-only flake or a real regression. |
+| Test count deltas from `3008 / 28 / 10` | The Common suite has changed. Compare the failing test-file list (rerun with `--load-only` then a targeted subtree) against the "cluster" list above to see if it's a new Linux-only flake or a real regression. |

@@ -56,4 +56,56 @@ Describe 'Get-CacheObject Tests' -Tag "Unit", "Cache" {
         $result = Get-CacheObject -CacheType 'Project'
         $result | Should -Be "ImportedProjectCache"
     }
+
+    Context 'Live cache reference' {
+
+        BeforeEach {
+            $env:AZDODSC_CACHE_DIRECTORY = "C:\MockCacheDirectory"
+        }
+
+        AfterEach {
+            Remove-Variable -Name "AzDoProject" -Scope Global -ErrorAction SilentlyContinue
+        }
+
+        It 'Should return the live list rather than a copy' {
+            $list = [System.Collections.Generic.List[CacheItem]]::new()
+            $list.Add([CacheItem]::new('Key1', 'Value1'))
+            Set-Variable -Name "AzDoProject" -Value $list -Scope Global
+
+            $result = Get-CacheObject -CacheType 'Project'
+
+            [object]::ReferenceEquals($result, $list) | Should -BeTrue
+        }
+
+        It 'Should return an empty list, not $null, for an empty cache' {
+            $list = [System.Collections.Generic.List[CacheItem]]::new()
+            Set-Variable -Name "AzDoProject" -Value $list -Scope Global
+
+            $result = Get-CacheObject -CacheType 'Project'
+
+            $null -eq $result | Should -BeFalse
+            $result.Count | Should -Be 0
+            [object]::ReferenceEquals($result, $list) | Should -BeTrue
+        }
+
+        It 'Should normalize an object array of cache items to a stored List[CacheItem]' {
+            $items = @([CacheItem]::new('Key1', 'Value1'), [CacheItem]::new('Key2', 'Value2'))
+            Set-Variable -Name "AzDoProject" -Value $items -Scope Global
+
+            $result = Get-CacheObject -CacheType 'Project'
+
+            $result.GetType().FullName | Should -BeLike 'System.Collections.Generic.List*'
+            $result.Count | Should -Be 2
+            [object]::ReferenceEquals($result, (Get-Variable -Name "AzDoProject" -Scope Global -ValueOnly)) | Should -BeTrue
+        }
+
+        It 'Should let a caller see changes made through the returned list' {
+            $list = [System.Collections.Generic.List[CacheItem]]::new()
+            Set-Variable -Name "AzDoProject" -Value $list -Scope Global
+
+            (Get-CacheObject -CacheType 'Project').Add([CacheItem]::new('Key1', 'Value1'))
+
+            $Global:AzDoProject.Count | Should -Be 1
+        }
+    }
 }

@@ -66,6 +66,19 @@ Function Find-Identity
         return $null
     }
 
+    # Helper: filters a cache with .Where(), which is several times faster than piping it through
+    # Where-Object once per ACE. It returns what Where-Object did: $null for no match, the item
+    # for one, an array for several. resolveUnique depends on that shape - an empty collection
+    # would count as a found identity.
+    $searchCache = {
+        param($cache, [scriptblock]$filter)
+        if ($null -eq $cache) { return $null }
+        $matched = $cache.Where($filter)
+        if ($matched.Count -eq 0) { return $null }
+        if ($matched.Count -eq 1) { return $matched[0] }
+        return ,@($matched)
+    }
+
     # Helper: returns the single matching identity from three candidate sets, or $null when
     # zero or more than one are found (with appropriate verbose/warning output).
     $resolveUnique = {
@@ -114,9 +127,9 @@ Function Find-Identity
     }
 
     # Search the caches.
-    $groupIdentity            = $CachedGroups            | Where-Object $groupFilter
-    $userIdentity             = $CachedUsers             | Where-Object $commonFilter
-    $servicePrincipalIdentity = $CachedServicePrincipals | Where-Object $commonFilter
+    $groupIdentity            = & $searchCache $CachedGroups            $groupFilter
+    $userIdentity             = & $searchCache $CachedUsers             $commonFilter
+    $servicePrincipalIdentity = & $searchCache $CachedServicePrincipals $commonFilter
 
     $resolved = & $resolveUnique $groupIdentity $userIdentity $servicePrincipalIdentity $Name
     if ($null -ne $resolved)
@@ -158,9 +171,9 @@ Function Find-Identity
         return $null
     }
 
-    # Descriptor index fast-path. The List caches frequently lose .value.ACLIdentity.descriptor across
-    # the clixml round-trip / init double-wrap, so a descriptor search that should hit the cache instead
-    # falls through to the expensive API pair below. The flat descriptor index keeps a clixml-safe
+    # Descriptor index fast-path. The List caches can lack .value.ACLIdentity.descriptor (a group cached
+    # before its identity was resolved, or a cache imported from an older file that was double-wrapped),
+    # so a descriptor search that should hit the cache can fall through to the expensive API pair below. The flat descriptor index keeps a clixml-safe
     # descriptor -> identity mapping that survives runspace isolation; check it before paying for the API.
     if ($SearchType -eq 'descriptor')
     {
@@ -248,9 +261,10 @@ Function Find-Identity
         return $null
     }
 
-    $groupIdentity            = $CachedGroups            | Where-Object { $_.value.ACLIdentity.id -eq $identity.id }
-    $userIdentity             = $CachedUsers             | Where-Object { $_.value.ACLIdentity.id -eq $identity.id }
-    $servicePrincipalIdentity = $CachedServicePrincipals | Where-Object { $_.value.ACLIdentity.id -eq $identity.id }
+    $idFilter = { $_.value.ACLIdentity.id -eq $identity.id }
+    $groupIdentity            = & $searchCache $CachedGroups            $idFilter
+    $userIdentity             = & $searchCache $CachedUsers             $idFilter
+    $servicePrincipalIdentity = & $searchCache $CachedServicePrincipals $idFilter
 
     $resolved = & $resolveUnique $groupIdentity $userIdentity $servicePrincipalIdentity $identity.id
     if ($null -ne $resolved)

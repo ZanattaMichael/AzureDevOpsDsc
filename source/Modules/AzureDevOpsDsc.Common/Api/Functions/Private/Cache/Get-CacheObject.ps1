@@ -23,7 +23,9 @@ Retrieves the cache object of type 'Team' from the specified root path.
 None.
 
 .OUTPUTS
-The cache object of the specified type.
+The cache object of the specified type. This is the live in-memory list, not a copy, so it
+reflects later Add-CacheItem and Remove-CacheItem calls. Use .Where() rather than piping it
+to Where-Object, which receives the list as one object.
 
 .NOTES
 This function is part of the AzureDevOpsDsc module.
@@ -68,12 +70,40 @@ function Get-CacheObject
         else
         {
             Write-Verbose "[Get-ObjectCache] Cache object not found in memory, attempting to import for type: $CacheType"
-            $var = Import-CacheObject -CacheType $CacheType
+            $imported = Import-CacheObject -CacheType $CacheType
+            # Import-CacheObject sets the global. Read it back rather than using the return value,
+            # which PowerShell has already unrolled into a copy (or $null, for an empty cache).
+            $var = Get-Variable -Name "AzDo$CacheType" -ValueOnly -Scope Global -ErrorAction SilentlyContinue
+            if ($null -eq $var)
+            {
+                $var = $imported
+            }
         }
 
-        # Return the content of the cache after importing it
-        Write-Verbose "[Get-ObjectCache] Returning imported cache object for type: $CacheDirectoryPath"
-        return $var
+        # Keep the global as a List[CacheItem], so Add-CacheItem and Remove-CacheItem can change it
+        # in place. Set-CacheObject stores an [Object[]]; convert that once here, not on every add.
+        if (($null -ne $var) -and ($var -isnot [System.Collections.Generic.List[CacheItem]]) -and ($var -is [System.Collections.IEnumerable]) -and ($var -isnot [string]))
+        {
+            try
+            {
+                $var = [System.Collections.Generic.List[CacheItem]]$var
+                Set-Variable -Name "AzDo$CacheType" -Value $var -Scope Global -Force
+            }
+            catch
+            {
+                Write-Verbose "[Get-ObjectCache] Cache '$CacheType' does not hold CacheItem objects; returning it unchanged."
+            }
+        }
+
+        if ($null -eq $var)
+        {
+            return
+        }
+
+        # Return the live cache, not a copy. A bare 'return $var' unrolls the list, so every call
+        # copied the whole cache and Add-CacheItem then copied it again into a new list.
+        Write-Verbose "[Get-ObjectCache] Returning cache object for type: $CacheType"
+        return ,$var
 
     }
     catch

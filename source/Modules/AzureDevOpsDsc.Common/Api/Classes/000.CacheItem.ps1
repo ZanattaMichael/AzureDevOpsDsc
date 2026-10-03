@@ -44,7 +44,7 @@ class CacheItem
 
         $this.Key = $Key
         $this.Value = $Value
-        $this.created = Get-Date
+        $this.created = [datetime]::Now
     }
 
 }

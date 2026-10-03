@@ -100,7 +100,7 @@ Describe "AzDoAPI_7_IdentitySubjectDescriptors" -Tag "Unit", "Cache Initalizatio
 
         Assert-MockCalled -CommandName Get-CacheObject
         Assert-MockCalled -CommandName Get-DevOpsDescriptorIdentityBatch
-        Assert-MockCalled -CommandName Add-CacheItem
+        Assert-MockCalled -CommandName Add-CacheItem -Times 0 -Exactly
         Assert-MockCalled -CommandName Export-CacheObject
     }
 
@@ -109,7 +109,7 @@ Describe "AzDoAPI_7_IdentitySubjectDescriptors" -Tag "Unit", "Cache Initalizatio
 
         Assert-MockCalled -CommandName Get-CacheObject
         Assert-MockCalled -CommandName Get-DevOpsDescriptorIdentityBatch
-        Assert-MockCalled -CommandName Add-CacheItem
+        Assert-MockCalled -CommandName Add-CacheItem -Times 0 -Exactly
         Assert-MockCalled -CommandName Export-CacheObject
     }
 
@@ -136,17 +136,24 @@ Describe "AzDoAPI_7_IdentitySubjectDescriptors" -Tag "Unit", "Cache Initalizatio
         # lazily on first use, so the cache is still written.
         { AzDoAPI_7_IdentitySubjectDescriptors -OrganizationName 'testOrg' } | Should -Not -Throw
 
-        Assert-MockCalled -CommandName Add-CacheItem
+        Assert-MockCalled -CommandName Add-CacheItem -Times 0 -Exactly
         Assert-MockCalled -CommandName Export-CacheObject
     }
 
-    It "should add members to each cache object" {
+    It "should stamp ACLIdentity onto the cached item in place, without re-adding it" {
 
-        $mockGroup = @{
+        # Get-CacheObject returns the live list, so the item the initializer enumerates is the
+        # cached item itself. Re-adding it used to store the whole item as the value of a new one,
+        # which left .value.ACLIdentity $null for every identity.
+        $script:liveGroup = [PSCustomObject]@{
             Key = 'mockKey'
             Value = [PSCustomObject]@{
                 descriptor = 'mockDescriptorGroup'
             }
+        }
+
+        Mock -CommandName Get-CacheObject -ParameterFilter { $CacheType -eq 'LiveGroups' } -MockWith {
+            return ,@($script:liveGroup)
         }
 
         $result = AzDoAPI_7_IdentitySubjectDescriptors -OrganizationName 'testOrg'
@@ -155,17 +162,15 @@ Describe "AzDoAPI_7_IdentitySubjectDescriptors" -Tag "Unit", "Cache Initalizatio
             $SubjectDescriptor -contains 'mockDescriptorGroup'
         }
 
-        $cacheItemArgs = @{
-            Key = 'mockKey'
-            Value = $mockGroup
-            Type = 'LiveGroups'
-            SuppressWarning = $true
-        }
+        Assert-MockCalled -CommandName Add-CacheItem -Times 0 -Exactly
 
-        Assert-MockCalled -CommandName Add-CacheItem -Times 1 -ParameterFilter {
-            $Key -eq $cacheItemArgs.Key -and
-            $Type -eq $cacheItemArgs.Type -and
-            $SuppressWarning -eq $cacheItemArgs.SuppressWarning
+        $script:liveGroup.Value.ACLIdentity | Should -Not -BeNullOrEmpty
+        $script:liveGroup.Value.ACLIdentity.id | Should -Be 'mockId'
+        $script:liveGroup.Value.ACLIdentity.descriptor | Should -Be 'mockDescriptor'
+        $script:liveGroup.Value.descriptor | Should -Be 'mockDescriptorGroup'
+
+        Assert-MockCalled -CommandName Export-CacheObject -ParameterFilter {
+            $CacheType -eq 'LiveGroups' -and @($Content)[0].Value.ACLIdentity.id -eq 'mockId'
         }
 
     }
