@@ -54,10 +54,10 @@ You never need to run `Install-Module` — it would fail against PSGallery.
 .claude/skills/run-azuredevopsdscnative/driver.sh
 ```
 
-Expected on this container: `Passed: 1672  Failed: 31  Skipped: 10  Duration: ~00:01:00`.
+Expected on this container: `Passed: 3008  Failed: 28  Skipped: 10  Duration: ~00:01:45`.
 
-The 31 failures are Linux-only and cluster on:
-- **Cache export/import** (`Export-CacheObject`, `Import-CacheObject`,
+The 28 failures are Linux-only and cluster on:
+- **Cache export/import** (`Export-CacheObject`,
   `Initialize-CacheObject`, `BypassFileCheck switch`) — path-separator and
   clixml round-trip differences vs Windows.
 - **`New-AzDoAuthenticationProvider` parameter sets** and **`Token export
@@ -66,7 +66,7 @@ The 31 failures are Linux-only and cluster on:
   security-namespace lookup that only resolves against Windows-shipped data.
 
 On the `windows-latest` CI runner these all pass. Don't treat the local
-number as a regression signal; treat a delta against 1672/31/10 as one.
+number as a regression signal; treat a delta against 3008/28/10 as one.
 
 ### One file or one subtree
 
@@ -145,7 +145,7 @@ executes `integration-tests.yml`.
 - **DPAPI-encrypted SecureStrings in `ModuleSettings.clixml`.** Any test
   that decrypts a fixture SecureString by round-tripping through clixml
   will fail on Linux — DPAPI is Windows-only. That's why the token-export
-  suite is in the 31 expected failures.
+  suite is in the 28 expected failures.
 
 ---
 
@@ -158,4 +158,4 @@ executes `integration-tests.yml`.
 | `The term 'Get-FunctionItem' is not recognized` | You bypassed the bootstrap. Always run `azuredevopsdsc.common.tests.ps1 -LoadModulesOnly` (the driver does this for you) before calling `Invoke-Pester` on the Common suite. |
 | `Unable to find type [AzDevOpsApiDscResourceBase]` on the Classes suite | You tried to run the Classes suite without a built module. Not fixable here — needs `./build.ps1 -Tasks build` on a machine with PSGallery access. Push and let CI run it. |
 | Driver hangs installing pwsh | The proxy has a `403` on the Microsoft package repo. Retry once; the transient case is common right after container start. |
-| Test count deltas from `1672 / 31 / 10` | The Common suite has changed. Compare the failing test-file list (rerun with `--load-only` then a targeted subtree) against the "cluster" list above to see if it's a new Linux-only flake or a real regression. |
+| Test count deltas from `3008 / 28 / 10` | The Common suite has changed. Compare the failing test-file list (rerun with `--load-only` then a targeted subtree) against the "cluster" list above to see if it's a new Linux-only flake or a real regression. |

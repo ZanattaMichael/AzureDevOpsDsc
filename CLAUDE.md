@@ -204,7 +204,7 @@ $config.Output.Verbosity = 'Detailed'
 Invoke-Pester -Configuration $config
 
 # Current baseline (Windows CI): 2015 Passed, 0 Failed, 10 Skipped.
-# On Linux 31 of those fail for environment reasons - see 'Testing Locally on Linux'.
+# On Linux 28 of those fail for environment reasons - see 'Testing Locally on Linux'.
 ```
 
 ---
@@ -330,9 +330,9 @@ side-loads Pester from nuget.org (PSGallery is proxy-blocked):
 .claude/skills/run-azuredevopsdscnative/driver.sh <path>       # one file or subtree
 ```
 
-**Baseline: 31 failures is correct on Linux.** They are environment-specific — DPAPI SecureStrings,
+**Baseline: 28 failures is correct on Linux.** They are environment-specific — DPAPI SecureStrings,
 cache clixml round-trips and Windows-only namespace fixtures — and all pass on the `windows-latest`
-CI runner. Treat a *delta* from 31 as a regression, not the number itself.
+CI runner. Treat a *delta* from 28 as a regression, not the number itself.
 
 The Classes suite (`azuredevopsdsc.tests.ps1`) and `build.ps1` cannot run in that container: the
 first resolves types via `using module` against the built module, and the second needs Sampler and

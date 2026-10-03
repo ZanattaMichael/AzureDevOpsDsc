@@ -36,7 +36,18 @@ function Get-CacheItem
     try
     {
         [System.Collections.Generic.List[CacheItem]]$cache = Get-CacheObject -CacheType $Type
-        $cacheItem = $cache.Where({$_.Key -eq $Key})
+        # A dictionary lookup rather than a scan of the whole cache on every read.
+        $index = Get-CacheKeyIndex -Type $Type -Cache $cache
+        if ($null -ne $index)
+        {
+            $found = $null
+            $cacheItem = if ($index.TryGetValue($Key, [ref]$found)) { @($found) } else { $null }
+        }
+        else
+        {
+            # The cache holds a duplicate key, so it cannot be indexed. Scan it instead.
+            $cacheItem = $cache.Where({$_.Key -eq $Key})
+        }
     }
     catch
     {

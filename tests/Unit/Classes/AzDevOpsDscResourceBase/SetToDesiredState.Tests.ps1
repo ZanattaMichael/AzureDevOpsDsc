@@ -46,6 +46,44 @@ Describe "[AzDevOpsDscResourceBase]::SetToDesiredState() Tests" -Tag "Unit", "Az
         }
     }
 
+    # Uses the real GetDscRequiredAction(): Ensure = Absent against an 'Unchanged' lookup maps to Remove.
+    class AzDevOpsDscResourceBaseCountingExample : AzDevOpsDscResourceBase # Note: Ignore 'TypeNotFound' warning (it is available at runtime)
+    {
+        [DscProperty(Key)]
+        [string]$AzDevOpsDscResourceBaseExampleName = 'AzDevOpsDscResourceBaseExampleNameValue'
+
+        [DscProperty()]
+        [Ensure]$Ensure = [Ensure]::Absent
+
+        [Int32]$CurrentStateReads = 0
+
+        [string]GetResourceName()
+        {
+            return 'AzDevOpsDscResourceBaseCountingExample'
+        }
+
+        [Hashtable]GetDscCurrentStateProperties()
+        {
+            $this.CurrentStateReads++
+            return @{
+                Ensure       = [Ensure]::Present
+                LookupResult = @{ Status = [DSCGetSummaryState]::Unchanged }
+            }
+        }
+
+        [string]GetResourceFunctionName([RequiredAction]$RequiredAction)
+        {
+            return 'Invoke-SetToDesiredStateTestAction'
+        }
+
+        [Hashtable]GetDesiredStateParameters([Hashtable]$Current, [Hashtable]$Desired, [RequiredAction]$RequiredAction)
+        {
+            return @{
+                RequiredAction = $RequiredAction
+            }
+        }
+    }
+
     $testCasesValidRequiredActionThatDoNotRequireAction = @(
         @{
             RequiredAction = [RequiredAction]::Get
@@ -92,6 +130,40 @@ Describe "[AzDevOpsDscResourceBase]::SetToDesiredState() Tests" -Tag "Unit", "Az
             $azDevOpsDscResourceBase | Add-Member -MemberType ScriptMethod -Name GetDscRequiredAction -Value $getDscRequiredAction -Force
 
             $azDevOpsDscResourceBase.SetToDesiredState() | Should -BeNullOrEmpty
+        }
+
+    }
+
+
+    Context 'When the resource is not in the desired state' {
+
+        BeforeAll {
+            function global:Invoke-SetToDesiredStateTestAction
+            {
+                param ($RequiredAction, $LookupResult)
+                $global:SetToDesiredStateTestActionCalls += @(@{ RequiredAction = $RequiredAction; LookupResult = $LookupResult })
+            }
+        }
+
+        BeforeEach {
+            $global:SetToDesiredStateTestActionCalls = @()
+        }
+
+        AfterAll {
+            Remove-Item -Path 'Function:\Invoke-SetToDesiredStateTestAction' -ErrorAction SilentlyContinue
+            Remove-Variable -Name SetToDesiredStateTestActionCalls -Scope Global -ErrorAction SilentlyContinue
+        }
+
+        It 'Should read the current state once and use it for both the action and its parameters' {
+
+            $azDevOpsDscResourceBase = [AzDevOpsDscResourceBaseCountingExample]::new()
+
+            $azDevOpsDscResourceBase.SetToDesiredState()
+
+            $azDevOpsDscResourceBase.CurrentStateReads | Should -Be 1
+            $global:SetToDesiredStateTestActionCalls.Count | Should -Be 1
+            $global:SetToDesiredStateTestActionCalls[0].RequiredAction | Should -Be ([RequiredAction]::Remove)
+            $global:SetToDesiredStateTestActionCalls[0].LookupResult.Status | Should -Be ([DSCGetSummaryState]::Unchanged)
         }
 
     }

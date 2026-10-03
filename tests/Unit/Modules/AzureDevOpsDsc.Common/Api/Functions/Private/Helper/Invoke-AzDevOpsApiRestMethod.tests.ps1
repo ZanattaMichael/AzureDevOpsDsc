@@ -113,14 +113,97 @@ Describe 'Invoke-AzDevOpsApiRestMethod' -Tag "Unit", "Helper" {
             Assert-MockCalled -CommandName Invoke-RestMethod -Exactly -Times 3
         }
 
-        It 'should wait between retries' {
+        It 'should wait between retries, but not after the last attempt' {
             Mock -CommandName Start-Sleep -Verifiable
             Mock -CommandName Invoke-RestMethod -MockWith { throw "Error" }
             $parameters = $defaultParameters.Clone()
             $parameters.RetryAttempts = 2
 
             { Invoke-AzDevOpsApiRestMethod @parameters } | Should -Throw
-            Assert-MockCalled -CommandName Start-Sleep -Exactly -Times 3
+            # Three attempts, two gaps between them.
+            Assert-MockCalled -CommandName Start-Sleep -Exactly -Times 2
+        }
+
+        It 'should not retry a non-transient HTTP <StatusCode> error' -TestCases @(
+            @{ StatusCode = [System.Net.HttpStatusCode]::BadRequest }
+            @{ StatusCode = [System.Net.HttpStatusCode]::Unauthorized }
+            @{ StatusCode = [System.Net.HttpStatusCode]::Forbidden }
+            @{ StatusCode = [System.Net.HttpStatusCode]::NotFound }
+            @{ StatusCode = [System.Net.HttpStatusCode]::Conflict }
+        ) {
+            param ($StatusCode)
+
+            Mock -CommandName Start-Sleep
+            # The mock body runs in its own scope and does not see the test case parameter.
+            $script:mockStatusCode = $StatusCode
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                throw [CustomException]::New('Client error', [System.Net.WebExceptionStatus]::ProtocolError, @{}, $script:mockStatusCode)
+            }
+            $parameters = $defaultParameters.Clone()
+            $parameters.RetryAttempts = 5
+
+            { Invoke-AzDevOpsApiRestMethod @parameters } | Should -Throw '*after 0*Client error*'
+            Assert-MockCalled -CommandName Invoke-RestMethod -Exactly -Times 1
+            Assert-MockCalled -CommandName Start-Sleep -Exactly -Times 0
+        }
+
+        It 'should retry a transient HTTP <StatusCode> error' -TestCases @(
+            @{ StatusCode = [System.Net.HttpStatusCode]::RequestTimeout }
+            @{ StatusCode = [System.Net.HttpStatusCode]::InternalServerError }
+            @{ StatusCode = [System.Net.HttpStatusCode]::BadGateway }
+            @{ StatusCode = [System.Net.HttpStatusCode]::ServiceUnavailable }
+            @{ StatusCode = [System.Net.HttpStatusCode]::GatewayTimeout }
+        ) {
+            param ($StatusCode)
+
+            Mock -CommandName Start-Sleep
+            # The mock body runs in its own scope and does not see the test case parameter.
+            $script:mockStatusCode = $StatusCode
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                throw [CustomException]::New('Server error', [System.Net.WebExceptionStatus]::ProtocolError, @{}, $script:mockStatusCode)
+            }
+            $parameters = $defaultParameters.Clone()
+            $parameters.RetryAttempts = 2
+
+            { Invoke-AzDevOpsApiRestMethod @parameters } | Should -Throw '*after 2*Server error*'
+            Assert-MockCalled -CommandName Invoke-RestMethod -Exactly -Times 3
+        }
+    }
+
+    Context 'Authentication header' {
+
+        It 'should add a fresh Authorization header to every request' {
+            Mock -CommandName Start-Sleep
+            Mock -CommandName Add-AuthenticationHTTPHeader -MockWith { return 'Bearer token' }
+            $script:seenAuthorization = @()
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                param ($Uri, $Method, $Headers)
+                $script:seenAuthorization += $Headers.Authorization
+                throw "Error"
+            }
+            $parameters = $defaultParameters.Clone()
+            $parameters.RetryAttempts = 1
+
+            { Invoke-AzDevOpsApiRestMethod @parameters } | Should -Throw
+            $script:seenAuthorization | Should -Be @('Bearer token', 'Bearer token')
+        }
+
+        It 'should keep the caller''s Authorization header on retries when NoAuthentication is set' {
+            Mock -CommandName Start-Sleep
+            Mock -CommandName Add-AuthenticationHTTPHeader -MockWith { return 'Bearer module-token' }
+            $script:seenAuthorization = @()
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                param ($Uri, $Method, $Headers)
+                $script:seenAuthorization += $Headers.Authorization
+                throw "Error"
+            }
+            $parameters = $defaultParameters.Clone()
+            $parameters.HttpHeaders = @{ Authorization = 'Bearer caller-token' }
+            $parameters.RetryAttempts = 1
+
+            { Invoke-AzDevOpsApiRestMethod @parameters -NoAuthentication } | Should -Throw
+            $script:seenAuthorization | Should -Be @('Bearer caller-token', 'Bearer caller-token')
+            Assert-MockCalled -CommandName Add-AuthenticationHTTPHeader -Exactly -Times 0
         }
     }
 
@@ -202,6 +285,124 @@ Describe 'Invoke-AzDevOpsApiRestMethod' -Tag "Unit", "Helper" {
             }
             Assert-MockCalled -CommandName Start-Sleep -Times 1
 
+        }
+    }
+
+    Context 'Rate limiting' {
+
+        BeforeEach {
+            Remove-Variable -Name DSCAZDO_APIRateLimit -Scope Global -ErrorAction SilentlyContinue
+            Remove-Variable -Name responseHeaders -Scope Global -ErrorAction SilentlyContinue
+            Mock -CommandName Start-Sleep
+        }
+
+        AfterAll {
+            Remove-Variable -Name DSCAZDO_APIRateLimit -Scope Global -ErrorAction SilentlyContinue
+            Remove-Variable -Name responseHeaders -Scope Global -ErrorAction SilentlyContinue
+            Remove-Variable -Name TooManyRequestsFlag -Scope Global -ErrorAction SilentlyContinue
+        }
+
+        It 'should back off in milliseconds when a 429 has no Retry-After header' {
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                Set-Variable TooManyRequestsFlag -Value $true -Scope Global
+                throw [CustomException]::New('Too Many Requests', [System.Net.WebExceptionStatus]::ProtocolError, @{}, [System.Net.HttpStatusCode]::TooManyRequests)
+            } -ParameterFilter { $null -eq $Global:TooManyRequestsFlag }
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                Remove-Variable -Name TooManyRequestsFlag -Scope Global
+                return @{ success = $true }
+            } -ParameterFilter { $Global:TooManyRequestsFlag -eq $true }
+
+            $parameters = $defaultParameters.Clone()
+            $parameters.RetryAttempts = 2
+
+            $result = Invoke-AzDevOpsApiRestMethod @parameters
+
+            $result.success | Should -Be $true
+            # RetryIntervalMs (250) for the first retry, doubling after that. Never a Seconds wait:
+            # the interval used to be stored as seconds and became a 250 second sleep.
+            Assert-MockCalled -CommandName Start-Sleep -Exactly -Times 1 -ParameterFilter { $Milliseconds -eq 250 }
+            Assert-MockCalled -CommandName Start-Sleep -Exactly -Times 0 -ParameterFilter { $Seconds -gt 0 }
+        }
+
+        It 'should not wait after a successful response that reported no rate limit' {
+            Mock -CommandName Invoke-RestMethod -MockWith { return @{ success = $true } }
+
+            $null = Invoke-AzDevOpsApiRestMethod @defaultParameters
+            $null = Invoke-AzDevOpsApiRestMethod @defaultParameters
+
+            $Global:DSCAZDO_APIRateLimit | Should -BeNullOrEmpty
+            Assert-MockCalled -CommandName Start-Sleep -Exactly -Times 0
+        }
+
+        It 'should read X-RateLimit headers from a successful response and slow the next request' {
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                Set-Variable responseHeaders -Scope Global -Value @{
+                    'X-RateLimit-Remaining' = @('20')
+                    'X-RateLimit-Reset'     = @('1700000000')
+                }
+                return @{ success = $true }
+            }
+
+            $null = Invoke-AzDevOpsApiRestMethod @defaultParameters
+
+            $Global:DSCAZDO_APIRateLimit.xRateLimitRemaining | Should -Be 20
+            $Global:DSCAZDO_APIRateLimit.xRateLimitReset | Should -Be 1700000000
+            Assert-MockCalled -CommandName Start-Sleep -Exactly -Times 0
+
+            $null = Invoke-AzDevOpsApiRestMethod @defaultParameters
+
+            Assert-MockCalled -CommandName Start-Sleep -Exactly -Times 1 -ParameterFilter { $Milliseconds -eq 250 }
+        }
+
+        It 'should honour a Retry-After from a successful response once' {
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                Set-Variable responseHeaders -Scope Global -Value @{ 'Retry-After' = @('3') }
+                return @{ success = $true }
+            } -ParameterFilter { $null -eq $Global:DSCAZDO_APIRateLimit }
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                Remove-Variable -Name responseHeaders -Scope Global -ErrorAction SilentlyContinue
+                return @{ success = $true }
+            } -ParameterFilter { $null -ne $Global:DSCAZDO_APIRateLimit }
+
+            $null = Invoke-AzDevOpsApiRestMethod @defaultParameters
+            $null = Invoke-AzDevOpsApiRestMethod @defaultParameters
+            $null = Invoke-AzDevOpsApiRestMethod @defaultParameters
+
+            Assert-MockCalled -CommandName Start-Sleep -Exactly -Times 1 -ParameterFilter { $Seconds -eq 3 }
+        }
+
+        It 'should read Retry-After from a PowerShell 7 HttpResponseException' {
+            # What Invoke-RestMethod really throws in PowerShell 7: Response is an
+            # HttpResponseMessage, whose Headers has no string indexer - Headers['Retry-After']
+            # returned nothing and the 429 fell back to the (mis-scaled) interval.
+            $script:throttled = $false
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                $script:throttled = $true
+                $message = [System.Net.Http.HttpResponseMessage]::new([System.Net.HttpStatusCode]::TooManyRequests)
+                $message.Headers.RetryAfter = [System.Net.Http.Headers.RetryConditionHeaderValue]::new([TimeSpan]::FromSeconds(7))
+                throw [Microsoft.PowerShell.Commands.HttpResponseException]::new('Too Many Requests', $message)
+            } -ParameterFilter { -not $script:throttled }
+            Mock -CommandName Invoke-RestMethod -MockWith { return @{ success = $true } } -ParameterFilter { $script:throttled }
+
+            $parameters = $defaultParameters.Clone()
+            $parameters.RetryAttempts = 2
+
+            $result = Invoke-AzDevOpsApiRestMethod @parameters
+
+            $result.success | Should -Be $true
+            Assert-MockCalled -CommandName Start-Sleep -Exactly -Times 1 -ParameterFilter { $Seconds -eq 7 }
+        }
+
+        It 'should not treat a 429 rate-limit state as an exhausted request budget' {
+            # xRateLimitRemaining is not reported on a 429, and used to default to 0 - which also
+            # triggered the 'overwhelmed' wait on top of the Retry-After wait.
+            $Global:DSCAZDO_APIRateLimit = [APIRateLimit]::New(2)
+            Mock -CommandName Invoke-RestMethod -MockWith { return @{ success = $true } }
+
+            $null = Invoke-AzDevOpsApiRestMethod @defaultParameters
+
+            Assert-MockCalled -CommandName Start-Sleep -Exactly -Times 1
+            Assert-MockCalled -CommandName Start-Sleep -Exactly -Times 1 -ParameterFilter { $Seconds -eq 2 }
         }
     }
 

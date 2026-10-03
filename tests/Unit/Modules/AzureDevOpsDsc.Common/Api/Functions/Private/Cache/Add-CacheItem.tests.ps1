@@ -25,6 +25,7 @@ Describe "Add-CacheItem" -Tag "Unit", "Cache" {
         . (Get-ClassFilePath '000.CacheItem')
         # Load Get-AzDoCacheObjects
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
+        . (Get-FunctionItem 'Get-CacheKeyIndex.ps1')
 
         # Mock dependencies
         Mock -CommandName Get-CacheObject -MockWith { return @() }
@@ -125,6 +126,61 @@ Describe "Add-CacheItem" -Tag "Unit", "Cache" {
             Add-CacheItem -Key 'MyKey' -Value 'NewValue' -Type 'Project'
 
             Assert-MockCalled -CommandName Write-Warning -Exactly 1
+        }
+    }
+
+    Context "when replacing a key in a live cache" {
+
+        BeforeEach {
+            $Global:AzDoCacheKeyIndex = @{}
+            $script:liveCache = [System.Collections.Generic.List[CacheItem]]::new()
+            $null = Set-Variable -Name "AzDoProject" -Value $script:liveCache -Scope Global
+            Mock -CommandName Get-CacheObject -MockWith { return ,$script:liveCache }
+            Mock -CommandName Write-Warning
+        }
+
+        AfterEach {
+            Remove-Variable -Name "AzDoProject" -Scope Global -ErrorAction SilentlyContinue
+            $Global:AzDoCacheKeyIndex = @{}
+        }
+
+        It "should replace the existing item in place without duplicating the key" {
+            Add-CacheItem -Key 'Key1' -Value 'Value1' -Type 'Project'
+            Add-CacheItem -Key 'Key2' -Value 'Value2' -Type 'Project'
+            Add-CacheItem -Key 'key1' -Value 'Updated' -Type 'Project'
+
+            $cache = Get-Variable -Name "AzDoProject" -Scope Global -ValueOnly
+            $cache.Count | Should -Be 2
+            @($cache | Where-Object { $_.Key -eq 'Key1' }).Count | Should -Be 1
+            ($cache | Where-Object { $_.Key -eq 'Key1' }).Value | Should -Be 'Updated'
+            ($cache | Where-Object { $_.Key -eq 'Key2' }).Value | Should -Be 'Value2'
+        }
+
+        It "should add to the live list rather than a copy" {
+            Add-CacheItem -Key 'Key1' -Value 'Value1' -Type 'Project'
+
+            $script:liveCache.Count | Should -Be 1
+        }
+
+        It "should keep the key index in step with the cache" {
+            Add-CacheItem -Key 'Key1' -Value 'Value1' -Type 'Project'
+            Add-CacheItem -Key 'Key1' -Value 'Value2' -Type 'Project'
+
+            $index = Get-CacheKeyIndex -Type 'Project' -Cache $script:liveCache
+            $index.Count | Should -Be 1
+            $index['Key1'].Value | Should -Be 'Value2'
+        }
+
+        It "should fill a large cache without rescanning it for every key" {
+            $timer = [System.Diagnostics.Stopwatch]::StartNew()
+            foreach ($i in 1..2000) {
+                Add-CacheItem -Key "Key$i" -Value $i -Type 'Project'
+            }
+            $timer.Stop()
+
+            $script:liveCache.Count | Should -Be 2000
+            # Generous bound: the old linear Where-Object scan took far longer than this.
+            $timer.Elapsed.TotalSeconds | Should -BeLessThan 60
         }
     }
 

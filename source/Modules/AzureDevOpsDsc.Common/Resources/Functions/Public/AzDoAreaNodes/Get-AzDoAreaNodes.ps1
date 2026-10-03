@@ -96,7 +96,7 @@ Function Get-AzDoAreaNodes {
     # required to reclassify work items on removal — would be missing), and changes made in a
     # previous DSC runspace are not reliably reflected in this runspace's in-memory cache. Clearing
     # and repopulating from live makes the comparison authoritative and idempotent.
-    $existingKeys = @((Get-CacheObject -CacheType 'LiveAreaNodes' | Where-Object { $_.Key -like "\$ProjectName\Area*" }).Key | Where-Object { $_ })
+    $existingKeys = @(((Get-CacheObject -CacheType 'LiveAreaNodes') | Where-Object { $_.Key -like "\$ProjectName\Area*" }).Key | Where-Object { $_ })
     ForEach ($existingKey in $existingKeys) { Remove-CacheItem -Key $existingKey -Type 'LiveAreaNodes' }
 
     $liveAreaNodes = List-DevOpsClassificationNodes -ProjectName $ProjectName -OrganizationName $OrganizationName
@@ -106,7 +106,7 @@ Function Get-AzDoAreaNodes {
     }
 
     # Retrieve cached area nodes from cache
-    $cachedAreaNodes = (Get-CacheObject -CacheType 'LiveAreaNodes' | Where-Object { $_.Key -like "\$ProjectName\Area*" }).Value
+    $cachedAreaNodes = ((Get-CacheObject -CacheType 'LiveAreaNodes') | Where-Object { $_.Key -like "\$ProjectName\Area*" }).Value
     Write-Verbose "[Get-AzDoAreaNodes] Retrieved cached area nodes: $($cachedAreaNodes | Out-String)"
 
     # Set the cached area nodes in the result object for use by other functions

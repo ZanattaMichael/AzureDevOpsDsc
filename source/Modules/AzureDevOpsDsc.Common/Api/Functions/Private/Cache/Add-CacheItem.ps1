@@ -46,10 +46,13 @@ Function Add-CacheItem
     )
 
     Write-Verbose "[Add-CacheItem] Retrieving the current cache."
+    # Get-CacheObject returns the live list, so the changes below are made in place rather than
+    # on a copy of the whole cache.
     [System.Collections.Generic.List[CacheItem]]$cache = Get-CacheObject -CacheType $Type
 
-    # If the cache is empty, create a new cache
-    if ($cache.count -eq 0)
+    # If there is no cache yet, create one. An empty list is the live cache and is filled in
+    # place, so anyone already holding it sees the new item.
+    if ($null -eq $cache)
     {
         Write-Verbose "[Add-CacheItem] Cache is empty. Creating new cache."
         $cache = [System.Collections.Generic.List[CacheItem]]::New()
@@ -59,7 +62,18 @@ Function Add-CacheItem
     $cacheItem = [CacheItem]::New($Key, $Value)
 
     Write-Verbose "[Add-CacheItem] Checking if the cache already contains the key: '$Key'."
-    $existingItem = $cache | Where-Object { $_.Key -eq $Key }
+    # A dictionary lookup instead of a Where-Object scan, which made filling a cache quadratic.
+    $index = Get-CacheKeyIndex -Type $Type -Cache $cache
+    if ($null -ne $index)
+    {
+        $existingItem = $null
+        $null = $index.TryGetValue($Key, [ref]$existingItem)
+    }
+    else
+    {
+        # The cache holds a duplicate key, so it cannot be indexed. Scan it instead.
+        $existingItem = $cache.Where({ $_.Key -eq $Key })
+    }
 
     if ($existingItem)
     {
@@ -73,25 +87,30 @@ Function Add-CacheItem
             Write-Warning "[Add-CacheItem] A cache item with the key '$Key' already exists. Flushing key from the cache."
         }
 
-        # Remove the existing cache item
-        Remove-CacheItem -Key $Key -Type $Type
-
-        # Refresh the cache
-        [System.Collections.Generic.List[CacheItem]]$cache = Get-CacheObject -CacheType $Type
-
-        # If the cache is empty, create a new cache
-        if ($cache.count -eq 0)
+        # Remove every item with this key, walking backwards so the indexes still to be visited
+        # do not shift.
+        for ($i = $cache.Count - 1; $i -ge 0; $i--)
         {
-            Write-Verbose "[Add-CacheItem] Cache is empty. Creating new cache."
-            $cache = [System.Collections.Generic.List[CacheItem]]::New()
+            if ($cache[$i].Key -eq $Key)
+            {
+                $cache.RemoveAt($i)
+            }
         }
-
+        if ($null -ne $index)
+        {
+            $null = $index.Remove($Key)
+        }
     }
 
     Write-Verbose "[Add-CacheItem] Adding new cache item with key: '$Key'."
     $cache.Add($cacheItem)
+    if ($null -ne $index)
+    {
+        $index[$Key] = $cacheItem
+    }
 
-    # Update the memory cache
+    # Update the memory cache. This is the same list in the usual case, but it is a new one when
+    # there was no cache yet or the global held something other than a List[CacheItem].
     Set-Variable -Name "AzDo$Type" -Value $cache -Scope Global
 
     Write-Verbose "[Add-CacheItem] Cache item with key: '$Key' successfully added."

@@ -38,11 +38,11 @@ Describe "[AzDevOpsDscResourceBase]::GetPostSetWaitTimeSeconds() Tests" -Tag "Un
             { $azDevOpsDscResourceBase.GetPostSetWaitTimeMs() } | Should -Not -Throw
         }
 
-        It 'Should return $null' {
+        It 'Should return 0 (no wait unless a resource overrides it)' {
 
             $azDevOpsDscResourceBase = [AzDevOpsDscResourceBaseExample]::new()
 
-            $azDevOpsDscResourceBase.GetPostSetWaitTimeMs() | Should -Be 2000
+            $azDevOpsDscResourceBase.GetPostSetWaitTimeMs() | Should -Be 0
         }
 
     }

@@ -148,6 +148,78 @@ function Invoke-AzDevOpsApiRestMethod
         $invokeRestMethodParameters.Remove('ContentType')
     }
 
+    # Reads one header from any of the shapes a response can carry: the dictionary from
+    # -ResponseHeadersVariable, HttpResponseHeaders on a PowerShell 7 error response, or
+    # WebHeaderCollection on a Windows PowerShell one. A lookup by indexer works on only the first.
+    function Get-ResponseHeaderValue
+    {
+        param ($Headers, [String]$Name)
+
+        if ($null -eq $Headers) { return $null }
+
+        $value = $null
+        if ($Headers -is [System.Collections.IDictionary])
+        {
+            # -eq on strings is case-insensitive, as header names are.
+            foreach ($key in $Headers.Keys) { if ($key -eq $Name) { $value = $Headers[$key]; break } }
+        }
+        elseif ($Headers -is [System.Net.Http.Headers.HttpHeaders])
+        {
+            $values = $null
+            if ($Headers.TryGetValues($Name, [ref]$values)) { $value = $values }
+        }
+        elseif ($Headers -is [System.Collections.Specialized.NameValueCollection])
+        {
+            $value = $Headers[$Name]
+        }
+
+        if ($null -eq $value) { return $null }
+        return [String](@($value)[0])
+    }
+
+    # Retry-After is either a number of seconds or an HTTP date.
+    function ConvertTo-RetryAfterSeconds
+    {
+        param ([String]$Value)
+
+        if ([String]::IsNullOrWhiteSpace($Value)) { return 0 }
+
+        $seconds = 0.0
+        if ([Double]::TryParse($Value, [System.Globalization.NumberStyles]::Float, [System.Globalization.CultureInfo]::InvariantCulture, [ref]$seconds))
+        {
+            return [Int][Math]::Max([Math]::Ceiling($seconds), 0)
+        }
+
+        $date = [DateTimeOffset]::MinValue
+        if ([DateTimeOffset]::TryParse($Value, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::AssumeUniversal, [ref]$date))
+        {
+            return [Int][Math]::Max([Math]::Ceiling(($date - [DateTimeOffset]::UtcNow).TotalSeconds), 0)
+        }
+
+        return 0
+    }
+
+    # Builds the rate-limit state from a response's headers, or $null when it reported none.
+    # Azure DevOps sends X-RateLimit-* while a caller is close to being throttled and Retry-After
+    # when it is delaying requests, on successful responses as well as on a 429.
+    function Get-APIRateLimitFromHeaders
+    {
+        param ($Headers)
+
+        $retryAfter = ConvertTo-RetryAfterSeconds (Get-ResponseHeaderValue -Headers $Headers -Name 'Retry-After')
+        $remaining  = Get-ResponseHeaderValue -Headers $Headers -Name 'X-RateLimit-Remaining'
+
+        if (($retryAfter -le 0) -and [String]::IsNullOrEmpty($remaining)) { return $null }
+
+        $rateLimit = [APIRateLimit]::New($retryAfter)
+
+        $parsed = 0
+        if ([Int]::TryParse($remaining, [ref]$parsed)) { $rateLimit.xRateLimitRemaining = $parsed }
+        if ([Int]::TryParse((Get-ResponseHeaderValue -Headers $Headers -Name 'X-RateLimit-Reset'), [ref]$parsed)) { $rateLimit.xRateLimitReset = $parsed }
+
+        return $rateLimit
+    }
+
     # Intially set this value to -1, as the first attempt does not want to be classed as a "RetryAttempt"
     $CurrentNoOfRetryAttempts = -1
     # Set the Continuation Token to be False
@@ -156,28 +228,44 @@ function Invoke-AzDevOpsApiRestMethod
 
     while ($CurrentNoOfRetryAttempts -lt $RetryAttempts)
     {
+        # Set by the catch block. Initialized here so a caller's variable of the same name is never read.
+        $statusCode = $null
+        $isTransient = $true
+
         <#
-            Slow down the retry attempts if the API resource is close to being overwelmed
-            If there are any retry attempts, wait for the specified number of seconds before retrying
+            Slow down if the last response asked for it. The state is left by the previous
+            response, which may have been from an earlier call.
         #>
 
-        if (($null -ne $Global:DSCAZDO_APIRateLimit.xRateLimitRemaining) -and ($Global:DSCAZDO_APIRateLimit.retryAfter -ge 0))
-        {
-            Write-Verbose -Message ('[Invoke-AzDevOpsApiRestMethod] Waiting for {0} seconds before retrying.' -f $Global:DSCAZDO_APIRateLimit.retryAfter)
-            Start-Sleep -Seconds $Global:DSCAZDO_APIRateLimit.retryAfter
-        }
+        $rateLimit = $Global:DSCAZDO_APIRateLimit
 
-        # If the API resouce is close to beig overwelmed, wait for the specified number of seconds before sending the request
-        if (($null -ne $Global:DSCAZDO_APIRateLimit.xRateLimitRemaining) -and ($Global:DSCAZDO_APIRateLimit.xRateLimitRemaining -le 50) -and ($Global:DSCAZDO_APIRateLimit.xRateLimitRemaining -ge 5))
+        if ($null -ne $rateLimit)
         {
-            Write-Verbose -Message "[Invoke-AzDevOpsApiRestMethod] Resource is close to being overwelmed. Waiting for $RetryIntervalMs seconds before sending the request."
-            Start-Sleep -Milliseconds $RetryIntervalMs
-        }
-        # If the API resouce is overwelmed, wait for the specified number of seconds before sending the request
-        elseif (($null -ne $Global:DSCAZDO_APIRateLimit.xRateLimitRemaining) -and ($Global:DSCAZDO_APIRateLimit.xRateLimitRemaining -lt 5))
-        {
-            Write-Verbose -Message ('[Invoke-AzDevOpsApiRestMethod] Resource is overwhelmed. Waiting for {0} seconds to reset the TSTUs.' -f $Global:DSCAZDO_APIRateLimit.xRateLimitReset)
-            Start-Sleep -Milliseconds $RetryIntervalMs
+            if ($rateLimit.retryAfter -gt 0)
+            {
+                Write-Verbose -Message ('[Invoke-AzDevOpsApiRestMethod] Waiting for {0} seconds before sending the request (Retry-After).' -f $rateLimit.retryAfter)
+                Start-Sleep -Seconds $rateLimit.retryAfter
+                # Honoured once. Without this every later request would wait again until a response cleared it.
+                $rateLimit.retryAfter = 0
+            }
+            # xRateLimitRemaining is -1 when the response did not report it.
+            elseif (($rateLimit.xRateLimitRemaining -ge 0) -and ($rateLimit.xRateLimitRemaining -lt 5))
+            {
+                $waitMs = $RetryIntervalMs
+                if ($rateLimit.xRateLimitReset -gt 0)
+                {
+                    $untilResetMs = ([DateTimeOffset]::FromUnixTimeSeconds($rateLimit.xRateLimitReset) - [DateTimeOffset]::UtcNow).TotalMilliseconds
+                    # Capped so a far-off or skewed reset time cannot stall a DSC run.
+                    $waitMs = [Int][Math]::Min([Math]::Max($untilResetMs, $RetryIntervalMs), 60000)
+                }
+                Write-Verbose -Message ('[Invoke-AzDevOpsApiRestMethod] Resource is overwhelmed. Waiting for {0} milliseconds for the rate limit to reset.' -f $waitMs)
+                Start-Sleep -Milliseconds $waitMs
+            }
+            elseif (($rateLimit.xRateLimitRemaining -ge 5) -and ($rateLimit.xRateLimitRemaining -le 50))
+            {
+                Write-Verbose -Message ('[Invoke-AzDevOpsApiRestMethod] Resource is close to being overwhelmed. Waiting for {0} milliseconds before sending the request.' -f $RetryIntervalMs)
+                Start-Sleep -Milliseconds $RetryIntervalMs
+            }
         }
 
         #
@@ -188,8 +276,10 @@ function Invoke-AzDevOpsApiRestMethod
             #
             # Add the Authentication Header
 
-            # If the 'NoAuthentication' switch is NOT PRESENT and the 'Authentication' header is empty, add the authentication header
-            if (([String]::IsNullOrEmpty($invokeRestMethodParameters.Headers.Authentication)) -and (-not $NoAuthentication.IsPresent))
+            # A fresh header for every request: a token can be refreshed between pages or retries,
+            # and the header is cleared again after each request. With -NoAuthentication the
+            # caller's own headers (if any) are sent as given and never touched.
+            if (-not $NoAuthentication.IsPresent)
             {
                 $invokeRestMethodParameters.Headers.Authorization = Add-AuthenticationHTTPHeader
             }
@@ -203,10 +293,13 @@ function Invoke-AzDevOpsApiRestMethod
                 # This is to prevent the output from being displayed in the console.
                 $response = Invoke-RestMethod @invokeRestMethodParameters -Verbose:$false
 
-                # Zero out the 'Authorization' header
-                $invokeRestMethodParameters.Headers.Authorization = $null
+                # Zero out the 'Authorization' header this function added
+                if (-not $NoAuthentication.IsPresent) { $invokeRestMethodParameters.Headers.Authorization = $null }
                 # Add the response to the results array
                 $null = $results.Add($response)
+
+                # Keep whatever rate-limit state this response reported for the next request
+                $Global:DSCAZDO_APIRateLimit = Get-APIRateLimitFromHeaders -Headers $responseHeaders
 
                 #
                 # Test to see if there is no continuation token
@@ -215,8 +308,6 @@ function Invoke-AzDevOpsApiRestMethod
                 {
                     # If not, set the continuation token to False
                     $isContinuationToken = $false
-                    # Update the Rate Limit information
-                    $Global:DSCAZDO_APIRateLimit = $null
 
                     Write-Verbose "[Invoke-AzDevOpsApiRestMethod] No continuation token found. Breaking loop."
 
@@ -261,31 +352,19 @@ function Invoke-AzDevOpsApiRestMethod
                     throw $_
                 }
 
-                # Zero out the 'Authorization' header
-                $invokeRestMethodParameters.Headers.Authorization = $null
-                # Check to see if it is an HTTP 429 (Too Many Requests) error
-                if ($_.Exception.Response.StatusCode -eq [System.Net.HttpStatusCode]::TooManyRequests)
+                # Zero out the 'Authorization' header this function added
+                if (-not $NoAuthentication.IsPresent) { $invokeRestMethodParameters.Headers.Authorization = $null }
+
+                # No status code means the request never got a response (DNS, connection reset,
+                # timeout), which is worth retrying.
+                $errorResponse = $_.Exception.Response
+                $statusCode = $null
+                if (($null -ne $errorResponse) -and ($null -ne $errorResponse.StatusCode))
                 {
-                    # If so, wait for the specified number of seconds before retrying
-                    $retryAfter = $_.Exception.Response.Headers['Retry-After']
-
-                    if ($retryAfter)
-                    {
-                        $retryAfter = [int]$retryAfter
-                        Write-Verbose -Message "Received a 'Too Many Requests' response from the Azure DevOps API. Waiting for $retryAfter seconds before retrying."
-                        $Global:DSCAZDO_APIRateLimit = [APIRateLimit]::New($retryAfter)
-                    }
-                    else
-                    {
-                        # If the Retry-After header is not present, wait for the specified number of milliseconds before retrying
-                        Write-Verbose -Message "Received a 'Too Many Requests' response from the Azure DevOps API. Waiting for $RetryIntervalMs milliseconds before retrying."
-                        $Global:DSCAZDO_APIRateLimit = [APIRateLimit]::New($RetryIntervalMs)
-                    }
-
+                    $statusCode = [Int]$errorResponse.StatusCode
                 }
 
-                # Increment the number of retries attempted and obtain any exception message
-                $CurrentNoOfRetryAttempts++
+                # Obtain any exception message
                 $responseBody = $null
                 try { $responseBody = $_.ErrorDetails.Message } catch {}
                 if (-not $responseBody)
@@ -301,6 +380,45 @@ function Invoke-AzDevOpsApiRestMethod
                 }
                 $restMethodExceptionMessage = if ($responseBody) { "$($_.Exception.Message) | ResponseBody: $responseBody" } else { $_.Exception.Message }
 
+                # Only a timeout, throttling or a server error can succeed on a second try. Any
+                # other 4xx (bad request, unauthorized, forbidden, not found, conflict) gives the
+                # same answer every time, so retrying it only adds delay before the same error.
+                $isTransient = ($null -eq $statusCode) -or ($statusCode -in @(408, 429)) -or ($statusCode -ge 500)
+                if (-not $isTransient)
+                {
+                    $CurrentNoOfRetryAttempts++
+                    break
+                }
+
+                # Increment the number of retries attempted
+                $CurrentNoOfRetryAttempts++
+
+                # The last attempt failed: nothing follows it, so there is nothing to wait for.
+                if ($CurrentNoOfRetryAttempts -ge $RetryAttempts)
+                {
+                    break
+                }
+
+                # Check to see if it is an HTTP 429 (Too Many Requests) error
+                if ($statusCode -eq 429)
+                {
+                    $retryAfter = ConvertTo-RetryAfterSeconds (Get-ResponseHeaderValue -Headers $errorResponse.Headers -Name 'Retry-After')
+
+                    if ($retryAfter -gt 0)
+                    {
+                        # The wait itself happens at the top of the retry loop.
+                        Write-Verbose -Message "Received a 'Too Many Requests' response from the Azure DevOps API. Waiting for $retryAfter seconds before retrying."
+                        $Global:DSCAZDO_APIRateLimit = [APIRateLimit]::New($retryAfter)
+                        break
+                    }
+
+                    # No Retry-After: back off exponentially from RetryIntervalMs instead.
+                    $backoffMs = [Int][Math]::Min($RetryIntervalMs * [Math]::Pow(2, $CurrentNoOfRetryAttempts), 30000)
+                    Write-Verbose -Message "Received a 'Too Many Requests' response from the Azure DevOps API. Waiting for $backoffMs milliseconds before retrying."
+                    Start-Sleep -Milliseconds $backoffMs
+                    break
+                }
+
                 # Wait before the next attempt/retry
                 Start-Sleep -Milliseconds $RetryIntervalMs
 
@@ -310,15 +428,22 @@ function Invoke-AzDevOpsApiRestMethod
 
         } Until (-not $isContinuationToken)
 
+        # A non-transient error ends the retries straight away.
+        if (-not $isTransient)
+        {
+            break
+        }
+
     }
 
-    # If all retry attempts have failed, throw an exception
+    # The request failed: either a non-transient error or every retry attempt failed. Report the
+    # retries actually made, which is fewer than $RetryAttempts when the error was not retried.
     $localizedMsg = $script:localizedData.AzDevOpsApiRestMethodException
     if ([String]::IsNullOrEmpty($localizedMsg))
     {
         $localizedMsg = "The '{0}' function returned an error after {1} retry attempts: ""{2}"""
     }
-    $errorMessage = $localizedMsg -f $MyInvocation.MyCommand, $RetryAttempts, $restMethodExceptionMessage
+    $errorMessage = $localizedMsg -f $MyInvocation.MyCommand, [Math]::Max($CurrentNoOfRetryAttempts, 0), $restMethodExceptionMessage
     throw "[Invoke-AzDevOpsApiRestMethod] $errorMessage"
 
 }

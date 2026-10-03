@@ -178,13 +178,8 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
 
         }
 
-        #
-        # Initialize the cache objects. Don't delete the cache objects since they are used by other resources.
-
-        Get-AzDoCacheObjects | ForEach-Object {
-            Initialize-CacheObject -CacheType $_ -BypassFileCheck -Debug
-            Write-Verbose "[AzDevOpsDscResourceBase] Initialized cache object of type: $_"
-        }
+        # Cache objects are not initialized here. Get-CacheObject imports a cache on first use, so a
+        # resource only pays for the caches it reads instead of every cache on every new().
 
     }
 
@@ -292,11 +287,17 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
 
     hidden [RequiredAction]GetDscRequiredAction()
     {
+        return $this.GetDscRequiredAction($this.GetDscCurrentStateProperties())
+    }
+
+    # Takes the current state already read, so a caller that also needs it (SetToDesiredState) runs
+    # the resource's Get function once rather than once per use.
+    hidden [RequiredAction]GetDscRequiredAction([Hashtable]$currentProperties)
+    {
         # Initialize required action as None
         $dscRequiredAction = [RequiredAction]::None
 
-        # Retrieve current and desired properties
-        [Hashtable]$currentProperties = $this.GetDscCurrentStateProperties()
+        # Retrieve desired properties
         [Hashtable]$desiredProperties = $this.GetDscDesiredStateProperties()
 
         # Retrieve property names
@@ -457,19 +458,21 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
     }
 
 
+    # Override in a resource whose API is eventually consistent and needs time after a write before
+    # the change is readable. Most are read-your-writes, so the default is no wait.
     [Int32]GetPostSetWaitTimeMs()
     {
-        return 2000
+        return 0
     }
 
     [void] SetToDesiredState()
     {
-        [RequiredAction]$dscRequiredAction = $this.GetDscRequiredAction()
-        $cacheProperties = $false
+        # Read the current state once and use it both to choose the action and to build its parameters.
+        [Hashtable]$dscCurrentStateProperties = $this.GetDscCurrentStateProperties()
+        [RequiredAction]$dscRequiredAction = $this.GetDscRequiredAction($dscCurrentStateProperties)
 
         if ($dscRequiredAction -in @([RequiredAction]::'New', [RequiredAction]::'Set', [RequiredAction]::'Remove'))
         {
-            $dscCurrentStateProperties = $this.GetDscCurrentStateProperties()
             $dscDesiredStateProperties = $this.GetDscDesiredStateProperties()
 
             $dscRequiredActionFunctionName = $this.GetResourceFunctionName($dscRequiredAction)
@@ -482,7 +485,12 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
             }
 
             & $dscRequiredActionFunctionName @dscDesiredStateParameters | Out-Null
-            Start-Sleep -Milliseconds $($this.GetPostSetWaitTimeMs())
+
+            $postSetWaitTimeMs = $this.GetPostSetWaitTimeMs()
+            if ($postSetWaitTimeMs -gt 0)
+            {
+                Start-Sleep -Milliseconds $postSetWaitTimeMs
+            }
         }
     }
 

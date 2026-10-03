@@ -25,7 +25,9 @@ Describe "Import-CacheObject Tests" -Tag "Unit", "Cache" {
         Mock -CommandName Test-Path -MockWith { return $true }
         Mock -CommandName Import-Clixml -MockWith { return @([PSCustomObject]@{ Key = 'Key1'; Value = 'Value1' }, [PSCustomObject]@{ Key = 'Key2'; Value = 'Value2' }) }
         Mock -CommandName Set-Variable
-        $ENV:AZDODSC_CACHE_DIRECTORY = 'C:\Cache'
+        # A path Join-Path can resolve on any OS ('C:\Cache' has no drive on Linux). Test-Path and
+        # Import-Clixml are mocked, so nothing is read from it.
+        $ENV:AZDODSC_CACHE_DIRECTORY = $TestDrive
 
     }
 
@@ -56,13 +58,25 @@ Describe "Import-CacheObject Tests" -Tag "Unit", "Cache" {
         BeforeEach {
             Mock -CommandName Test-Path -MockWith { return $false }
             Mock -CommandName Write-Warning
+            Mock -CommandName Write-Verbose
         }
 
-        It "Writes a warning when cache file is not found" {
+        It "Reports the missing file as verbose output, not a warning" {
             Import-CacheObject -CacheType 'Project'
 
-            Assert-MockCalled -CommandName Write-Warning -Exactly 1 -ParameterFilter {
+            Assert-MockCalled -CommandName Write-Verbose -Exactly 1 -ParameterFilter {
                 $Message -match 'Cache file not found'
+            }
+            Assert-MockCalled -CommandName Write-Warning -Exactly 0
+        }
+
+        It "Sets an empty in-memory cache when the cache file is not found" {
+            Mock -CommandName Set-Variable
+
+            Import-CacheObject -CacheType 'Project'
+
+            Assert-MockCalled -CommandName Set-Variable -Exactly 1 -ParameterFilter {
+                $Name -eq 'AzDoProject' -and $Scope -eq 'Global' -and $Value.Count -eq 0
             }
         }
     }

@@ -51,6 +51,12 @@ Describe 'APIRateLimit' -Tag "Unit", "API" {
 
             $apiRateLimit.retryAfter | Should -Be $retryAfterValue
         }
+
+        It 'should leave xRateLimitRemaining as -1 (not reported) rather than 0 (exhausted)' {
+            $apiRateLimit = [APIRateLimit]::new(5)
+
+            $apiRateLimit.xRateLimitRemaining | Should -Be -1
+        }
     }
 
     Context 'isValid method' {
