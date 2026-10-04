@@ -59,6 +59,16 @@ Describe 'APIRateLimit' -Tag "Unit", "API" {
         }
     }
 
+    Context 'New-APIRateLimit' {
+        It 'should return an APIRateLimit with retryAfter set' {
+            $apiRateLimit = New-APIRateLimit -RetryAfter 7
+
+            $apiRateLimit.GetType().Name | Should -Be 'APIRateLimit'
+            $apiRateLimit.retryAfter | Should -Be 7
+            $apiRateLimit.xRateLimitRemaining | Should -Be -1
+        }
+    }
+
     Context 'isValid method' {
         It 'should return true for a valid hashtable' {
             $validHashTable = @{

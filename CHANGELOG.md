@@ -96,6 +96,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `AzDoPicklist` polls for up to 30 seconds for the removed picklist to
     drop out of the picklist list. The list could still return it for a moment
     after a successful DELETE.
+  - `Get-MIToken` requests its token with `-NoAuthentication`, which
+    `Invoke-APIRestMethod` now honours. It used to build an Authorization
+    header from `$Global:DSCAZDO_AuthenticationToken`, so after a test whose
+    token request failed had left that global null, the post-run teardown
+    threw before cleaning up or reporting the test results.
 - AzureDevOpsDscNative
   - `Invoke-AzDevOpsApiRestMethod -AzureArcAuthentication` retries a 408, 429
     or 5xx from the Azure Arc token endpoint like any other request. It used to
@@ -103,6 +108,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     only needs the 401 challenge unchanged, so a throttled token request failed
     the resource being constructed. It showed up as a 429 failing
     `[AzDoProject]::Export()` and `[AzDoGitRepository]::Export()`.
+  - `Invoke-AzDevOpsApiRestMethod` no longer throws "Unable to find type
+    [APIRateLimit]" on a 429 or a response carrying rate-limit headers. The
+    class lives in the root module, which the nested `AzureDevOpsDsc.Common`
+    module cannot resolve type names from; it now builds the object through
+    the new `New-APIRateLimit` function, as the token classes already do.
   - The nested `AzureDevOpsDsc.Common` module now imports the
     `DscResource.Common` copy shipped beside it. It called `Get-LocalizedData`
     without importing it, so the command was found through auto-discovery as an

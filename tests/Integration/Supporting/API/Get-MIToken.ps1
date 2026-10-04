@@ -36,6 +36,7 @@ Function Get-MIToken {
         Method      = 'Get'
         HttpHeaders = @{ Metadata="true" }
         ContentType = 'Application/json'
+        NoAuthentication = $true
     }
 
     # Dertimine if the machine is an arc machine

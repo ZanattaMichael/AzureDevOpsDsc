@@ -90,3 +90,10 @@ class APIRateLimit
     }
 
 }
+
+# Function to create a new APIRateLimit object. The nested AzureDevOpsDsc.Common module cannot
+# resolve this module's class names, so it builds the object through this function instead.
+Function New-APIRateLimit ([int]$RetryAfter)
+{
+    return [APIRateLimit]::New($RetryAfter)
+}

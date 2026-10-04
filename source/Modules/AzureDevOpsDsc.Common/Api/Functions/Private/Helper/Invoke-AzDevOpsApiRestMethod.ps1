@@ -211,7 +211,7 @@ function Invoke-AzDevOpsApiRestMethod
 
         if (($retryAfter -le 0) -and [String]::IsNullOrEmpty($remaining)) { return $null }
 
-        $rateLimit = [APIRateLimit]::New($retryAfter)
+        $rateLimit = New-APIRateLimit -RetryAfter $retryAfter
 
         $parsed = 0
         if ([Int]::TryParse($remaining, [ref]$parsed)) { $rateLimit.xRateLimitRemaining = $parsed }
@@ -411,7 +411,7 @@ function Invoke-AzDevOpsApiRestMethod
                     {
                         # The wait itself happens at the top of the retry loop.
                         Write-Verbose -Message "Received a 'Too Many Requests' response from the Azure DevOps API. Waiting for $retryAfter seconds before retrying."
-                        $Global:DSCAZDO_APIRateLimit = [APIRateLimit]::New($retryAfter)
+                        $Global:DSCAZDO_APIRateLimit = New-APIRateLimit -RetryAfter $retryAfter
                         break
                     }
 
