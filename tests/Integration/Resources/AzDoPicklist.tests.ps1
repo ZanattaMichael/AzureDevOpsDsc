@@ -16,6 +16,22 @@ Describe "AzDoPicklist Integration Tests" -Tag "Integration", "Process" {
             }
         }
 
+        # The picklist list can still return a picklist for a second or so after its DELETE has
+        # succeeded, so a read straight after removal polls until the name is gone, returning the
+        # last names read if it never goes.
+        function Wait-TestPicklistRemoved
+        {
+            param([string]$Name, [int]$TimeoutSeconds = 30)
+            $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+            do
+            {
+                $names = @((Get-TestPicklists).name)
+                if ($names -notcontains $Name) { break }
+                Start-Sleep -Seconds 2
+            } while ((Get-Date) -lt $deadline)
+            return $names
+        }
+
         $parameters = @{
             Name       = 'AzDoPicklist'
             ModuleName = 'AzureDevOpsDscNative'
@@ -111,7 +127,7 @@ Describe "AzDoPicklist Integration Tests" -Tag "Integration", "Process" {
         }
 
         It "Should no longer exist in Azure DevOps" {
-            @((Get-TestPicklists).name) | Should -Not -Contain $PICKLISTNAME
+            Wait-TestPicklistRemoved -Name $PICKLISTNAME | Should -Not -Contain $PICKLISTNAME
         }
     }
 }
