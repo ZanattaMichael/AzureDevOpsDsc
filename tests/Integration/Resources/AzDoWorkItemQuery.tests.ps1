@@ -56,7 +56,7 @@ select [System.Id], [System.Title]
 
         # The query's parent folder is a prerequisite - the query resource deliberately does not
         # create its own ancestry.
-        Invoke-DscResource @folderParameters
+        Invoke-TestQueryFolderSet -Parameters $folderParameters
     }
 
     Context "Testing if the query exists" {

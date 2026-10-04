@@ -71,7 +71,9 @@ function Invoke-APIRestMethod
         $invokeRestMethodParameters.Remove('ContentType')
     }
 
-    if ($null -eq $HttpHeaders.Authorization)
+    # A token request (-NoAuthentication) carries no Azure DevOps credential, so it must not depend on
+    # $Global:DSCAZDO_AuthenticationToken, which is null after a failed token request in this session.
+    if (-not $NoAuthentication.IsPresent -and $null -eq $HttpHeaders.Authorization)
     {
         $HttpHeaders.Authorization = Add-Header
     }

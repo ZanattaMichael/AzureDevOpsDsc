@@ -211,7 +211,7 @@ function Invoke-AzDevOpsApiRestMethod
 
         if (($retryAfter -le 0) -and [String]::IsNullOrEmpty($remaining)) { return $null }
 
-        $rateLimit = [APIRateLimit]::New($retryAfter)
+        $rateLimit = New-APIRateLimit -RetryAfter $retryAfter
 
         $parsed = 0
         if ([Int]::TryParse($remaining, [ref]$parsed)) { $rateLimit.xRateLimitRemaining = $parsed }
@@ -345,13 +345,6 @@ function Invoke-AzDevOpsApiRestMethod
             catch
             {
 
-                # If AzureArcAuthentication is present, then we need to handle the error differently.
-                # Stop and Pass the error back to the caller. The caller will handle the error.
-                if ($AzureArcAuthentication.IsPresent)
-                {
-                    throw $_
-                }
-
                 # Zero out the 'Authorization' header this function added
                 if (-not $NoAuthentication.IsPresent) { $invokeRestMethodParameters.Headers.Authorization = $null }
 
@@ -384,6 +377,16 @@ function Invoke-AzDevOpsApiRestMethod
                 # other 4xx (bad request, unauthorized, forbidden, not found, conflict) gives the
                 # same answer every time, so retrying it only adds delay before the same error.
                 $isTransient = ($null -eq $statusCode) -or ($statusCode -in @(408, 429)) -or ($statusCode -ge 500)
+
+                # Azure Arc answers the first token request with a 401 whose WWW-Authenticate header names
+                # the secret file, and the caller needs that exception as it was thrown. Any other
+                # non-transient error goes back unchanged too. A throttled or failed token request (429,
+                # 5xx) is retried like any other: rethrowing it as well failed every resource constructed
+                # while the Arc token endpoint was throttling.
+                if ($AzureArcAuthentication.IsPresent -and -not $isTransient)
+                {
+                    throw $_
+                }
                 if (-not $isTransient)
                 {
                     $CurrentNoOfRetryAttempts++
@@ -408,7 +411,7 @@ function Invoke-AzDevOpsApiRestMethod
                     {
                         # The wait itself happens at the top of the retry loop.
                         Write-Verbose -Message "Received a 'Too Many Requests' response from the Azure DevOps API. Waiting for $retryAfter seconds before retrying."
-                        $Global:DSCAZDO_APIRateLimit = [APIRateLimit]::New($retryAfter)
+                        $Global:DSCAZDO_APIRateLimit = New-APIRateLimit -RetryAfter $retryAfter
                         break
                     }
 

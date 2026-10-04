@@ -97,6 +97,42 @@ function New-TestProject
     }
 }
 
+function Invoke-TestQueryFolderSet
+{
+    #
+    # A project that has only just reached wellFormed does not yet let its creator write under
+    # Shared Queries. For a few seconds the queries API answers with
+    #
+    #     403 Forbidden - "TF401256: You do not have Write permissions for query Shared Queries."
+    #
+    # Invoke-AzDevOpsApiRestMethod does not retry a 403, since it is not transient in general, so a
+    # BeforeAll that creates a query folder straight after New-TestProject goes through here. Only
+    # TF401256 is retried, until TimeoutSeconds have passed; any other error is thrown at once.
+    #
+    param(
+        [Parameter(Mandatory)][hashtable]$Parameters,
+        [int]$TimeoutSeconds  = 90,
+        [int]$IntervalSeconds = 5
+    )
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+
+    while ($true)
+    {
+        try
+        {
+            return Invoke-DscResource @Parameters -ErrorAction Stop
+        }
+        catch
+        {
+            if ($_.Exception.Message -notmatch 'TF401256' -or (Get-Date) -ge $deadline) { throw }
+
+            Write-Warning "[Invoke-TestQueryFolderSet] Shared Queries is not writable yet in '$($Parameters.property.ProjectName)'; retrying in ${IntervalSeconds}s."
+            Start-Sleep -Seconds $IntervalSeconds
+        }
+    }
+}
+
 function New-TestGitRepository
 {
     param(

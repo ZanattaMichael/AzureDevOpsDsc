@@ -170,6 +170,54 @@ Describe 'Invoke-AzDevOpsApiRestMethod' -Tag "Unit", "Helper" {
         }
     }
 
+    Context 'Azure Arc authentication' {
+
+        BeforeAll {
+            $arcParameters = @{
+                ApiUri                 = 'http://localhost:40342/metadata/identity/oauth2/token'
+                HttpMethod             = 'Get'
+                HttpHeaders            = @{ Metadata = 'true' }
+                NoAuthentication       = $true
+                AzureArcAuthentication = $true
+                RetryAttempts          = 2
+                RetryIntervalMs        = 250
+            }
+        }
+
+        It 'should hand the Arc 401 challenge back to the caller unchanged and not retry it' {
+            Mock -CommandName Start-Sleep
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                throw [CustomException]::New('Arc challenge', [System.Net.WebExceptionStatus]::ProtocolError, @{}, [System.Net.HttpStatusCode]::Unauthorized)
+            }
+
+            $thrown = $null
+            try { Invoke-AzDevOpsApiRestMethod @arcParameters } catch { $thrown = $_ }
+
+            # The caller reads the WWW-Authenticate header from this exception's response.
+            $thrown.Exception.Message | Should -Be 'Arc challenge'
+            $thrown.Exception.Response.StatusCode | Should -Be ([System.Net.HttpStatusCode]::Unauthorized)
+            Assert-MockCalled -CommandName Invoke-RestMethod -Exactly -Times 1
+        }
+
+        It 'should retry a throttled Arc token request rather than failing on the first 429' {
+            Mock -CommandName Start-Sleep
+            $script:arcCalls = 0
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                $script:arcCalls++
+                if ($script:arcCalls -eq 1)
+                {
+                    throw [CustomException]::New('Too Many Requests', [System.Net.WebExceptionStatus]::ProtocolError, @{}, [System.Net.HttpStatusCode]::TooManyRequests)
+                }
+                return [PSCustomObject]@{ access_token = 'token' }
+            }
+
+            $result = Invoke-AzDevOpsApiRestMethod @arcParameters
+
+            $result.access_token | Should -Be 'token'
+            Assert-MockCalled -CommandName Invoke-RestMethod -Exactly -Times 2
+        }
+    }
+
     Context 'Authentication header' {
 
         It 'should add a fresh Authorization header to every request' {

@@ -38,7 +38,7 @@ Describe "AzDoQueryPermission Integration Tests" -Tag "Integration", "WorkItemQu
 
         # The folder has to exist before its ACL can be addressed - the token is built from the
         # folder's GUID, not from its name.
-        Invoke-DscResource @folderParameters
+        Invoke-TestQueryFolderSet -Parameters $folderParameters
     }
 
     Context "Testing permissions on the query folder" {

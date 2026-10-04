@@ -76,7 +76,15 @@ Describe "AzDoReleaseDefinitionPermission Integration Tests" -Tag "Integration",
 
         New-TestProject -ProjectName $PROJECTNAME
 
-        $script:definition = New-TestReleaseDefinition -ProjectName $PROJECTNAME -DefinitionName $DEFINITIONNAME
+        # A release definition is a classic-pipeline object, refused with 400 "The classic pipelines
+        # are disabled for this project / organization." while that policy is on. Clear the project
+        # half of it; when an organization policy pins it on, the tests below are skipped.
+        $classicPipelinesEnabled = Enable-TestClassicPipeline -ProjectName $PROJECTNAME
+
+        if ($classicPipelinesEnabled)
+        {
+            $script:definition = New-TestReleaseDefinition -ProjectName $PROJECTNAME -DefinitionName $DEFINITIONNAME
+        }
 
         $parameters = @{
             Name       = 'AzDoReleaseDefinitionPermission'
@@ -109,6 +117,11 @@ Describe "AzDoReleaseDefinitionPermission Integration Tests" -Tag "Integration",
         BeforeAll { $parameters.Method = 'Test' }
 
         It "Should not throw any exceptions when testing the release definition permissions" {
+            if (-not $classicPipelinesEnabled)
+            {
+                Set-ItResult -Skipped -Because 'classic pipeline creation is disabled for this organization'
+            }
+
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
     }
@@ -118,15 +131,30 @@ Describe "AzDoReleaseDefinitionPermission Integration Tests" -Tag "Integration",
         BeforeAll { $parameters.Method = 'Set' }
 
         It "Should not throw any exceptions when setting the release definition permissions" {
+            if (-not $classicPipelinesEnabled)
+            {
+                Set-ItResult -Skipped -Because 'classic pipeline creation is disabled for this organization'
+            }
+
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
 
         It "Should return True after setting the permissions" {
+            if (-not $classicPipelinesEnabled)
+            {
+                Set-ItResult -Skipped -Because 'classic pipeline creation is disabled for this organization'
+            }
+
             $parameters.Method = 'Test'
             (Invoke-DscResource @parameters).InDesiredState | Should -BeTrue
         }
 
         It "Should remain in the desired state when tested repeatedly" {
+            if (-not $classicPipelinesEnabled)
+            {
+                Set-ItResult -Skipped -Because 'classic pipeline creation is disabled for this organization'
+            }
+
             $parameters.Method = 'Test'
             (Invoke-DscResource @parameters).InDesiredState | Should -BeTrue
             (Invoke-DscResource @parameters).InDesiredState | Should -BeTrue
@@ -152,6 +180,11 @@ Describe "AzDoReleaseDefinitionPermission Integration Tests" -Tag "Integration",
         }
 
         It "Should not throw any exceptions when removing the release definition permissions" {
+            if (-not $classicPipelinesEnabled)
+            {
+                Set-ItResult -Skipped -Because 'classic pipeline creation is disabled for this organization'
+            }
+
             { Invoke-DscResource @parameters } | Should -Not -Throw
         }
     }

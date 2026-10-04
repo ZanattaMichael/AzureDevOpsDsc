@@ -82,7 +82,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Integration tests
+  - `AzDoQueryPermission` and `AzDoWorkItemQuery` create their query folder
+    through the new `Invoke-TestQueryFolderSet`. It retries the
+    `TF401256: You do not have Write permissions for query Shared Queries` 403
+    that a project returns for a few seconds after it reaches `wellFormed`.
+    `Invoke-AzDevOpsApiRestMethod` no longer retries a 403, and that retry
+    used to hide the delay.
+  - `AzDoReleaseDefinitionPermission` calls `Enable-TestClassicPipeline` before
+    creating its classic release definition, and skips when an organization
+    policy forbids classic pipelines, as `AzDoTaskGroup` and
+    `AzDoDeploymentGroup` already do.
+  - `AzDoPicklist` polls for up to 30 seconds for the removed picklist to
+    drop out of the picklist list. The list could still return it for a moment
+    after a successful DELETE.
+  - `Get-MIToken` requests its token with `-NoAuthentication`, which
+    `Invoke-APIRestMethod` now honours. It used to build an Authorization
+    header from `$Global:DSCAZDO_AuthenticationToken`, so after a test whose
+    token request failed had left that global null, the post-run teardown
+    threw before cleaning up or reporting the test results.
 - AzureDevOpsDscNative
+  - `Invoke-AzDevOpsApiRestMethod -AzureArcAuthentication` retries a 408, 429
+    or 5xx from the Azure Arc token endpoint like any other request. It used to
+    hand every error straight back to `Get-AzManagedIdentityToken`, which
+    only needs the 401 challenge unchanged, so a throttled token request failed
+    the resource being constructed. It showed up as a 429 failing
+    `[AzDoProject]::Export()` and `[AzDoGitRepository]::Export()`.
+  - `Invoke-AzDevOpsApiRestMethod` no longer throws "Unable to find type
+    [APIRateLimit]" on a 429 or a response carrying rate-limit headers. The
+    class lives in the root module, which the nested `AzureDevOpsDsc.Common`
+    module cannot resolve type names from; it now builds the object through
+    the new `New-APIRateLimit` function, as the token classes already do.
+  - The nested `AzureDevOpsDsc.Common` module now imports the
+    `DscResource.Common` copy shipped beside it. It called `Get-LocalizedData`
+    without importing it, so the command was found through auto-discovery as an
+    export of `AzureDevOpsDscNative`, which was itself still loading. Every
+    process that had not already imported `DscResource.Common` globally failed
+    to load the module with "the module could not be loaded". That included
+    each `dsc resource get/test/set` call through the DSC v3 PowerShell adapter.
   - The identity cache initializer (`AzDoAPI_7_IdentitySubjectDescriptors`)
     re-added every group, user and service principal with the whole cache item
     as its value, so `.value.ACLIdentity` read `$null` for all of them and every
