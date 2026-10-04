@@ -5,9 +5,18 @@ param (
     $isClass
 )
 
-# Setup/Import 'DscResource.Common' helper module
-#$script:resourceHelperModulePath = Join-Path -Path $PSScriptRoot -ChildPath '..\..\Modules\DscResource.Common'
-#Import-Module -Name $script:resourceHelperModulePath
+# Import the 'DscResource.Common' helper module that ships beside this one in the built module
+# (<version>\Modules\DscResource.Common). The root module's own import of it lands in the root
+# module's session state, which this nested module cannot see, so without this Get-LocalizedData
+# is resolved by command auto-discovery. That finds it exported by AzureDevOpsDscNative - the
+# module still being loaded - and fails with "the module could not be loaded" in any process that
+# has not already imported DscResource.Common globally, such as the DSC v3 adapter's pwsh.
+# The source tree has no sibling copy; there the caller is expected to have loaded it.
+$script:resourceHelperModulePath = Join-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -ChildPath 'DscResource.Common'
+if (Test-Path -Path $script:resourceHelperModulePath)
+{
+    Import-Module -Name $script:resourceHelperModulePath
+}
 
 $script:localizedData = Get-LocalizedData -DefaultUICulture 'en-US'
 

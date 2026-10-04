@@ -141,7 +141,7 @@ product regression - and, through `publish.yml`, does not block a release.
 
 | Feature | Resources | How it is handled |
 |---|---|---|
-| Classic build and release pipelines | `AzDoTaskGroup`, `AzDoDeploymentGroup` | `Enable-TestClassicPipeline` (in `Supporting/Functions/SupportingFunctions.ps1`) clears the project-level half of the "Disable creation of classic build and release pipelines" policy for the test project and reads the setting back. If an organization-level policy pins it on, the tests that create the object are skipped. |
+| Classic build and release pipelines | `AzDoTaskGroup`, `AzDoDeploymentGroup`, `AzDoReleaseDefinitionPermission` | `Enable-TestClassicPipeline` (in `Supporting/Functions/SupportingFunctions.ps1`) clears the project-level half of the "Disable creation of classic build and release pipelines" policy for the test project and reads the setting back. If an organization-level policy pins it on, the tests that create the object are skipped. |
 | Real tenant user identities | `AzDoUserEntitlement`, `AzDoNotificationSubscription` | Skipped unless `AZDODSC_TEST_USER_UPN` names a real user in the organization's Entra ID tenant. The value is PII, so it is never committed - set it as a masked CI secret. |
 | An external service hook endpoint | `AzDoServiceHook` | Not skipped - `AZDODSC_TEST_HOOK_URL` supplies a real endpoint when set, and otherwise a per-run `example.com` URL is used. Azure DevOps does not call the URL at create time, so the full lifecycle still runs. |
 | A provisioned Event Hub | `AzDoAuditStream` | Skipped unconditionally - there is no safe placeholder connection string. |

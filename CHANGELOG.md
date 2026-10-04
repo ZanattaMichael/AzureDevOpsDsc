@@ -82,7 +82,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Integration tests
+  - `AzDoQueryPermission` and `AzDoWorkItemQuery` create their query folder
+    through the new `Invoke-TestQueryFolderSet`. It retries the
+    `TF401256: You do not have Write permissions for query Shared Queries` 403
+    that a project returns for a few seconds after it reaches `wellFormed`.
+    `Invoke-AzDevOpsApiRestMethod` no longer retries a 403, and that retry
+    used to hide the delay.
+  - `AzDoReleaseDefinitionPermission` calls `Enable-TestClassicPipeline` before
+    creating its classic release definition, and skips when an organization
+    policy forbids classic pipelines, as `AzDoTaskGroup` and
+    `AzDoDeploymentGroup` already do.
 - AzureDevOpsDscNative
+  - The nested `AzureDevOpsDsc.Common` module now imports the
+    `DscResource.Common` copy shipped beside it. It called `Get-LocalizedData`
+    without importing it, so the command was found through auto-discovery as an
+    export of `AzureDevOpsDscNative`, which was itself still loading. Every
+    process that had not already imported `DscResource.Common` globally failed
+    to load the module with "the module could not be loaded". That included
+    each `dsc resource get/test/set` call through the DSC v3 PowerShell adapter.
   - The identity cache initializer (`AzDoAPI_7_IdentitySubjectDescriptors`)
     re-added every group, user and service principal with the whole cache item
     as its value, so `.value.ACLIdentity` read `$null` for all of them and every
