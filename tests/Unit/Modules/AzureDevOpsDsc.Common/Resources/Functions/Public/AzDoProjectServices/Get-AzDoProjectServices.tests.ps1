@@ -21,6 +21,7 @@ Describe "Get-AzDoProjectServices" -Tag "Unit", "ProjectServices" {
         . (Get-ClassFilePath 'Ensure')
         . (Get-ClassFilePath '003.LocalizedDataAzURLParams')
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
+        . (Get-FunctionItem 'Resolve-AzDoProject.ps1')
 
         Mock -CommandName Get-AzDoOrganizationName -MockWith { return 'TestOrganization' }
         # AUTO-ADDED live-fallback mocks (unit isolation for cache-miss live lookups)
@@ -36,6 +37,24 @@ Describe "Get-AzDoProjectServices" -Tag "Unit", "ProjectServices" {
         It "returns status NotFound" {
             $result = Get-AzDoProjectServices -ProjectName 'NonExistent'
             $result.status | Should -Be 'NotFound'
+        }
+
+        It "returns status NotFound when the live lookup answers 404" {
+            # #55: a missing project used to surface as a TF200016 error from Get.
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith {
+                throw 'Response status code does not indicate success: 404 (Not Found). TF200016: The following project does not exist: NonExistent.'
+            }
+
+            $result = Get-AzDoProjectServices -ProjectName 'NonExistent'
+            $result.status | Should -Be 'NotFound'
+        }
+
+        It "rethrows a live lookup failure other than 404" {
+            Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith {
+                throw 'Response status code does not indicate success: 500 (Internal Server Error).'
+            }
+
+            { Get-AzDoProjectServices -ProjectName 'NonExistent' } | Should -Throw '*500*'
         }
     }
 

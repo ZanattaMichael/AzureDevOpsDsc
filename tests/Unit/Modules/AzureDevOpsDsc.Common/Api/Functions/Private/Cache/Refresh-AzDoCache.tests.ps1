@@ -109,4 +109,28 @@ Describe "Refresh-AzDoCache Tests" -Tag "Unit", "Cache" {
         }
     }
 
+    Context "Output stream" {
+
+        BeforeAll {
+            # Import-CacheObject returns the collection it imported (#55).
+            Mock -CommandName Import-CacheObject -MockWith {
+                [System.Collections.Generic.List[CacheItem]]@([CacheItem]::New('Key', 'Value'))
+            }
+        }
+
+        It "Should not write the reimported caches to the output stream on a full refresh" {
+            $output = @(Refresh-AzDoCache -OrganizationName 'MyOrg')
+
+            $output.Count | Should -Be 0
+            Assert-MockCalled -CommandName Import-CacheObject
+        }
+
+        It "Should not write the reimported caches to the output stream on a narrowed refresh" {
+            $output = @(Refresh-AzDoCache -OrganizationName 'MyOrg' -CacheType 'LiveProjects')
+
+            $output.Count | Should -Be 0
+            Assert-MockCalled -CommandName Import-CacheObject -ParameterFilter { $CacheType -eq 'LiveProjects' }
+        }
+    }
+
 }

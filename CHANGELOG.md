@@ -102,6 +102,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     token request failed had left that global null, the post-run teardown
     threw before cleaning up or reporting the test results.
 - AzureDevOpsDscNative
+  - Reloading a cache no longer writes the whole cache to the output stream
+    ([issue #55](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/55)).
+    `Import-CacheObject` returns the collection it imported, and
+    `Initialize-CacheObject`, `Refresh-CacheObject` and `Refresh-AzDoCache`
+    called it for its side effect without discarding that value. Every `New-`
+    and `Set-` function that ends by refreshing its cache printed the cache as
+    a `Key`/`Value` table during `Invoke-DscResource`.
+  - `Get-AzDoProjectServices` reports `NotFound` for a project that does not
+    exist, rather than failing with `TF200016`. Its live fallback lookup now
+    goes through `Resolve-AzDoProject`, which treats a 404 as no project.
   - `Invoke-AzDevOpsApiRestMethod -AzureArcAuthentication` retries a 408, 429
     or 5xx from the Azure Arc token endpoint like any other request. It used to
     hand every error straight back to `Get-AzManagedIdentityToken`, which
