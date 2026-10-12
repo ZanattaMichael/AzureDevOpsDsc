@@ -179,6 +179,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - AzureDevOpsDscNative
+  - Added `AzDoDashboard`, class `150`, managing a team or project dashboard's
+    existence, description and refresh interval (part of
+    [#71](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/71)). A dashboard
+    belongs to the team named in `TeamName`, or to the project when `TeamName` is
+    omitted. Widgets are not managed: updates never send the widget list, so widgets
+    added in the UI are kept. The API replaces a dashboard's settings on every update,
+    so a setting the configuration does not state is written back with its live value
+    rather than cleared. Added the private Dashboard API functions
+    `Get-DevOpsDashboard`, `New-DevOpsDashboard`, `Update-DevOpsDashboard`,
+    `Remove-DevOpsDashboard` and `Get-DevOpsDashboardUri`.
   - `AzDoPipeline` now supports GitHub, GitHub Enterprise and Bitbucket repositories, and
     pipeline variables ([#81](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/81)):
     - Added the `RepositoryType` property (`TfsGit` default, `GitHub`, `GitHubEnterprise`,
