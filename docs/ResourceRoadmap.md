@@ -72,6 +72,15 @@ error-prone part. Every permission resource below needs a matching `New-ACLToken
 | `AzDoReleaseDefinitionPermission` | `ReleaseManagement` | `{projectId}/{folderPath}/{definitionId}` (or `{projectId}/{definitionId}` at the root) | **Shipped** — see §5.5 |
 | `AzDoAnalyticsPermission` | `Analytics` | `$/{projectId}` | **Shipped** — see §6 |
 | `AzDoAnalyticsViewsPermission` | `AnalyticsViews` | `$/Shared/{projectId}` | **Shipped** — see §6 |
+| `AzDoOrganizationPermission` | `Collection` | `NAMESPACE:` (unverified) | Outstanding — see §12.1 |
+| `AzDoTaskGroupPermission` | `MetaTask` | `{projectId}/{taskGroupId}` (unverified) | Outstanding — see §12.1 |
+| `AzDoServiceHookPermission` | `ServiceHooks` | `PublisherSecurity/{projectId}` (unverified) | Outstanding — see §12.1 |
+| `AzDoAuditPermission` | `AuditLog` | `AllPermissions` (unverified) | Outstanding — see §12.1 |
+| `AzDoNotificationPermission` | `EventSubscription` | To confirm | Outstanding — see §12.1 |
+| `AzDoTfvcPermission` | `VersionControlItems` | `$/{projectName}[/{path}]` — by project *name* (unverified) | Outstanding — see §12.1 |
+
+The token shapes marked *unverified* were not checked against a live organization. Read
+an existing ACL for the namespace before building on them.
 
 Whenever a namespace is added, add a `New-ACLToken` → `ConvertTo-FormattedToken` →
 `Parse-ACLToken` round-trip test with it. If the build and parse directions disagree, a
@@ -456,6 +465,9 @@ Still outstanding, in the order below:
 - **Tenant-scoped items** (§7) — **spiked and closed as unsupported/not-built**, see
   [`docs/Spikes/TenantScopedPolicies.md`](Spikes/TenantScopedPolicies.md) (#85). No
   resources were built; class prefixes `130`–`131` reserved for the spike are unused.
+- **Gaps from the October 2026 code review** (§12) — permission resources for namespaces
+  with no dedicated resource, and Boards, Pipelines, Test and Artifacts settings that no
+  resource or issue covered.
 
 Since that merge, [#90](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/90) shipped
 `AzDoTaggingPermission`, `AzDoAnalyticsPermission` and `AzDoAnalyticsViewsPermission`
@@ -576,6 +588,7 @@ remains:
    closed - see §8.
 8. **Tenant-scoped items** (§7) — done: spiked in #85 and closed as unsupported/not-built,
    see [`docs/Spikes/TenantScopedPolicies.md`](Spikes/TenantScopedPolicies.md).
+9. **Gaps from the October 2026 code review** (§12) — in the order given in §12.7.
 
 Per-resource checklist (from `CLAUDE.md`): class in `source/Classes/` with the next numeric
 prefix (continue from `117`), public functions under
@@ -636,3 +649,97 @@ actually keys on — the mapping is process-specific for inherited processes wit
 added backlog levels, and building it correctly would need the same `work/processes` view
 that `Resolve-AzDoProcessWorkItemType` already reads for a different reason (§6). Configurations
 target `BacklogVisibilities` by category reference name for now.
+
+---
+
+## 12. Gaps found in the October 2026 code review
+
+A review of `source/Classes/` and `source/Modules/AzureDevOpsDsc.Common/` on `main` at commit
+`db25b7f` turned up the gaps below. None of them was in this document or in an open issue
+when the review was done. Each one was confirmed absent from the code. The routes come from
+the public REST reference and clients generated from it, and were not tried against the
+live test organization. Check each one there before building on it: as #83 showed, a route
+that looks right can still return 404.
+
+### 12.1 Permission resources
+
+These namespaces have no dedicated resource. `AzDoSecurityNamespacePermission` can reach
+them, but only with a token the user builds by hand, which is the part §2 exists to remove.
+Each needs `New-ACLToken` / `ConvertTo-FormattedToken` / `Parse-ACLToken` branches and the
+round-trip test described in §2.
+
+| Resource | Namespace | Why it matters | Effort |
+|---|---|---|---|
+| `AzDoOrganizationPermission` | `Collection` | Organization-level permissions such as *Create new projects*, *Edit instance-level information* and *Manage enterprise policies*. `AzDoGroupPermission` sets permissions *on* a group (`Identity`) and `AzDoProjectPermission` is project-level (`Project`), so nothing manages these today. | Low |
+| `AzDoTaskGroupPermission` | `MetaTask` | `AzDoTaskGroup` (`080`) has no permission resource to go with it. | Low |
+| `AzDoDeploymentGroupPermission` | Role assignments (`distributedtask.machinegrouprole`, unverified) | `AzDoDeploymentGroup` (`079`) has no permission resource to go with it. The portal manages this as role assignments through `_apis/securityroles`, not as a namespace ACL — decide which to model before building, since `AzDoAgentPoolPermission` and `AzDoEnvironmentPermission` use `DistributedTask` ACLs. | Medium |
+| `AzDoAgentQueuePermission` | Role assignments (`distributedtask.agentqueuerole`, unverified) | Project-level agent pool security. `AzDoAgentPoolPermission` (`075`) has no `ProjectName` and covers organization pools only. Same ACL-or-role decision as the row above. | Medium |
+| `AzDoServiceHookPermission` | `ServiceHooks` | Who may view, edit or delete service hook subscriptions in a project. | Low |
+| `AzDoAuditPermission` | `AuditLog` | *View audit log*, *Manage audit streams* and *Delete audit streams*. Pairs with the shipped `AzDoAuditStream`. | Low |
+| `AzDoNotificationPermission` | `EventSubscription` | Who may manage notification subscriptions. Pairs with the shipped `AzDoNotificationSubscription`. | Low |
+| `AzDoTfvcPermission` | `VersionControlItems` | `AzDoProject` accepts `SourceControlType = 'Tfvc'`, but nothing can secure TFVC paths. The token uses the project *name*, not its id. Low priority: TFVC is legacy. | Medium |
+
+### 12.2 Boards and teams
+
+| Resource | API | Why it matters | Effort |
+|---|---|---|---|
+| `AzDoWorkItemTemplate` | `{org}/{project}/{team}/_apis/wit/templates` (`7.1-preview.1`) | Team work item templates — prefilled field sets teams rely on for consistent bugs and tasks. Team-scoped, like `AzDoTeamSettings`. | Low |
+| `AzDoTaskboardColumn` | `{org}/{project}/{team}/_apis/work/taskboardcolumns` (`7.1-preview.1`, `PUT` of the whole column list) | Sprint taskboard columns and their state mappings. The board-configuration resources in #71 cover the backlog board, not the taskboard. Could be folded into #71. | Medium |
+
+### 12.3 Pipelines
+
+| Resource | API | Why it matters | Effort |
+|---|---|---|---|
+| `AzDoAgent` | `PATCH _apis/distributedtask/pools/{poolId}/agents/{agentId}` | Enabling or disabling a registered agent, and its user capabilities. Agent-install-only, like `AzDoEnvironmentVMResource`: DSC never registers an agent, and `Present` with no agent registered has to throw from `Set`, not only report `Error` from `Get`. The user-capabilities route is not in the public reference — confirm it first. | Medium |
+| `AzDoPipeline` extension | Build definition `PUT`, as `Set-DevOpsPipeline` already does (§8b) | Per-pipeline settings `AzDoPipeline` does not expose: processing of new run requests (`queueStatus` enabled/paused/disabled), build number format and job timeout. An extension of the existing resource rather than a new class. | Low |
+| `AzDoAgentPoolMaintenance` | `_apis/distributedtask/pools/{poolId}/maintenancedefinitions` (not in the public reference) | Agent pool maintenance jobs: working directory cleanup and agent update schedule. Spike the route first. Low priority. | Medium |
+
+Classic build definitions are not covered either — `AzDoPipeline` manages YAML pipelines
+only. Not proposed as a resource: classic build pipelines are legacy, and
+`AzDoPipelineSettings` already has `DisableClassicPipelineCreation` to stop new ones being
+created in a project.
+
+### 12.4 Test and Artifacts
+
+| Resource | API | Why it matters | Effort |
+|---|---|---|---|
+| `AzDoTestResultRetentionSettings` | `{org}/{project}/_apis/test/resultretentionsettings` (`7.1-preview.1`) | How long automated and manual test results are kept. The test-results counterpart to `AzDoBuildRetentionSettings` (`143`). | Low |
+| `AzDoArtifactFeedGlobalPermission` | `feeds.dev.azure.com/{org}/_apis/packaging/globalpermissions` (`7.1-preview.1`) | Organization-wide *who can create feeds* and *who can administer feeds*. `AzDoArtifactFeedPermission` works per feed only. Uses the feed role model, not a security namespace. | Low |
+
+### 12.5 Organization and project — low priority
+
+| Resource | API | Why it matters | Effort |
+|---|---|---|---|
+| `AzDoProjectProperties` | `PATCH _apis/projects/{projectId}/properties` (JSON Patch, `7.1-preview.1`) | Custom project properties, used by some organizations for tagging and ownership metadata. Could be a property on `AzDoProject` instead of a new resource. | Low |
+| `AzDoNotificationDeliverySettings` | `PATCH _apis/notification/subscribers/{subscriberId}` | Team and group notification delivery preference (for example, deliver to members, or to a preferred email address). | Low |
+
+### 12.6 Checked and not gaps
+
+Recorded so they are not raised again:
+
+- **Repository-level policies** (file size, path length, reserved names and similar) —
+  covered by `AzDoBranchPolicy` with an empty `BranchName`.
+- **Deployment pools** — covered by `AzDoAgentPool` with `PoolType = 'deployment'`.
+- **Feed upstreams and retention** — covered by `AzDoArtifactFeedSettings`
+  (`UpstreamSources`, `RetentionCountLimit`, `DaysToKeepRecentlyDownloadedPackages`).
+- **Team iteration and area paths** — covered by `AzDoTeamSettings` (`IterationPaths`,
+  `AreaPaths`, `DefaultAreaPath`).
+- **Classic release retention** — not buildable: on Azure DevOps Services the release
+  retention settings can be viewed but not changed. Revisit only with Azure DevOps Server
+  support (§10).
+- **Team capacity and days off** — out of scope. They are sprint planning data that teams
+  change every iteration, not desired-state configuration, in the same way §7 leaves test
+  runs out.
+
+### 12.7 Suggested order
+
+1. `AzDoOrganizationPermission`, `AzDoTaskGroupPermission` — low effort, and the
+   organization permissions are the most commonly needed of §12.1.
+2. `AzDoTestResultRetentionSettings`, `AzDoArtifactFeedGlobalPermission`,
+   `AzDoWorkItemTemplate` — low effort, documented routes.
+3. The `AzDoPipeline` per-pipeline settings extension (§12.3).
+4. `AzDoDeploymentGroupPermission`, `AzDoAgentQueuePermission` — after deciding between
+   role assignments and `DistributedTask` ACLs.
+5. `AzDoTaskboardColumn` — together with the #71 board-configuration resources.
+6. `AzDoAgent`, then the remaining §12.1 namespaces, then §12.5 and
+   `AzDoAgentPoolMaintenance`.
