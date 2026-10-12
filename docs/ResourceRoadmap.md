@@ -468,6 +468,8 @@ Still outstanding, in the order below:
 - **Gaps from the October 2026 code review** (§12) — permission resources for namespaces
   with no dedicated resource, and Boards, Pipelines, Test and Artifacts settings that no
   resource or issue covered.
+- **Copilot code review and GitHub Advanced Security** (§13) — open issues #66 and #67, both
+  preview or recently GA features whose APIs need a spike before a property model is fixed.
 
 Since that merge, [#90](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/90) shipped
 `AzDoTaggingPermission`, `AzDoAnalyticsPermission` and `AzDoAnalyticsViewsPermission`
@@ -589,6 +591,8 @@ remains:
 8. **Tenant-scoped items** (§7) — done: spiked in #85 and closed as unsupported/not-built,
    see [`docs/Spikes/TenantScopedPolicies.md`](Spikes/TenantScopedPolicies.md).
 9. **Gaps from the October 2026 code review** (§12) — in the order given in §12.7.
+10. **GitHub Advanced Security, then Copilot code review** (§13) — spikes first, in the
+    order given in §13.3.
 
 Per-resource checklist (from `CLAUDE.md`): class in `source/Classes/` with the next numeric
 prefix (continue from `117`), public functions under
@@ -743,3 +747,44 @@ Recorded so they are not raised again:
 5. `AzDoTaskboardColumn` — together with the #71 board-configuration resources.
 6. `AzDoAgent`, then the remaining §12.1 namespaces, then §12.5 and
    `AzDoAgentPoolMaintenance`.
+
+---
+
+## 13. Copilot code review and GitHub Advanced Security (#66, #67)
+
+Two open issues cover Azure Repos features that no resource configures today. Neither
+`source/Classes/` nor the public functions call the Advanced Security or Copilot settings
+routes. Both features are new enough that their APIs are preview or undocumented, so each
+issue starts with a spike. Unlike §12, these are tracked in their own issues; this section
+records where they sit in the plan, and the issues hold the detail.
+
+### 13.1 Copilot code review — [#66](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/66)
+
+| Proposed resource | Covers | Open question |
+|---|---|---|
+| `AzDoCopilotCodeReview` | Enables Copilot as a pull request reviewer for a repository, automatic review when a pull request opens, and custom review instructions at organization, project or repository scope. | The organization-level settings API is preview and needs a spike. The issue recommends a dedicated resource over a new `AzDoBranchPolicy` policy type, because the properties do not map onto the branch policy shape. |
+
+The issue proposes `ProjectName` and `RepositoryName` both as keys. Only one
+`[DscProperty(Key)]` is allowed, so one of them becomes `[DscProperty(Mandatory)]`.
+
+### 13.2 GitHub Advanced Security — [#67](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/67)
+
+| Proposed resource | Covers | Open question |
+|---|---|---|
+| `AzDoAdvancedSecurity` | Enables Advanced Security for a repository, and secret, dependency and code scanning, including CodeQL default setup (`_apis/management/enablement`, `codeqlDefaults`). | CodeQL default setup is GA, but its `codeqlDefaults` route is preview and needs a spike. Integration tests need Advanced Security licensed on the test organization. |
+| `AzDoAdvancedSecurityAutofixPolicy` | Copilot Autofix at organization, project or repository scope. | Whether this is a resource of its own or organization and project scope on `AzDoAdvancedSecurity`. |
+| `AzDoAdvancedSecurityStatusCheck` | The `AdvancedSecurity/NewHighAndCritical` and `AdvancedSecurity/AllHighAndCritical` status checks that block pull request completion. | Whether a new class is needed at all. `AzDoBranchPolicy` already supports `PolicyType = 'StatusCheck'` with `PolicyIdentifier` (#74), but `PolicyIdentifier` does not match a value nested in the settings (§7), so check the settings shape these checks return first. The issue asks for the decision to be recorded there before work begins. |
+
+The issue proposes both resources with `ProjectName` and `RepositoryName` as keys, and
+for the Autofix policy, empty values to mean organization or project scope. The same
+one-key rule applies, and an empty `ProjectName` has to be handled when the resource reads
+it.
+
+### 13.3 Suggested order
+
+1. Spike the `_apis/management/enablement` route, then build `AzDoAdvancedSecurity`. Its
+   route is the better documented of the two issues.
+2. Decide the status check question for #67 against `AzDoBranchPolicy`, then decide
+   Autofix scope.
+3. Spike the Copilot organization-level settings API, then build `AzDoCopilotCodeReview`
+   (#66).
