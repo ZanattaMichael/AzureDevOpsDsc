@@ -15,20 +15,20 @@ explicitly.
 
 ## 1. Current coverage (verified)
 
-92 class files exist, `001`–`149` (not contiguous); 81 of them carry
+94 class files exist, `001`–`152` (not contiguous); 83 of them carry
 `[DscResource()]` (the other 11 are the auth and base classes). By subsystem:
 
 | Subsystem | Resources |
 |---|---|
 | Auth / base | `AuthenticationToken`, `PersonalAccessToken`, `ManagedIdentityToken`, `ServicePrincipalToken`, `CertificateToken`, `AzureCliToken`, `WorkloadIdentityFederationToken`, `DscResourceBase`, `AzDevOpsApiDscResourceBase`, `AzDevOpsDscResourceBase`, `APIRateLimit` |
-| Projects / org | `AzDoProject`, `AzDoProjectServices`, `AzDoProjectPermission`, `AzDoOrganizationSettings`, `AzDoExtension`, `AzDoAuditStream`, `AzDoServiceHook`, `AzDoNotificationSubscription` |
+| Projects / org | `AzDoProject`, `AzDoProjectServices`, `AzDoProjectPermission`, `AzDoOrganizationPermission`, `AzDoOrganizationSettings`, `AzDoExtension`, `AzDoAuditStream`, `AzDoServiceHook`, `AzDoNotificationSubscription` |
 | Identity / groups | `AzDoOrganizationGroup`, `AzDoProjectGroup`, `AzDoGroupMember`, `AzDoGroupPermission`, `AzDoUserEntitlement`, `AzDoGroupEntitlement`, `AzDoServicePrincipalEntitlement` |
 | Repos | `AzDoGitRepository`, `AzDoGitPermission`, `AzDoRepositorySettings`, `AzDoBranchPolicy` |
 | Boards | `AzDoAreaNodes`, `AzDoIterationNodes`, `AzDoAreaPermission`, `AzDoIterationPermission`, `AzDoWIPTags`, `AzDoWIPTagHygiene`, `AzDoProcess`, `AzDoProcessPermission` |
 | Work item queries | `AzDoQueryFolder`, `AzDoWorkItemQuery`, `AzDoQueryPermission` |
 | Process customization | `AzDoPicklist`, `AzDoProcessWorkItemType`, `AzDoProcessField`, `AzDoProcessState`, `AzDoProcessRule`, `AzDoProcessBehavior` |
 | Teams | `AzDoTeam`, `AzDoTeamMember`, `AzDoTeamSettings` |
-| Pipelines | `AzDoPipeline`, `AzDoPipelinePermission`, `AzDoPipelineSettings`, `AzDoPipelineEnvironment`, `AzDoEnvironmentApproval`, `AzDoEnvironmentPermission`, `AzDoCheckConfiguration`, `AzDoTaskGroup`, `AzDoAgentPool`, `AzDoAgentPoolPermission`, `AzDoAgentQueue`, `AzDoDeploymentGroup`, `AzDoPipelineFolder`, `AzDoPipelineFolderPermission`, `AzDoPipelineAuthorization` |
+| Pipelines | `AzDoPipeline`, `AzDoPipelinePermission`, `AzDoPipelineSettings`, `AzDoPipelineEnvironment`, `AzDoEnvironmentApproval`, `AzDoEnvironmentPermission`, `AzDoCheckConfiguration`, `AzDoTaskGroup`, `AzDoTaskGroupPermission`, `AzDoAgentPool`, `AzDoAgentPoolPermission`, `AzDoAgentQueue`, `AzDoDeploymentGroup`, `AzDoPipelineFolder`, `AzDoPipelineFolderPermission`, `AzDoPipelineAuthorization` |
 | Library / connections | `AzDoVariableGroup`, `AzDoVariableGroupPermission`, `AzDoServiceConnection`, `AzDoServiceConnectionPermission`, `AzDoSecureFile`, `AzDoSecureFilePermission` |
 | Artifacts | `AzDoArtifactFeed`, `AzDoArtifactFeedPermission`, `AzDoArtifactFeedSettings`, `AzDoArtifactFeedView` |
 | Classic Release Management | `AzDoReleaseFolder`, `AzDoReleaseFolderPermission`, `AzDoReleaseDefinitionPermission` |
@@ -43,10 +43,10 @@ explicitly.
 Most new *permission* resources are blocked on one shared piece of work, and it should land
 before (or with) the first of them.
 
-`New-ACLToken.ps1` builds security tokens for **16** namespaces: `Git Repositories`,
+`New-ACLToken.ps1` builds security tokens for **18** namespaces: `Git Repositories`,
 `Identity`, `CSS`, `Iteration`, `Project`, `Process`, `Build`, `Library`,
 `ServiceEndpoints`, `AgentPool`, `DistributedTask`, `WorkItemQueryFolders`,
-`ReleaseManagement`, `Tagging`, `Analytics`, `AnalyticsViews`.
+`ReleaseManagement`, `Tagging`, `Analytics`, `AnalyticsViews`, `Collection`, `MetaTask`.
 `Parse-ACLToken.ps1` mirrors that set and falls through to a `Generic` type for anything
 else. `Build` now covers both the definition and the folder token form, and `Library` both
 the variable group and the secure file form. `Git Repositories` now covers the branch
@@ -72,6 +72,8 @@ error-prone part. Every permission resource below needs a matching `New-ACLToken
 | `AzDoReleaseDefinitionPermission` | `ReleaseManagement` | `{projectId}/{folderPath}/{definitionId}` (or `{projectId}/{definitionId}` at the root) | **Shipped** — see §5.5 |
 | `AzDoAnalyticsPermission` | `Analytics` | `$/{projectId}` | **Shipped** — see §6 |
 | `AzDoAnalyticsViewsPermission` | `AnalyticsViews` | `$/Shared/{projectId}` | **Shipped** — see §6 |
+| `AzDoOrganizationPermission` | `Collection` | `NAMESPACE:` — read from the live ACL, not assumed | **Shipped** (`151`) |
+| `AzDoTaskGroupPermission` | `MetaTask` | `{projectId}` or `{projectId}/{taskGroupId}` | **Shipped** (`152`) |
 
 Whenever a namespace is added, add a `New-ACLToken` → `ConvertTo-FormattedToken` →
 `Parse-ACLToken` round-trip test with it. If the build and parse directions disagree, a

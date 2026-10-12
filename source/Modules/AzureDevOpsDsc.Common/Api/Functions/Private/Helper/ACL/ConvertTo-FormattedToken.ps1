@@ -104,6 +104,17 @@ Function ConvertTo-FormattedToken {
             $string = '$/Shared/{0}' -f $Token.ProjectId
             break
         }
+        # Collection permissions — the organization root token, written back as it was read
+        {$_.type -eq 'Organization'} {
+            $string = $Token.RootToken
+            break
+        }
+        # MetaTask permissions — '{projectId}' or '{projectId}/{taskGroupId}'
+        {$_.type -eq 'TaskGroup'} {
+            $string = if ($Token.TaskGroupId) { '{0}/{1}' -f $Token.ProjectId, $Token.TaskGroupId }
+                      else                    { $Token.ProjectId }
+            break
+        }
         # Process permissions — org-wide root
         {$_.type -eq 'ProcessRoot'} {
             $string = '$PROCESS'

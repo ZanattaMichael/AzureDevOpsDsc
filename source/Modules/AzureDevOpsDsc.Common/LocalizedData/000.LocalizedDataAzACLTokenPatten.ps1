@@ -52,6 +52,11 @@ data LocalizedDataAzACLTokenPatten
         AnalyticsPermission     = '^\$\/(?<ProjectId>[A-Za-z0-9-]+)$'
         # AnalyticsViews ACL Token Patterns — '$/Shared/{projectId}'
         AnalyticsViewsPermission = '^\$\/Shared\/(?<ProjectId>[A-Za-z0-9-]+)$'
+        # Collection (organization-level) ACL Token Patterns. The namespace has a single root token;
+        # it is read from the live ACL rather than assumed, so both spellings are accepted.
+        OrganizationPermission  = '^(?<RootToken>NAMESPACE:?)$'
+        # MetaTask (task group) ACL Token Patterns — '{projectId}' or '{projectId}/{taskGroupId}'
+        TaskGroupPermission     = '^(?<ProjectId>[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12})(\/(?<TaskGroupId>[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}))?$'
         # Process ACL Token Patterns — org-wide root ($PROCESS), or $PROCESS:{parentProcessId}:{processId}
         ProcessRootPermission   = '^\$PROCESS$'
         ProcessPermission       = '^\$PROCESS:(?<ParentProcessId>[A-Za-z0-9-]+):(?<ProcessId>[A-Za-z0-9-]+)$'

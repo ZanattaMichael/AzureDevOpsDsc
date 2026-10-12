@@ -146,6 +146,7 @@ Each resource links to its example/usage documentation.
 | Resource | Description |
 |---|---|
 | [AzDoProjectPermission](source/Examples/Resources/AzDoProjectPermission.md) | Manages project-level permissions for identities. |
+| [AzDoOrganizationPermission](source/Examples/Resources/AzDoOrganizationPermission.md) | Manages organization-level permissions, such as who can create projects. |
 | [AzDoGitPermission](source/Examples/Resources/AzDoGitPermission.md) | Manages fine-grained Git repository permissions for identities. |
 | [AzDoAreaPermission](source/Examples/Resources/AzDoAreaPermission.md) | Manages area path (classification node) permissions. |
 | [AzDoIterationPermission](source/Examples/Resources/AzDoIterationPermission.md) | Manages iteration path (classification node) permissions. |
@@ -183,6 +184,7 @@ Each resource links to its example/usage documentation.
 | [AzDoAgentPool](source/Examples/Resources/AzDoAgentPool.md) | Creates and manages organization agent pools. |
 | [AzDoAgentQueue](source/Examples/Resources/AzDoAgentQueue.md) | Creates and manages project agent queues. |
 | [AzDoTaskGroup](source/Examples/Resources/AzDoTaskGroup.md) | Creates and manages task groups. |
+| [AzDoTaskGroupPermission](source/Examples/Resources/AzDoTaskGroupPermission.md) | Manages permissions on task groups, or on every task group in a project. |
 | [AzDoVariableGroup](source/Examples/Resources/AzDoVariableGroup.md) | Creates and manages variable groups (library). |
 | [AzDoSecureFile](source/Examples/Resources/AzDoSecureFile.md) | Manages secure files (certificates, keystores) available to pipelines. |
 | [AzDoServiceConnection](source/Examples/Resources/AzDoServiceConnection.md) | Creates and manages service connections (service endpoints), optionally shared with other projects. |

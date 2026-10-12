@@ -46,6 +46,10 @@ data LocalizedDataAzResourceTokenPatten
         AnalyticsPermission     = '^\$\/(?<ProjectId>[A-Za-z0-9-_]+)$'
         # AnalyticsViews Token Patterns — '$/Shared/{projectId}'
         AnalyticsViewsPermission = '^\$\/Shared\/(?<ProjectId>[A-Za-z0-9-_]+)$'
+        # Collection Token Patterns — the organization root token, passed through as read from the live ACL
+        OrganizationPermission  = '^(?<RootToken>NAMESPACE:?)$'
+        # MetaTask Token Patterns — '{projectId}' or '{projectId}/{taskGroupId}', addressed by id
+        TaskGroupPermission     = '^(?<ProjectId>[A-Za-z0-9-_]+)(\/(?<TaskGroupId>[A-Za-z0-9-_]+))?$'
         # AreaPath and IterationPath ACL Token Patterns
         AreaPathPermission      = '(vstfs:\/{3}Classification\/Node\/)(?<identifiers>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})'
         IterationPathPermission = '(vstfs:\/{3}Classification\/Node\/)(?<identifiers>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})'

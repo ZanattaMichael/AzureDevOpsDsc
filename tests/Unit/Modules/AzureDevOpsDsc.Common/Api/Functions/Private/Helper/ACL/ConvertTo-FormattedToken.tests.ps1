@@ -156,6 +156,37 @@ Describe "ConvertTo-FormattedToken" -Tag "Unit", "ACL", "Helper" {
         $result | Should -Be '$/Shared/myProject'
     }
 
+    It "should format the Collection root token as it was read: <RootToken>" -ForEach @(
+        @{ RootToken = 'NAMESPACE:' }
+        @{ RootToken = 'NAMESPACE' }
+    ) {
+        $token = @{
+            type      = 'Organization'
+            RootToken = $RootToken
+        }
+
+        ConvertTo-FormattedToken -Token $token | Should -BeExactly $RootToken
+    }
+
+    It "should format a project-level MetaTask token correctly" {
+        $token = @{
+            type      = 'TaskGroup'
+            ProjectId = 'myProject'
+        }
+
+        ConvertTo-FormattedToken -Token $token | Should -Be 'myProject'
+    }
+
+    It "should format a task group MetaTask token correctly" {
+        $token = @{
+            type        = 'TaskGroup'
+            ProjectId   = 'myProject'
+            TaskGroupId = 'myTaskGroup'
+        }
+
+        ConvertTo-FormattedToken -Token $token | Should -Be 'myProject/myTaskGroup'
+    }
+
     It "should return an empty string for unrecognized token type" {
         $token = @{
             type = 'UnknownType'
