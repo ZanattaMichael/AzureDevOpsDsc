@@ -80,6 +80,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `CacheItem` stamps its creation time with `[datetime]::Now` rather than
       a `Get-Date` call.
 
+- Documentation
+  - `docs/ResourceRoadmap.md` gains §12, the resources a code review found
+    missing that neither the roadmap nor an open issue tracked: permission
+    resources for the `Collection`, `MetaTask`, `ServiceHooks`, `AuditLog`,
+    `EventSubscription` and `VersionControlItems` namespaces and for deployment
+    groups and project agent queues; `AzDoWorkItemTemplate` and
+    `AzDoTaskboardColumn`; `AzDoAgent`, agent pool maintenance and per-pipeline
+    settings on `AzDoPipeline`; `AzDoTestResultRetentionSettings` and
+    organization-wide feed permissions; and project properties and notification
+    delivery settings. It also records what was checked and found already
+    covered or not buildable, and a suggested order. §2, §8 and §9 point to it.
+  - `docs/ResourceRoadmap.md` gains §13 for open issues #66 (Copilot code
+    review) and #67 (GitHub Advanced Security), which the roadmap did not
+    mention. It lists the proposed resources and the questions each issue
+    must settle first, and gives an order. §8 and §9 point to it.
+
 ### Fixed
 
 - Integration tests
