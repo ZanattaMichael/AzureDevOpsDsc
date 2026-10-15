@@ -62,6 +62,23 @@ Describe "Set-AzDoDashboard" -Tag "Unit", "Dashboard" {
         }
     }
 
+    Context "when the live dashboard has no refresh interval" {
+
+        BeforeEach {
+            Mock -CommandName Get-DevOpsDashboard -MockWith {
+                return [PSCustomObject]@{ id = 'd1'; eTag = '7'; name = 'Overview'; description = $null }
+            }
+        }
+
+        It "does not send a RefreshInterval it does not manage" {
+            Set-AzDoDashboard -DashboardName 'Overview' -ProjectName 'TestProject' -Description 'New'
+
+            Assert-MockCalled -CommandName Update-DevOpsDashboard -Exactly -Times 1 -ParameterFilter {
+                (-not $PesterBoundParameters.ContainsKey('RefreshInterval')) -and $Description -eq 'New'
+            }
+        }
+    }
+
     Context "when the dashboard no longer exists" {
 
         BeforeEach {

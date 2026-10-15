@@ -50,6 +50,15 @@ Describe 'Get-DevOpsDashboard' -Tag "Unit", "Dashboard", "API" {
         Get-DevOpsDashboard -Organization 'myorg' -ProjectName 'P' -TeamName 'T' -Name 'Missing' | Should -BeNullOrEmpty
     }
 
+    It 'returns every dashboard in scope when no name is given' {
+        $result = @(Get-DevOpsDashboard -Organization 'myorg' -ProjectName 'P' -TeamName 'T')
+        $result.Count | Should -Be 3
+
+        $result = @(Get-DevOpsDashboard -Organization 'myorg' -ProjectName 'P')
+        $result.Count | Should -Be 1
+        $result[0].id | Should -Be 'project1'
+    }
+
     It 'throws with the scope when the API call fails' {
         Mock -CommandName Invoke-AzDevOpsApiRestMethod -MockWith { throw 'API error' }
 
