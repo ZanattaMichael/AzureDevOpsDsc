@@ -48,6 +48,61 @@ Describe 'Merge-AzDoUnmanagedACE' -Tag "Unit", "ACL", "Helper" {
         $aces['desc-other'].ContainsKey('extendedInfo') | Should -BeFalse
     }
 
+    It 'adds a live ACE the body does not carry, with its masks unchanged (hashtables)' {
+        $live = @(
+            @{
+                token          = 'NAMESPACE:'
+                acesDictionary = @{
+                    'desc-other'  = @{ descriptor = 'desc-other';  allow = 3; deny = 0 }
+                    'desc-other2' = @{ descriptor = 'desc-other2'; allow = 0; deny = 16 }
+                }
+            }
+        )
+
+        $result = Merge-AzDoUnmanagedACE -SerializedACLs (New-Body) -LiveACLs $live
+        $aces   = $result.value[0].acesDictionary
+
+        $aces.Keys.Count | Should -Be 3
+        $aces['desc-other'].allow | Should -Be 3
+        $aces['desc-other'].deny | Should -Be 0
+        $aces['desc-other2'].allow | Should -Be 0
+        $aces['desc-other2'].deny | Should -Be 16
+        $aces['desc-managed'].allow | Should -Be 4
+    }
+
+    It 'matches the live ACL token case-insensitively' {
+        $live = @(
+            @{
+                token          = 'namespace:'
+                acesDictionary = @{ 'desc-other' = @{ descriptor = 'desc-other'; allow = 7; deny = 0 } }
+            }
+        )
+
+        $result = Merge-AzDoUnmanagedACE -SerializedACLs (New-Body) -LiveACLs $live
+        $result.value[0].acesDictionary.ContainsKey('desc-other') | Should -BeTrue
+    }
+
+    It 'skips a live entry that has no descriptor' {
+        $live = @(
+            [PSCustomObject]@{
+                token          = 'NAMESPACE:'
+                acesDictionary = [PSCustomObject]@{
+                    'blank' = [PSCustomObject]@{ descriptor = ''; allow = 7; deny = 0 }
+                }
+            }
+        )
+
+        $result = Merge-AzDoUnmanagedACE -SerializedACLs (New-Body) -LiveACLs $live
+        $result.value[0].acesDictionary.Keys.Count | Should -Be 1
+    }
+
+    It 'leaves the body unchanged when the live ACL has no entries' {
+        $live = @( @{ token = 'NAMESPACE:'; acesDictionary = @{} } )
+
+        $result = Merge-AzDoUnmanagedACE -SerializedACLs (New-Body) -LiveACLs $live
+        $result.value[0].acesDictionary.Keys.Count | Should -Be 1
+    }
+
     It 'keeps the desired masks for an identity the body already carries' {
         $live = @(
             @{
