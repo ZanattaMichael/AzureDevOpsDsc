@@ -38,12 +38,7 @@
     PlatyPS                        = 'latest'
 
     # Prerequisite module for generating DSC v3 adapted resource manifests.
-    'DscResource.Authoring'        = @{
-        Version    = 'latest'
-        Parameters = @{
-            AllowPrerelease = $true
-        }
-    }
+    'DscResource.Authoring'        = 'latest'
 
     # Prerequisites modules needed for examples or integration tests
     PSDscResources                 = '2.12.0.0'

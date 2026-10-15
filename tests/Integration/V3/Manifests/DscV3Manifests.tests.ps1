@@ -10,13 +10,12 @@
         consumers without breaking anything the v2 tests exercise.
 
         The failure mode these tests exist for is silent. DscResource.Authoring derives each
-        property's JSON schema type from the AST TypeName, which yields the fully-qualified
-        name ("System.Boolean") for this module's convention rather than the short alias
-        ("bool") its type map expects - so the property falls back to "string" and nothing
-        errors. Fix_DscAdaptedResourceManifestTypes repairs that after generation. Nothing
-        was checking the repair actually happened: if the task stops running, stops matching,
-        or the upstream tool changes shape, every numeric and boolean property silently
-        becomes a string again and the build still goes green.
+        property's JSON schema type from the AST TypeName. Releases before 0.3.0 only knew the
+        short aliases ("bool"), so this module's fully-qualified convention ("System.Boolean")
+        fell back to "string" and nothing errored; the build used to patch that after
+        generation. The tool now maps the qualified names itself, and this suite is what
+        notices if a future tool release regresses: every numeric and boolean property would
+        silently become a string again and the build would still go green.
 
         Runs against the built module, so `build.ps1 -Tasks build` and `-Tasks dscv3` must
         have run first. The CLI context at the end additionally needs `dsc` on PATH with a
@@ -271,9 +270,9 @@ Describe 'DSC v3 adapted resource manifests' {
             $schemaProperties = $embedded.properties
             $schemaProperties | Should -Not -BeNullOrEmpty
 
-            # This is the regression guard. Without Fix_DscAdaptedResourceManifestTypes every
-            # boolean and numeric property here reads as "string", which a host accepts and
-            # then hands the resource the wrong shape.
+            # This is the regression guard. With a DscResource.Authoring release that does not
+            # map fully-qualified type names, every boolean and numeric property here reads as
+            # "string", which a host accepts and then hands the resource the wrong shape.
             $mismatches = foreach ($propertyName in @($schemaProperties.PSObject.Properties.Name))
             {
                 if (-not $Properties.ContainsKey($propertyName)) { continue }
@@ -334,8 +333,8 @@ Describe 'DSC v3 adapted resource manifests' {
 
         It 'agrees with each individual manifest on every property type' {
             # Create_DscResourceManifestsList regenerates its own copies rather than reading
-            # the files, so the two are patched separately and can drift apart silently -
-            # one correct, one still claiming everything is a string.
+            # the files, so the two are produced separately and can drift apart silently if
+            # either task is configured differently.
             $disagreements = foreach ($listed in $list.adaptedResources)
             {
                 if (-not $individual.ContainsKey($listed.type)) { continue }
