@@ -104,15 +104,9 @@ Function Get-AzDoProjectServices
 
     $OrganizationName = Get-AzDoOrganizationName
 
-    # Retrieve the Project from the Live Cache, with live fallback.
-    $Project = Get-CacheItem -Key $ProjectName -Type 'LiveProjects'
-
-    if ($null -eq $Project)
-    {
-        Write-Verbose "[Get-AzDevOpsProjectServices] Project '$ProjectName' not in cache — falling back to live API lookup."
-        $Project = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/_apis/projects/${ProjectName}?api-version=7.1-preview.4" -Method Get
-        if ($Project) { Add-CacheItem -Key $ProjectName -Value $Project -Type 'LiveProjects' }
-    }
+    # Retrieve the Project from the Live Cache, with live fallback. Resolve-AzDoProject returns $null
+    # for a project the API answers 404 for, so a missing project is NotFound rather than an error.
+    $Project = Resolve-AzDoProject -ProjectName $ProjectName
 
     # If the Project does not exist in the Live Cache, return the Project object.
     if ($null -eq $Project)

@@ -210,6 +210,7 @@ created at their path.
 | [AzDoQueryFolder](source/Examples/Resources/AzDoQueryFolder.md) | Manages folders in the shared work item query tree. |
 | [AzDoWorkItemQuery](source/Examples/Resources/AzDoWorkItemQuery.md) | Manages shared work item queries, including WIQL, columns and sort order. |
 | [AzDoNotificationSubscription](source/Examples/Resources/AzDoNotificationSubscription.md) | Manages notification subscriptions. |
+| [AzDoDashboard](source/Examples/Resources/AzDoDashboard.md) | Manages team and project dashboards: existence, description and refresh interval. |
 
 ### Test management
 

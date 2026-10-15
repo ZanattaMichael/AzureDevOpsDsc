@@ -64,7 +64,7 @@ Function Initialize-CacheObject
         {
             # If the cache file exists, import the cache object
             Write-Verbose "[Initialize-CacheObject] Cache file found. Importing cache object for '$CacheType'."
-            Import-CacheObject -CacheType $CacheType
+            $null = Import-CacheObject -CacheType $CacheType
         }
         else
         {

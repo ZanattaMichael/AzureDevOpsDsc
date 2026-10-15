@@ -15,7 +15,7 @@ explicitly.
 
 ## 1. Current coverage (verified)
 
-92 class files exist, `001`–`149` (not contiguous); 81 of them carry
+93 class files exist, `001`–`150` (not contiguous); 82 of them carry
 `[DscResource()]` (the other 11 are the auth and base classes). By subsystem:
 
 | Subsystem | Resources |
@@ -27,7 +27,7 @@ explicitly.
 | Boards | `AzDoAreaNodes`, `AzDoIterationNodes`, `AzDoAreaPermission`, `AzDoIterationPermission`, `AzDoWIPTags`, `AzDoWIPTagHygiene`, `AzDoProcess`, `AzDoProcessPermission` |
 | Work item queries | `AzDoQueryFolder`, `AzDoWorkItemQuery`, `AzDoQueryPermission` |
 | Process customization | `AzDoPicklist`, `AzDoProcessWorkItemType`, `AzDoProcessField`, `AzDoProcessState`, `AzDoProcessRule`, `AzDoProcessBehavior` |
-| Teams | `AzDoTeam`, `AzDoTeamMember`, `AzDoTeamSettings` |
+| Teams | `AzDoTeam`, `AzDoTeamMember`, `AzDoTeamSettings`, `AzDoDashboard` |
 | Pipelines | `AzDoPipeline`, `AzDoPipelinePermission`, `AzDoPipelineSettings`, `AzDoPipelineEnvironment`, `AzDoEnvironmentApproval`, `AzDoEnvironmentPermission`, `AzDoCheckConfiguration`, `AzDoTaskGroup`, `AzDoAgentPool`, `AzDoAgentPoolPermission`, `AzDoAgentQueue`, `AzDoDeploymentGroup`, `AzDoPipelineFolder`, `AzDoPipelineFolderPermission`, `AzDoPipelineAuthorization` |
 | Library / connections | `AzDoVariableGroup`, `AzDoVariableGroupPermission`, `AzDoServiceConnection`, `AzDoServiceConnectionPermission`, `AzDoSecureFile`, `AzDoSecureFilePermission` |
 | Artifacts | `AzDoArtifactFeed`, `AzDoArtifactFeedPermission`, `AzDoArtifactFeedSettings`, `AzDoArtifactFeedView` |
@@ -324,7 +324,7 @@ code beyond conventions. Both landed **before** their permission counterparts, a
 | `AzDoSecureFile` / `AzDoSecureFilePermission` | Certificates, keystores and signing files used by pipelines. They share the `Library` namespace with `AzDoVariableGroup`, so most of the ACL token work already existed. | Low | **Shipped** (`105`–`106`) |
 | `AzDoGroupEntitlement` | Group-based license rules. `AzDoUserEntitlement` covers only per-user licensing. | Low | **Shipped** (`109`) |
 | `AzDoServicePrincipalEntitlement` | Workload identities / service principals as org members, closing the inconsistency with the existing `ServicePrincipalToken` and `WorkloadIdentityFederationToken` auth. | Low | **Shipped** (`110`) |
-| `AzDoDashboard` / `AzDoDashboardWidget` / `AzDoDashboardPermission` | Team and project dashboards. `Dashboards` namespace needs adding. | Medium | Outstanding |
+| `AzDoDashboard` / `AzDoDashboardWidget` / `AzDoDashboardPermission` | Team and project dashboards (#71). `Dashboards` namespace needs adding. | Medium | **Partially shipped** — `AzDoDashboard` (class `150`) manages the dashboard itself; `AzDoDashboardWidget` and `AzDoDashboardPermission` are outstanding |
 | `AzDoDeliveryPlan` | Cross-team roadmap plans; `Plan` namespace. | Medium | Outstanding |
 | `AzDoElasticPool` | VMSS-backed agent pools — increasingly the default for self-hosted compute. Complements the existing `AzDoAgentPool`. | Medium | Outstanding |
 | `AzDoBuildRetentionSettings` | Project-level run/artifact retention (`_apis/build/retention`). | Low | **Shipped** (`143`) |
@@ -384,7 +384,7 @@ Items from #59 checked against the code:
 | `AzDoPipelineFolder` | **Closed.** Shipped as classes `107`–`108`, together with the `Build` folder ACL token (§5.3–5.4). |
 | `AzDoDeploymentGroupAgent` | **Closed for tags/removal.** Shipped as `AzDoEnvironmentKubernetesResource` (`125`), `AzDoEnvironmentVMResource` (`126`) and `AzDoDeploymentGroupTarget` (`127`) — see §8. VM and deployment-group targets are agent-install-only by design; DSC never registers one, only manages tags and removal of an already-registered target. Kubernetes resources are fully creatable via the REST API. |
 | `AzDoWikiPage` | **Closed.** Shipped as class `145` (#89, §6). |
-| `AzDoElasticPool`, dashboards, delivery plans, analytics | Confirmed gaps, still outstanding. |
+| `AzDoElasticPool`, dashboards, delivery plans, analytics | Confirmed gaps, still outstanding. `AzDoDashboard` shipped as class `150` (#71); dashboard widgets and permissions remain. |
 | Classic Release Management (Phase 2 in #59) | **Partially closed** (#86). `AzDoReleaseFolder`, `AzDoReleaseFolderPermission` and `AzDoReleaseDefinitionPermission` shipped as classes `132`–`134`, together with `ReleaseManagement` ACL token support (§2). `AzDoReleaseDefinition` itself — the resource managing a definition's stages, artifacts and approvers — remains outstanding; it is a materially larger surface, comparable in size to `AzDoPipeline`. |
 | Test Management (Phase 3 in #59) | **Closed** (#87). Shipped as `AzDoTestVariable`, `AzDoTestConfiguration`, `AzDoTestPlan` and `AzDoTestSuite` (classes `138`–`141`, §8). Test cases, test points and test runs remain out of scope - they are execution-time state, not desired-state configuration. There is no test-plan security namespace; 'Manage test plans'/'Manage test suites' are CSS (area path) permissions already covered by `AzDoAreaPermission`, so no `AzDoTestPlanPermission` resource was added. |
 | `AzDoBillingSettings`, `AzDoPatPolicy`, `AzDoExtensionPolicy`, `AzDoAuditLogAlert` | **Spiked in [#85](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/85), see [`docs/Spikes/TenantScopedPolicies.md`](Spikes/TenantScopedPolicies.md).** All four verdicts are **unsupported / not built**: `AzDoPatPolicy` and an org-creation-restriction candidate have no documented REST route and the tenant-level halves need a Microsoft Entra tenant-admin identity this module cannot model; `AzDoBillingSettings` is excluded outright because every write is a billing/purchase change; `AzDoExtensionPolicy` has no documented route for the policy toggles (role constraint alone would pass); `AzDoAuditLogAlert` is not a distinct feature and folds into the shipped `AzDoAuditStream` (#69). The org-level "restrict PAT creation" allow-list is a follow-up property for `AzDoOrganizationSettings` once #84 lands, not a tenant policy. |
@@ -449,9 +449,10 @@ Still outstanding, in the order below:
   sub-project of its own: the layout API is a three-level tree with its own ordering and
   inheritance rules, which does not fit the flat compare-and-patch shape the other six
   share.
-- **Dashboards, delivery plans and board configuration** (§6) — `AzDoDashboard`,
-  `AzDoDashboardWidget`, `AzDoDashboardPermission`, `AzDoDeliveryPlan`, `AzDoBoardColumn`,
-  `AzDoBoardSettings`, `AzDoCardRule`. The `Dashboards` and `Plan` ACL namespaces are
+- **Dashboards, delivery plans and board configuration** (§6) — `AzDoDashboard` shipped
+  as class `150` (#71); still outstanding are `AzDoDashboardWidget`,
+  `AzDoDashboardPermission`, `AzDoDeliveryPlan`, `AzDoBoardColumn`, `AzDoBoardSettings`,
+  `AzDoCardRule`. The `Dashboards` and `Plan` ACL namespaces are
   still unimplemented (§2).
 - **Remaining §6 gaps** — `AzDoElasticPool`. `AzDoWikiPage` shipped as class `145` (#89);
   `AzDoBuildRetentionSettings` shipped as class `143` (issue #88).
@@ -580,7 +581,8 @@ remains:
 2. **`AzDoElasticPool`** (§6) — low effort, no ACL dependency.
    `AzDoBuildRetentionSettings` shipped as class `143` (issue #88).
 3. **Dashboards and delivery plans** (§6) — `Dashboards` and `Plan` ACL namespaces first
-   (§2), then `AzDoDashboard` → `AzDoDashboardWidget` → `AzDoDashboardPermission`, and
+   (§2), then `AzDoDashboardWidget` → `AzDoDashboardPermission` (`AzDoDashboard` shipped as
+   class `150`, #71), and
    `AzDoDeliveryPlan`.
 4. **Board configuration** (§6) — `AzDoBoardColumn`, `AzDoBoardSettings`, `AzDoCardRule`.
 5. **`AzDoWikiPage`** (§6) — **shipped** (class `145`, #89).
