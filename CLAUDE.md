@@ -74,10 +74,11 @@ All DSC resources live in `source\Classes\` with numeric prefixes controlling lo
 | `143.AzDoBuildRetentionSettings.ps1` | `AzDoBuildRetentionSettings` | Project run/artifact retention (`_apis/build/retention`) |
 | `145.AzDoWikiPage.ps1` | `AzDoWikiPage` | Wiki page content and sibling order; project wikis only |
 | `147`–`149` | `AzDoTaggingPermission`, `AzDoAnalyticsPermission`, `AzDoAnalyticsViewsPermission` | `Tagging`, `Analytics`, `AnalyticsViews` namespaces |
+| `150.AzDoDashboard.ps1` | `AzDoDashboard` | Team or project dashboard; widgets are not managed and are kept on update |
 | `151.AzDoOrganizationPermission.ps1` | `AzDoOrganizationPermission` | `Collection` namespace (organization root). Carries every unmanaged ACE through the replacing ACL POST, and `Absent` clears only the managed ACEs — never deletes the ACL |
 | `152.AzDoTaskGroupPermission.ps1` | `AzDoTaskGroupPermission` | `MetaTask` namespace; same carry-through as `151` |
 
-There are currently **83** `[DscResource()]` classes. `docs/ResourceRoadmap.md` is the plan of record for what is implemented and what is still outstanding.
+There are currently **84** `[DscResource()]` classes. `docs/ResourceRoadmap.md` is the plan of record for what is implemented and what is still outstanding.
 
 The `Construct()` method (in `AzDevOpsDscResourceBase`) runs at `new()` time, reads `ModuleSettings.clixml`, and sets `$Global:DSCAZDO_AuthenticationToken` and `$Global:DSCAZDO_OrganizationName`.
 

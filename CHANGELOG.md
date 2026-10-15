@@ -80,6 +80,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `CacheItem` stamps its creation time with `[datetime]::Now` rather than
       a `Get-Date` call.
 
+- Documentation
+  - `docs/ResourceRoadmap.md` gains §12, the resources a code review found
+    missing that neither the roadmap nor an open issue tracked: permission
+    resources for the `Collection`, `MetaTask`, `ServiceHooks`, `AuditLog`,
+    `EventSubscription` and `VersionControlItems` namespaces and for deployment
+    groups and project agent queues; `AzDoWorkItemTemplate` and
+    `AzDoTaskboardColumn`; `AzDoAgent`, agent pool maintenance and per-pipeline
+    settings on `AzDoPipeline`; `AzDoTestResultRetentionSettings` and
+    organization-wide feed permissions; and project properties and notification
+    delivery settings. It also records what was checked and found already
+    covered or not buildable, and a suggested order. §2, §8 and §9 point to it.
+  - `docs/ResourceRoadmap.md` gains §13 for open issues #66 (Copilot code
+    review) and #67 (GitHub Advanced Security), which the roadmap did not
+    mention. It lists the proposed resources and the questions each issue
+    must settle first, and gives an order. §8 and §9 point to it.
+
 ### Fixed
 
 - Integration tests
@@ -102,6 +118,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     token request failed had left that global null, the post-run teardown
     threw before cleaning up or reporting the test results.
 - AzureDevOpsDscNative
+  - Reloading a cache no longer writes the whole cache to the output stream
+    ([issue #55](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/55)).
+    `Import-CacheObject` returns the collection it imported, and
+    `Initialize-CacheObject`, `Refresh-CacheObject` and `Refresh-AzDoCache`
+    called it for its side effect without discarding that value. Every `New-`
+    and `Set-` function that ends by refreshing its cache printed the cache as
+    a `Key`/`Value` table during `Invoke-DscResource`.
+  - `Get-AzDoProjectServices` reports `NotFound` for a project that does not
+    exist, rather than failing with `TF200016`. Its live fallback lookup now
+    goes through `Resolve-AzDoProject`, which treats a 404 as no project.
   - `Invoke-AzDevOpsApiRestMethod -AzureArcAuthentication` retries a 408, 429
     or 5xx from the Azure Arc token endpoint like any other request. It used to
     hand every error straight back to `Get-AzManagedIdentityToken`, which
@@ -169,6 +195,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - AzureDevOpsDscNative
+  - Added `AzDoDashboard`, class `150`, managing a team or project dashboard's
+    existence, description and refresh interval (part of
+    [#71](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/71)). A dashboard
+    belongs to the team named in `TeamName`, or to the project when `TeamName` is
+    omitted. Widgets are not managed: updates never send the widget list, so widgets
+    added in the UI are kept. The API replaces a dashboard's settings on every update,
+    so a setting the configuration does not state is written back with its live value
+    rather than cleared. Added the private Dashboard API functions
+    `Get-DevOpsDashboard`, `New-DevOpsDashboard`, `Update-DevOpsDashboard`,
+    `Remove-DevOpsDashboard` and `Get-DevOpsDashboardUri`.
   - Added `AzDoOrganizationPermission` (class `151`), which manages the
     organization-level permissions in the `Collection` security namespace, such as
     *Create new projects* and *Manage enterprise policies*. Only the identities in

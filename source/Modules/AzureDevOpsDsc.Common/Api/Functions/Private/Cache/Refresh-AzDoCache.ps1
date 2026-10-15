@@ -145,7 +145,7 @@ Function Refresh-AzDoCache
         }
 
         Get-AzDoCacheObjects | ForEach-Object {
-            Import-CacheObject -CacheType $_
+            $null = Import-CacheObject -CacheType $_
         }
 
         return
@@ -173,7 +173,7 @@ Function Refresh-AzDoCache
     }
 
     $affected | ForEach-Object {
-        Import-CacheObject -CacheType $_
+        $null = Import-CacheObject -CacheType $_
     }
 
 }

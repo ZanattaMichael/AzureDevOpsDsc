@@ -62,4 +62,17 @@ Describe "Refresh-CacheObject" -Tag "Unit", "Cache" {
         }
     }
 
+    Context "Output stream" {
+        It "Does not write the reloaded cache to the output stream" {
+            # Import-CacheObject returns the collection it imported (#55). New-/Set- resource
+            # functions end with a Refresh-CacheObject call, so a leak lands in DSC output.
+            Mock Import-CacheObject { [System.Collections.Generic.List[CacheItem]]@([CacheItem]::New('Key', 'Value')) }
+
+            $output = @(Refresh-CacheObject -CacheType 'Type1')
+
+            $output.Count | Should -Be 0
+            Assert-MockCalled -CommandName Import-CacheObject -Exactly 1
+        }
+    }
+
 }

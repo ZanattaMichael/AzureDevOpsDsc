@@ -36,7 +36,7 @@ Function Refresh-CacheObject
     Write-Verbose "[Refresh-CacheObject] Reloading the cache object of type '$CacheType'."
 
     # Reload the cache object
-    Import-CacheObject -CacheType $CacheType
+    $null = Import-CacheObject -CacheType $CacheType
 
 }
 

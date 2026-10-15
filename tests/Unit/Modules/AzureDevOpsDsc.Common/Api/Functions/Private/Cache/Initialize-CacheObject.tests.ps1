@@ -98,4 +98,22 @@ Describe "Initialize-CacheObject Tests" -Tag "Unit", "Cache" {
         }
     }
 
+    Context "Output stream" {
+
+        It "Does not write the imported cache to the output stream" {
+            # Import-CacheObject returns the collection it imported (#55). Initialize-CacheObject
+            # only needs the global it sets, so nothing should reach the caller.
+            # TestDrive rather than C:\Cache, so this also runs on Linux.
+            $ENV:AZDODSC_CACHE_DIRECTORY = $TestDrive
+            Mock Test-Path { $true }
+            Mock Import-CacheObject { [System.Collections.Generic.List[CacheItem]]@([CacheItem]::New('Key', 'Value')) }
+
+            $output = @(Initialize-CacheObject -CacheType 'Project' -BypassFileCheck)
+            $ENV:AZDODSC_CACHE_DIRECTORY = 'C:\Cache'
+
+            $output.Count | Should -Be 0
+            Assert-MockCalled -CommandName Import-CacheObject -Exactly 1
+        }
+    }
+
 }
