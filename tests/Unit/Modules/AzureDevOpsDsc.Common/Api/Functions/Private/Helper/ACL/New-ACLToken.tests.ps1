@@ -474,6 +474,87 @@ Describe 'New-ACLToken Function Tests' -Tag "Unit", "ACL", "Helper" {
         }
     }
 
+    Context 'Collection SecurityNamespace' {
+
+        It "Returns type 'Organization' and keeps the root token as given: <Token>" -ForEach @(
+            @{ Token = 'NAMESPACE:' }
+            @{ Token = 'NAMESPACE' }
+        ) {
+            $result = New-ACLToken -SecurityNamespace 'Collection' -TokenName $Token
+            $result.type | Should -Be 'Organization'
+            $result.RootToken | Should -BeExactly $Token
+        }
+
+        It "Returns type 'OrganizationUnknown' for a token that is not the root" {
+            $result = New-ACLToken -SecurityNamespace 'Collection' -TokenName 'NAMESPACE:/child'
+            $result.type | Should -Be 'OrganizationUnknown'
+        }
+
+        It 'Round-trips the root token through New-ACLToken, ConvertTo-FormattedToken and Parse-ACLToken: <Token>' -ForEach @(
+            @{ Token = 'NAMESPACE:' }
+            @{ Token = 'NAMESPACE' }
+        ) {
+            . (Get-FunctionItem 'ConvertTo-FormattedToken.ps1').FullName
+            . (Get-FunctionItem 'Parse-ACLToken.ps1').FullName
+            . (Get-ClassFilePath '000.LocalizedDataAzACLTokenPatten')
+
+            $structured = New-ACLToken -SecurityNamespace 'Collection' -TokenName $Token
+            $formatted  = ConvertTo-FormattedToken -Token $structured
+            $formatted | Should -BeExactly $Token
+
+            $parsed = Parse-ACLToken -Token $formatted -SecurityNamespace 'Collection'
+            $parsed.type | Should -Be 'Organization'
+            $parsed.RootToken | Should -BeExactly $structured.RootToken
+        }
+    }
+
+    Context 'MetaTask SecurityNamespace' {
+
+        It "Returns type 'TaskGroup' with only the project id for a project-level token" {
+            $projectId = [guid]::NewGuid().ToString()
+            $result = New-ACLToken -SecurityNamespace 'MetaTask' -TokenName $projectId
+            $result.type | Should -Be 'TaskGroup'
+            $result.ProjectId | Should -Be $projectId
+            $result.ContainsKey('TaskGroupId') | Should -BeFalse
+        }
+
+        It "Returns type 'TaskGroup' with the project and task group ids for a task group token" {
+            $projectId   = [guid]::NewGuid().ToString()
+            $taskGroupId = [guid]::NewGuid().ToString()
+            $result = New-ACLToken -SecurityNamespace 'MetaTask' -TokenName "$projectId/$taskGroupId"
+            $result.type | Should -Be 'TaskGroup'
+            $result.ProjectId | Should -Be $projectId
+            $result.TaskGroupId | Should -Be $taskGroupId
+        }
+
+        It "Returns type 'TaskGroupUnknown' for a token with too many segments" {
+            $result = New-ACLToken -SecurityNamespace 'MetaTask' -TokenName 'a/b/c'
+            $result.type | Should -Be 'TaskGroupUnknown'
+        }
+
+        It 'Round-trips a <Name> token through New-ACLToken, ConvertTo-FormattedToken and Parse-ACLToken' -ForEach @(
+            @{ Name = 'project-level'; WithTaskGroup = $false }
+            @{ Name = 'task group';    WithTaskGroup = $true }
+        ) {
+            . (Get-FunctionItem 'ConvertTo-FormattedToken.ps1').FullName
+            . (Get-FunctionItem 'Parse-ACLToken.ps1').FullName
+            . (Get-ClassFilePath '000.LocalizedDataAzACLTokenPatten')
+
+            $projectId   = [guid]::NewGuid().ToString()
+            $taskGroupId = [guid]::NewGuid().ToString()
+            $original    = if ($WithTaskGroup) { "$projectId/$taskGroupId" } else { $projectId }
+
+            $structured = New-ACLToken -SecurityNamespace 'MetaTask' -TokenName $original
+            $formatted  = ConvertTo-FormattedToken -Token $structured
+            $formatted | Should -Be $original
+
+            $parsed = Parse-ACLToken -Token $formatted -SecurityNamespace 'MetaTask'
+            $parsed.type | Should -Be 'TaskGroup'
+            $parsed.ProjectId | Should -Be $structured.ProjectId
+            $parsed.TaskGroupId | Should -Be $structured.TaskGroupId
+        }
+    }
+
     Context 'Unknown SecurityNamespace' {
 
         It 'Should return Generic type for unrecognized security namespace (pass-through)' {

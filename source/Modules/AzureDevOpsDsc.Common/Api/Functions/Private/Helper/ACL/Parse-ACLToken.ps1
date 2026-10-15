@@ -164,6 +164,22 @@ Function Parse-ACLToken
             }
         }
 
+        'Collection' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.OrganizationPermission { $result.type = 'Organization';        break }
+                default                                               { $result.type = 'OrganizationUnknown'        }
+            }
+        }
+
+        'MetaTask' {
+            switch -regex ($Token.Trim())
+            {
+                $LocalizedDataAzACLTokenPatten.TaskGroupPermission { $result.type = 'TaskGroup';        break }
+                default                                            { $result.type = 'TaskGroupUnknown'        }
+            }
+        }
+
         'Process' {
             switch -regex ($Token.Trim())
             {

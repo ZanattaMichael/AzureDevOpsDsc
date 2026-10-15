@@ -42,6 +42,8 @@ Describe 'Parse-ACLToken' -Tag "Unit", "ACL", "Helper" {
             TaggingPermission       = '^\/(?<ProjectId>[A-Za-z0-9-]+)$'
             AnalyticsPermission     = '^\$\/(?<ProjectId>[A-Za-z0-9-]+)$'
             AnalyticsViewsPermission = '^\$\/Shared\/(?<ProjectId>[A-Za-z0-9-]+)$'
+            OrganizationPermission  = '^(?<RootToken>NAMESPACE:?)$'
+            TaskGroupPermission     = '^(?<ProjectId>[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12})(\/(?<TaskGroupId>[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}))?$'
         }
 
         # If there were any Mock commands needed, they should be added here using the complete syntax.
@@ -262,5 +264,41 @@ Describe 'Parse-ACLToken' -Tag "Unit", "ACL", "Helper" {
         $result = Parse-ACLToken -Token $token -SecurityNamespace 'SomeUnhandledNamespace'
         $result.type | Should -Be 'Generic'
         $result.TokenValue | Should -Be $token
+    }
+
+    It 'Should parse the Collection root token: <Token>' -ForEach @(
+        @{ Token = 'NAMESPACE:' }
+        @{ Token = 'NAMESPACE' }
+    ) {
+        $result = Parse-ACLToken -Token $Token -SecurityNamespace 'Collection'
+        $result.type | Should -Be 'Organization'
+        $result.RootToken | Should -BeExactly $Token
+    }
+
+    It 'Should return OrganizationUnknown for a Collection token that is not the root' {
+        $result = Parse-ACLToken -Token 'NAMESPACE:/child' -SecurityNamespace 'Collection'
+        $result.type | Should -Be 'OrganizationUnknown'
+    }
+
+    It 'Should parse a project-level MetaTask token' {
+        $projectId = [guid]::NewGuid().ToString()
+        $result = Parse-ACLToken -Token $projectId -SecurityNamespace 'MetaTask'
+        $result.type | Should -Be 'TaskGroup'
+        $result.ProjectId | Should -Be $projectId
+        $result.ContainsKey('TaskGroupId') | Should -BeFalse
+    }
+
+    It 'Should parse a task group MetaTask token' {
+        $projectId   = [guid]::NewGuid().ToString()
+        $taskGroupId = [guid]::NewGuid().ToString()
+        $result = Parse-ACLToken -Token "$projectId/$taskGroupId" -SecurityNamespace 'MetaTask'
+        $result.type | Should -Be 'TaskGroup'
+        $result.ProjectId | Should -Be $projectId
+        $result.TaskGroupId | Should -Be $taskGroupId
+    }
+
+    It 'Should return TaskGroupUnknown for a MetaTask token that is not id-shaped' {
+        $result = Parse-ACLToken -Token 'not-a-task-group-token' -SecurityNamespace 'MetaTask'
+        $result.type | Should -Be 'TaskGroupUnknown'
     }
 }

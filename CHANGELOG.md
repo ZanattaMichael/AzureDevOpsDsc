@@ -205,6 +205,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     rather than cleared. Added the private Dashboard API functions
     `Get-DevOpsDashboard`, `New-DevOpsDashboard`, `Update-DevOpsDashboard`,
     `Remove-DevOpsDashboard` and `Get-DevOpsDashboardUri`.
+  - Added `AzDoOrganizationPermission` (class `151`), which manages the
+    organization-level permissions in the `Collection` security namespace, such as
+    *Create new projects* and *Manage enterprise policies*. Only the identities in
+    `Permissions` are managed: the ACL POST replaces the whole ACL for a token, so every
+    other identity's entry on the organization root is sent back unchanged, and
+    `Ensure = 'Absent'` clears only the managed entries. The organization ACL is never
+    deleted. The root token is read from the live ACL rather than assumed, and `Get`
+    reports an error naming the tokens it saw if there is none. There is no `isInherited`
+    property; the root has no parent.
+  - Added `AzDoTaskGroupPermission` (class `152`), which manages permissions on a task
+    group (`MetaTask` namespace, token `{projectId}/{taskGroupId}`), or on every task
+    group in a project when `TaskGroupName` is omitted (`{projectId}`). It carries
+    unmanaged entries, such as the creator's *Administer* grant, through the same way.
+    A missing project or task group is reported as `NotFound` and nothing is written.
+  - Added `Collection` and `MetaTask` branches to `New-ACLToken`,
+    `ConvertTo-FormattedToken` and `Parse-ACLToken`, with round-trip tests, and a
+    `Merge-AzDoUnmanagedACE` helper that adds the live entries a resource does not manage
+    to a serialized ACL body.
+  - For both resources, `Get` reports `NotFound` under `Ensure = 'Absent'` once none of
+    the managed identities holds an entry, so `Test` passes and `Remove` stops running.
   - `AzDoPipeline` now supports GitHub, GitHub Enterprise and Bitbucket repositories, and
     pipeline variables ([#81](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/81)):
     - Added the `RepositoryType` property (`TfsGit` default, `GitHub`, `GitHubEnterprise`,

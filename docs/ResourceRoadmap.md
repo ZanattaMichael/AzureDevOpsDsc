@@ -15,20 +15,20 @@ explicitly.
 
 ## 1. Current coverage (verified)
 
-93 class files exist, `001`–`150` (not contiguous); 82 of them carry
+95 class files exist, `001`–`152` (not contiguous); 84 of them carry
 `[DscResource()]` (the other 11 are the auth and base classes). By subsystem:
 
 | Subsystem | Resources |
 |---|---|
 | Auth / base | `AuthenticationToken`, `PersonalAccessToken`, `ManagedIdentityToken`, `ServicePrincipalToken`, `CertificateToken`, `AzureCliToken`, `WorkloadIdentityFederationToken`, `DscResourceBase`, `AzDevOpsApiDscResourceBase`, `AzDevOpsDscResourceBase`, `APIRateLimit` |
-| Projects / org | `AzDoProject`, `AzDoProjectServices`, `AzDoProjectPermission`, `AzDoOrganizationSettings`, `AzDoExtension`, `AzDoAuditStream`, `AzDoServiceHook`, `AzDoNotificationSubscription` |
+| Projects / org | `AzDoProject`, `AzDoProjectServices`, `AzDoProjectPermission`, `AzDoOrganizationPermission`, `AzDoOrganizationSettings`, `AzDoExtension`, `AzDoAuditStream`, `AzDoServiceHook`, `AzDoNotificationSubscription` |
 | Identity / groups | `AzDoOrganizationGroup`, `AzDoProjectGroup`, `AzDoGroupMember`, `AzDoGroupPermission`, `AzDoUserEntitlement`, `AzDoGroupEntitlement`, `AzDoServicePrincipalEntitlement` |
 | Repos | `AzDoGitRepository`, `AzDoGitPermission`, `AzDoRepositorySettings`, `AzDoBranchPolicy` |
 | Boards | `AzDoAreaNodes`, `AzDoIterationNodes`, `AzDoAreaPermission`, `AzDoIterationPermission`, `AzDoWIPTags`, `AzDoWIPTagHygiene`, `AzDoProcess`, `AzDoProcessPermission` |
 | Work item queries | `AzDoQueryFolder`, `AzDoWorkItemQuery`, `AzDoQueryPermission` |
 | Process customization | `AzDoPicklist`, `AzDoProcessWorkItemType`, `AzDoProcessField`, `AzDoProcessState`, `AzDoProcessRule`, `AzDoProcessBehavior` |
 | Teams | `AzDoTeam`, `AzDoTeamMember`, `AzDoTeamSettings`, `AzDoDashboard` |
-| Pipelines | `AzDoPipeline`, `AzDoPipelinePermission`, `AzDoPipelineSettings`, `AzDoPipelineEnvironment`, `AzDoEnvironmentApproval`, `AzDoEnvironmentPermission`, `AzDoCheckConfiguration`, `AzDoTaskGroup`, `AzDoAgentPool`, `AzDoAgentPoolPermission`, `AzDoAgentQueue`, `AzDoDeploymentGroup`, `AzDoPipelineFolder`, `AzDoPipelineFolderPermission`, `AzDoPipelineAuthorization` |
+| Pipelines | `AzDoPipeline`, `AzDoPipelinePermission`, `AzDoPipelineSettings`, `AzDoPipelineEnvironment`, `AzDoEnvironmentApproval`, `AzDoEnvironmentPermission`, `AzDoCheckConfiguration`, `AzDoTaskGroup`, `AzDoTaskGroupPermission`, `AzDoAgentPool`, `AzDoAgentPoolPermission`, `AzDoAgentQueue`, `AzDoDeploymentGroup`, `AzDoPipelineFolder`, `AzDoPipelineFolderPermission`, `AzDoPipelineAuthorization` |
 | Library / connections | `AzDoVariableGroup`, `AzDoVariableGroupPermission`, `AzDoServiceConnection`, `AzDoServiceConnectionPermission`, `AzDoSecureFile`, `AzDoSecureFilePermission` |
 | Artifacts | `AzDoArtifactFeed`, `AzDoArtifactFeedPermission`, `AzDoArtifactFeedSettings`, `AzDoArtifactFeedView` |
 | Classic Release Management | `AzDoReleaseFolder`, `AzDoReleaseFolderPermission`, `AzDoReleaseDefinitionPermission` |
@@ -43,10 +43,10 @@ explicitly.
 Most new *permission* resources are blocked on one shared piece of work, and it should land
 before (or with) the first of them.
 
-`New-ACLToken.ps1` builds security tokens for **16** namespaces: `Git Repositories`,
+`New-ACLToken.ps1` builds security tokens for **18** namespaces: `Git Repositories`,
 `Identity`, `CSS`, `Iteration`, `Project`, `Process`, `Build`, `Library`,
 `ServiceEndpoints`, `AgentPool`, `DistributedTask`, `WorkItemQueryFolders`,
-`ReleaseManagement`, `Tagging`, `Analytics`, `AnalyticsViews`.
+`ReleaseManagement`, `Tagging`, `Analytics`, `AnalyticsViews`, `Collection`, `MetaTask`.
 `Parse-ACLToken.ps1` mirrors that set and falls through to a `Generic` type for anything
 else. `Build` now covers both the definition and the folder token form, and `Library` both
 the variable group and the secure file form. `Git Repositories` now covers the branch
@@ -72,8 +72,8 @@ error-prone part. Every permission resource below needs a matching `New-ACLToken
 | `AzDoReleaseDefinitionPermission` | `ReleaseManagement` | `{projectId}/{folderPath}/{definitionId}` (or `{projectId}/{definitionId}` at the root) | **Shipped** — see §5.5 |
 | `AzDoAnalyticsPermission` | `Analytics` | `$/{projectId}` | **Shipped** — see §6 |
 | `AzDoAnalyticsViewsPermission` | `AnalyticsViews` | `$/Shared/{projectId}` | **Shipped** — see §6 |
-| `AzDoOrganizationPermission` | `Collection` | `NAMESPACE:` (unverified) | Outstanding — see §12.1 |
-| `AzDoTaskGroupPermission` | `MetaTask` | `{projectId}/{taskGroupId}` (unverified) | Outstanding — see §12.1 |
+| `AzDoOrganizationPermission` | `Collection` | `NAMESPACE:` — read from the live ACL, not assumed | **Shipped** (`151`) |
+| `AzDoTaskGroupPermission` | `MetaTask` | `{projectId}` or `{projectId}/{taskGroupId}` | **Shipped** (`152`) |
 | `AzDoServiceHookPermission` | `ServiceHooks` | `PublisherSecurity/{projectId}` (unverified) | Outstanding — see §12.1 |
 | `AzDoAuditPermission` | `AuditLog` | `AllPermissions` (unverified) | Outstanding — see §12.1 |
 | `AzDoNotificationPermission` | `EventSubscription` | To confirm | Outstanding — see §12.1 |
@@ -676,8 +676,8 @@ round-trip test described in §2.
 
 | Resource | Namespace | Why it matters | Effort |
 |---|---|---|---|
-| `AzDoOrganizationPermission` | `Collection` | Organization-level permissions such as *Create new projects*, *Edit instance-level information* and *Manage enterprise policies*. `AzDoGroupPermission` sets permissions *on* a group (`Identity`) and `AzDoProjectPermission` is project-level (`Project`), so nothing manages these today. | Low |
-| `AzDoTaskGroupPermission` | `MetaTask` | `AzDoTaskGroup` (`080`) has no permission resource to go with it. | Low |
+| `AzDoOrganizationPermission` | `Collection` | Organization-level permissions such as *Create new projects*, *Edit instance-level information* and *Manage enterprise policies*. `AzDoGroupPermission` sets permissions *on* a group (`Identity`) and `AzDoProjectPermission` is project-level (`Project`), so nothing manages these today. | **Shipped** (`151`) |
+| `AzDoTaskGroupPermission` | `MetaTask` | `AzDoTaskGroup` (`080`) has no permission resource to go with it. | **Shipped** (`152`) |
 | `AzDoDeploymentGroupPermission` | Role assignments (`distributedtask.machinegrouprole`, unverified) | `AzDoDeploymentGroup` (`079`) has no permission resource to go with it. The portal manages this as role assignments through `_apis/securityroles`, not as a namespace ACL — decide which to model before building, since `AzDoAgentPoolPermission` and `AzDoEnvironmentPermission` use `DistributedTask` ACLs. | Medium |
 | `AzDoAgentQueuePermission` | Role assignments (`distributedtask.agentqueuerole`, unverified) | Project-level agent pool security. `AzDoAgentPoolPermission` (`075`) has no `ProjectName` and covers organization pools only. Same ACL-or-role decision as the row above. | Medium |
 | `AzDoServiceHookPermission` | `ServiceHooks` | Who may view, edit or delete service hook subscriptions in a project. | Low |
@@ -739,7 +739,7 @@ Recorded so they are not raised again:
 
 ### 12.7 Suggested order
 
-1. `AzDoOrganizationPermission`, `AzDoTaskGroupPermission` — low effort, and the
+1. ~~`AzDoOrganizationPermission`, `AzDoTaskGroupPermission`~~ — shipped (`151`, `152`). Low effort, and the
    organization permissions are the most commonly needed of §12.1.
 2. `AzDoTestResultRetentionSettings`, `AzDoArtifactFeedGlobalPermission`,
    `AzDoWorkItemTemplate` — low effort, documented routes.

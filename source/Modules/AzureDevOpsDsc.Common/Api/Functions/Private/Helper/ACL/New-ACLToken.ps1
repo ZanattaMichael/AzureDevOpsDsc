@@ -276,6 +276,37 @@ Function New-ACLToken
             break
         }
 
+        # Collection (organization-level) permissions — the namespace's single root token.
+        'Collection' {
+            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.OrganizationPermission)
+            {
+                $result.type      = 'Organization'
+                $result.RootToken = $matches.RootToken
+            }
+            else
+            {
+                $result.type = 'OrganizationUnknown'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known Collection ACL Token Patterns."
+            }
+            break
+        }
+
+        # MetaTask (task group) permissions — '{projectId}' or '{projectId}/{taskGroupId}'.
+        'MetaTask' {
+            if ($TokenName -match $LocalizedDataAzResourceTokenPatten.TaskGroupPermission)
+            {
+                $result.type      = 'TaskGroup'
+                $result.ProjectId = $matches.ProjectId
+                if ($matches.TaskGroupId) { $result.TaskGroupId = $matches.TaskGroupId }
+            }
+            else
+            {
+                $result.type = 'TaskGroupUnknown'
+                Write-Warning "[New-ACLToken] TokenName '$TokenName' does not match any known MetaTask ACL Token Patterns."
+            }
+            break
+        }
+
         # Process permissions — root ($PROCESS) or a specific process ($PROCESS:{parentId}:{processId}).
         'Process' {
             if ($TokenName -match $LocalizedDataAzACLTokenPatten.ProcessRootPermission)
