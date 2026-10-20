@@ -30,9 +30,44 @@ Describe 'Set-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
         Mock -CommandName Add-CacheItem
         Mock -CommandName Export-CacheObject
         Mock -CommandName Refresh-CacheObject
+        Mock -CommandName List-DevOpsVariableGroups -MockWith { return $null }
         Mock -CommandName Write-Error
         Mock -CommandName Write-Verbose
 
+    }
+
+    Context 'When the group is read back after the write' {
+
+        BeforeEach {
+            Mock -CommandName Get-CacheItem -MockWith { return @{ id = 'vg-id'; name = 'TestVG' } }
+            Mock -CommandName List-DevOpsVariableGroups -MockWith {
+                return @(
+                    [PSCustomObject]@{ id = 'other-id'; name = 'Other'; description = 'not this one' }
+                    [PSCustomObject]@{ id = 'vg-id'; name = 'TestVG'; description = 'as stored' }
+                )
+            }
+        }
+
+        It 'Should cache the group as the API reads it back, not the write response' {
+            Set-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -Description 'as stored'
+
+            Assert-MockCalled -CommandName List-DevOpsVariableGroups -Exactly 1 -ParameterFilter {
+                $ProjectName -eq 'TestProject' -and $ApiUri -eq 'https://dev.azure.com/TestOrganization'
+            }
+            Assert-MockCalled -CommandName Add-CacheItem -Exactly 1 -ParameterFilter {
+                $Key -eq 'TestProject\TestVG' -and $Value.id -eq 'vg-id' -and $Value.description -eq 'as stored'
+            }
+        }
+
+        It 'Should fall back to the write response when the read-back does not list the group' {
+            Mock -CommandName List-DevOpsVariableGroups -MockWith { return $null }
+
+            Set-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG'
+
+            Assert-MockCalled -CommandName Add-CacheItem -Exactly 1 -ParameterFilter {
+                $Key -eq 'TestProject\TestVG' -and $Value.id -eq 'vg-id'
+            }
+        }
     }
 
     Context 'When the variable group exists in cache' {

@@ -35,6 +35,16 @@ Function New-AzDoVariableGroup
         return
     }
 
+    # The write response echoes the request rather than the stored group - its top-level
+    # description is not what a project-scoped read returns - and a later Get compares the
+    # configuration against the cache, so cache what the API now reads back for the project.
+    $live = List-DevOpsVariableGroups -ApiUri ('https://dev.azure.com/{0}' -f (Get-AzDoOrganizationName)) -ProjectName $ProjectName |
+        Where-Object { $_.id -eq $value.id } | Select-Object -First 1
+    if ($live)
+    {
+        $value = $live
+    }
+
     Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $VariableGroupName) -Value $value -Type 'LiveVariableGroups'
     Export-CacheObject -CacheType 'LiveVariableGroups' -Content $AzDoLiveVariableGroups
     Refresh-CacheObject -CacheType 'LiveVariableGroups'
