@@ -27,9 +27,11 @@ if (-not $TestFrameworkConfiguration.Organization)
 # Confirm the Authentication Type
 if ($TestFrameworkConfiguration.AuthenticationType -eq 'PAT')
 {
-    # Authenticate with a Personal Access Token
+    # Authenticate with a Personal Access Token. Convert it in memory first: the plain-text
+    # -PersonalAccessToken set warns on every use, and the SecureString set is the default.
     #New-AuthProvider -OrganizationName $TestFrameworkConfiguration.Organization -PersonalAccessToken $TestFrameworkConfiguration.PATToken
-    New-AzDoAuthenticationProvider -OrganizationName $TestFrameworkConfiguration.Organization -PersonalAccessToken $TestFrameworkConfiguration.PATToken
+    $securePAT = ConvertTo-SecureString -String $TestFrameworkConfiguration.PATToken -AsPlainText -Force
+    New-AzDoAuthenticationProvider -OrganizationName $TestFrameworkConfiguration.Organization -SecureStringPersonalAccessToken $securePAT
 }
 elseif ($TestFrameworkConfiguration.AuthenticationType -eq 'ManagedIdentity')
 {
