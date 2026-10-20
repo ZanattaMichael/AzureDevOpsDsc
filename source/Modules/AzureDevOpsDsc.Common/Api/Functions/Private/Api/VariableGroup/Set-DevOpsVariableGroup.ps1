@@ -25,8 +25,15 @@ Function Set-DevOpsVariableGroup
             description = $Description
             type        = $Type
             variables   = $normalizedVariables
+            # The description Azure DevOps shows and returns for a project is the one on the
+            # project reference; the top-level one alone is not stored, and a group written
+            # without it reads back with a null description.
             variableGroupProjectReferences = @(
-                @{ projectReference = @{ name = $ProjectName }; name = $VariableGroupName }
+                @{
+                    projectReference = @{ name = $ProjectName }
+                    name             = $VariableGroupName
+                    description      = $Description
+                }
             )
         } | ConvertTo-Json -Depth 10
     }

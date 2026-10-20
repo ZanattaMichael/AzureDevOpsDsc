@@ -606,11 +606,14 @@ jobs:
           Remove-Item -LiteralPath $cacheDir -Recurse -Force -ErrorAction SilentlyContinue
           Write-Host "Removed cache directory: $cacheDir"
 
+          # The checkout can be owned by another account than the one running the job (the
+          # runner service installs it), and actions/checkout's own safe.directory entry lives
+          # in a temporary HOME that is gone by now, so git is told the path is trusted here.
           $configPath = 'tests/Integration/TestFrameworkConfiguration.json'
-          git checkout -- $configPath
+          git -c "safe.directory=$env:GITHUB_WORKSPACE" checkout -- $configPath
           $restored = $LASTEXITCODE -eq 0
           if ($restored) {
-              git diff --quiet -- $configPath
+              git -c "safe.directory=$env:GITHUB_WORKSPACE" diff --quiet -- $configPath
               $restored = $LASTEXITCODE -eq 0
           }
           if ($restored) {
@@ -620,3 +623,6 @@ jobs:
               Remove-Item -LiteralPath $configPath -Force -ErrorAction SilentlyContinue
               Write-Host "Could not restore $configPath from git - removed it instead."
           }
+          # Either way the credentials are gone, which is this step's job; a failed git call
+          # above must not be what the step reports.
+          exit 0

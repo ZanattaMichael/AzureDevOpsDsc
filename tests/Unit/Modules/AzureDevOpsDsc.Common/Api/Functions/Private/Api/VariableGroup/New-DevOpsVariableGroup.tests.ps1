@@ -36,6 +36,22 @@ Describe 'New-DevOpsVariableGroup' -Tag "Unit", "VariableGroup", "API" {
         { New-DevOpsVariableGroup -ApiUri 'https://dev.azure.com/myorg' -ProjectName 'TestProject' -VariableGroupName 'TestVG' } | Should -Throw
     }
 
+    Context 'Description in the request body' {
+
+        It 'Sends the description on the project reference as well as at the top level' {
+            New-DevOpsVariableGroup -ApiUri 'https://dev.azure.com/myorg' -ProjectName 'TestProject' -VariableGroupName 'TestVG' -Description 'Shared settings'
+
+            Assert-MockCalled -CommandName Invoke-AzDevOpsApiRestMethod -Times 1 -ParameterFilter {
+                $sent = $Body | ConvertFrom-Json
+                $sent.description -eq 'Shared settings' -and
+                @($sent.variableGroupProjectReferences).Count -eq 1 -and
+                $sent.variableGroupProjectReferences[0].description -eq 'Shared settings' -and
+                $sent.variableGroupProjectReferences[0].name -eq 'TestVG' -and
+                $sent.variableGroupProjectReferences[0].projectReference.name -eq 'TestProject'
+            }
+        }
+    }
+
     Context 'Variables in the request body' {
 
         It 'Sends a flat variable as a non-secret in the API shape' {
