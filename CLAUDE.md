@@ -113,10 +113,14 @@ Public resource functions are in `source\Modules\AzureDevOpsDsc.Common\Resources
 ## Important Gotchas
 
 ### 1. Token `.Get()` call-stack guard
-`PersonalAccessToken.Get()` and `ManagedIdentityToken.Get()` inspect the PowerShell call stack and throw if called from outside these three allowed callers:
+Every token class's `Get()` inspects the PowerShell call stack and throws if called from outside these three allowed callers:
 - `Add-AuthenticationHTTPHeader`
 - `Invoke-AzDevOpsApiRestMethod`
 - `New-AzDoAuthenticationProvider`
+
+It is a guard against *accidental* use of the token outside the request path, not a security
+boundary: code in the same process can define a function with an allowed name or read the hidden
+SecureString directly. Do not describe it as protection in docs or reviews.
 
 **Never call `$Global:DSCAZDO_AuthenticationToken.Get()` directly from test code.**
 
@@ -126,8 +130,17 @@ Public resource functions are in `source\Modules\AzureDevOpsDsc.Common\Resources
 ### 3. `Add-AuthenticationHTTPHeader` not available in test scope
 `azuredevopsdsc.tests.ps1 -LoadModulesOnly` dot-sources `Helper\` and `Cache\` subdirectories but **not** `Authentication\`. Calling `Add-AuthenticationHTTPHeader` or `Invoke-AzDevOpsApiRestMethod` from integration tests will fail with "not recognized."
 
-### 4. DPAPI SecureString deserialization
-`ModuleSettings.clixml` SecureStrings are DPAPI-encrypted. They are safely decryptable on the same machine and user account using `[System.Runtime.InteropServices.Marshal]`.
+### 4. `ModuleSettings.clixml` holds credentials
+The file holds the PAT (or client secret / PFX password) and the current access token as
+SecureStrings. On Windows `Export-Clixml` DPAPI-encrypts them for the writing user, so the same
+account can decrypt them with `[System.Runtime.InteropServices.Marshal]`. On Linux and macOS there
+is no DPAPI: the SecureString is written as hex-encoded UTF-16, i.e. recoverable plaintext, and the
+file is protected only by its permissions. The module therefore sets owner-only permissions on the
+cache directory, `ModuleSettings.clixml` and every cache file it writes (`Protect-AzDoCachePath`),
+and warns on non-Windows. Keep `AZDODSC_CACHE_DIRECTORY` on a private path, never on a shared or
+world-readable one, and run DSC as the account that ran `New-AzDoAuthenticationProvider`. The
+`Cache/` contents matter too: the identity caches map names to descriptors, so anyone who can
+write them can redirect a permission grant.
 
 ### 5. CSS Security Namespace performance
 `AzDoAreaPermission`, `AzDoIterationPermission`, and `AzDoPipelinePermission` scan all org-level ACLs. Each test for these resources takes 200–400 seconds.

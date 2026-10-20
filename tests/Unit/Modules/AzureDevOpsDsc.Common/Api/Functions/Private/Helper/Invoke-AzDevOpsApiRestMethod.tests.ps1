@@ -48,6 +48,47 @@ Describe 'Invoke-AzDevOpsApiRestMethod' -Tag "Unit", "Helper" {
 
     }
 
+    Context 'Transport security' {
+
+        BeforeAll {
+            Mock -CommandName Invoke-RestMethod -MockWith { return @{ value = 'ok' } }
+        }
+
+        It 'Refuses a plain http request to the Azure DevOps API before sending anything' {
+            $parameters = $defaultParameters.Clone()
+            $parameters.ApiUri = 'http://dev.azure.com/someOrganizationName/_apis/'
+
+            { Invoke-AzDevOpsApiRestMethod @parameters } | Should -Throw '*only https is allowed*'
+            Assert-MockCalled -CommandName Invoke-RestMethod -Exactly -Times 0
+            Assert-MockCalled -CommandName Add-AuthenticationHTTPHeader -Exactly -Times 0
+        }
+
+        It 'Refuses a relative or malformed URI' {
+            $parameters = $defaultParameters.Clone()
+            $parameters.ApiUri = 'dev.azure.com/_apis/'
+
+            { Invoke-AzDevOpsApiRestMethod @parameters } | Should -Throw '*not an absolute URI*'
+            Assert-MockCalled -CommandName Invoke-RestMethod -Exactly -Times 0
+        }
+
+        It 'Allows plain http to the instance metadata endpoint <Uri>' -ForEach @(
+            @{ Uri = 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01' }
+            @{ Uri = 'http://localhost:40342/metadata/identity/oauth2/token' }
+            @{ Uri = 'http://127.0.0.1:40342/metadata/identity/oauth2/token' }
+        ) {
+            $parameters = $defaultParameters.Clone()
+            $parameters.ApiUri = $Uri
+            $parameters.NoAuthentication = $true
+
+            { Invoke-AzDevOpsApiRestMethod @parameters } | Should -Not -Throw
+            Assert-MockCalled -CommandName Invoke-RestMethod -Exactly -Times 1
+        }
+
+        It 'Allows https to any host' {
+            { Invoke-AzDevOpsApiRestMethod @defaultParameters } | Should -Not -Throw
+        }
+    }
+
     Context 'Basic functionality' {
 
         BeforeAll {

@@ -20,9 +20,9 @@ Describe 'Test-AzDevOpsApiUri' -Tag "Unit", "API" {
         $result | Should -Be $true
     }
 
-    It 'Returns $true for a valid HTTP URI when -IsValid is used' {
+    It 'Returns $false for a plain HTTP URI, even a well-formed one, when -IsValid is used' {
         $result = Test-AzDevOpsApiUri -ApiUri 'http://example.com/_apis/' -IsValid
-        $result | Should -Be $true
+        $result | Should -Be $false
     }
 
     It 'Returns $true for a valid HTTPS URI when -IsValid is used' {

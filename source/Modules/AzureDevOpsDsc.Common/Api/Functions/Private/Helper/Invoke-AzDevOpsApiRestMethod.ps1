@@ -124,6 +124,25 @@ function Invoke-AzDevOpsApiRestMethod
 
     )
 
+    # Every request carries the credential in its Authorization header, so it must not travel
+    # over plain http. The only exceptions are the instance metadata endpoints, which answer
+    # http only and are link-local or loopback: IMDS (169.254.169.254) and the Azure Arc agent
+    # (localhost). Anything else over http is refused before a header is built.
+    $requestUri = $null
+    if (-not [System.Uri]::TryCreate($ApiUri, [System.UriKind]::Absolute, [ref]$requestUri))
+    {
+        throw "[Invoke-AzDevOpsApiRestMethod] '$ApiUri' is not an absolute URI."
+    }
+    if ($requestUri.Scheme -ne 'https')
+    {
+        $plainHttpHosts = @('169.254.169.254', 'localhost', '127.0.0.1', '::1')
+        if (($requestUri.Scheme -ne 'http') -or ($requestUri.DnsSafeHost -notin $plainHttpHosts))
+        {
+            throw ("[Invoke-AzDevOpsApiRestMethod] Refusing to send a request over '{0}' to '{1}': only https is " +
+                   "allowed, apart from the instance metadata endpoints (169.254.169.254 and localhost).") -f $requestUri.Scheme, $requestUri.DnsSafeHost
+        }
+    }
+
     $invokeRestMethodParameters = @{
         Uri                         = $ApiUri
         Method                      = $HttpMethod
