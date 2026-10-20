@@ -5,6 +5,87 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Credential storage
+  - `New-AzDoAuthenticationProvider` no longer leaves `ModuleSettings.clixml` and the cache
+    directory with default permissions. A new private helper, `Protect-AzDoCachePath`,
+    restricts everything the module writes under `AZDODSC_CACHE_DIRECTORY` to its owner:
+    on Windows the ACL is replaced with an explicit, non-inherited DACL granting
+    FullControl to the current user, SYSTEM and BUILTIN\Administrators only; on Linux and
+    macOS files are set to mode 600 and directories to 700. `New-AzDoAuthenticationProvider`,
+    `Export-CacheObject`, `Initialize-CacheObject` and `Save-IdentityDescriptorIndex` apply
+    it to every directory they create and file they write, so the identity caches and
+    `IdentityDescriptorIndex.clixml`, which decide which identity a permission grant
+    resolves to, are covered as well. A permissions failure is a warning, never an error.
+  - On Linux and macOS `Export-Clixml` stores a SecureString as hex-encoded UTF-16, so
+    `ModuleSettings.clixml` holds the credential in a recoverable form.
+    `New-AzDoAuthenticationProvider` now warns on those platforms that the file is
+    protected only by the owner-only permissions it sets, that `AZDODSC_CACHE_DIRECTORY`
+    must be a private path, and that DSC must run as the same account. `USAGE.md` and
+    `CLAUDE.md` describe this.
+  - `New-AzDoAuthenticationProvider` defaults to the `SecureStringPersonalAccessToken`
+    parameter set. The plain-text `-PersonalAccessToken` and `-ClientSecret` parameters
+    still work but warn that the secret lands in shell history, transcripts and process
+    listings, and name the `-SecureStringPersonalAccessToken` / `-SecureStringClientSecret`
+    alternative. Every example and the integration test framework use the SecureString
+    parameters.
+- Transport
+  - `Invoke-AzDevOpsApiRestMethod` refuses any request that is not https before it builds
+    an Authorization header. The only exceptions are the two instance metadata endpoints
+    that answer http only: IMDS (`169.254.169.254`) and the Azure Arc agent on `localhost`.
+    `Test-AzDevOpsApiUri` accepts https only.
+- Azure Arc
+  - `Get-AzManagedIdentityToken` validates both Azure Arc inputs before using them, as
+    Microsoft's reference implementations do. `IDENTITY_ENDPOINT` must be an absolute
+    http/https URI on `localhost`, `127.0.0.1` or `::1`; the secret file path from the 401
+    challenge (`WWW-Authenticate: Basic realm=<path>`) must be a `.key` file directly inside
+    the Arc tokens directory (`%ProgramData%\AzureConnectedMachineAgent\Tokens` on Windows,
+    `/var/opt/azcmagent/tokens` on Linux). Anything else throws, naming the value, before a
+    request is sent or a file is read. New private helpers `Test-AzDoArcSecretFilePath`
+    and `Get-AzDoArcTokensDirectory`.
+- Token guard
+  - `AuthenticationToken.TestCaller()` no longer carries the `Write-*` and `Out-File`
+    checks, which could never fire (`TestCallStack` compares whole command names, and
+    arguments are evaluated before a cmdlet is on the stack). The comments above it and
+    above `ServicePrincipalToken.GetClientSecret()` now say what the remaining call-stack
+    check is: a guard against accidental use of the plain token outside the module's
+    request path, not a security boundary. The allowed-callers behaviour is unchanged.
+- Secrets in logs and exports
+  - `AzDevOpsDscResourceBase` gains `FormatPropertiesForLog()`, which renders
+    current-state properties for verbose logging with secret properties (those named by
+    `GetDscResourceSecretPropertyNames()`) shown as `<redacted>` and hashtable-valued
+    properties shown as key names only. `AzDoVariableGroup`, `AzDoServiceConnection`,
+    `AzDoAuditStream` and `AzDoServiceHook` log through it, so variable values, a service
+    connection's `serviceprincipalkey` and consumer credentials no longer reach DSC
+    verbose logs.
+  - `AzDoServiceConnection` declares `Authorization`, and `AzDoAuditStream` and
+    `AzDoServiceHook` declare `ConsumerInputs`, as secret properties, so `Export()` redacts
+    them through `Protect-AzDoExportedSecretProperty` instead of writing them out.
+  - `AzDoVariableGroup` can create secret variables: `Variables` accepts
+    `@{ NAME = @{ value = 'v'; isSecret = $true } }` alongside `@{ NAME = 'value' }`. A
+    secret variable's value is never read back, compared or logged.
+- CI
+  - The integration test workflow no longer admits pull requests from forks. Both
+    `integration-tests.yml` jobs require the pull request's head repository to be this
+    repository in addition to the `resource-add/` branch prefix, and the test framework
+    configuration step refuses to fall back to Managed Identity on a `pull_request` run
+    (it throws if `AZURE_DEVOPS_PAT` is empty). Previously a fork's code could have run on
+    the self-hosted runner under the runner VM's identity.
+  - Both integration workflows wipe the module cache directory before the run and, in a
+    final `if: always()` step, remove it again and restore
+    `tests/Integration/TestFrameworkConfiguration.json` from git, so neither
+    `ModuleSettings.clixml` nor the plain-text PAT survives the job on the runner.
+  - `publish.yml` token permissions moved from workflow level to job level; only the
+    `publish` job holds `contents: write` and `pull-requests: write`; the release-gate jobs
+    on the self-hosted runners get `contents: read`.
+  - `actions/checkout`, `actions/cache` and `actions/upload-artifact` are pinned to commit
+    SHAs (v4.4.0, v4.3.0, v4.6.2) in every workflow.
+  - New `script-analysis` job in `unit-tests.yml` runs PSScriptAnalyzer 1.24.0 over
+    `source/Classes`, `source/Modules` and `source/Enum` with the security-focused rule
+    set in the new `PSScriptAnalyzerSettings.psd1`; any finding fails the job.
+
+
 ### Changed
 
 - Build
@@ -113,6 +194,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       token, several identities in one configuration, changing a permission
       from `Deny` to `Allow`, turning inheritance off and back on, and a
       project that does not exist.
+  - `New-AzDoAuthenticationProvider.tests.ps1` uses `$TestDrive` instead of a `C:\` path,
+    so it passes on Linux. The known Linux-only failure count in the Common suite drops
+    from 28 to 9 (the remaining `C:\`-path tests in `Export-CacheObject.tests.ps1` and
+    `Initialize-CacheObject.tests.ps1`).
 
 ### Fixed
 
@@ -209,10 +294,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     the inputs the connection type declares, so the API answered
     `400 Following fields in the service connection are not expected: url`.
     `url` is now sent once, at the top level.
+  - SecureStrings are decoded correctly on Linux and macOS. `PtrToStringAuto` reads a BSTR
+    as UTF-8 off Windows and returned garbage in `Add-AuthenticationHTTPHeader`
+    (managed-identity cache restore), `Get-AzManagedIdentityToken` (cached token reuse),
+    `Get-AzServicePrincipalCertificateToken` (the PFX password, so the PFX path did not
+    work on Linux at all) and `AzDevOpsDscResourceBase.Construct()` (Workload Identity
+    Federation manual-token restore). All of them, and `Get-AzServicePrincipalToken`, now
+    use the new private helper `ConvertFrom-AzDoSecureString`.
+  - `Get-AzDoVariableGroup` detects drift in `Description` and `Variables` (a secret is
+    compared only on existence and on being secret), so `Set` runs after creation; before,
+    an existing group was always reported `Unchanged`. `Set-AzDoVariableGroup` re-sends
+    the live variables and description when the configuration does not state them,
+    instead of clearing them. `AllowAccess` is not compared: the variable-group API does
+    not expose it (use `AzDoPipelineAuthorization`).
 
 ### Added
 
 - AzureDevOpsDscNative
+  - Private helpers `Protect-AzDoCachePath`, `Test-AzDoIsWindows`,
+    `ConvertFrom-AzDoSecureString`, `Test-AzDoArcSecretFilePath`,
+    `Get-AzDoArcTokensDirectory`, `ConvertTo-AzDoVariableGroupVariables` and
+    `Test-AzDoVariableGroupVariableDrift`, each with unit tests, and secret-variable
+    coverage in the `AzDoVariableGroup` integration test.
   - Added `AzDoDashboard`, class `150`, managing a team or project dashboard's
     existence, description and refresh interval (part of
     [#71](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/71)). A dashboard
