@@ -96,6 +96,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     mention. It lists the proposed resources and the questions each issue
     must settle first, and gives an order. §8 and §9 point to it.
 
+- Tests
+  - The integration tests for `AzDoDashboard`, `AzDoOrganizationPermission` and
+    `AzDoTaskGroupPermission` now read the live state back from the REST API
+    after each `Set`, instead of relying only on the resource's own `Test`:
+    - `AzDoDashboard`: the written description and refresh interval, no
+      duplicate on a repeated `Set`, a widget added outside DSC surviving an
+      update, drift made outside DSC being detected and fixed, and a team and
+      a project dashboard with the same name being kept apart.
+    - `AzDoOrganizationPermission`: the exact allow and deny bits, and every
+      other entry on the organization root compared mask for mask against a
+      snapshot taken before any write - after a `Set`, a second group's `Set`,
+      a repeated `Set` and `Absent`. Also outside drift, permissions named by
+      display name, and `Absent` removing only its own group's entry.
+    - `AzDoTaskGroupPermission`: the same live-ACL checks on the project-level
+      token, several identities in one configuration, changing a permission
+      from `Deny` to `Allow`, turning inheritance off and back on, and a
+      project that does not exist.
+
 ### Fixed
 
 - Integration tests
