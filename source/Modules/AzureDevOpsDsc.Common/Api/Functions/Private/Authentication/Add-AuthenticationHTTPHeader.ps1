@@ -49,9 +49,7 @@ Function Add-AuthenticationHTTPHeader
                         $ct            = $objectSettings.Token
                         $epochStart    = [datetime]::new(1970, 1, 1, 0, 0, 0, [DateTimeKind]::Utc)
                         $expiresOnUnix = [long]($ct.expires_on.ToUniversalTime() - $epochStart).TotalSeconds
-                        $bstr          = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($ct.access_token)
-                        $plainToken    = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
-                        [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+                        $plainToken    = ConvertFrom-AzDoSecureString -SecureString $ct.access_token
                         $tokenData = [PSCustomObject]@{
                             access_token = $plainToken
                             expires_on   = $expiresOnUnix

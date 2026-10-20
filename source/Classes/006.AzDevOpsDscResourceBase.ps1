@@ -148,9 +148,9 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
 
                         $epochStart    = [datetime]::new(1970, 1, 1, 0, 0, 0, [DateTimeKind]::Utc)
                         $expiresOnUnix = [long]($tokenObject.expires_on.ToUniversalTime() - $epochStart).TotalSeconds
-                        $bstr          = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($access_token)
-                        $plainToken    = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
-                        [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+                        # AzureDevOpsDsc.Common is imported at the top of Construct(), so its
+                        # private helper is reachable here.
+                        $plainToken    = ConvertFrom-AzDoSecureString -SecureString $access_token
 
                         $tokenData = [PSCustomObject]@{
                             access_token = $plainToken

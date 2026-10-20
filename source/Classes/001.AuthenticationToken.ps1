@@ -24,13 +24,16 @@
             Tests the call stack to check if a specific function is in the call stack.
 
         TestCaller()
-            Ensures that the Get() method is called only by authorized functions and not within certain contexts.
+            Throws unless one of the module's own request-path functions is on the call stack.
 
         [String] Get()
-            Retrieves the access token after ensuring that the calling function is authorized to do so.
+            Retrieves the access token after TestCaller() has passed.
 
     .NOTES
-        The class is designed to prevent unauthorized access to the access token and to ensure that the token is handled securely.
+        The call-stack check in TestCaller() is a guard against accidental use of the plain token
+        outside the module's request path. It is not a security boundary: any code in the same
+        process can define a function with an allowed name, or read the hidden SecureString
+        directly. See the comment above TestCaller().
 #>
 
 class AuthenticationToken
@@ -76,37 +79,41 @@ class AuthenticationToken
         return $false
     }
 
-    # Function to prevent unauthorized access to the Get() method
+    <#
+        Guard against *accidental* use of the token outside the module's own request path.
+
+        Get() is allowed only while one of these functions is on the call stack:
+          - Add-AuthenticationHTTPHeader
+          - Invoke-AzDevOpsApiRestMethod
+          - New-AzDoAuthenticationProvider
+
+        That catches the honest mistakes - a resource function, a test or an interactive session
+        calling $Global:DSCAZDO_AuthenticationToken.Get() and dropping the plain token into a
+        log, a verbose stream or a return value - and it keeps the places that handle the plain
+        token to three.
+
+        It is NOT a security boundary. Any code running in the same process can define a
+        function with one of the allowed names and call Get() from inside it, can read the
+        hidden access_token SecureString directly and decode it, or can call
+        ConvertFromSecureString itself. Nothing here can stop that, and nothing in the module
+        relies on it being stopped: the token's confidentiality rests on who can run code in
+        this process and read the cache directory, not on this check.
+
+        Earlier versions also "refused" Get() when Write-* or Out-File was on the stack. Those
+        checks could never fire - TestCallStack compares whole command names, and an argument
+        such as Write-Verbose ($token.Get()) is evaluated in the caller's frame before the
+        cmdlet is ever invoked, so no Write-* frame exists while Get() runs - and they have been
+        removed rather than left to suggest a protection that was never there.
+    #>
     TestCaller()
     {
-        # Prevent Execution and Writing to Files and Pipeline Variables.
-
-        <#
-            The Get() method can only be called within the following functions:
-            - Add-AuthenticationHTTPHeader
-            - Invoke-AzDevOpsApiRestMethod
-            - New-AzDoAuthenticationProvider
-        #>
         if (
             (-not($this.TestCallStack('Add-AuthenticationHTTPHeader'))) -and
             (-not($this.TestCallStack('Invoke-AzDevOpsApiRestMethod'))) -and
             (-not($this.TestCallStack('New-AzDoAuthenticationProvider')))
         )
         {
-            # Token can only be called within Invoke-AzDevOpsApiRestMethod. Test to see if the calling function is Invoke-AzDevOpsApiRestMethod
             throw "[AuthenticationToken][Access Denied] The Get() method can only be called within AzureDevOpsDsc.Common."
-        }
-
-        # Token cannot be returned within a Write-* function. Test to see if the calling function is Write-*
-        if ($this.TestCallStack('Write-'))
-        {
-            throw "[AuthenticationToken][Access Denied] The Get() method cannot be called within a Write-* function."
-        }
-
-        # Token cannot be written to a file. Test to see if the calling function is Out-File
-        if ($this.TestCallStack('Out-File'))
-        {
-            throw "[AuthenticationToken][Access Denied] The Get() method cannot be called within Out-File."
         }
     }
 

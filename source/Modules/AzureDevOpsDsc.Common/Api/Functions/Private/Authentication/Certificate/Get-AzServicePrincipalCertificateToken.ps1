@@ -80,9 +80,7 @@ Function Get-AzServicePrincipalCertificateToken
             throw "[Get-AzServicePrincipalCertificateToken] Certificate file not found at path '$CertificatePath'."
         }
 
-        $BSTR           = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($CertificatePassword)
-        $plainPassword  = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
-        [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($BSTR)
+        $plainPassword = ConvertFrom-AzDoSecureString -SecureString $CertificatePassword
 
         $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
             $CertificatePath,
