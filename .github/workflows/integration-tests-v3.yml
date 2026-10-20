@@ -83,7 +83,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Install build dependencies
         shell: pwsh
@@ -313,6 +313,19 @@ jobs:
                     "from the runner."
           }
 
+      # An empty AZURE_DEVOPS_PAT means "use the runner VM's Managed Identity", as the
+      # setup note at the top of the file describes. That is acceptable here only because
+      # this workflow has no `pull_request` trigger: it is started by workflow_dispatch or
+      # by publish.yml, both by someone with write access, running code already in this
+      # repository. If a `pull_request` trigger is ever added, copy BOTH halves of what
+      # integration-tests.yml does - the head-repository condition on its jobs, and its
+      # refusal to fall back to Managed Identity on a pull_request event. GitHub withholds
+      # secrets from a fork's pull request, so an empty PAT on a pull request is what a
+      # fork looks like, and the fallback would run the fork's code as the runner's identity.
+      #
+      # TestFrameworkConfiguration.json carries the PAT in plain text. The last step of
+      # this job restores the committed placeholder and removes the cache directory, so
+      # neither outlives the job on this persistent runner.
       - name: Write test framework configuration
         shell: pwsh
         env:
@@ -562,8 +575,48 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: v3-integration-test-results-${{ github.run_number }}
           path: C:\Temp\v3-integration-test-results.xml
           if-no-files-found: ignore
+
+      # Leave no credential on the runner - the same step integration-tests.yml ends with,
+      # for the same reasons. This is a persistent machine, and two things here carry the
+      # PAT: the cache directory's ModuleSettings.clixml (DPAPI-encrypted under the runner
+      # account, which the next job on this runner also runs as) and
+      # tests/Integration/TestFrameworkConfiguration.json, written in PLAIN TEXT into the
+      # checkout that the next run reuses. The json is restored to its committed
+      # placeholder from git; if that fails, or leaves the file differing from HEAD, it is
+      # deleted instead. `if: always()` because a failed or cancelled suite is exactly when
+      # this must still happen. The cache directory name is repeated as a fallback so that a
+      # job that failed before "Prepare cache directory" still cleans up a previous run's
+      # leftovers.
+      - name: Remove credentials from the runner
+        if: always()
+        shell: pwsh
+        run: |
+          # A non-zero exit from git is handled below, not a terminating error.
+          $PSNativeCommandUseErrorActionPreference = $false
+
+          $cacheDir = $env:AZDODSC_CACHE_DIRECTORY
+          if ([string]::IsNullOrEmpty($cacheDir)) {
+              $cacheDir = Join-Path $env:TEMP 'AzureDevOpsDscCache-V3'
+          }
+          Remove-Item -LiteralPath $cacheDir -Recurse -Force -ErrorAction SilentlyContinue
+          Write-Host "Removed cache directory: $cacheDir"
+
+          $configPath = 'tests/Integration/TestFrameworkConfiguration.json'
+          git checkout -- $configPath
+          $restored = $LASTEXITCODE -eq 0
+          if ($restored) {
+              git diff --quiet -- $configPath
+              $restored = $LASTEXITCODE -eq 0
+          }
+          if ($restored) {
+              Write-Host "Restored $configPath from git."
+          }
+          else {
+              Remove-Item -LiteralPath $configPath -Force -ErrorAction SilentlyContinue
+              Write-Host "Could not restore $configPath from git - removed it instead."
+          }

@@ -17,10 +17,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Cache required build modules
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: output/RequiredModules
           key: ${{ runner.os }}-requiredmodules-${{ hashFiles('RequiredModules.psd1') }}
@@ -125,10 +125,74 @@ jobs:
 
       - name: Upload test logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: unit-test-logs
           path: |
             classes-tests.log
             common-tests.log
           if-no-files-found: ignore
+
+  # Static analysis of the module source with PSScriptAnalyzer, limited to the rules
+  # that catch credential-handling mistakes. PSScriptAnalyzerSettings.psd1 at the
+  # repository root lists them and says why two of the usual ones are left out.
+  #
+  # A job of its own, on a hosted Linux runner with no secrets: it needs neither the
+  # build nor the test modules, so a finding comes back in well under a minute instead
+  # of after the Windows build, and nothing a finding could describe is reachable from
+  # the job that reports it.
+  script-analysis:
+    name: PowerShell Script Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Install-Module -Name PSScriptAnalyzer -RequiredVersion 1.24.0 -Force -Scope CurrentUser
+
+      # source/Examples is deliberately not analysed: it holds DSC configuration fragments
+      # that do not parse standalone, so every file there reports a parse error and
+      # nothing else.
+      #
+      # TypeNotFound and ParseError are not rules from the settings file; they are
+      # pseudo-rules PSScriptAnalyzer emits when a file does not parse cleanly on its own.
+      # The resource classes reference types that exist only once the module is built -
+      # the base classes, the enums, DscResource.Common - so class files produce
+      # TypeNotFound whatever their content, and both are filtered out. Anything that
+      # remains is a finding from one of the listed rules, and fails the job.
+      - name: Run PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Import-Module -Name PSScriptAnalyzer -RequiredVersion 1.24.0 -Force
+
+          $paths = @('source/Classes', 'source/Modules', 'source/Enum')
+          $findings = @(
+              @(
+                  foreach ($path in $paths) {
+                      Invoke-ScriptAnalyzer -Path $path -Recurse -Settings ./PSScriptAnalyzerSettings.psd1
+                  }
+              ) | Where-Object { $_.RuleName -notin @('TypeNotFound', 'ParseError') }
+          )
+
+          if ($findings.Count -eq 0) {
+              Write-Host "PSScriptAnalyzer: no findings in $($paths -join ', ')."
+              exit 0
+          }
+
+          Write-Host "PSScriptAnalyzer: $($findings.Count) finding(s)."
+          $findings |
+              Sort-Object -Property ScriptPath, Line |
+              Format-Table -Property RuleName, Severity, ScriptName, Line, Message -AutoSize -Wrap |
+              Out-String -Width 4096 |
+              Write-Host
+
+          # ::error annotations put each finding on its line in the pull request's Files view.
+          foreach ($finding in $findings) {
+              $relative = [System.IO.Path]::GetRelativePath($PWD.Path, $finding.ScriptPath) -replace '\\', '/'
+              Write-Host "::error file=$relative,line=$($finding.Line)::$($finding.RuleName): $($finding.Message)"
+          }
+          exit 1

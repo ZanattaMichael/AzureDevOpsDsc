@@ -18,16 +18,18 @@ name: Publish
 #   AzureDevOpsOrg     - Azure DevOps organization the integration tests run against.
 # GITHUB_TOKEN is provided automatically and is used for the GitHub Release, the
 # wiki push, and the changelog roll-over pull request.
+#
+# Token permissions are declared per job, not for the workflow. A workflow-level grant
+# applies to every job, including the two release gates that call the integration test
+# workflows - and those run on the self-hosted AZDO-AGENT runners against a live
+# organization. Nothing there needs to write to this repository, so only the publish
+# job, on a hosted runner, holds `contents: write` and `pull-requests: write`.
 
 on:
   push:
     tags:
       - 'v*'
   workflow_dispatch:
-
-permissions:
-  contents: write
-  pull-requests: write
 
 concurrency:
   group: publish-${{ github.ref }}
@@ -37,13 +39,15 @@ jobs:
   validate:
     name: Validate Release Tag
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       version: ${{ steps.derive.outputs.version }}
       isPrerelease: ${{ steps.derive.outputs.isPrerelease }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
 
@@ -91,6 +95,11 @@ jobs:
   integration-tests:
     name: Integration Tests (release gate)
     needs: validate
+    # Read-only: the called workflow checks out and tests, nothing more, and it runs on
+    # the self-hosted runners. A reusable workflow can hold at most what its caller
+    # grants it, so this is the ceiling for everything inside it.
+    permissions:
+      contents: read
     uses: ./.github/workflows/integration-tests.yml
     secrets: inherit
     with:
@@ -104,6 +113,9 @@ jobs:
   integration-tests-v3:
     name: DSC v3 Integration Tests (release gate)
     needs: validate
+    # Read-only, as for the v2 gate above.
+    permissions:
+      contents: read
     uses: ./.github/workflows/integration-tests-v3.yml
     secrets: inherit
     with:
@@ -114,6 +126,11 @@ jobs:
     name: Build, Test, and Publish Release
     needs: [validate, integration-tests, integration-tests-v3]
     runs-on: windows-latest
+    # The only job that writes: `contents: write` for the GitHub Release and the wiki
+    # push, `pull-requests: write` for the changelog roll-over pull request.
+    permissions:
+      contents: write
+      pull-requests: write
     env:
       # $env:ModuleVersion has to be set before the *first* `build` task runs (not just
       # before pack), since that is what bakes the version into the psd1. Setting it at
@@ -123,12 +140,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
 
       - name: Cache required build modules
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: output/RequiredModules
           key: ${{ runner.os }}-requiredmodules-${{ hashFiles('RequiredModules.psd1') }}
@@ -228,7 +245,7 @@ jobs:
 
       - name: Upload release package
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: release-package-${{ github.ref_name }}
           path: |
