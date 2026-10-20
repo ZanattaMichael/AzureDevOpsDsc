@@ -112,6 +112,14 @@ class AzDoServiceHook : AzDevOpsDscResourceBase
         $properties.ResourceVersion  = $CurrentResourceObject.ResourceVersion
         $properties.LookupResult     = $CurrentResourceObject.LookupResult
         $properties.Ensure           = $CurrentResourceObject.Ensure
+        # ConsumerInputs may carry the consumer's credential (basic auth, an HTTP header): it is
+        # never logged.
+        Write-Verbose "[AzDoServiceHook] Current state properties:`n$($this.FormatPropertiesForLog($properties))"
         return $properties
+    }
+
+    hidden [System.String[]]GetDscResourceSecretPropertyNames()
+    {
+        return @('ConsumerInputs')
     }
 }

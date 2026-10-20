@@ -11,6 +11,10 @@ Function New-DevOpsVariableGroup
         [Parameter()][bool]$AllowAccess = $false,
         [Parameter()][string]$ApiVersion = '7.1-preview.2'
     )
+    # Accept both @{ NAME = 'value' } and @{ NAME = @{ value = 'v'; isSecret = $true } }; the API
+    # stores only the latter shape, and a secret is only secret when 'isSecret' reaches it.
+    $normalizedVariables = ConvertTo-AzDoVariableGroupVariables -Variables $Variables
+
     $params = @{
         Uri         = '{0}/{1}/_apis/distributedtask/variablegroups?api-version={2}' -f $ApiUri.TrimEnd('/'), $ProjectName, $ApiVersion
         Method      = 'POST'
@@ -19,7 +23,7 @@ Function New-DevOpsVariableGroup
             name        = $VariableGroupName
             description = $Description
             type        = $Type
-            variables   = $Variables
+            variables   = $normalizedVariables
             variableGroupProjectReferences = @(
                 @{ projectReference = @{ name = $ProjectName }; name = $VariableGroupName }
             )

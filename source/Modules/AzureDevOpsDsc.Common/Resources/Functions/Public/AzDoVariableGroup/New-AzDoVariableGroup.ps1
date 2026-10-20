@@ -21,7 +21,9 @@ Function New-AzDoVariableGroup
         VariableGroupName = $VariableGroupName
         Description       = $Description
         Type              = $VariableGroupType
-        Variables         = if ($Variables) { $Variables } else { @{} }
+        # Either @{ NAME = 'value' } or @{ NAME = @{ value = 'v'; isSecret = $true } }: normalized
+        # to the API shape so a configured secret is created secret. Values are never logged.
+        Variables         = ConvertTo-AzDoVariableGroupVariables -Variables $Variables
         AllowAccess       = $AllowAccess
     }
 

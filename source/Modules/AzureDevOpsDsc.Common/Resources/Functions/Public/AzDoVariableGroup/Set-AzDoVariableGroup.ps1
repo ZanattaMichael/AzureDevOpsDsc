@@ -1,3 +1,46 @@
+<#
+.SYNOPSIS
+Updates an Azure DevOps variable group to the configured state.
+
+.DESCRIPTION
+Sends the group back to the API with the configured description and variables. A setting the
+configuration does not state is re-sent as it is live, so a Set that corrects the description
+does not wipe the variables (or the other way round).
+
+Variables are normalized with ConvertTo-AzDoVariableGroupVariables, so a configured secret is
+written with isSecret = $true. A secret's value is sent only when the configuration supplies
+one; '@{ isSecret = $true }' with no value - and every live secret re-sent because Variables is
+not configured - carries a null value, which Azure DevOps treats as "keep the stored secret".
+
+.PARAMETER ProjectName
+The name of the Azure DevOps project.
+
+.PARAMETER VariableGroupName
+The name of the variable group.
+
+.PARAMETER Description
+The desired description. Left as it is live when empty.
+
+.PARAMETER VariableGroupType
+The variable group type.
+
+.PARAMETER Variables
+The desired variables, as @{ NAME = 'value' } or @{ NAME = @{ value = 'v'; isSecret = $true } }.
+Left as they are live when not supplied.
+
+.PARAMETER AllowAccess
+Accepted for parity with the resource; not written here (pipeline access is the
+pipelinePermissions API).
+
+.PARAMETER LookupResult
+The lookup result from Get, supplied by the DSC base class.
+
+.PARAMETER Ensure
+The desired state, supplied by the DSC base class.
+
+.PARAMETER Force
+Forces the operation, supplied by the DSC base class.
+#>
 Function Set-AzDoVariableGroup
 {
     [CmdletBinding()]
@@ -23,14 +66,31 @@ Function Set-AzDoVariableGroup
         return
     }
 
+    # Only what the configuration states is changed; the rest is re-sent as it is live. The API
+    # replaces the whole variable set on PUT, so sending @{} here would delete every variable.
+    $desiredDescription = if (-not [String]::IsNullOrEmpty($Description)) { $Description } else { [String]$vg.description }
+
+    $desiredVariables = if ($PSBoundParameters.ContainsKey('Variables') -and ($null -ne $Variables))
+    {
+        ConvertTo-AzDoVariableGroupVariables -Variables $Variables
+    }
+    else
+    {
+        # Live secrets come back with a null value; re-sending them that way keeps the stored
+        # secret. Their values are never read or logged.
+        ConvertTo-AzDoVariableGroupVariables -Variables $vg.variables
+    }
+
+    Write-Verbose "[Set-AzDoVariableGroup] Sending variables: $(@($desiredVariables.Keys | Sort-Object) -join ', ')."
+
     $params = @{
         ApiUri            = 'https://dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
         ProjectName       = $ProjectName
         VariableGroupId   = $vg.id
         VariableGroupName = $VariableGroupName
-        Description       = $Description
+        Description       = $desiredDescription
         Type              = $VariableGroupType
-        Variables         = if ($Variables) { $Variables } else { @{} }
+        Variables         = $desiredVariables
     }
 
     $value = Set-DevOpsVariableGroup @params

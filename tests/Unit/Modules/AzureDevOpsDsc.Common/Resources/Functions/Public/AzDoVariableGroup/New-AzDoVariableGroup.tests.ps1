@@ -17,6 +17,9 @@ Describe 'New-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
         $files = Get-FunctionItem (Find-MockedFunctions -TestFilePath $currentFile)
         ForEach ($file in $files) { . $file.FullName }
 
+        # The variable normalizer decides what is sent; load it rather than mock it.
+        . (Get-FunctionItem 'ConvertTo-AzDoVariableGroupVariables.ps1').FullName
+
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
         . (Get-ClassFilePath 'DSCGetSummaryState')
         . (Get-ClassFilePath '000.CacheItem')
@@ -75,6 +78,32 @@ Describe 'New-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
 
             Assert-MockCalled -CommandName New-DevOpsVariableGroup -Exactly 1 -ParameterFilter {
                 $Variables -ne $null
+            }
+        }
+
+        It 'Should normalize a flat variable to the API shape' {
+            New-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -Variables @{ APP_ENV = 'production' }
+
+            Assert-MockCalled -CommandName New-DevOpsVariableGroup -Exactly 1 -ParameterFilter {
+                $Variables.APP_ENV.value -eq 'production' -and $Variables.APP_ENV.isSecret -eq $false
+            }
+        }
+
+        It 'Should pass a secret variable through with isSecret true' {
+            New-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG' -Variables @{
+                APP_KEY = @{ value = 'p@ssw0rd'; isSecret = $true }
+            }
+
+            Assert-MockCalled -CommandName New-DevOpsVariableGroup -Exactly 1 -ParameterFilter {
+                $Variables.APP_KEY.value -eq 'p@ssw0rd' -and $Variables.APP_KEY.isSecret -eq $true
+            }
+        }
+
+        It 'Should pass an empty set when no Variables are given' {
+            New-AzDoVariableGroup -ProjectName 'TestProject' -VariableGroupName 'TestVG'
+
+            Assert-MockCalled -CommandName New-DevOpsVariableGroup -Exactly 1 -ParameterFilter {
+                $null -ne $Variables -and $Variables.Count -eq 0
             }
         }
 
