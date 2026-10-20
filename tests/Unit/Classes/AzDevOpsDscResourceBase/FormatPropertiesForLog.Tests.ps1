@@ -37,7 +37,7 @@ Describe "[AzDevOpsDscResourceBase]::FormatPropertiesForLog() Tests" -Tag "Unit"
         }
 
         It 'Should redact the secret property' {
-            $rendered | Should -Match '(?m)^  Authorization = <redacted>$'
+            $rendered | Should -Match '(?m)^  Authorization = <redacted>\r?$'
         }
 
         It 'Should never contain a secret value, whether named secret, nested in a hashtable or in LookupResult' {
@@ -48,17 +48,17 @@ Describe "[AzDevOpsDscResourceBase]::FormatPropertiesForLog() Tests" -Tag "Unit"
         }
 
         It 'Should show a hashtable-valued property as its key names only' {
-            $rendered | Should -Match '(?m)^  Variables = \{APP_ENV, APP_KEY\}$'
-            $rendered | Should -Match '(?m)^  LookupResult = \{liveCache, status\}$'
+            $rendered | Should -Match '(?m)^  Variables = \{APP_ENV, APP_KEY\}\r?$'
+            $rendered | Should -Match '(?m)^  LookupResult = \{liveCache, status\}\r?$'
             $rendered | Should -Not -Match 'prod'
             $rendered | Should -Not -Match 'Unchanged'
         }
 
         It 'Should show scalar and list values as strings' {
-            $rendered | Should -Match '(?m)^  Name = One$'
-            $rendered | Should -Match '(?m)^  Ensure = Present$'
-            $rendered | Should -Match '(?m)^  Shared = \[A, B\]$'
-            $rendered | Should -Match '(?m)^  Nothing = $'
+            $rendered | Should -Match '(?m)^  Name = One\r?$'
+            $rendered | Should -Match '(?m)^  Ensure = Present\r?$'
+            $rendered | Should -Match '(?m)^  Shared = \[A, B\]\r?$'
+            $rendered | Should -Match '(?m)^  Nothing = \r?$'
         }
 
         It 'Should render one line per property' {
