@@ -6,7 +6,8 @@
         AllowDestructiveRemove is required. Prefer IsDisabled unless the type really must go.
 #>
 
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
+$SecureStringPAT = Read-Host -Prompt 'Enter your PAT' -AsSecureString
+New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -SecureStringPersonalAccessToken $SecureStringPAT
 
 Configuration Example
 {
