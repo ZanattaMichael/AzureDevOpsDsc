@@ -29,6 +29,7 @@ Describe "Export-CacheObject" -Tag "Unit", "Cache" {
         Mock -CommandName Test-Path -MockWith { param ($Path) return $false } -Verifiable
         Mock -CommandName New-Item -MockWith { param ($Path, $ItemType) } -Verifiable
         Mock -CommandName Export-Clixml -MockWith { param ($InputObject, $Depth, $LiteralPath) } -Verifiable
+        Mock -CommandName Protect-AzDoCachePath
 
     }
 
@@ -122,6 +123,47 @@ Describe "Export-CacheObject" -Tag "Unit", "Cache" {
                 $Depth       -eq 5 -and
                 $LiteralPath -eq "C:\Temp\AzDoCache\Cache\Project.clixml"
             }
+        }
+    }
+
+    Context "cache file permissions" {
+
+        # TestDrive rather than a C:\ path so these also run on Linux.
+        BeforeEach {
+            $env:AZDODSC_CACHE_DIRECTORY = $TestDrive
+            $script:expectedDirectory = Join-Path -Path $TestDrive -ChildPath 'Cache'
+            $script:expectedFile      = Join-Path -Path $script:expectedDirectory -ChildPath 'Project.clixml'
+        }
+
+        It "restricts the cache directory it creates and the cache file it writes" {
+            Mock -CommandName Test-Path -MockWith { $false }
+            Mock -CommandName New-Item
+            Mock -CommandName Export-Clixml
+
+            Export-CacheObject -CacheType 'Project' -Content @()
+
+            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 1 -ParameterFilter { $Path -eq $script:expectedDirectory }
+            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 1 -ParameterFilter { $Path -eq $script:expectedFile }
+        }
+
+        It "restricts only the cache file when the directory already exists" {
+            Mock -CommandName Test-Path -MockWith { $true }
+            Mock -CommandName New-Item
+            Mock -CommandName Export-Clixml
+
+            Export-CacheObject -CacheType 'Project' -Content @()
+
+            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 0 -ParameterFilter { $Path -eq $script:expectedDirectory }
+            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 1 -ParameterFilter { $Path -eq $script:expectedFile }
+        }
+
+        It "restricts the file only after it has been written" {
+            Mock -CommandName Test-Path -MockWith { $true }
+            Mock -CommandName Export-Clixml -MockWith { throw 'disk full' }
+
+            { Export-CacheObject -CacheType 'Project' -Content @() } | Should -Throw
+
+            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 0
         }
     }
 

@@ -13,20 +13,25 @@
             with appropriate permissions via Access Control.
 
         Required values:
-          TenantId   - The Azure AD tenant (directory) ID, e.g. '00000000-0000-0000-0000-000000000000'
-          ClientId   - The Application (client) ID of the App Registration.
-          ClientSecret - The client secret value generated in the App Registration.
+          TenantId     - The Azure AD tenant (directory) ID, e.g. '00000000-0000-0000-0000-000000000000'
+          ClientId     - The Application (client) ID of the App Registration.
+          ClientSecret - The client secret value generated in the App Registration, as a SecureString.
+
+        Always pass the client secret as a SecureString. A plain-text -ClientSecret still works but
+        lands in shell history, transcripts and process listings, and the module warns when it is used.
 #>
 
-# Plain-text client secret
-New-AzDoAuthenticationProvider `
-    -OrganizationName 'my-organization' `
-    -TenantId         '00000000-0000-0000-0000-000000000000' `
-    -ClientId         'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' `
-    -ClientSecret     'my-client-secret-value'
-
-# SecureString client secret (preferred for production — avoids plain-text in memory)
+# Interactive use: prompt for the secret so it never appears in the script or the shell history
 $SecureSecret = Read-Host -Prompt 'Enter client secret' -AsSecureString
+New-AzDoAuthenticationProvider `
+    -OrganizationName           'my-organization' `
+    -TenantId                   '00000000-0000-0000-0000-000000000000' `
+    -ClientId                   'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' `
+    -SecureStringClientSecret   $SecureSecret
+
+# Automation: read the secret from a secret store (a pipeline secret variable, Azure Key Vault,
+# SecretManagement, ...) and convert it in memory, rather than hard-coding it
+$SecureSecret = ConvertTo-SecureString -String $env:AZDO_CLIENT_SECRET -AsPlainText -Force
 New-AzDoAuthenticationProvider `
     -OrganizationName           'my-organization' `
     -TenantId                   '00000000-0000-0000-0000-000000000000' `
@@ -35,8 +40,8 @@ New-AzDoAuthenticationProvider `
 
 # Skip the initial connectivity verification check
 New-AzDoAuthenticationProvider `
-    -OrganizationName 'my-organization' `
-    -TenantId         '00000000-0000-0000-0000-000000000000' `
-    -ClientId         'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' `
-    -ClientSecret     'my-client-secret-value' `
+    -OrganizationName           'my-organization' `
+    -TenantId                   '00000000-0000-0000-0000-000000000000' `
+    -ClientId                   'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' `
+    -SecureStringClientSecret   $SecureSecret `
     -NoVerify

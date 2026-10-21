@@ -76,6 +76,7 @@ Function Initialize-CacheObject
             {
                 Write-Verbose "[Initialize-CacheObject] Cache directory not found. Creating cache directory."
                 New-Item -Path $CacheDirectoryPath -ItemType Directory | Out-Null
+                Protect-AzDoCachePath -Path $CacheDirectoryPath
             }
 
             # Create the content

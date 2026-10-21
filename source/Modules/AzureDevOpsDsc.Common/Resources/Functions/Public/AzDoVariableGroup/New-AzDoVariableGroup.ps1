@@ -21,7 +21,9 @@ Function New-AzDoVariableGroup
         VariableGroupName = $VariableGroupName
         Description       = $Description
         Type              = $VariableGroupType
-        Variables         = if ($Variables) { $Variables } else { @{} }
+        # Either @{ NAME = 'value' } or @{ NAME = @{ value = 'v'; isSecret = $true } }: normalized
+        # to the API shape so a configured secret is created secret. Values are never logged.
+        Variables         = ConvertTo-AzDoVariableGroupVariables -Variables $Variables
         AllowAccess       = $AllowAccess
     }
 
@@ -31,6 +33,16 @@ Function New-AzDoVariableGroup
     {
         Write-Error "[New-AzDoVariableGroup] New-DevOpsVariableGroup returned null. Check authentication token and organization settings."
         return
+    }
+
+    # The write response echoes the request rather than the stored group - its top-level
+    # description is not what a project-scoped read returns - and a later Get compares the
+    # configuration against the cache, so cache what the API now reads back for the project.
+    $live = List-DevOpsVariableGroups -ApiUri ('https://dev.azure.com/{0}' -f (Get-AzDoOrganizationName)) -ProjectName $ProjectName |
+        Where-Object { $_.id -eq $value.id } | Select-Object -First 1
+    if ($live)
+    {
+        $value = $live
     }
 
     Add-CacheItem -Key ('{0}\{1}' -f $ProjectName, $VariableGroupName) -Value $value -Type 'LiveVariableGroups'

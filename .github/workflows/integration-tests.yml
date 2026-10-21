@@ -9,8 +9,19 @@ name: Integration Tests
 # `resource-add/`, draft or not, so a batch of new resources is exercised against a real
 # organization while it is being worked on. It still never fires on an ordinary push, or
 # on a PR from any other branch prefix.
-# Remove the `pull_request` trigger and the head_ref condition on the job below to put
-# this back to dispatch-only.
+#
+# A pull request from a FORK is never admitted, whatever its head branch is called. Both
+# jobs below run the pull request's own checkout - build.ps1, the test framework, the
+# module - and the second does so on a self-hosted, non-ephemeral runner that holds
+# credentials for a live organization. GitHub withholds repository secrets from a fork's
+# pull request, so on one of those AZURE_DEVOPS_PAT would arrive empty; and an empty PAT
+# must not quietly become "use the runner VM's Managed Identity instead", which is what
+# the dispatch path does by design. So the two job conditions require the head repository
+# to be this repository, and the configuration step refuses to fall back to Managed
+# Identity on a pull request at all, in case the conditions are ever loosened by mistake.
+#
+# Remove the `pull_request` trigger and the head_ref/fork conditions on both jobs below
+# to put this back to dispatch-only.
 #
 # One-time repository setup required (repository scope, NOT an Environment):
 #   1. Add repository variable:  AzureDevOpsOrg   (your Azure DevOps org name)
@@ -92,9 +103,16 @@ jobs:
   select-tests:
     name: Select Affected Tests
     runs-on: ubuntu-latest
+    # A pull request is admitted only from a `resource-add/` head branch in THIS
+    # repository. The repository clause is the fork guard: whoever opens a pull request
+    # chooses its branch name, so the prefix alone would admit any fork that used it, and
+    # this job's output gates a job that executes the pull request's code on a self-hosted
+    # runner with live-organization credentials. See the note at the top of the file.
+    # Non-PR events have no pull_request payload and are admitted by the first clause.
     if: >-
       github.event_name != 'pull_request' ||
-      startsWith(github.head_ref, 'resource-add/')
+      (startsWith(github.head_ref, 'resource-add/') &&
+       github.event.pull_request.head.repo.full_name == github.repository)
     outputs:
       should-run: ${{ steps.select.outputs.should-run }}
       run-all: ${{ steps.select.outputs.run-all }}
@@ -104,7 +122,7 @@ jobs:
     steps:
       # fetch-depth: 0 because the default shallow clone has no merge base to diff against.
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
 
@@ -218,23 +236,34 @@ jobs:
   integration-tests:
     name: Run Integration Tests
     needs: select-tests
-    # Two gates, both of which must hold:
+    # Three gates, all of which must hold:
     #
     #   1. The HEAD branch prefix - see the trigger comment above for why this cannot be a
     #      `branches:` filter. Non-PR events have an empty github.head_ref, so they are
-    #      admitted by the first clause and keep their existing dispatch-only behaviour.
-    #      Draft state is deliberately NOT part of it: the prefix exists so that a batch of
-    #      new resources is exercised against a real organization while it is in progress,
-    #      and a PR in progress is normally a draft - excluding drafts meant the suite never
-    #      ran for the one case it was enabled for.
+    #      admitted by the event_name clause and keep their existing dispatch-only
+    #      behaviour. Draft state is deliberately NOT part of it: the prefix exists so that
+    #      a batch of new resources is exercised against a real organization while it is in
+    #      progress, and a PR in progress is normally a draft - excluding drafts meant the
+    #      suite never ran for the one case it was enabled for.
     #
-    #   2. select-tests found something worth running. A change that touches no resource
+    #   2. The pull request comes from this repository, not a fork. The head branch name is
+    #      chosen by whoever opens the pull request, so gate 1 alone admits any fork that
+    #      uses the prefix - and this job runs the pull request's checkout on a self-hosted,
+    #      non-ephemeral runner that holds live-organization credentials. A fork's pull
+    #      request also receives no secrets, which without this gate (and the refusal in
+    #      the configuration step below) would have selected the runner VM's Managed
+    #      Identity as the fallback. Non-PR events are admitted by the event_name clause
+    #      exactly as in gate 1. Repeated here rather than relied on through select-tests
+    #      so that this job's own condition is sufficient on its own.
+    #
+    #   3. select-tests found something worth running. A change that touches no resource
     #      with integration coverage skips the live run outright, which reports as
     #      `skipped` - honest - rather than as a pass over an empty selection.
     if: >-
       needs.select-tests.outputs.should-run == 'true' &&
       (github.event_name != 'pull_request' ||
-       startsWith(github.head_ref, 'resource-add/'))
+       (startsWith(github.head_ref, 'resource-add/') &&
+        github.event.pull_request.head.repo.full_name == github.repository))
     runs-on: AZDO-AGENT
 
     # AZDO-AGENT is a label, not a machine: more than one runner carries it, so this job
@@ -252,7 +281,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Install build dependencies
         shell: pwsh
@@ -436,18 +465,56 @@ jobs:
           }
           Write-Host "Resolved Pester $($pester5.Version) -> $($pester5.ModuleBase)"
 
+      # Which credential the suite runs with depends on how this job was started.
+      #
+      # On workflow_dispatch and workflow_call (the release gate) an empty AZURE_DEVOPS_PAT
+      # means "use the runner VM's Managed Identity", as the setup note at the top of the
+      # file describes. Both of those are started by someone with write access to this
+      # repository, running code that is already in it.
+      #
+      # On pull_request the PAT is mandatory and an empty one FAILS the job. GitHub
+      # withholds repository secrets from a fork's pull request, so an empty PAT on a pull
+      # request is what a fork looks like, not a configuration choice - and the fallback
+      # would run the fork's code as the runner VM's identity. The job conditions already
+      # exclude forks; this is the second lock on the same door, so a mistake in those
+      # expressions cannot quietly reopen it. The head and base repository names are
+      # passed in for the same reason, and are checked again here.
+      #
+      # TestFrameworkConfiguration.json carries the PAT in plain text. The last step of
+      # this job restores the committed placeholder and removes the cache directory, so
+      # neither outlives the job on this persistent runner.
       - name: Write test framework configuration
         shell: pwsh
         env:
           AZURE_DEVOPS_ORG: ${{ vars.AzureDevOpsOrg }}
           AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          PR_BASE_REPO: ${{ github.event.pull_request.base.repo.full_name }}
         run: |
           if ([string]::IsNullOrEmpty($env:AZURE_DEVOPS_ORG)) {
               throw "Required variable 'AzureDevOpsOrg' is not set. " +
                     "Add it under Settings > Secrets and variables > Actions > Variables."
           }
+
+          if ($env:GITHUB_EVENT_NAME -eq 'pull_request') {
+              Write-Host "Pull request : head repository '$($env:PR_HEAD_REPO)', base repository '$($env:PR_BASE_REPO)'"
+              if ([string]::IsNullOrEmpty($env:PR_HEAD_REPO) -or $env:PR_HEAD_REPO -ne $env:PR_BASE_REPO) {
+                  throw ("Refusing to run: this pull request's head repository '$($env:PR_HEAD_REPO)' is not " +
+                         "this repository '$($env:PR_BASE_REPO)'. Pull requests from forks must never run on " +
+                         "this self-hosted runner - the job conditions should have skipped this job.")
+              }
+              if ([string]::IsNullOrEmpty($env:AZURE_DEVOPS_PAT)) {
+                  throw ("Secret 'AZURE_DEVOPS_PAT' is empty on a pull_request run. A pull request never " +
+                         "falls back to Managed Identity: the runner's own identity must not be lent to the " +
+                         "code under test. Add the secret under Settings > Secrets and variables > Actions > " +
+                         "Secrets, or run the suite with workflow_dispatch from a branch in this repository.")
+              }
+          }
+
           $authType = if (-not [string]::IsNullOrEmpty($env:AZURE_DEVOPS_PAT)) { 'PAT' } else { 'ManagedIdentity' }
           Write-Host "Organization : $($env:AZURE_DEVOPS_ORG)"
+          Write-Host "Event        : $($env:GITHUB_EVENT_NAME)"
           Write-Host "Auth type    : $authType"
 
           $config = [ordered]@{
@@ -462,10 +529,21 @@ jobs:
               Set-Content -Path .\tests\Integration\TestFrameworkConfiguration.json -Encoding UTF8
           Write-Host "TestFrameworkConfiguration.json written."
 
+      # Cleared at the start of each run, as the v3 workflow does with its own directory,
+      # for two reasons. A run must never be answered out of a previous run's exported
+      # cache - the module imports whatever is on disk at startup. And this is a
+      # persistent runner: the directory is also where the module writes
+      # ModuleSettings.clixml, which holds the PAT (DPAPI-encrypted under the runner
+      # account, which is no protection against the next job that runs as that account).
+      # The last step of this job removes the directory again; clearing it here as well
+      # covers a previous run that was cancelled or crashed before reaching that step.
       - name: Prepare cache directory
         shell: pwsh
         run: |
           $cacheDir = Join-Path $env:TEMP 'AzureDevOpsDscCache'
+          if (Test-Path -LiteralPath $cacheDir) {
+              Remove-Item -LiteralPath $cacheDir -Recurse -Force
+          }
           New-Item -Path $cacheDir -ItemType Directory -Force | Out-Null
           "AZDODSC_CACHE_DIRECTORY=$cacheDir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           Write-Host "Cache directory: $cacheDir"
@@ -528,8 +606,57 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: integration-test-results-${{ github.run_number }}
           path: C:\Temp\integration-test-results.xml
           if-no-files-found: ignore
+
+      # Leave no credential on the runner. This is a persistent machine, and anything the
+      # job writes outside its uploaded artifacts stays there until something removes it.
+      # Two things here carry the PAT:
+      #   - the cache directory's ModuleSettings.clixml, DPAPI-encrypted under the runner
+      #     account - which the next job on this runner also runs as; and
+      #   - tests/Integration/TestFrameworkConfiguration.json, which the configuration
+      #     step wrote in PLAIN TEXT into the checkout, and the checkout is reused by the
+      #     next run on this runner.
+      # The json is restored to its committed placeholder from git; if that fails for any
+      # reason, or leaves the file differing from HEAD, the file is deleted instead - a
+      # missing placeholder is a nuisance for the next run, a leaked PAT is not.
+      # `if: always()` because a failed or cancelled suite is exactly when this must still
+      # happen. The cache directory name is repeated as a fallback so that a job that
+      # failed before "Prepare cache directory" still cleans up a previous run's leftovers.
+      - name: Remove credentials from the runner
+        if: always()
+        shell: pwsh
+        run: |
+          # A non-zero exit from git is handled below, not a terminating error.
+          $PSNativeCommandUseErrorActionPreference = $false
+
+          $cacheDir = $env:AZDODSC_CACHE_DIRECTORY
+          if ([string]::IsNullOrEmpty($cacheDir)) {
+              $cacheDir = Join-Path $env:TEMP 'AzureDevOpsDscCache'
+          }
+          Remove-Item -LiteralPath $cacheDir -Recurse -Force -ErrorAction SilentlyContinue
+          Write-Host "Removed cache directory: $cacheDir"
+
+          # The checkout can be owned by another account than the one running the job (the
+          # runner service installs it), and actions/checkout's own safe.directory entry lives
+          # in a temporary HOME that is gone by now, so git is told the path is trusted here.
+          $configPath = 'tests/Integration/TestFrameworkConfiguration.json'
+          git -c "safe.directory=$env:GITHUB_WORKSPACE" checkout -- $configPath
+          $restored = $LASTEXITCODE -eq 0
+          if ($restored) {
+              git -c "safe.directory=$env:GITHUB_WORKSPACE" diff --quiet -- $configPath
+              $restored = $LASTEXITCODE -eq 0
+          }
+          if ($restored) {
+              Write-Host "Restored $configPath from git."
+          }
+          else {
+              Remove-Item -LiteralPath $configPath -Force -ErrorAction SilentlyContinue
+              Write-Host "Could not restore $configPath from git - removed it instead."
+          }
+          # Either way the credentials are gone, which is this step's job; a failed git call
+          # above must not be what the step reports.
+          exit 0

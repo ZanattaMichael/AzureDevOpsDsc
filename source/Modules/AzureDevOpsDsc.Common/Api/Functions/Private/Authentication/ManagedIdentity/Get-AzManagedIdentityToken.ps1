@@ -17,6 +17,12 @@ Obtains the access token for the managed identity associated with the organizati
 
 .NOTES
 This function does not require the Azure PowerShell module.
+
+On an Azure Arc machine two inputs come from outside the module and are validated before use:
+IDENTITY_ENDPOINT must be an absolute http/https URI on localhost, 127.0.0.1 or ::1, and the
+secret file path in the 401 challenge's WWW-Authenticate realm must pass
+Test-AzDoArcSecretFilePath (a .key file directly inside the Arc tokens directory). Either
+failing throws before anything is sent or read.
 #>
 
 Function Get-AzManagedIdentityToken
@@ -54,9 +60,7 @@ Function Get-AzManagedIdentityToken
                     Write-Verbose "[Get-AzManagedIdentityToken] Reusing valid cached managed identity token (expires $($cachedToken.expires_on))."
                     $epochStart    = [datetime]::new(1970, 1, 1, 0, 0, 0, [DateTimeKind]::Utc)
                     $expiresOnUnix = [long]($cachedToken.expires_on.ToUniversalTime() - $epochStart).TotalSeconds
-                    $bstr          = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($cachedToken.access_token)
-                    $plainToken    = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
-                    [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+                    $plainToken    = ConvertFrom-AzDoSecureString -SecureString $cachedToken.access_token
                     $tokenData = [PSCustomObject]@{
                         access_token = $plainToken
                         expires_on   = $expiresOnUnix
@@ -89,6 +93,18 @@ Function Get-AzManagedIdentityToken
     # Dertimine if the machine is an arc machine
     if ($env:IDENTITY_ENDPOINT)
     {
+        # The Arc agent only ever listens on the loopback interface. IDENTITY_ENDPOINT is an
+        # environment variable, so anything able to set it could otherwise point this function
+        # - and the Arc secret file it sends as a Basic credential - at any host.
+        $identityEndpoint = [String]$env:IDENTITY_ENDPOINT
+        $endpointUri      = $null
+        $isLocalEndpoint  = [Uri]::TryCreate($identityEndpoint, [UriKind]::Absolute, [ref]$endpointUri) -and
+                            ($endpointUri.Scheme -in @('http', 'https')) -and
+                            ($endpointUri.DnsSafeHost -in @('localhost', '127.0.0.1', '::1'))
+        if (-not $isLocalEndpoint)
+        {
+            throw ("[Get-AzManagedIdentityToken] The IDENTITY_ENDPOINT environment variable '{0}' is not an absolute http or https URI on localhost, 127.0.0.1 or ::1. The Azure Arc identity endpoint is only ever local, so the request has not been sent." -f $identityEndpoint)
+        }
 
         $OSInfo = Get-OperatingSystemInfo
 
@@ -132,7 +148,16 @@ Function Get-AzManagedIdentityToken
         Write-Verbose "[Get-AzManagedIdentityToken] Managed Identity Token Retrival Failed. Retrying with secret file."
 
         # Extract the secret file path from the WWW-Authenticate header
-        $secretFile = ($wwwAuthHeader -split "Basic realm=")[1]
+        $secretFile = ([String]($wwwAuthHeader -split "Basic realm=")[1]).Trim()
+
+        # The path came from an HTTP response. Only read it when it is a .key file directly
+        # inside the Arc agent's own tokens directory; otherwise the content of any file the
+        # process can read would be sent to the endpoint as a credential.
+        if (-not (Test-AzDoArcSecretFilePath -Path $secretFile))
+        {
+            throw ("[Get-AzManagedIdentityToken] The secret file path '{0}' in the WWW-Authenticate challenge is not a .key file directly inside the Azure Arc tokens directory '{1}'. The file has not been read." -f $secretFile, (Get-AzDoArcTokensDirectory))
+        }
+
         # Read the secret file to get the token
         $token = Get-Content -LiteralPath $secretFile -Raw
         # Add the token to the headers

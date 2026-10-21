@@ -3,7 +3,8 @@
         This example shows how to ensure that Azure DevOps iteration nodes exist in a project.
 #>
 
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
+$SecureStringPAT = Read-Host -Prompt 'Enter your PAT' -AsSecureString
+New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -SecureStringPersonalAccessToken $SecureStringPAT
 
 Configuration Example
 {

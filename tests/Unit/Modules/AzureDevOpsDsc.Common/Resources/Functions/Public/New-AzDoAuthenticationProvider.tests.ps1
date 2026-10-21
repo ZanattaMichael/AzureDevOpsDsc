@@ -36,11 +36,15 @@ Describe "New-AzDoAuthenticationProvider" -Tag "Unit", "Public" {
         Mock -CommandName Get-Command
         Mock -CommandName Initialize-CacheObject
         Mock -CommandName Export-Clixml
+        Mock -CommandName Protect-AzDoCachePath
+        Mock -CommandName Test-AzDoIsWindows -MockWith { return $true }
+        Mock -CommandName Write-Warning
 
     }
 
     BeforeEach {
-        $ENV:AZDODSC_CACHE_DIRECTORY = "C:\MockCacheDirectory"
+        # TestDrive rather than a C:\ path so the Join-Path calls also work on Linux.
+        $ENV:AZDODSC_CACHE_DIRECTORY = $TestDrive
         $Global:DSCAZDO_AuthenticationToken = $null
     }
 
@@ -62,6 +66,14 @@ Describe "New-AzDoAuthenticationProvider" -Tag "Unit", "Public" {
         }
     }
 
+    Context "Default parameter set" {
+
+        It "Is the SecureString Personal Access Token set, so a plain-text secret is never the default" {
+            # Get-Command is mocked above, so read the FunctionInfo from the function: drive instead.
+            (Get-Item -Path 'function:New-AzDoAuthenticationProvider').DefaultParameterSet | Should -Be 'SecureStringPersonalAccessToken'
+        }
+    }
+
     Context "Using PersonalAccessToken parameter set" {
         It "Should set the global authentication token without verification" {
             # Act
@@ -79,6 +91,20 @@ Describe "New-AzDoAuthenticationProvider" -Tag "Unit", "Public" {
             # Assert
             $Global:DSCAZDO_AuthenticationToken | Should -Be "mockedToken"
             Assert-MockCalled -CommandName Set-AzPersonalAccessToken -Exactly 1 -ParameterFilter { $Verify }
+        }
+
+        It "Should warn that the PAT was passed as plain text and name the SecureString parameter" {
+            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -PersonalAccessToken "dummyPat" -NoVerify
+
+            Should -Invoke -CommandName Write-Warning -Exactly 1 -ParameterFilter {
+                $Message -like '*plain text*' -and $Message -like '*-SecureStringPersonalAccessToken*'
+            }
+        }
+
+        It "Should still warn about plain text when isResource is set" {
+            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -PersonalAccessToken "dummyPat" -NoVerify -isResource
+
+            Should -Invoke -CommandName Write-Warning -Exactly 1 -ParameterFilter { $Message -like '*plain text*' }
         }
     }
 
@@ -100,6 +126,12 @@ Describe "New-AzDoAuthenticationProvider" -Tag "Unit", "Public" {
             $Global:DSCAZDO_AuthenticationToken | Should -Be "mockedManagedIdentityToken"
             Assert-MockCalled -CommandName Get-AzManagedIdentityToken -Exactly 1 -ParameterFilter { $Verify }
         }
+
+        It "Should not warn about plain-text secrets" {
+            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -useManagedIdentity -NoVerify
+
+            Should -Invoke -CommandName Write-Warning -Exactly 0 -ParameterFilter { $Message -like '*plain text*' }
+        }
     }
 
     Context "Using SecureStringPersonalAccessToken parameter set" {
@@ -113,6 +145,22 @@ Describe "New-AzDoAuthenticationProvider" -Tag "Unit", "Public" {
             # Assert
             $Global:DSCAZDO_AuthenticationToken | Should -Be "mockedToken"
             Assert-MockCalled -CommandName Set-AzPersonalAccessToken -Exactly 1
+        }
+
+        It "Should not warn about plain-text secrets" {
+            $secureStringPAT = ConvertTo-SecureString "dummySecurePat" -AsPlainText -Force
+
+            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -SecureStringPersonalAccessToken $secureStringPAT
+
+            Should -Invoke -CommandName Write-Warning -Exactly 0 -ParameterFilter { $Message -like '*plain text*' }
+        }
+
+        It "Should be selected when the PAT is passed positionally as a SecureString through the alias" {
+            $secureStringPAT = ConvertTo-SecureString "dummySecurePat" -AsPlainText -Force
+
+            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -SecureStringPAT $secureStringPAT
+
+            Assert-MockCalled -CommandName Set-AzPersonalAccessToken -Exactly 1 -ParameterFilter { $null -ne $SecureStringPersonalAccessToken }
         }
     }
 
@@ -132,12 +180,27 @@ Describe "New-AzDoAuthenticationProvider" -Tag "Unit", "Public" {
             Assert-MockCalled -CommandName Get-AzServicePrincipalToken -Exactly 1 -ParameterFilter { $Verify }
         }
 
+        It "Should warn that the client secret was passed as plain text and name the SecureString parameter" {
+            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "tenant" -ClientId "client" -ClientSecret "secret" -NoVerify
+
+            Should -Invoke -CommandName Write-Warning -Exactly 1 -ParameterFilter {
+                $Message -like '*plain text*' -and $Message -like '*-SecureStringClientSecret*'
+            }
+        }
+
         It "Should accept SecureString client secret" {
             $securePwd = ConvertTo-SecureString "secret" -AsPlainText -Force
             New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "tenant" -ClientId "client" -SecureStringClientSecret $securePwd -NoVerify
 
             $Global:DSCAZDO_AuthenticationToken | Should -Be "mockedSPToken"
             Assert-MockCalled -CommandName Get-AzServicePrincipalToken -Exactly 1
+        }
+
+        It "Should not warn about plain-text secrets when the client secret is a SecureString" {
+            $securePwd = ConvertTo-SecureString "secret" -AsPlainText -Force
+            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "tenant" -ClientId "client" -SecureStringClientSecret $securePwd -NoVerify
+
+            Should -Invoke -CommandName Write-Warning -Exactly 0 -ParameterFilter { $Message -like '*plain text*' }
         }
     }
 
@@ -245,6 +308,76 @@ Describe "New-AzDoAuthenticationProvider" -Tag "Unit", "Public" {
 
             # Assert
             Assert-MockCalled -CommandName Export-Clixml -Exactly 0
+        }
+    }
+
+    Context "Cache directory and settings file permissions" {
+
+        BeforeEach {
+            $script:expectedSettingsPath = Join-Path -Path $TestDrive -ChildPath 'ModuleSettings.clixml'
+        }
+
+        It "Should restrict the cache directory and then the settings file after exporting" {
+            $secureStringPAT = ConvertTo-SecureString "dummySecurePat" -AsPlainText -Force
+
+            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -SecureStringPersonalAccessToken $secureStringPAT
+
+            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 1 -ParameterFilter { $Path -eq $TestDrive }
+            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 1 -ParameterFilter { $Path -eq $script:expectedSettingsPath }
+            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 2
+        }
+
+        It "Should not touch any permissions when isResource is set" {
+            $secureStringPAT = ConvertTo-SecureString "dummySecurePat" -AsPlainText -Force
+
+            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -SecureStringPersonalAccessToken $secureStringPAT -isResource
+
+            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 0
+        }
+
+        It "Should not restrict the settings file when the export fails" {
+            Mock -CommandName Export-Clixml -MockWith { throw 'disk full' }
+            $secureStringPAT = ConvertTo-SecureString "dummySecurePat" -AsPlainText -Force
+
+            { New-AzDoAuthenticationProvider -OrganizationName "Contoso" -SecureStringPersonalAccessToken $secureStringPAT } | Should -Throw
+
+            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 0
+        }
+    }
+
+    Context "Recoverable credential warning on non-Windows platforms" {
+
+        It "Should warn before exporting when the platform cannot DPAPI-protect the SecureString" {
+            Mock -CommandName Test-AzDoIsWindows -MockWith { return $false }
+            $secureStringPAT = ConvertTo-SecureString "dummySecurePat" -AsPlainText -Force
+
+            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -SecureStringPersonalAccessToken $secureStringPAT
+
+            Should -Invoke -CommandName Write-Warning -Exactly 1 -ParameterFilter {
+                $Message -like '*recoverable form*' -and
+                $Message -like '*ModuleSettings.clixml*' -and
+                $Message -like '*AZDODSC_CACHE_DIRECTORY*' -and
+                $Message -like '*same account*'
+            }
+        }
+
+        It "Should not warn on Windows" {
+            Mock -CommandName Test-AzDoIsWindows -MockWith { return $true }
+            $secureStringPAT = ConvertTo-SecureString "dummySecurePat" -AsPlainText -Force
+
+            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -SecureStringPersonalAccessToken $secureStringPAT
+
+            Should -Invoke -CommandName Write-Warning -Exactly 0 -ParameterFilter { $Message -like '*recoverable form*' }
+        }
+
+        It "Should not warn when nothing is exported because isResource is set" {
+            Mock -CommandName Test-AzDoIsWindows -MockWith { return $false }
+            $secureStringPAT = ConvertTo-SecureString "dummySecurePat" -AsPlainText -Force
+
+            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -SecureStringPersonalAccessToken $secureStringPAT -isResource
+
+            Should -Invoke -CommandName Write-Warning -Exactly 0 -ParameterFilter { $Message -like '*recoverable form*' }
+            Should -Invoke -CommandName Test-AzDoIsWindows -Exactly 0
         }
     }
 }

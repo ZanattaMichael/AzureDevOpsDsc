@@ -24,6 +24,10 @@ Describe "IdentityDescriptorIndex" -Tag "Unit", "Helper" {
 
         . (Get-ClassFilePath '000.CacheItem')
 
+        # Save-IdentityDescriptorIndex restricts what it writes; the permission change itself is
+        # covered by Protect-AzDoCachePath's own tests.
+        Mock -CommandName Protect-AzDoCachePath
+
         # Use an isolated, real cache directory so persist/reload actually touches disk.
         $script:OriginalCacheDir = $ENV:AZDODSC_CACHE_DIRECTORY
         $script:TestCacheDir = Join-Path -Path $TestDrive -ChildPath 'IdxTestCache'
@@ -150,6 +154,34 @@ Describe "IdentityDescriptorIndex" -Tag "Unit", "Helper" {
             $ENV:AZDODSC_CACHE_DIRECTORY = $null
             Remove-Variable -Name AzDoIdentityDescriptorIndex -Scope Global -ErrorAction SilentlyContinue
             { Save-IdentityDescriptorIndex } | Should -Not -Throw
+        }
+
+        It "restricts the index file it writes" {
+            Add-Sample -Descriptor 'aclDesc-1'
+            Save-IdentityDescriptorIndex
+
+            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 1 -ParameterFilter { $Path -eq (Get-IdentityDescriptorIndexPath) }
+        }
+
+        It "restricts the cache directory when it has to create it" {
+            $cacheDir = Split-Path -Path (Get-IdentityDescriptorIndexPath) -Parent
+            if (Test-Path $cacheDir) { Remove-Item $cacheDir -Recurse -Force }
+
+            Add-Sample -Descriptor 'aclDesc-1'
+            Save-IdentityDescriptorIndex
+
+            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 1 -ParameterFilter { $Path -eq $cacheDir }
+            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 1 -ParameterFilter { $Path -eq (Get-IdentityDescriptorIndexPath) }
+        }
+
+        It "does not touch the cache directory's permissions when it already exists" {
+            $cacheDir = Split-Path -Path (Get-IdentityDescriptorIndexPath) -Parent
+            New-Item -Path $cacheDir -ItemType Directory -Force | Out-Null
+
+            Add-Sample -Descriptor 'aclDesc-1'
+            Save-IdentityDescriptorIndex
+
+            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 0 -ParameterFilter { $Path -eq $cacheDir }
         }
     }
 

@@ -15,6 +15,9 @@ Describe "Add-AuthenticationHTTPHeader" -Tag "Unit", "Authentication" {
             . $file.FullName
         }
 
+        # Used by the managed-identity cache restore; not mocked, so load it by name.
+        . (Get-FunctionItem 'ConvertFrom-AzDoSecureString.ps1').FullName
+
         Mock -CommandName Update-AzManagedIdentity
         Mock -CommandName Update-AzServicePrincipal
         Mock -CommandName Update-AzServicePrincipalCertificate

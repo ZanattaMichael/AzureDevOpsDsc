@@ -19,8 +19,15 @@ function Save-IdentityDescriptorIndex
     try
     {
         $parent = Split-Path -Path $path -Parent
-        if (-not (Test-Path -Path $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
+        if (-not (Test-Path -Path $parent))
+        {
+            New-Item -ItemType Directory -Path $parent -Force | Out-Null
+            Protect-AzDoCachePath -Path $parent
+        }
         Export-Clixml -InputObject $index -Path $path -Depth 3
+
+        # The index maps descriptors to identities, so it has to stay owner-only like the other caches.
+        Protect-AzDoCachePath -Path $path
     }
     catch
     {

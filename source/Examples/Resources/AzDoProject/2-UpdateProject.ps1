@@ -7,7 +7,8 @@
 #>
 
 # Refer to Authentication\1-NewAuthenticationPAT.ps1 for the New-AzDoAuthenticationProvider command
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
+$SecureStringPAT = Read-Host -Prompt 'Enter your PAT' -AsSecureString
+New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -SecureStringPersonalAccessToken $SecureStringPAT
 
 Configuration Example
 {
