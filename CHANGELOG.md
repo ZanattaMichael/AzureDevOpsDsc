@@ -307,6 +307,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     the live variables and description when the configuration does not state them,
     instead of clearing them. `AllowAccess` is not compared: the variable-group API does
     not expose it (use `AzDoPipelineAuthorization`).
+  - `New-` and `Set-DevOpsVariableGroup` send the description on the project reference as
+    well as at the top level; Azure DevOps stores only the former, so a group written
+    through the resource read back with no description. After a write the resource now
+    caches the group as the API reads it back rather than the write's echo, which is what
+    the next `Test` compares against.
 
 ### Added
 
