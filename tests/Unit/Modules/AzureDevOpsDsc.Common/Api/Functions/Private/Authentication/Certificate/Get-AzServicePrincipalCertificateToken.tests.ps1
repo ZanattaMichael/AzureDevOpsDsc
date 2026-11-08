@@ -13,6 +13,9 @@ Describe "Get-AzServicePrincipalCertificateToken Tests" -Tags "Unit", "Authentic
             . $file.FullName
         }
 
+        # Decodes the PFX password; not mocked, so load it by name.
+        . (Get-FunctionItem 'ConvertFrom-AzDoSecureString.ps1').FullName
+
         Import-Enums | ForEach-Object { . $_.FullName }
 
         . (Get-ClassFilePath '001.AuthenticationToken')

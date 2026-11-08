@@ -270,7 +270,22 @@ Describe "AzDoTaskGroupPermission Integration Tests - live ACL" -Tag "Integratio
         $readersDescriptor      = Get-AclDescriptor $READERS
         $testDescriptors        = @($contributorsDescriptor, $readersDescriptor)
 
-        $baseline = Get-ProjectAcl
+        # Azure DevOps provisions a new project's default MetaTask entries (the project and build
+        # administrators and the collection administrators, Allow 7) in the background, some time
+        # after the project is created and classic pipelines are toggled. A baseline taken before
+        # they land would blame the resource for them when they show up after its first Set, so
+        # wait for an entry that is not one of the identities under test before snapshotting.
+        $deadline = (Get-Date).AddSeconds(120)
+        do
+        {
+            $baseline = Get-ProjectAcl
+            $settled  = @($baseline.Aces.Keys | Where-Object { $_ -notin $testDescriptors }).Count -gt 0
+            if (-not $settled)
+            {
+                Start-Sleep -Seconds 10
+            }
+        }
+        while (-not $settled -and (Get-Date) -lt $deadline)
 
         $parameters = @{
             Name       = 'AzDoTaskGroupPermission'

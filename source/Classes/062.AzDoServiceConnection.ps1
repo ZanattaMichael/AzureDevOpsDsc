@@ -101,7 +101,13 @@ class AzDoServiceConnection : AzDevOpsDscResourceBase
         $properties.SharedNameOverrides = $CurrentResourceObject.SharedNameOverrides
         $properties.LookupResult     = $CurrentResourceObject.LookupResult
         $properties.Ensure           = $CurrentResourceObject.Ensure
-        Write-Verbose "[AzDoServiceConnection] Current state properties: $($properties | Out-String)"
+        # Authorization carries the credential (e.g. serviceprincipalkey): it is never logged.
+        Write-Verbose "[AzDoServiceConnection] Current state properties:`n$($this.FormatPropertiesForLog($properties))"
         return $properties
+    }
+
+    hidden [System.String[]]GetDscResourceSecretPropertyNames()
+    {
+        return @('Authorization')
     }
 }

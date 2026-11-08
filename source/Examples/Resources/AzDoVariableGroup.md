@@ -23,7 +23,7 @@ AzDoVariableGroup [string] #ResourceName
 - **VariableGroupName**: The name of the variable group. This is a key property.
 - **Description**: An optional description for the variable group.
 - **VariableGroupType**: The type of variable group. Valid values are `Vsts` (standard) and `AzureKeyVault`. Defaults to `Vsts`.
-- **Variables**: A hashtable of key-value pairs representing the variables.
+- **Variables**: The variables of the group, keyed by name. Each entry is a plain string (a non-secret variable) or a hashtable with `value` and `isSecret`, e.g. `@{ APP_API_KEY = @{ value = 'p@ssw0rd'; isSecret = $true } }`. A secret variable is stored encrypted and can never be read back, so Test only checks that it exists and is secret; `@{ isSecret = $true }` with no value keeps the value already stored. When specified, `Variables` is the complete set: a variable that is not listed is removed on Set; when not specified, the live variables are left alone.
 - **AllowAccess**: Whether all pipelines can access this variable group. Defaults to `$false`.
 - **Ensure**: Specifies whether the variable group should exist. Valid values are `Present` and `Absent`.
 
@@ -50,6 +50,7 @@ Configuration ExampleConfig {
             Variables         = @{
                 APP_ENV       = 'production'
                 APP_LOG_LEVEL = 'warn'
+                APP_API_KEY   = @{ value = $AppApiKey; isSecret = $true }
             }
         }
     }

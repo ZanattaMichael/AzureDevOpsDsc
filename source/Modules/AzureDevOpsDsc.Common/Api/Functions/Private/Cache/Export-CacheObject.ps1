@@ -68,6 +68,7 @@ Function Export-CacheObject
         {
             Write-Verbose "[Export-ObjectCache] Creating cache directory at path: $CacheDirectoryPath"
             New-Item -Path $CacheDirectoryPath -ItemType Directory | Out-Null
+            Protect-AzDoCachePath -Path $CacheDirectoryPath
         }
 
         # Normalize null content to an empty list so Export-Clixml always receives an object.
@@ -81,6 +82,9 @@ Function Export-CacheObject
         # Save content to cache file — must use -InputObject (not pipeline).
         Write-Verbose "[Export-ObjectCache] Saving content to cache file: $cacheFilePath"
         Export-Clixml -InputObject $Content -Depth $Depth -LiteralPath $cacheFilePath
+
+        # The identity caches decide who a permission grant resolves to, so keep them owner-only.
+        Protect-AzDoCachePath -Path $cacheFilePath
 
         # Confirm completion of export process
         Write-Verbose "[Export-ObjectCache] Export process completed successfully for cache type: $CacheType"

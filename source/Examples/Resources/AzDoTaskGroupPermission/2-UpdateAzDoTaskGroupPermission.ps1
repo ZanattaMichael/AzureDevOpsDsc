@@ -3,7 +3,8 @@
         This example shows how to set permissions at the project level, which every task group in the project inherits.
 #>
 
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
+$SecureStringPAT = Read-Host -Prompt 'Enter your PAT' -AsSecureString
+New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -SecureStringPersonalAccessToken $SecureStringPAT
 
 Configuration Example
 {

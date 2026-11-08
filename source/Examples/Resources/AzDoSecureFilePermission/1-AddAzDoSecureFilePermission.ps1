@@ -3,7 +3,8 @@
         This example grants a group access to a secure file.
 #>
 
-New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -PersonalAccessToken 'my-pat'
+$SecureStringPAT = Read-Host -Prompt 'Enter your PAT' -AsSecureString
+New-AzDoAuthenticationProvider -OrganizationName 'test-organization' -SecureStringPersonalAccessToken $SecureStringPAT
 
 Configuration Example
 {

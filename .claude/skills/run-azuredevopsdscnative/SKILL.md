@@ -54,19 +54,14 @@ You never need to run `Install-Module` — it would fail against PSGallery.
 .claude/skills/run-azuredevopsdscnative/driver.sh
 ```
 
-Expected on this container: `Passed: 3008  Failed: 28  Skipped: 10  Duration: ~00:01:45`.
+Expected on this container: `Failed: 9  Skipped: 13` (around 3340 passed; ~00:02:30).
 
-The 28 failures are Linux-only and cluster on:
-- **Cache export/import** (`Export-CacheObject`,
-  `Initialize-CacheObject`, `BypassFileCheck switch`) — path-separator and
-  clixml round-trip differences vs Windows.
-- **`New-AzDoAuthenticationProvider` parameter sets** and **`Token export
-  functionality`** — DPAPI SecureString APIs are Windows-only.
-- **`Get-AzDoProjectPermission` / `AzDoPipelinePermission`** — a test-fixture
-  security-namespace lookup that only resolves against Windows-shipped data.
+The 9 failures are Linux-only: the `C:\`-path tests in **`Export-CacheObject`**
+(5) and **`Initialize-CacheObject`** (4), which mock `Test-Path`/`New-Item` against a
+Windows drive path that `Join-Path` cannot build here.
 
 On the `windows-latest` CI runner these all pass. Don't treat the local
-number as a regression signal; treat a delta against 3008/28/10 as one.
+number as a regression signal; treat a delta against the 9 failures as one.
 
 ### One file or one subtree
 
@@ -145,7 +140,7 @@ executes `integration-tests.yml`.
 - **DPAPI-encrypted SecureStrings in `ModuleSettings.clixml`.** Any test
   that decrypts a fixture SecureString by round-tripping through clixml
   will fail on Linux — DPAPI is Windows-only. That's why the token-export
-  suite is in the 28 expected failures.
+  suite would fail on Linux (it is mocked today).
 
 ---
 
@@ -158,4 +153,4 @@ executes `integration-tests.yml`.
 | `The term 'Get-FunctionItem' is not recognized` | You bypassed the bootstrap. Always run `azuredevopsdsc.common.tests.ps1 -LoadModulesOnly` (the driver does this for you) before calling `Invoke-Pester` on the Common suite. |
 | `Unable to find type [AzDevOpsApiDscResourceBase]` on the Classes suite | You tried to run the Classes suite without a built module. Not fixable here — needs `./build.ps1 -Tasks build` on a machine with PSGallery access. Push and let CI run it. |
 | Driver hangs installing pwsh | The proxy has a `403` on the Microsoft package repo. Retry once; the transient case is common right after container start. |
-| Test count deltas from `3008 / 28 / 10` | The Common suite has changed. Compare the failing test-file list (rerun with `--load-only` then a targeted subtree) against the "cluster" list above to see if it's a new Linux-only flake or a real regression. |
+| Failure count differs from 9 | The Common suite has changed. Compare the failing test-file list (rerun with `--load-only` then a targeted subtree) against the "cluster" list above to see if it's a new Linux-only flake or a real regression. |

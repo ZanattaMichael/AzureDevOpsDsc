@@ -13,6 +13,9 @@ Describe "Get-AzServicePrincipalToken Tests" -Tags "Unit", "Authentication" {
             . $file.FullName
         }
 
+        # Decodes the SecureString client secret; not mocked, so load it by name.
+        . (Get-FunctionItem 'ConvertFrom-AzDoSecureString.ps1').FullName
+
         Import-Enums | ForEach-Object { . $_.FullName }
 
         . (Get-ClassFilePath '001.AuthenticationToken')
@@ -113,6 +116,18 @@ Describe "Get-AzServicePrincipalToken Tests" -Tags "Unit", "Authentication" {
             $result = Get-AzServicePrincipalToken -OrganizationName "TestOrg" -TenantId "tenant" -ClientId "client" -SecureStringClientSecret $secureSecret
             $result | Should -Not -BeNullOrEmpty
             Assert-MockCalled -CommandName Invoke-RestMethod -Times 1
+        }
+
+        It "Should send the decoded secret, including non-ASCII characters, in the request body" {
+            # A platform-wrong SecureString decode (PtrToStringAuto off Windows) mangles anything
+            # outside ASCII, so a secret with such a character proves the decode is correct.
+            $plainSecret  = 'sécret-ß-€'
+            $secureSecret = ConvertTo-SecureString $plainSecret -AsPlainText -Force
+            $expected     = 'client_secret={0}' -f [Uri]::EscapeDataString($plainSecret)
+
+            Get-AzServicePrincipalToken -OrganizationName "TestOrg" -TenantId "tenant" -ClientId "client" -SecureStringClientSecret $secureSecret
+
+            Assert-MockCalled -CommandName Invoke-RestMethod -Times 1 -ParameterFilter { $Body -like "*$expected*" }
         }
     }
 }

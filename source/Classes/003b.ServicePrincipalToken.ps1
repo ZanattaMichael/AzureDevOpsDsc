@@ -8,8 +8,9 @@
     It also stores the credentials required to refresh the token when it expires.
 
 .NOTES
-    The clientSecret is stored as a SecureString and can only be retrieved by Update-AzServicePrincipal
-    via the GetClientSecret() method, which enforces call stack validation.
+    The clientSecret is stored as a SecureString. GetClientSecret() returns it in plain text only
+    while Update-AzServicePrincipal is on the call stack. That is a guard against accidental use,
+    not a security boundary - see the comment above GetClientSecret().
 #>
 class ServicePrincipalToken : AuthenticationToken
 {
@@ -65,7 +66,17 @@ class ServicePrincipalToken : AuthenticationToken
         return ($this.expires_on.AddSeconds(-10) -lt [DateTime]::UtcNow)
     }
 
-    # Only callable from Update-AzServicePrincipal — enforced by call stack check
+    <#
+        Guard against *accidental* use of the client secret outside the token refresh path:
+        GetClientSecret() returns plain text only while Update-AzServicePrincipal is on the call
+        stack, so a resource function or a test cannot pull the secret into a log or a return
+        value by mistake.
+
+        It is NOT a security boundary. Any code in the same process can define a function named
+        Update-AzServicePrincipal and call this from inside it, or read the hidden clientSecret
+        SecureString directly and decode it. See AuthenticationToken.TestCaller() for the same
+        point about the access token.
+    #>
     [String] GetClientSecret()
     {
         if (-not ($this.TestCallStack('Update-AzServicePrincipal')))

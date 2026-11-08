@@ -49,7 +49,7 @@
         AZDO_ERRORLOGGING_FILEPATH     path for error log file
 
     AUTHENTICATION METHODS:
-      PAT          : -PersonalAccessToken "<pat>"
+      PAT          : -SecureStringPersonalAccessToken <SecureString>  (-PersonalAccessToken "<pat>" still works but warns: plain text)
       Managed ID   : -useManagedIdentity
       Service Prin : -TenantId -ClientId -ClientSecret
       Certificate  : -TenantId -ClientId (-CertificateThumbprint | -CertificatePath + -CertificatePassword)
@@ -320,7 +320,7 @@ Write-Host '──────────────────────�
 @'
 
   # Personal Access Token
-  New-AzDoAuthenticationProvider -OrganizationName "<org>" -PersonalAccessToken "<pat>"
+  New-AzDoAuthenticationProvider -OrganizationName "<org>" -SecureStringPersonalAccessToken (Read-Host -Prompt "PAT" -AsSecureString)
 
   # Managed Identity  (Azure VM / Arc-enabled machine)
   New-AzDoAuthenticationProvider -OrganizationName "<org>" -useManagedIdentity

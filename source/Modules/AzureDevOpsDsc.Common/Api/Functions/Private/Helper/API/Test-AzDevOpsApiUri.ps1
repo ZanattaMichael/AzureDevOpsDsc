@@ -42,7 +42,8 @@ function Test-AzDevOpsApiUri
         return $true
     }
 
-    return !(($ApiUri -inotlike 'http://*' -and
-              $ApiUri -inotlike 'https://*') -or
+    # Only https: every request carries the credential in its Authorization header, so a plain
+    # http URI would send it in clear text.
+    return !($ApiUri -inotlike 'https://*' -or
              $ApiUri -inotlike '*/_apis/')
 }

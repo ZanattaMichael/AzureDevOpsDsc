@@ -63,6 +63,14 @@ class AzDoAuditStream : AzDevOpsDscResourceBase
         $properties.Enabled        = $CurrentResourceObject.Enabled
         $properties.LookupResult   = $CurrentResourceObject.LookupResult
         $properties.Ensure         = $CurrentResourceObject.Ensure
+        # ConsumerInputs carries the consumer's credential (a Splunk token, an Event Hub
+        # connection string): it is never logged.
+        Write-Verbose "[AzDoAuditStream] Current state properties:`n$($this.FormatPropertiesForLog($properties))"
         return $properties
+    }
+
+    hidden [System.String[]]GetDscResourceSecretPropertyNames()
+    {
+        return @('ConsumerInputs')
     }
 }

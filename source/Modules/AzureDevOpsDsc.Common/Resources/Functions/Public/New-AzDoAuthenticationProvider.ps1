@@ -11,11 +11,29 @@ Workload Identity Federation (file-based, GitHub Actions OIDC, or a manually-sup
 .PARAMETER OrganizationName
 Specifies the name of the Azure DevOps organization.
 
+.PARAMETER PersonalAccessToken
+The Personal Access Token as plain text. Prefer -SecureStringPersonalAccessToken: a plain-text
+secret on the command line lands in shell history, transcripts and process listings, and the
+function warns when this parameter is used.
+
+.PARAMETER SecureStringPersonalAccessToken
+The Personal Access Token as a SecureString. This is the default parameter set.
+
+.PARAMETER ClientSecret
+The service principal client secret as plain text. Prefer -SecureStringClientSecret for the same
+reason as -PersonalAccessToken; the function warns when this parameter is used.
+
+.EXAMPLE
+New-AzDoAuthenticationProvider -OrganizationName "Contoso" -SecureStringPersonalAccessToken (Read-Host -Prompt 'PAT' -AsSecureString)
+
 .EXAMPLE
 New-AzDoAuthenticationProvider -OrganizationName "Contoso" -PersonalAccessToken "myPAT"
 
 .EXAMPLE
 New-AzDoAuthenticationProvider -OrganizationName "Contoso" -useManagedIdentity
+
+.EXAMPLE
+New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "..." -ClientId "..." -SecureStringClientSecret $secureSecret
 
 .EXAMPLE
 New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "..." -ClientId "..." -ClientSecret "..."
@@ -37,7 +55,7 @@ New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "..." -Clie
 #>
 Function New-AzDoAuthenticationProvider
 {
-    [CmdletBinding(DefaultParameterSetName = 'PersonalAccessToken')]
+    [CmdletBinding(DefaultParameterSetName = 'SecureStringPersonalAccessToken')]
     param (
         # Organization Name
         [Parameter(Mandatory = $true, ParameterSetName = 'PersonalAccessToken')]
@@ -186,6 +204,7 @@ Function New-AzDoAuthenticationProvider
     {
 
         Write-Verbose "[New-AzDoAuthenticationProvider] Creating a new Personal Access Token with OrganizationName $OrganizationName."
+        Write-Warning "[New-AzDoAuthenticationProvider] The Personal Access Token was passed as plain text, so it can be recovered from shell history, transcripts and process listings. Pass it as a SecureString with -SecureStringPersonalAccessToken instead (for example from Read-Host -AsSecureString or ConvertTo-SecureString)."
 
         # if the NoVerify switch is not set, verify the Token.
         if ($NoVerify)
@@ -224,6 +243,7 @@ Function New-AzDoAuthenticationProvider
     elseif ($PSCmdlet.ParameterSetName -eq 'ServicePrincipal')
     {
         Write-Verbose "[New-AzDoAuthenticationProvider] Creating a Service Principal token with OrganizationName $OrganizationName."
+        Write-Warning "[New-AzDoAuthenticationProvider] The client secret was passed as plain text, so it can be recovered from shell history, transcripts and process listings. Pass it as a SecureString with -SecureStringClientSecret instead (for example from Read-Host -AsSecureString or ConvertTo-SecureString)."
 
         if ($NoVerify)
         {
@@ -371,7 +391,18 @@ Function New-AzDoAuthenticationProvider
         SecurityDescriptorTypes = Join-Path -Path $ENV:AZDODSC_CACHE_DIRECTORY -ChildPath "SecurityDescriptors.clixml"
     }
 
+    # Export-Clixml only protects a SecureString with DPAPI on Windows. Elsewhere the credential is
+    # written in a recoverable form, so the file permissions set below are all that protects it.
+    if (-not (Test-AzDoIsWindows))
+    {
+        Write-Warning "[New-AzDoAuthenticationProvider] On this platform '$moduleSettingsPath' stores the credential in a recoverable form that is protected only by file permissions, which the module sets to owner-only. Keep AZDODSC_CACHE_DIRECTORY on a private path and run DSC as the same account that ran New-AzDoAuthenticationProvider."
+    }
+
     # Export the Object to the Cache Directory
     $objectSettings | Export-Clixml -LiteralPath $moduleSettingsPath -Depth 5
+
+    # Restrict the cache directory (so anything created under it inherits) and then the settings file.
+    Protect-AzDoCachePath -Path $ENV:AZDODSC_CACHE_DIRECTORY
+    Protect-AzDoCachePath -Path $moduleSettingsPath
 
 }

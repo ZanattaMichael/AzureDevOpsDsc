@@ -18,7 +18,20 @@
     The type of variable group. Valid values are Vsts (standard) and AzureKeyVault. Defaults to Vsts.
 
 .PARAMETER Variables
-    A hashtable of key-value pairs representing the variables.
+    The variables of the group, keyed by variable name. Each entry is either a plain string value
+    (a non-secret variable) or a hashtable with 'value' and 'isSecret' (key names are not case
+    sensitive):
+
+        Variables = @{
+            APP_ENV      = 'production'
+            APP_API_KEY  = @{ value = 'p@ssw0rd'; isSecret = $true }
+        }
+
+    A secret variable is stored encrypted by Azure DevOps and can never be read back, so Test only
+    checks that it exists and is secret - a changed secret value is not detected as drift. Its value
+    is written when the configuration supplies one; '@{ isSecret = $true }' with no value keeps the
+    value already stored. When Variables is specified it is the complete set: a variable that is
+    not listed is removed on Set. When it is not specified the live variables are left alone.
 
 .PARAMETER AllowAccess
     Whether all pipelines can access this variable group. Defaults to $false.
@@ -84,7 +97,8 @@ class AzDoVariableGroup : AzDevOpsDscResourceBase
         $properties.LookupResult      = $CurrentResourceObject.LookupResult
         $properties.Ensure            = $CurrentResourceObject.Ensure
 
-        Write-Verbose "[AzDoVariableGroup] Current state properties: $($properties | Out-String)"
+        # Variables may hold secrets: log property names only, never the values.
+        Write-Verbose "[AzDoVariableGroup] Current state properties:`n$($this.FormatPropertiesForLog($properties))"
 
         return $properties
     }

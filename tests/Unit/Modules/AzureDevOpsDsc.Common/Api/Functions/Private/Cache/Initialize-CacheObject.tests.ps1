@@ -27,6 +27,7 @@ Describe "Initialize-CacheObject Tests" -Tag "Unit", "Cache" {
         Mock -CommandName Set-CacheObject
         Mock -CommandName Remove-Item
         Mock -CommandName New-Item
+        Mock -CommandName Protect-AzDoCachePath
 
         $ENV:AZDODSC_CACHE_DIRECTORY = 'C:\Cache'
 
@@ -95,6 +96,33 @@ Describe "Initialize-CacheObject Tests" -Tag "Unit", "Cache" {
             Assert-MockCalled -CommandName Remove-Item -Exactly 0
             Assert-MockCalled -CommandName Import-CacheObject -Exactly 1
             Assert-MockCalled -CommandName Set-CacheObject -Exactly 0
+        }
+    }
+
+    Context "Cache directory permissions" {
+
+        # TestDrive rather than C:\Cache, so this also runs on Linux.
+        It "restricts the cache directory it creates" {
+            $ENV:AZDODSC_CACHE_DIRECTORY = $TestDrive
+            $script:expectedDirectory = Join-Path -Path $TestDrive -ChildPath 'Cache'
+            Mock Test-Path { $false }
+
+            Initialize-CacheObject -CacheType 'Project'
+            $ENV:AZDODSC_CACHE_DIRECTORY = 'C:\Cache'
+
+            Should -Invoke -CommandName New-Item -Exactly 1
+            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 1 -ParameterFilter { $Path -eq $script:expectedDirectory }
+        }
+
+        It "does not touch the permissions of a directory that already exists" {
+            $ENV:AZDODSC_CACHE_DIRECTORY = $TestDrive
+            Mock Test-Path { $true }
+
+            Initialize-CacheObject -CacheType 'Project' -BypassFileCheck
+            $ENV:AZDODSC_CACHE_DIRECTORY = 'C:\Cache'
+
+            Should -Invoke -CommandName New-Item -Exactly 0
+            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 0
         }
     }
 

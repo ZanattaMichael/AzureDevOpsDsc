@@ -45,8 +45,10 @@ if (-not $script:V3Config.Organization)
 
 if ($script:V3Config.AuthenticationType -eq 'PAT')
 {
+    # Convert in memory first: the plain-text -PersonalAccessToken set warns on every use.
+    $securePAT = ConvertTo-SecureString -String $script:V3Config.PATToken -AsPlainText -Force
     New-AzDoAuthenticationProvider -OrganizationName $script:V3Config.Organization `
-                                   -PersonalAccessToken $script:V3Config.PATToken
+                                   -SecureStringPersonalAccessToken $securePAT
 }
 elseif ($script:V3Config.AuthenticationType -eq 'ManagedIdentity')
 {

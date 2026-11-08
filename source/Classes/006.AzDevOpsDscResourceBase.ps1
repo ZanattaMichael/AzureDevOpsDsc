@@ -148,9 +148,9 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
 
                         $epochStart    = [datetime]::new(1970, 1, 1, 0, 0, 0, [DateTimeKind]::Utc)
                         $expiresOnUnix = [long]($tokenObject.expires_on.ToUniversalTime() - $epochStart).TotalSeconds
-                        $bstr          = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($access_token)
-                        $plainToken    = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
-                        [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+                        # AzureDevOpsDsc.Common is imported at the top of Construct(), so its
+                        # private helper is reachable here.
+                        $plainToken    = ConvertFrom-AzDoSecureString -SecureString $access_token
 
                         $tokenData = [PSCustomObject]@{
                             access_token = $plainToken
@@ -510,6 +510,83 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
     hidden [System.String[]]GetDscResourceSecretPropertyNames()
     {
         return @()
+    }
+
+    <#
+        .NOTES
+            Renders a property set for a verbose log line without exposing a secret. DSC captures
+            verbose output into its logs, and 'Out-String' writes a hashtable-valued property one
+            level deep - which is exactly where a variable group's values, a service connection's
+            'serviceprincipalkey' or a service hook's credentials live.
+
+            One line per property, in name order:
+              - a property named by GetDscResourceSecretPropertyNames() is shown as '<redacted>';
+              - a hashtable (or any other property bag) is shown as its key names only, never
+                its values - so LookupResult, Variables, Authorization and ConsumerInputs can be
+                logged without their contents;
+              - anything else is shown as its string value.
+    #>
+    hidden [System.String] FormatPropertiesForLog([Hashtable]$Properties)
+    {
+        if ($null -eq $Properties -or $Properties.Count -eq 0)
+        {
+            return ''
+        }
+
+        [System.String[]]$secretPropertyNames = @($this.GetDscResourceSecretPropertyNames())
+        $lines = [System.Collections.Generic.List[System.String]]::new()
+
+        foreach ($name in @($Properties.Keys | ForEach-Object { [System.String]$_ } | Sort-Object))
+        {
+            $value    = $Properties[$name]
+            $rendered = ''
+
+            if ($secretPropertyNames -contains $name)
+            {
+                $rendered = '<redacted>'
+            }
+            elseif ($null -eq $value)
+            {
+                $rendered = ''
+            }
+            elseif ($value -is [System.Collections.IDictionary])
+            {
+                $rendered = '{' + (@($value.Keys | ForEach-Object { [System.String]$_ } | Sort-Object) -join ', ') + '}'
+            }
+            elseif ($value -is [System.Management.Automation.PSCustomObject])
+            {
+                $rendered = '{' + (@($value.PSObject.Properties.Name | Sort-Object) -join ', ') + '}'
+            }
+            elseif ($value -is [System.Collections.IEnumerable] -and -not ($value -is [System.String]))
+            {
+                # A list of scalars (e.g. SharedWithProjects). A nested property bag inside it is
+                # still reduced to its key names.
+                $items = foreach ($item in $value)
+                {
+                    if ($item -is [System.Collections.IDictionary])
+                    {
+                        '{' + (@($item.Keys | ForEach-Object { [System.String]$_ } | Sort-Object) -join ', ') + '}'
+                    }
+                    elseif ($item -is [System.Management.Automation.PSCustomObject])
+                    {
+                        '{' + (@($item.PSObject.Properties.Name | Sort-Object) -join ', ') + '}'
+                    }
+                    else
+                    {
+                        [System.String]$item
+                    }
+                }
+                $rendered = '[' + (@($items) -join ', ') + ']'
+            }
+            else
+            {
+                $rendered = [System.String]$value
+            }
+
+            $lines.Add(('  {0} = {1}' -f $name, $rendered))
+        }
+
+        return ($lines -join [System.Environment]::NewLine)
     }
 
     <#

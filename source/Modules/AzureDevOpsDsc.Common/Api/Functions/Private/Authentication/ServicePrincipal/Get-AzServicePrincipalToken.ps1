@@ -52,13 +52,7 @@ Function Get-AzServicePrincipalToken
     # Resolve plain-text secret
     if ($PSCmdlet.ParameterSetName -eq 'SecureString')
     {
-        $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecureStringClientSecret)
-        $ClientSecret = if ($isLinux) {
-            [System.Runtime.InteropServices.Marshal]::PtrToStringUni($BSTR)
-        } else {
-            [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
-        }
-        [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($BSTR)
+        $ClientSecret     = ConvertFrom-AzDoSecureString -SecureString $SecureStringClientSecret
         $secureForStorage = $SecureStringClientSecret
     }
     else

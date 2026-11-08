@@ -82,6 +82,18 @@ The system environment variable `AZDODSC_CACHE_DIRECTORY` is used by the module
 to store caching settings and the cache itself. Make sure this variable is properly
 set up in your system environment.
 
+Treat the directory as credential storage. `New-AzDoAuthenticationProvider` writes
+`ModuleSettings.clixml` there, which holds the personal access token (or client
+secret / certificate password) and the current access token. On Windows those values
+are DPAPI-encrypted for the account that wrote them; on Linux and macOS there is no
+DPAPI and they are stored in a recoverable form, protected only by file permissions.
+The module sets owner-only permissions on the directory and on every file it writes
+there, and warns on non-Windows. Keep the directory on a private, local path (never
+a shared or world-readable one), and run DSC as the same account that ran
+`New-AzDoAuthenticationProvider`. The `Cache` subfolder is security-relevant too: it
+maps identity names to descriptors, so anything that can write it can redirect a
+permission grant.
+
 ### *AZDO_WARNINGLOGGING_FILEPATH* and *AZDO_ERRORLOGGING_FILEPATH* Environment Variables
 
 The `AZDO_WARNINGLOGGING_FILEPATH` and `AZDO_ERRORLOGGING_FILEPATH`environment
