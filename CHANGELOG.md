@@ -87,6 +87,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Build
+  - `Resolve-Dependency.psd1` pins `PSResourceGetVersion` to `1.2.0`. It was
+    unset, so the bootstrap downloaded the newest PSResourceGet on every run,
+    and with `1.3.1` the first `Save-PSResource` fails with `Response returned
+    status code package: Not Found`, which stopped the build and unit test
+    workflows before any module code ran.
 - Performance
   - `Find-Identity` scans the group, user and service-principal caches with a
     plain loop instead of invoking a filter scriptblock for every cached

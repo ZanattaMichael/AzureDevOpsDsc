@@ -8,7 +8,10 @@
     #ModuleFastBleedingEdge = $true
 
     UsePSResourceGet                           = $true
-    #PSResourceGetVersion = '1.0.1'
+    # Pinned. Left unset, the bootstrap downloads the newest PSResourceGet on every run, and
+    # 1.3.1 fails the first Save-PSResource with 'Response returned status code package: Not
+    # Found.' 1.2.0 is the version the last passing build used.
+    PSResourceGetVersion                       = '1.2.0'
 
     UsePowerShellGetCompatibilityModule        = $true
     UsePowerShellGetCompatibilityModuleVersion = '3.0.23-beta23'
