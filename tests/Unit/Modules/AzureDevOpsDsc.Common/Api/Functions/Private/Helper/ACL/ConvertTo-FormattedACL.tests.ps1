@@ -24,6 +24,66 @@ Describe "ConvertTo-FormattedACL" -Tag "Unit", "ACL", "Helper" {
 
     }
 
+    Context "When several ACEs carry the same descriptor" {
+
+        BeforeAll {
+
+            $repeatedACLList = @(
+                @{
+                    inheritPermissions = $true
+                    token = "TokenOne"
+                    acesDictionary = [PSCustomObject]@{
+                        "DescriptorA" = @{ allow = 2; deny = 0 }
+                        "DescriptorB" = @{ allow = 4; deny = 0 }
+                    }
+                },
+                @{
+                    inheritPermissions = $true
+                    token = "TokenTwo"
+                    acesDictionary = [PSCustomObject]@{
+                        "DescriptorA" = @{ allow = 1; deny = 0 }
+                        "DescriptorMissing" = @{ allow = 1; deny = 0 }
+                    }
+                },
+                @{
+                    inheritPermissions = $true
+                    token = "TokenThree"
+                    acesDictionary = [PSCustomObject]@{
+                        "DescriptorMissing" = @{ allow = 1; deny = 0 }
+                    }
+                }
+            )
+
+            Mock -CommandName Find-Identity -MockWith {
+                if ($Name -eq 'DescriptorMissing') { return $null }
+                return @{ Id = "Identity-$Name" }
+            }
+
+        }
+
+        It "Should resolve each descriptor once per call, including one that does not resolve" {
+            $result = $repeatedACLList | ConvertTo-FormattedACL -SecurityNamespace "Git Repositories" -OrganizationName "TestOrg"
+
+            Assert-MockCalled -CommandName Find-Identity -Exactly -Times 3 -Scope It
+            Assert-MockCalled -CommandName Find-Identity -Exactly -Times 1 -Scope It -ParameterFilter { $Name -eq 'DescriptorA' }
+            Assert-MockCalled -CommandName Find-Identity -Exactly -Times 1 -Scope It -ParameterFilter { $Name -eq 'DescriptorMissing' }
+
+            $result.count | Should -Be 3
+            ($result[0].aces | Where-Object { $_.Name -eq 'DescriptorA' }).Identity.Id | Should -Be 'Identity-DescriptorA'
+            ($result[0].aces | Where-Object { $_.Name -eq 'DescriptorB' }).Identity.Id | Should -Be 'Identity-DescriptorB'
+            ($result[1].aces | Where-Object { $_.Name -eq 'DescriptorA' }).Identity.Id | Should -Be 'Identity-DescriptorA'
+            ($result[1].aces | Where-Object { $_.Name -eq 'DescriptorMissing' }).Identity | Should -BeNullOrEmpty
+            $result[2].aces[0].Identity | Should -BeNullOrEmpty
+        }
+
+        It "Should resolve the descriptors again on the next call" {
+            $null = $repeatedACLList | ConvertTo-FormattedACL -SecurityNamespace "Git Repositories" -OrganizationName "TestOrg"
+            $null = $repeatedACLList | ConvertTo-FormattedACL -SecurityNamespace "Git Repositories" -OrganizationName "TestOrg"
+
+            Assert-MockCalled -CommandName Find-Identity -Exactly -Times 6 -Scope It
+        }
+    }
+
     Context "When ACL has token and ACE entries" {
 
         BeforeAll {

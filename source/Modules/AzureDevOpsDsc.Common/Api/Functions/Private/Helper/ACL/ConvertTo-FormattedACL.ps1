@@ -47,6 +47,12 @@ Function ConvertTo-FormattedACL
     {
         Write-Verbose "[ConvertTo-FormattedACL] Started."
         $ACLList = [System.Collections.Generic.List[HashTable]]::new()
+
+        # Identities already resolved in this call, by ACE descriptor. A namespace holds far more
+        # ACEs than it has distinct identities, so each descriptor is resolved once per call
+        # rather than once per ACE. A descriptor that does not resolve is remembered too: without
+        # that, every ACE left behind by a deleted identity repeats the same API lookup.
+        $resolvedIdentities = @{}
     }
 
     process
@@ -96,7 +102,11 @@ Function ConvertTo-FormattedACL
         foreach ($ACE in $ACEs)
         {
             Write-Verbose "[ConvertTo-FormattedACL] Matching identity for ACE: $($ACE.Name)"
-            $ACE."Identity" = Find-Identity -Name $ACE.Name -OrganizationName $OrganizationName
+            if (-not $resolvedIdentities.ContainsKey($ACE.Name))
+            {
+                $resolvedIdentities[$ACE.Name] = Find-Identity -Name $ACE.Name -OrganizationName $OrganizationName
+            }
+            $ACE."Identity" = $resolvedIdentities[$ACE.Name]
             Write-Verbose "[ConvertTo-FormattedACL] Formatting ACE: $($ACE.Name) - Allow $($ACE.value.allow) - Deny $($ACE.value.deny)"
             $ACE."Permissions" = Format-ACEs -Allow $ACE.value.allow -Deny $ACE.value.deny -SecurityNamespace $SecurityNamespace
         }
