@@ -949,6 +949,13 @@ key cannot publish anything else.
    git push origin v1.2.3
    ```
 
+   Alternatively, run the **Create Tag** workflow from the Actions tab. Give it
+   the tag, or leave the tag empty to bump the patch, minor or major part of the
+   latest `vX.Y.Z` tag, and tick **publish** to start the release. A tag created
+   by that workflow does not start the Publish workflow by itself, because GitHub
+   does not raise `push` events for tags pushed with `GITHUB_TOKEN`; without
+   **publish** ticked, run the Publish workflow by hand and select the tag.
+
 5. Watch the Publish workflow. It will refuse to release if the tag is not on
    `main`, if the tag is not a valid version, or if either unit test suite fails.
 
