@@ -87,6 +87,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Build
+  - `Resolve-Dependency.psd1` pins `PSResourceGetVersion` to `1.2.0`. It was
+    unset, so the bootstrap downloaded the newest PSResourceGet on every run,
+    and with `1.3.1` the first `Save-PSResource` fails with `Response returned
+    status code package: Not Found`, which stopped the build and unit test
+    workflows before any module code ran.
+- Performance
+  - `Find-Identity` scans the group, user and service-principal caches with a
+    plain loop instead of invoking a filter scriptblock for every cached
+    identity. It runs once per ACE, so this is the largest part of formatting
+    an ACL: with 2,000 identities in each cache a lookup takes about a third of
+    the time it did. What it returns, and what it warns about, is unchanged.
+  - `ConvertTo-FormattedACL` resolves each ACE descriptor once per call rather
+    than once per ACE. A namespace holds far more ACEs than distinct identities,
+    so formatting 300 ACLs that share 20 identities went from about 7.5 seconds
+    to under one. A descriptor that does not resolve is remembered for the rest
+    of the call as well, so the ACEs a deleted identity leaves behind cost one
+    API lookup and one warning per call instead of one for every ACE.
+  - `AzDoAPI_3_GroupMemberCache` matches each group's member descriptors
+    through a set instead of testing every cached user and group against the
+    member list with `-in`. Building the cache for 400 groups and 1,500 users
+    went from 9.4 seconds to 0.75 (excluding the API calls), with the same
+    members in the same order.
+  - `AzureDevOpsDsc.Common` imports faster, which matters because DSC imports
+    the module again for each resource invocation. The function files are
+    enumerated with `System.IO` instead of `Get-ChildItem -Recurse -Include`,
+    the public functions are exported in one `Export-ModuleMember` call instead
+    of one call each, and the cache initializers, which two of the listed
+    directories both reach, are dot-sourced once. The functions defined and
+    exported are the same.
+  - A resource instance keeps the authentication token its session already
+    holds when that token is unexpired and was issued for the organization and
+    identity in `ModuleSettings.clixml`
+    (`[AzDevOpsDscResourceBase]::CanReuseAuthenticationToken()`). Until now
+    every instance acquired a new one - a request to Microsoft Entra ID or the
+    identity endpoint, or a new `az` process - so an export paid that for each
+    exported instance. A personal access token is never kept this way, and a
+    session that holds no token, such as the fresh runspace `Invoke-DscResource`
+    starts, restores it exactly as before.
 - Documentation
   - `docs/ResourceRoadmap.md` gains §12, the resources a code review found
     missing that neither the roadmap nor an open issue tracked: permission

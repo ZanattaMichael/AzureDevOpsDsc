@@ -45,6 +45,37 @@ function AzDoAPI_3_GroupMemberCache
     # Enumerate the live users cache
     $AzDoLiveUsers = Get-CacheObject -CacheType 'LiveUsers'
 
+    # The cached users and groups, read once rather than once per group.
+    $liveUserValues  = @($AzDoLiveUsers.value)
+    $liveGroupValues = @($AzDoLiveGroups.value)
+
+    # Returns the identities whose descriptor is one of a group's member descriptors, in cache
+    # order. The member descriptors go into a set first: testing each cached identity with
+    # '-in' against the member list made this pass (groups x identities x members).
+    $selectMembers = {
+        param($identities, $memberDescriptors)
+        $memberSet  = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::InvariantCultureIgnoreCase)
+        $allStrings = $true
+        foreach ($memberDescriptor in $memberDescriptors)
+        {
+            if ($memberDescriptor -is [string]) { $null = $memberSet.Add($memberDescriptor) }
+            else { $allStrings = $false }
+        }
+        foreach ($identity in $identities)
+        {
+            $descriptor = $identity.descriptor
+            if ($allStrings -and ($descriptor -is [string]))
+            {
+                if ($memberSet.Contains($descriptor)) { $identity }
+            }
+            elseif ($descriptor -in $memberDescriptors)
+            {
+                # Not a plain string comparison, so leave it to PowerShell's own.
+                $identity
+            }
+        }
+    }
+
     try
     {
         ForEach ($AzDoLiveGroup in $AzDoLiveGroups)
@@ -67,20 +98,25 @@ function AzDoAPI_3_GroupMemberCache
             # Members
             $members = [System.Collections.Generic.List[object]]::new()
 
-            # Iterate through each of the users and groups and add them to the cache
-            $azdoUserMembers = $AzDoLiveUsers.value | Where-Object { $_.descriptor -in $groupMembers.memberDescriptor }
-            $azdoGroupMembers = $AzDoLiveGroups.value | Where-Object { $_.descriptor -in $groupMembers.memberDescriptor }
+            # Find the users and groups that are members of this group
+            $memberDescriptors = @($groupMembers.memberDescriptor)
+            $azdoUserMembers   = @(& $selectMembers $liveUserValues $memberDescriptors)
+            $azdoGroupMembers  = @(& $selectMembers $liveGroupValues $memberDescriptors)
 
             # Add the users to the cache
-            $azdoUserMembers = $azdoUserMembers | Select-Object *,@{Name="Type";Exp={"user"}}
-            $azdoUserMembers | Where-Object { $_.descriptor -in $groupMembers.memberDescriptor } | ForEach-Object {
-                $null = $members.Add($_)
+            if ($azdoUserMembers.Count -gt 0)
+            {
+                $azdoUserMembers | Select-Object *,@{Name="Type";Exp={"user"}} | ForEach-Object {
+                    $null = $members.Add($_)
+                }
             }
 
             # Add the groups to the cache
-            $azdoGroupMembers = $azdoGroupMembers | Select-Object *,@{Name="Type";Exp={"group"}}
-            $azdoGroupMembers | Where-Object { $_.descriptor -in $groupMembers.memberDescriptor } | ForEach-Object {
-                $null = $members.Add($_)
+            if ($azdoGroupMembers.Count -gt 0)
+            {
+                $azdoGroupMembers | Select-Object *,@{Name="Type";Exp={"group"}} | ForEach-Object {
+                    $null = $members.Add($_)
+                }
             }
 
             # Add the group to the cache

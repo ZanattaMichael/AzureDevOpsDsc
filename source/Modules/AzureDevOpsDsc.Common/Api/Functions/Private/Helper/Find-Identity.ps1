@@ -66,14 +66,56 @@ Function Find-Identity
         return $null
     }
 
-    # Helper: filters a cache with .Where(), which is several times faster than piping it through
-    # Where-Object once per ACE. It returns what Where-Object did: $null for no match, the item
-    # for one, an array for several. resolveUnique depends on that shape - an empty collection
-    # would count as a found identity.
+    # Helper: scans a cache for the items whose identity property equals a value. A plain foreach
+    # with the comparison inline, because this runs once per ACE over every group, user and
+    # service principal, and invoking a filter scriptblock per item (.Where() or Where-Object)
+    # costs several times the comparison itself. It returns what Where-Object did: $null for no
+    # match, the item for one, an array for several. resolveUnique depends on that shape - an
+    # empty collection would count as a found identity.
+    #   -Property           the property compared with -Value
+    #   -OnACLIdentity      read the property from .value.ACLIdentity rather than .value
+    #   -GroupPrincipalName compare the bracket-stripped principalName instead (groups only)
     $searchCache = {
-        param($cache, [scriptblock]$filter)
+        param($cache, [string]$Property, $Value, [switch]$OnACLIdentity, [switch]$GroupPrincipalName)
         if ($null -eq $cache) { return $null }
-        $matched = $cache.Where($filter)
+        $matched = [System.Collections.Generic.List[object]]::new()
+        if ($GroupPrincipalName)
+        {
+            # Organisation-level groups have a principalName like "[orgName]\GroupName".
+            # When the caller uses "[]\GroupName" (empty org prefix), after bracket-stripping
+            # the name becomes "\GroupName". We match by suffix so "[orgName]\GroupName" resolves correctly.
+            $matchSuffix = $Value.StartsWith('\')
+            foreach ($item in $cache)
+            {
+                $principalName = $item.value.principalName
+                # A cached group can have a null/empty principalName (e.g. a malformed or
+                # partially-provisioned org group). Calling .replace() on it throws
+                # "You cannot call a method on a null-valued expression", which aborts every
+                # ACL resolution (ConvertTo-ACEList -> Find-Identity) and fails all permission
+                # resources. Such a group can never be the target of a principalName search,
+                # so exclude it.
+                if ([string]::IsNullOrEmpty($principalName)) { continue }
+                $normalizedPrincipal = $principalName.replace('[','').replace(']','')
+                if (($normalizedPrincipal -eq $Value) -or ($matchSuffix -and $normalizedPrincipal.EndsWith($Value)))
+                {
+                    $matched.Add($item)
+                }
+            }
+        }
+        elseif ($OnACLIdentity)
+        {
+            foreach ($item in $cache)
+            {
+                if ($item.value.ACLIdentity.$Property -eq $Value) { $matched.Add($item) }
+            }
+        }
+        else
+        {
+            foreach ($item in $cache)
+            {
+                if ($item.value.$Property -eq $Value) { $matched.Add($item) }
+            }
+        }
         if ($matched.Count -eq 0) { return $null }
         if ($matched.Count -eq 1) { return $matched[0] }
         return ,@($matched)
@@ -93,43 +135,30 @@ Function Find-Identity
         return $found[0]   # $null when Count -eq 0
     }
 
-    # Build the filter scriptblock for each cache type.
+    # Map the search type to the identity property it compares.
     # Groups use a bracket-stripped principalName comparison; all others use the raw value.
-    $commonFilter = switch ($SearchType)
+    $searchProperty = @{ Property = $SearchType; Value = $Name }
+    switch ($SearchType)
     {
-        'descriptor'    { { $_.value.ACLIdentity.descriptor -eq $Name }; break }
-        'descriptorId'  { { $_.value.ACLIdentity.id         -eq $Name }; break }
-        'originId'      { { $_.value.originId               -eq $Name }; break }
-        'principalName' { { $_.value.principalName          -eq $Name }; break }
-        'displayName'   { { $_.value.displayName            -eq $Name }; break }
+        'descriptor'    { $searchProperty.Property = 'descriptor'; $searchProperty.OnACLIdentity = $true; break }
+        'descriptorId'  { $searchProperty.Property = 'id';         $searchProperty.OnACLIdentity = $true; break }
+        'originId'      { break }
+        'principalName' { break }
+        'displayName'   { break }
         default         { Write-Error "Invalid SearchType: $SearchType"; return $null }
-    }
-    $groupFilter = if ($SearchType -eq 'principalName')
-    {
-        # Organisation-level groups have a principalName like "[orgName]\GroupName".
-        # When the caller uses "[]\GroupName" (empty org prefix), after bracket-stripping
-        # $Name becomes "\GroupName". We match by suffix so "[orgName]\GroupName" resolves correctly.
-        {
-            # A cached group can have a null/empty principalName (e.g. a malformed or
-            # partially-provisioned org group). Calling .replace() on it throws
-            # "You cannot call a method on a null-valued expression", which aborts every
-            # ACL resolution (ConvertTo-ACEList -> Find-Identity) and fails all permission
-            # resources. Such a group can never be the target of a principalName search,
-            # so exclude it.
-            if ([string]::IsNullOrEmpty($_.value.principalName)) { return $false }
-            $normalizedPrincipal = $_.value.principalName.replace('[','').replace(']','')
-            ($normalizedPrincipal -eq $Name) -or ($Name.StartsWith('\') -and $normalizedPrincipal.EndsWith($Name))
-        }
-    }
-    else
-    {
-        $commonFilter
     }
 
     # Search the caches.
-    $groupIdentity            = & $searchCache $CachedGroups            $groupFilter
-    $userIdentity             = & $searchCache $CachedUsers             $commonFilter
-    $servicePrincipalIdentity = & $searchCache $CachedServicePrincipals $commonFilter
+    $groupIdentity            = if ($SearchType -eq 'principalName')
+    {
+        & $searchCache -cache $CachedGroups -Value $Name -GroupPrincipalName
+    }
+    else
+    {
+        & $searchCache -cache $CachedGroups @searchProperty
+    }
+    $userIdentity             = & $searchCache -cache $CachedUsers             @searchProperty
+    $servicePrincipalIdentity = & $searchCache -cache $CachedServicePrincipals @searchProperty
 
     $resolved = & $resolveUnique $groupIdentity $userIdentity $servicePrincipalIdentity $Name
     if ($null -ne $resolved)
@@ -261,10 +290,10 @@ Function Find-Identity
         return $null
     }
 
-    $idFilter = { $_.value.ACLIdentity.id -eq $identity.id }
-    $groupIdentity            = & $searchCache $CachedGroups            $idFilter
-    $userIdentity             = & $searchCache $CachedUsers             $idFilter
-    $servicePrincipalIdentity = & $searchCache $CachedServicePrincipals $idFilter
+    $idSearch = @{ Property = 'id'; Value = $identity.id; OnACLIdentity = $true }
+    $groupIdentity            = & $searchCache -cache $CachedGroups            @idSearch
+    $userIdentity             = & $searchCache -cache $CachedUsers             @idSearch
+    $servicePrincipalIdentity = & $searchCache -cache $CachedServicePrincipals @idSearch
 
     $resolved = & $resolveUnique $groupIdentity $userIdentity $servicePrincipalIdentity $identity.id
     if ($null -ne $resolved)

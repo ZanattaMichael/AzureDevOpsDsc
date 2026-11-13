@@ -47,6 +47,15 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
 
         Write-Verbose "[AzDevOpsDscResourceBase] Token type: $($tokenObject.tokenType)"
 
+        # Keep the token this session already holds when it is still good. Restoring one costs a
+        # request to the identity endpoint or to Microsoft Entra ID, or a new 'az' process, and it
+        # was paid by every instance constructed - once per exported instance during an export.
+        if ($this.CanReuseAuthenticationToken($organizationName, $tokenObject))
+        {
+            Write-Verbose "[AzDevOpsDscResourceBase] Reusing the unexpired authentication token already held by this session."
+            return
+        }
+
         #
         # Determine the type of Token
 
@@ -181,6 +190,66 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
         # Cache objects are not initialized here. Get-CacheObject imports a cache on first use, so a
         # resource only pays for the caches it reads instead of every cache on every new().
 
+    }
+
+    <#
+        .NOTES
+            Tests whether $Global:DSCAZDO_AuthenticationToken can be kept instead of restoring the
+            authentication from ModuleSettings.clixml again. It can when it was issued for the
+            organization and identity the settings describe and has not expired. The token's
+            value is never read.
+
+            A personal access token is never kept: restoring one makes no request, and the
+            settings file is then always what decides which token is used.
+    #>
+    hidden [System.Boolean]CanReuseAuthenticationToken([System.String]$OrganizationName, [System.Object]$TokenSettings)
+    {
+        $currentToken = $Global:DSCAZDO_AuthenticationToken
+
+        if (($null -eq $currentToken) -or ($null -eq $TokenSettings) -or ($null -eq $TokenSettings.tokenType))
+        {
+            return $false
+        }
+
+        # The session has to be working against the organization the settings name.
+        if ([System.String]::IsNullOrEmpty($OrganizationName) -or
+            ([System.String]$Global:DSCAZDO_OrganizationName -ne $OrganizationName))
+        {
+            return $false
+        }
+
+        # tokenType is an enum on the live token and a string (or a deserialized enum) in the settings.
+        [System.String]$currentTokenType = $currentToken.tokenType
+        if ([System.String]::IsNullOrEmpty($currentTokenType) -or
+            ($currentTokenType -ne $TokenSettings.tokenType.ToString()))
+        {
+            return $false
+        }
+
+        if ($currentTokenType -in @('ServicePrincipal', 'Certificate', 'WorkloadIdentityFederation'))
+        {
+            # These are issued to an application, so it has to be the same one.
+            if (([System.String]$currentToken.tenantId -ne [System.String]$TokenSettings.tenantId) -or
+                ([System.String]$currentToken.clientId -ne [System.String]$TokenSettings.clientId))
+            {
+                return $false
+            }
+        }
+        elseif ($currentTokenType -notin @('ManagedIdentity', 'AzureCLI'))
+        {
+            # A personal access token, or a type this method does not know.
+            return $false
+        }
+
+        try
+        {
+            return (-not $currentToken.isExpired())
+        }
+        catch
+        {
+            # Not a token that can report its expiry, so restore it the usual way.
+            return $false
+        }
     }
 
     hidden [Hashtable]GetDscCurrentStateObjectGetParameters()

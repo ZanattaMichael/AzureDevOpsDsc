@@ -55,10 +55,68 @@ $functionSubDirectoryPaths = @(
     # Services
     "$ModuleRoot\Services\Functions\Public"
 )
-$functions = Get-ChildItem -Path $functionSubDirectoryPaths -Recurse -Include "*.ps1"
+# Enumerate the function files with System.IO rather than 'Get-ChildItem -Recurse -Include', which
+# is several times slower over this many directories and is paid on every import - and DSC imports
+# the module afresh for each resource invocation. The order is the one Get-ChildItem gave: each
+# listed directory in turn, its files by name, then its subdirectories. Hidden items are skipped,
+# as they were, and a file reached through two listed directories is loaded once.
+function Get-ModuleFunctionFile
+{
+    param ([System.String]$Path)
 
+    $compare = [System.StringComparer]::OrdinalIgnoreCase
+    $hidden  = [System.IO.FileAttributes]::Hidden
 
-# Loop through all PSModule functions and import/dot-source them (and export them if 'Public')
+    $files = [System.IO.Directory]::GetFiles($Path)
+    [System.Array]::Sort($files, $compare)
+    foreach ($file in $files)
+    {
+        if ($file.EndsWith('.ps1', [System.StringComparison]::OrdinalIgnoreCase) -and
+            -not ([System.IO.File]::GetAttributes($file) -band $hidden))
+        {
+            [System.IO.FileInfo]::new($file)
+        }
+    }
+
+    $directories = [System.IO.Directory]::GetDirectories($Path)
+    [System.Array]::Sort($directories, $compare)
+    foreach ($directory in $directories)
+    {
+        if (-not ([System.IO.File]::GetAttributes($directory) -band $hidden))
+        {
+            Get-ModuleFunctionFile -Path $directory
+        }
+    }
+}
+
+$loadedFunctionPaths = [System.Collections.Generic.HashSet[System.String]]::new([System.StringComparer]::OrdinalIgnoreCase)
+$functions = foreach ($functionSubDirectoryPath in $functionSubDirectoryPaths)
+{
+    # The paths above are written with '\', which PowerShell accepts on every platform but
+    # System.IO only on Windows.
+    $functionSubDirectoryPath = $functionSubDirectoryPath.Replace('\', [System.IO.Path]::DirectorySeparatorChar)
+
+    if (-not [System.IO.Directory]::Exists($functionSubDirectoryPath))
+    {
+        # Leave a missing directory to Get-ChildItem, so it is reported as it always was.
+        Get-ChildItem -Path $functionSubDirectoryPath -Recurse -Include "*.ps1"
+        continue
+    }
+
+    foreach ($functionFile in (Get-ModuleFunctionFile -Path ([System.IO.Path]::GetFullPath($functionSubDirectoryPath))))
+    {
+        if ($loadedFunctionPaths.Add($functionFile.FullName))
+        {
+            $functionFile
+        }
+    }
+}
+
+Remove-Item -Path 'Function:\Get-ModuleFunctionFile'
+
+# Loop through all PSModule functions and import/dot-source them. The 'Public' ones are exported
+# together afterwards: one Export-ModuleMember call per function was a measurable part of the import.
+$publicFunctionNames = [System.Collections.Generic.List[System.String]]::new()
 foreach ($function in $functions)
 {
     Write-Verbose "Dot-sourcing '$($function.FullName)'..."
@@ -71,8 +129,13 @@ foreach ($function in $functions)
     if ($function.FullName -ilike "$ModuleRoot\*\Functions\Public\*")
     {
         Write-Verbose "Exporting '$($function.BaseName)'..."
-        Export-ModuleMember -Function $($function.BaseName)
+        $publicFunctionNames.Add($function.BaseName)
     }
+}
+
+if ($publicFunctionNames.Count -gt 0)
+{
+    Export-ModuleMember -Function $publicFunctionNames
 }
 
 #
