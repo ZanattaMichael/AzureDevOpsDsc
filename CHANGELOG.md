@@ -197,6 +197,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- CI
+  - `Create Tag` workflow (`.github/workflows/create-tag.yml`), run manually from the
+    Actions tab. It creates and pushes an annotated version tag on `main` (or a given
+    branch or commit contained in `main`). The tag is either supplied (`vX.Y.Z` or
+    `vX.Y.Z-<prerelease>`) or derived by bumping the patch, minor or major part of the
+    highest existing `vX.Y.Z` tag. An existing tag is never moved. Because a tag pushed
+    with `GITHUB_TOKEN` does not trigger other workflows, creating a tag this way does
+    not cut a release unless the `publish` option is ticked, which dispatches the
+    Publish workflow on the new tag.
 - AzureDevOpsDscNative
   - Private helpers `Protect-AzDoCachePath`, `Test-AzDoIsWindows`,
     `ConvertFrom-AzDoSecureString`, `Test-AzDoArcSecretFilePath`,

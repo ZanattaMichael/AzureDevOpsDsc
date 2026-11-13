@@ -1,0 +1,162 @@
+name: Create Tag
+
+# Manually run workflow that creates a version tag and pushes it.
+#
+# Run it from the Actions tab (Create Tag -> Run workflow) or with
+#   gh workflow run create-tag.yml -f tag=v1.2.3
+#
+# Inputs:
+#   tag        - The tag to create, e.g. v1.2.3 or v1.2.3-preview0001. Leave empty to
+#                derive it from the highest existing vX.Y.Z tag and `increment`.
+#   increment  - Which part of the version to bump when `tag` is empty.
+#   ref        - Branch or commit SHA to tag. Defaults to main.
+#   publish    - Also start the Publish workflow for the new tag.
+#
+# The tag follows the rules the Publish workflow enforces, so a tag made here is always
+# one that can be released: vX.Y.Z with an optional alphanumeric prerelease suffix, on a
+# commit contained in main.
+#
+# A tag pushed with GITHUB_TOKEN does not start other workflows - GitHub suppresses
+# `push` events raised by that token - so creating a tag here does NOT cut a release by
+# itself. Tick `publish` to have this workflow dispatch publish.yml on the new tag
+# (workflow_dispatch is exempt from that rule), or start Publish for the tag by hand.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to create (vX.Y.Z or vX.Y.Z-preview0001). Empty = bump the latest vX.Y.Z tag.'
+        required: false
+        type: string
+        default: ''
+      increment:
+        description: 'Part of the version to bump when no tag is given'
+        required: false
+        type: choice
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+      ref:
+        description: 'Branch or commit SHA to tag'
+        required: false
+        type: string
+        default: main
+      publish:
+        description: 'Start the Publish workflow for the new tag (cuts a release)'
+        required: false
+        type: boolean
+        default: false
+
+# One tagging run at a time, so two runs cannot both derive the same next version.
+concurrency:
+  group: create-tag
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  create-tag:
+    name: Create and Push Tag
+    runs-on: ubuntu-latest
+    # `contents: write` to push the tag. `actions: write` only to dispatch publish.yml
+    # when `publish` is ticked.
+    permissions:
+      contents: write
+      actions: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      # Inputs are passed through the environment, never interpolated into the script,
+      # so a value cannot be executed as shell.
+      - name: Resolve tag name
+        id: resolve
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          INCREMENT: ${{ inputs.increment }}
+        run: |
+          set -euo pipefail
+          git fetch --tags --force --quiet origin
+
+          tag="$INPUT_TAG"
+          if [ -z "$tag" ]; then
+            latest="$(git tag --list 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1 || true)"
+            if [ -z "$latest" ]; then
+              echo "::error::No existing vX.Y.Z tag to increment. Supply the tag input instead."
+              exit 1
+            fi
+            IFS=. read -r major minor patch <<< "${latest#v}"
+            case "$INCREMENT" in
+              major) major=$((major + 1)); minor=0; patch=0 ;;
+              minor) minor=$((minor + 1)); patch=0 ;;
+              patch) patch=$((patch + 1)) ;;
+              *) echo "::error::Unknown increment '$INCREMENT'."; exit 1 ;;
+            esac
+            tag="v${major}.${minor}.${patch}"
+            echo "Latest release tag is $latest; $INCREMENT bump gives $tag."
+          fi
+
+          # Same shape publish.yml accepts. The PowerShell Gallery requires the
+          # prerelease suffix to be alphanumeric only - no dots, no extra hyphens.
+          if ! [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9]+)?$ ]]; then
+            echo "::error::'$tag' is not a valid version tag. Expected vX.Y.Z (e.g. v1.2.3) or vX.Y.Z-<prerelease> (e.g. v1.2.3-preview0001)."
+            exit 1
+          fi
+
+          if git rev-parse --quiet --verify "refs/tags/$tag" > /dev/null; then
+            echo "::error::Tag '$tag' already exists. Tags are never moved by this workflow."
+            exit 1
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      # publish.yml refuses to release a tag that is not on main, so do not create one.
+      - name: Verify commit is on main
+        run: |
+          set -euo pipefail
+          git fetch --quiet origin +refs/heads/main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "::error::Commit $(git rev-parse HEAD) is not contained in main. Release tags must be created from main."
+            exit 1
+          fi
+
+      - name: Create and push tag
+        env:
+          TAG: ${{ steps.resolve.outputs.tag }}
+        run: |
+          set -euo pipefail
+          sha="$(git rev-parse HEAD)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag --annotate "$TAG" --message "Release $TAG" "$sha"
+          git push origin "refs/tags/$TAG"
+          {
+            echo "### Created tag \`$TAG\`"
+            echo
+            echo "- Commit: \`$sha\`"
+            echo "- Requested by: ${GITHUB_ACTOR}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Start Publish workflow
+        if: inputs.publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.resolve.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh workflow run publish.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG"
+          echo "- Publish workflow started for \`$TAG\`." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Note that no release was started
+        if: ${{ !inputs.publish }}
+        env:
+          TAG: ${{ steps.resolve.outputs.tag }}
+        run: |
+          echo "- Publish was not started. To release, run the Publish workflow and pick the tag \`$TAG\`." >> "$GITHUB_STEP_SUMMARY"
