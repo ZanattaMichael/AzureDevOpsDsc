@@ -81,13 +81,12 @@ the resource failures that would otherwise follow it.
 
 ### What `Manifests/` guards
 
-`DscResource.Authoring` derives each property's JSON schema type from the AST type name, so this
-module's `[System.Boolean]` convention does not match its `bool` type map and the property silently
-falls back to `"string"`. The `Fix_DscAdaptedResourceManifestTypes` build task repairs that
-afterwards - 25 of the 49 manifests need it - and if it ever stops running or stops matching, the
-build still goes green with every boolean and numeric property typed as a string. `Manifests/`
-asserts each property's schema type against the type its class declares, so that regression fails a
-test instead of shipping.
+`DscResource.Authoring` derives each property's JSON schema type from the AST type name. Releases
+before 0.3.0 only knew the short aliases, so this module's `[System.Boolean]` convention silently
+fell back to `"string"` and the build patched the manifests afterwards. The tool now maps the
+qualified names itself; if a future release regresses, the build still goes green with every boolean
+and numeric property typed as a string. `Manifests/` asserts each property's schema type against the
+type its class declares, so that regression fails a test instead of shipping.
 
 ### Overriding the adapter
 
