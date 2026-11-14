@@ -67,4 +67,28 @@ Describe "New-AzDoTestSuite" -Tag "Unit", "TestManagement" {
             }
         }
     }
+
+    Context "when the lookup result already holds the plan and the parent suite" {
+
+        It "creates the suite without listing the plans or suites again" {
+            New-AzDoTestSuite -ProjectName 'Contoso' -PlanName 'Sprint 1' -Path 'Regression/Smoke' -SuiteType 'StaticTestSuite' -LookupResult @{ planId = 7; parentSuiteId = 101 }
+            Assert-MockCalled -CommandName Get-DevOpsTestPlan -Exactly -Times 0
+            Assert-MockCalled -CommandName Get-DevOpsTestSuite -Exactly -Times 0
+            Assert-MockCalled -CommandName New-DevOpsTestSuite -Exactly -Times 1 -ParameterFilter {
+                $TestPlanId -eq 7 -and $ParentSuiteId -eq 101 -and $Name -eq 'Smoke'
+            }
+        }
+    }
+
+    Context "when the lookup result holds the plan but no parent suite" {
+
+        It "looks the parent up itself" {
+            New-AzDoTestSuite -ProjectName 'Contoso' -PlanName 'Sprint 1' -Path 'Regression/Smoke' -SuiteType 'StaticTestSuite' -LookupResult @{ planId = 1 }
+            Assert-MockCalled -CommandName Get-DevOpsTestPlan -Exactly -Times 1
+            Assert-MockCalled -CommandName Get-DevOpsTestSuite -Exactly -Times 1
+            Assert-MockCalled -CommandName New-DevOpsTestSuite -Exactly -Times 1 -ParameterFilter {
+                $TestPlanId -eq 1 -and $ParentSuiteId -eq 101
+            }
+        }
+    }
 }

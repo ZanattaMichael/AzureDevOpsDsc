@@ -90,34 +90,44 @@ Function New-AzDoTestSuite
         return
     }
 
-    $plan = Get-DevOpsTestPlan -Organization $organization -ProjectName $ProjectName -Name $PlanName
-
-    if ($null -eq $plan)
-    {
-        Write-Error "[New-AzDoTestSuite] Test plan '$PlanName' does not exist in project '$ProjectName'."
-        return
-    }
-
     $suiteName = $segments[-1]
     $parentSegments = if ($segments.Count -gt 1) { $segments[0..($segments.Count - 2)] } else { @() }
     $parentPath = $parentSegments -join '/'
 
-    $suites = Get-DevOpsTestSuite -Organization $organization -ProjectName $ProjectName -TestPlanId $plan.id
-    $parentSuiteId = if ($parentSegments.Count -eq 0)
-    {
-        $plan.rootSuite.id
-    }
-    else
-    {
-        $parent = Resolve-AzDoTestSuitePath -Suites $suites -RootSuiteId $plan.rootSuite.id -Path $parentPath
+    # Get-AzDoTestSuite has already found the plan and the suite this one goes under, and passes
+    # both in the lookup result. Only without them are the plans and suites listed here.
+    $planId        = $LookupResult.planId
+    $parentSuiteId = $LookupResult.parentSuiteId
 
-        if ($null -eq $parent)
+    if ((-not $planId) -or (-not $parentSuiteId))
+    {
+        $plan = Get-DevOpsTestPlan -Organization $organization -ProjectName $ProjectName -Name $PlanName
+
+        if ($null -eq $plan)
         {
-            Write-Error "[New-AzDoTestSuite] Parent suite '$parentPath' does not exist in plan '$PlanName'. Create it first (AzDoTestSuite with DependsOn)."
+            Write-Error "[New-AzDoTestSuite] Test plan '$PlanName' does not exist in project '$ProjectName'."
             return
         }
 
-        $parent.id
+        $planId = $plan.id
+
+        $suites = Get-DevOpsTestSuite -Organization $organization -ProjectName $ProjectName -TestPlanId $plan.id
+        $parentSuiteId = if ($parentSegments.Count -eq 0)
+        {
+            $plan.rootSuite.id
+        }
+        else
+        {
+            $parent = Resolve-AzDoTestSuitePath -Suites $suites -RootSuiteId $plan.rootSuite.id -Path $parentPath
+
+            if ($null -eq $parent)
+            {
+                Write-Error "[New-AzDoTestSuite] Parent suite '$parentPath' does not exist in plan '$PlanName'. Create it first (AzDoTestSuite with DependsOn)."
+                return
+            }
+
+            $parent.id
+        }
     }
 
     Write-Verbose "[New-AzDoTestSuite] Creating suite '$suiteName' under parent suite id $parentSuiteId in plan '$PlanName'."
@@ -125,7 +135,7 @@ Function New-AzDoTestSuite
     $params = @{
         Organization  = $organization
         ProjectName   = $ProjectName
-        TestPlanId    = $plan.id
+        TestPlanId    = $planId
         ParentSuiteId = $parentSuiteId
         Name          = $suiteName
         SuiteType     = $SuiteType

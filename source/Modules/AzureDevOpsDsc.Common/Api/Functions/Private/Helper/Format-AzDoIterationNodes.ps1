@@ -40,23 +40,26 @@ Function Format-AzDoIterationNodes {
     $FormattedIterationAttributes = $IterationAttributes | Format-AzDoIteration -ProjectName $ProjectName -StructureType 'Iteration'
 
     # Extract all Classification Node Paths and match the output to IterationAttributes. If there are any missing, add them.
-    $FormattedIterationAttributes.Path | Get-AllAzDoClassificationNodePaths | ForEach-Object {
+    # The paths already present are held in a set, compared the way '-eq' compares strings, so
+    # each classification node path is one lookup instead of a scan of every attribute.
+    $knownPaths = [System.Collections.Generic.HashSet[System.String]]::new([System.StringComparer]::InvariantCultureIgnoreCase)
+    foreach ($attribute in $FormattedIterationAttributes) {
+        if ($null -ne $attribute.Path) { $null = $knownPaths.Add([System.String]$attribute.Path) }
+    }
 
-        # Store the current path from the pipeline
-        $path = $_
-
-        # Retrieve the state of the current path by filtering the formatted attributes
-        $state = @($FormattedIterationAttributes | Where-Object { $_.path -eq $path })
-
-        # If no matching state is found (i.e., count is zero), add the current path to the formatted attributes
-        if ($state.count -eq 0) {
-            # Add the entry for the missing path
-            $FormattedIterationAttributes += @{
+    $missingAttributes = [System.Collections.Generic.List[System.Object]]::new()
+    foreach ($path in @($FormattedIterationAttributes.Path | Get-AllAzDoClassificationNodePaths)) {
+        # If no attribute has the current path, add an entry for it
+        if ($knownPaths.Add([System.String]$path)) {
+            $missingAttributes.Add(@{
                 Path = $path
-            }
+            })
         }
+    }
 
-    } | Sort-Object -Property Path
+    if ($missingAttributes.Count -gt 0) {
+        $FormattedIterationAttributes = @($FormattedIterationAttributes) + $missingAttributes.ToArray()
+    }
 
     # Return the final list of formatted iteration attributes
     return $FormattedIterationAttributes
