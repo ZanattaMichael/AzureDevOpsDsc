@@ -36,7 +36,7 @@ Function Format-AzDoIteration {
     )
 
     Begin {
-        $array = @()
+        $array = [System.Collections.Generic.List[System.Object]]::new()
     }
 
     Process {
@@ -74,7 +74,7 @@ Function Format-AzDoIteration {
         # Update the Path
         $hashTable.Path = $Path
 
-        $array += $hashTable
+        $array.Add($hashTable)
 
     }
 
@@ -86,11 +86,11 @@ Function Format-AzDoIteration {
         # Add it to the list
         if ($exists.count -eq 0) {
 
-            $array += @{
+            $array.Add(@{
                 Path = "\$ProjectName\$StructureType"
                 StartDate = $null
                 EndDate = $null
-            }
+            })
 
         }
 

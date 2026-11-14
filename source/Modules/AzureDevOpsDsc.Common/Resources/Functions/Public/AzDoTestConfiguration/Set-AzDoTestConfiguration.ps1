@@ -108,8 +108,16 @@ Function Set-AzDoTestConfiguration
 
     if ($PSBoundParameters.ContainsKey('Values'))
     {
-        $testVariables   = Get-DevOpsTestVariable -Organization $organization -ProjectName $ProjectName
-        $params.Values   = ConvertTo-AzDoTestConfigurationValue -Values $Values -TestVariables $testVariables -ConfigurationName $Name
+        if (($null -ne $LookupResult) -and $LookupResult.ContainsKey('parsedValues'))
+        {
+            # Get-AzDoTestConfiguration already validated and parsed these Values.
+            $params.Values = $LookupResult.parsedValues
+        }
+        else
+        {
+            $testVariables   = Get-DevOpsTestVariable -Organization $organization -ProjectName $ProjectName
+            $params.Values   = ConvertTo-AzDoTestConfigurationValue -Values $Values -TestVariables $testVariables -ConfigurationName $Name
+        }
     }
 
     return (Update-DevOpsTestConfiguration @params)

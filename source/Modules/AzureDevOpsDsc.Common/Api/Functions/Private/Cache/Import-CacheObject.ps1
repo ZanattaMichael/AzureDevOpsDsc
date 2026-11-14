@@ -78,15 +78,18 @@ function Import-CacheObject
         # If the content is null, skip!
         if ($null -ne $Content)
         {
-            $Content | ForEach-Object {
+            # A loop rather than a pipeline: every resource invocation imports the caches it
+            # reads, and a cache can hold thousands of items.
+            foreach ($importedItem in $Content)
+            {
                 # If the key is empty, skip the item
-                if ([string]::IsNullOrEmpty($_.Key))
+                if ([string]::IsNullOrEmpty($importedItem.Key))
                 {
-                    return
+                    continue
                 }
 
                 # Create a new CacheItem object and add it to the list
-                $newCache.Add([CacheItem]::New($_.Key, $_.Value))
+                $newCache.Add([CacheItem]::New($importedItem.Key, $importedItem.Value))
             }
         }
 

@@ -4,6 +4,12 @@
 #>
 class DscResourceBase
 {
+    # Which properties of a resource class are DSC properties, and which one is its key, is fixed
+    # by the class definition. Both are read through reflection, and Get(), Test() and Set() each
+    # ask several times, so the answers are kept per type for the life of the session.
+    hidden static [System.Collections.Hashtable] $DscResourceKeyPropertyNameCache = [System.Collections.Hashtable]::Synchronized(@{})
+    hidden static [System.Collections.Hashtable] $DscResourcePropertyNamesCache = [System.Collections.Hashtable]::Synchronized(@{})
+
     hidden [System.String]GetDscResourceKey()
     {
         [System.String]$dscResourceKeyPropertyName = $this.GetDscResourceKeyPropertyName()
@@ -22,6 +28,13 @@ class DscResourceBase
         [System.String[]]$dscResourceKeyPropertyNames = @()
 
         [Type]$thisType = $this.GetType()
+
+        $cachedKeyPropertyName = [DscResourceBase]::DscResourceKeyPropertyNameCache[$thisType]
+        if ($null -ne $cachedKeyPropertyName)
+        {
+            return $cachedKeyPropertyName
+        }
+
         [System.Reflection.PropertyInfo[]]$thisProperties = $thisType.GetProperties()
 
         $thisProperties | ForEach-Object {
@@ -51,6 +64,9 @@ class DscResourceBase
             throw (New-InvalidOperationException -Message $errorMessage)
         }
 
+        # Only a valid answer is kept: a class with no key, or more than one, throws every time.
+        [DscResourceBase]::DscResourceKeyPropertyNameCache[$thisType] = $dscResourceKeyPropertyNames[0]
+
         return $dscResourceKeyPropertyNames[0]
     }
 
@@ -60,6 +76,14 @@ class DscResourceBase
         [System.String[]]$thisDscPropertyNames = @()
 
         [Type]$thisType = $this.GetType()
+
+        $cachedPropertyNames = [DscResourceBase]::DscResourcePropertyNamesCache[$thisType]
+        if ($null -ne $cachedPropertyNames)
+        {
+            # A copy, so that a caller changing the array cannot change the cached one.
+            return [System.String[]]$cachedPropertyNames.Clone()
+        }
+
         [System.Reflection.PropertyInfo[]]$thisProperties = $thisType.GetProperties()
 
         $thisProperties | ForEach-Object {
@@ -74,6 +98,8 @@ class DscResourceBase
                 }
             }
         }
+
+        [DscResourceBase]::DscResourcePropertyNamesCache[$thisType] = [System.String[]]$thisDscPropertyNames.Clone()
 
         return $thisDscPropertyNames
     }

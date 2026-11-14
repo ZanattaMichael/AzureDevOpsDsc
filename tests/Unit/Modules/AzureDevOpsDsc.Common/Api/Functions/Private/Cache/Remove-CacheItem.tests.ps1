@@ -22,6 +22,7 @@ Describe 'Remove-CacheItem' -Tag "Unit", "Cache" {
         }
 
         . (Get-ClassFilePath '000.CacheItem')
+        . (Get-FunctionItem 'Get-CacheKeyIndex.ps1')
 
         Mock -CommandName Get-CacheObject -MockWith {
             param ([string]$CacheType)
@@ -132,6 +133,30 @@ Describe 'Remove-CacheItem' -Tag "Unit", "Cache" {
 
             Remove-CacheItem -Key 'absent' -Type 'Project'
             @($script:persisted | ForEach-Object { $_.Key }) | Should -Be @('a', 'b')
+        }
+
+        It 'Matches the key without regard to case' {
+            'a', 'B', 'c' | ForEach-Object { $script:testList.Add([CacheItem]::New($_, $_)) }
+
+            Remove-CacheItem -Key 'b' -Type 'Project'
+            @($script:persisted | ForEach-Object { $_.Key }) | Should -Be @('a', 'c')
+        }
+
+        It 'Removes the key from the key index as well, so the index still matches the list' {
+            'a', 'b', 'c' | ForEach-Object { $script:testList.Add([CacheItem]::New($_, $_)) }
+
+            # Hand back the live list itself, as Get-CacheObject does, rather than a copy.
+            Mock -CommandName Get-CacheObject -MockWith { return ,$script:testList }
+
+            Remove-CacheItem -Key 'b' -Type 'Project'
+
+            @($script:testList | ForEach-Object { $_.Key }) | Should -Be @('a', 'c')
+
+            $entry = $Global:AzDoCacheKeyIndex['Project']
+            [object]::ReferenceEquals($entry.List, $script:testList) | Should -BeTrue
+            $entry.Map.Count | Should -Be 2
+            $entry.Map.ContainsKey('b') | Should -BeFalse
+            $entry.Map.ContainsKey('a') | Should -BeTrue
         }
     }
 }

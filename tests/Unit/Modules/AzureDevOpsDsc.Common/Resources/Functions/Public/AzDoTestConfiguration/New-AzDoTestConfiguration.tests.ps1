@@ -61,4 +61,19 @@ Describe "New-AzDoTestConfiguration" -Tag "Unit", "TestManagement" {
             Assert-MockCalled -CommandName New-DevOpsTestConfiguration -Exactly -Times 0
         }
     }
+
+    Context "when the lookup result already holds the parsed values" {
+
+        BeforeEach {
+            Mock -CommandName New-DevOpsTestConfiguration -MockWith { return @{ id = 1 } }
+        }
+
+        It "creates the configuration without listing the test variables again" {
+            New-AzDoTestConfiguration -ProjectName 'TestProject' -Name 'Windows 11 + Edge' -Values @('Browser=Edge') -LookupResult @{ parsedValues = @(@{ name = 'Browser'; value = 'Edge' }) }
+            Assert-MockCalled -CommandName Get-DevOpsTestVariable -Exactly -Times 0
+            Assert-MockCalled -CommandName New-DevOpsTestConfiguration -Exactly -Times 1 -ParameterFilter {
+                $Values.Count -eq 1 -and $Values[0].name -eq 'Browser' -and $Values[0].value -eq 'Edge'
+            }
+        }
+    }
 }
