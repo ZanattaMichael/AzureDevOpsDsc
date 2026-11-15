@@ -11,6 +11,10 @@ Function New-AzDoAuditStream
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
     )
     Write-Verbose "[New-AzDoAuditStream] Creating audit stream '$StreamName'."
+
+    # A value in ConsumerInputs may be a secret reference instead of the secret; fetch those now.
+    # See Resolve-AzDoSecretReference.
+    $ConsumerInputs = Resolve-AzDoSecretReferenceTable -Table $ConsumerInputs
     $params = @{
         ApiUri         = 'https://auditservice.dev.azure.com/{0}/' -f (Get-AzDoOrganizationName)
         ConsumerType   = $ConsumerType

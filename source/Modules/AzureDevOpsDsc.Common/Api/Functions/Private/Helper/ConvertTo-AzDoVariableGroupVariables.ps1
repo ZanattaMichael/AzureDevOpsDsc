@@ -118,9 +118,12 @@ function ConvertTo-AzDoVariableGroupVariables
             continue
         }
 
-        $value      = $null
-        $isSecret   = $false
-        $isReadOnly = $null
+        $value        = $null
+        $isSecret     = $false
+        $isSecretSet  = $false
+        $isReadOnly   = $null
+        $hasValue     = $false
+        $reference    = @{}
 
         foreach ($field in (Get-BagEntries -Bag $raw))
         {
@@ -128,10 +131,17 @@ function ConvertTo-AzDoVariableGroupVariables
             {
                 'value'
                 {
-                    $value = if ($null -eq $field.Value) { $null } else { [System.String]$field.Value }
+                    $hasValue = $true
+                    $value    = if ($null -eq $field.Value) { $null } else { [System.String]$field.Value }
+                }
+                { $_ -in @('secretenvironmentvariable', 'secretname', 'secretvault') }
+                {
+                    # A reference to the secret instead of the secret (Resolve-AzDoSecretReference).
+                    $reference[$field.Name] = $field.Value
                 }
                 'issecret'
                 {
+                    $isSecretSet = $true
                     $isSecret = if ($field.Value -is [System.String]) { [System.Boolean]::Parse($field.Value) } else { [System.Boolean]$field.Value }
                 }
                 'isreadonly'
@@ -140,9 +150,24 @@ function ConvertTo-AzDoVariableGroupVariables
                 }
                 default
                 {
-                    throw "[ConvertTo-AzDoVariableGroupVariables] Variable '$name' has an unrecognised key '$($field.Name)'. A variable is a plain value or a hashtable with 'value' and 'isSecret'."
+                    throw "[ConvertTo-AzDoVariableGroupVariables] Variable '$name' has an unrecognised key '$($field.Name)'. A variable is a plain value, a hashtable with 'value' and 'isSecret', or a secret reference ('SecretEnvironmentVariable', or 'SecretName' with an optional 'SecretVault')."
                 }
             }
+        }
+
+        if ($reference.Count -gt 0)
+        {
+            if ($hasValue)
+            {
+                throw "[ConvertTo-AzDoVariableGroupVariables] Variable '$name' has both a 'value' and a secret reference. Give one or the other."
+            }
+            if ($isSecretSet -and -not $isSecret)
+            {
+                throw "[ConvertTo-AzDoVariableGroupVariables] Variable '$name' is a secret reference, so it cannot have 'isSecret' set to false."
+            }
+
+            $value    = Resolve-AzDoSecretReference -Value $reference
+            $isSecret = $true
         }
 
         # A non-secret variable always has a string value; a secret one may have none (keep the

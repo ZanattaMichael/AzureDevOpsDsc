@@ -85,6 +85,10 @@ function New-AzDoServiceHook
 
     Write-Verbose "[New-AzDoServiceHook] Started."
 
+    # A value in ConsumerInputs may be a secret reference instead of the secret; fetch those now.
+    # See Resolve-AzDoSecretReference.
+    $ConsumerInputs = Resolve-AzDoSecretReferenceTable -Table $ConsumerInputs
+
     $OrganizationName = (Get-AzDoOrganizationName)
 
     $buildParams = @{

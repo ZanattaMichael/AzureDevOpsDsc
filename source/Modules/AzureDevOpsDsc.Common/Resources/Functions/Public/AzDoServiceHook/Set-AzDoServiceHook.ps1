@@ -86,6 +86,10 @@ function Set-AzDoServiceHook
 
     Write-Verbose "[Set-AzDoServiceHook] Started."
 
+    # A value in ConsumerInputs may be a secret reference instead of the secret; fetch those now.
+    # See Resolve-AzDoSecretReference.
+    $ConsumerInputs = Resolve-AzDoSecretReferenceTable -Table $ConsumerInputs
+
     $OrganizationName = (Get-AzDoOrganizationName)
 
     $subscriptionId = $LookupResult.subscriptionId
