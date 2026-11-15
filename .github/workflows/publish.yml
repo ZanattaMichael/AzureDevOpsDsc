@@ -10,9 +10,10 @@ name: Publish
 #   2. Every integration test passes, against a live Azure DevOps organization.
 #   3. Both unit test suites pass against the freshly built module.
 #
-# Required repository secrets:
+# Required secrets:
 #   GALLERY_API_TOKEN  - PowerShell Gallery API key. If unset, the Gallery publish
-#                        is skipped and only the GitHub Release is created.
+#                        is skipped and only the GitHub Release is created. Keep it as
+#                        a secret of the `release` environment, not of the repository.
 #   AZURE_DEVOPS_PAT   - PAT for the integration tests (see integration-tests.yml).
 # Required repository variable:
 #   AzureDevOpsOrg     - Azure DevOps organization the integration tests run against.
