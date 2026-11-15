@@ -144,6 +144,44 @@ In this example:
 - `-CacheType 'LiveUsers'` specifies the type of cache being exported.
 - `-Content $AzDoLiveUsers` provides the actual cache data to be written to the disk.
 
+### Reloading a Cache from Disk
+
+`Refresh-CacheObject` unloads a cache from memory and reads its file back in:
+
+```powershell
+Refresh-CacheObject -CacheType 'LiveUsers'
+```
+
+`New-` and `Set-` functions usually finish with `Add-CacheItem`, `Export-CacheObject` and
+`Refresh-CacheObject`. Reading back a file that was written a moment earlier changes nothing, so
+`Refresh-CacheObject` skips the reload when both of these hold:
+
+- the cache file has the same last write time and length as when this session last wrote it
+  (`Export-CacheObject`, `Set-CacheObject`) or read it (`Import-CacheObject`), and
+- the cache in memory still holds exactly the items that were written or read, in the same order.
+
+A file written by another process, or a cache changed in memory since (`Add-CacheItem`,
+`Remove-CacheItem`, or the list changed directly), is reloaded as before. The record is kept by the
+private helpers `Set-CacheFileStamp` and `Test-CacheFileStamp` in `$Global:AzDoCacheFileStamp`.
+
+Two things follow from this:
+
+- When the reload is skipped, the values in memory are the objects you added, not copies that
+  have been through `Export-Clixml` and `Import-Clixml`. A copy read from disk differs slightly:
+  arrays come back as `ArrayList`, and anything nested deeper than the export depth is flattened
+  to a string. Each `Invoke-DscResource` call runs in a new runspace and reads the file, so write
+  code that works with both.
+- Changing a property of an object that is already in the cache is not seen as a change to the
+  cache. Call `Add-CacheItem` with the updated object, then `Export-CacheObject`.
+
+### Verbose Messages in the Cache Functions
+
+`Get-CacheObject`, `Add-CacheItem`, `Remove-CacheItem` and `Get-CacheKeyIndex` run on every cache
+read or write, and inside the module `Write-Verbose` is a proxy function that costs a fraction of
+a millisecond per call even when nothing is listening. These functions therefore only call
+`Write-Verbose` when verbose output is on or `AZDO_VERBOSELOGGING_FILEPATH` is set. Keep that
+guard when adding a message to them, and pass `-Verbose` in a unit test that asserts on one.
+
 ### Getting a Cache Item
 
 To retrieve a cache item, you can use either the `Get-CacheItem` or `Find-CacheItem` functions.

@@ -177,6 +177,21 @@ normalizer (`ConvertTo-NormalizedWiql`, `ConvertTo-NormalizedRuleClause`, `Forma
 `Format-AzDoPipelineFolderPath`) used **only for comparison** — what gets written back is always
 what the configuration supplied.
 
+### 10. `Refresh-CacheObject` does not always reload
+`New-`/`Set-` functions end with `Add-CacheItem`, `Export-CacheObject`, `Refresh-CacheObject`.
+The refresh skips the read when the cache file is the one this session last wrote or read and the
+cache in memory still holds exactly those items (`Set-CacheFileStamp` / `Test-CacheFileStamp`).
+The values in memory are then the objects that were added, not `Import-Clixml` copies, so code
+must work with both. A unit test that runs `Export-CacheObject`, `Set-CacheObject`,
+`Import-CacheObject` or `Refresh-CacheObject` for real has to dot-source both stamp helpers.
+
+### 11. `Write-Verbose` is a proxy inside the module
+`Helper/Logging/Proxy Functions` replaces `Write-Verbose`, `Write-Warning` and `Write-Error` with
+functions that also append to the file named by `AZDO_VERBOSELOGGING_FILEPATH`. A call costs about
+0.2 ms even with verbose output off. The cache primitives (`Get-CacheObject`, `Add-CacheItem`,
+`Remove-CacheItem`, `Get-CacheKeyIndex`) guard their messages on `$VerbosePreference` *or* that
+variable; a guard that checks only the preference silently drops file logging.
+
 ---
 
 ## Auth Helper Pattern for Integration Tests

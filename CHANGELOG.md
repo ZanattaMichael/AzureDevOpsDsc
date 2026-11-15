@@ -117,6 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     5,000-item cache this saves about 150 ms per `New-`/`Set-` call. Within
     the same session the cached values are then the objects that were added,
     not copies that have been through `Export-Clixml` and `Import-Clixml`.
+    `CONTRIBUTING.md` and `CLAUDE.md` describe this and the verbose guard.
   - `Find-Identity` scans the group, user and service-principal caches with a
     plain loop instead of invoking a filter scriptblock for every cached
     identity. It runs once per ACE, so this is the largest part of formatting
