@@ -74,6 +74,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     continuation token or after 10000 pages (`AZDODSC_MAX_RESPONSE_PAGES`). A request
     could previously wait, or page, for ever.
 
+- `SECURITY.md` is now a full security policy. It adds the supported versions, what is in
+  and out of scope, and the process a vulnerability report goes through (acknowledge,
+  triage with a severity and a target for the fix, fix, release, coordinated disclosure).
+  The list of built-in protections is expanded into a summary of how the module protects
+  the credential in memory, on disk, on the network and in logs, what that does not
+  cover, and what the operator has to do.
 - Secret leakage and untrusted input
   - Everything written through the module's `Write-Verbose`, `Write-Warning` and
     `Write-Error` proxies, and every error message built from text the module did not
