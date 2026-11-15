@@ -62,6 +62,14 @@ function Set-CacheObject
         Write-Verbose "[Set-ObjectCache] Setting global variable AzDo$CacheType with the provided content"
         Set-Variable -Name "AzDo$CacheType" -Value $Content -Scope Global -Force
 
+        # The global now holds what Export-CacheObject wrote. Record that here, because the export
+        # ran before the global was replaced and so could not.
+        if ($ENV:AZDODSC_CACHE_DIRECTORY)
+        {
+            $cacheFilePath = [System.IO.Path]::Combine($ENV:AZDODSC_CACHE_DIRECTORY, 'Cache', "$CacheType.clixml")
+            Set-CacheFileStamp -CacheType $CacheType -Path $cacheFilePath -Content $Content
+        }
+
         Write-Verbose "[Set-ObjectCache] Successfully set cache object for type: $CacheType"
 
     }
