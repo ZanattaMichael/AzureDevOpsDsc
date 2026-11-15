@@ -25,15 +25,30 @@
     xDscResourceDesigner           = '1.13.0.0'
     'DscResource.Common'           = '0.24.5'
 
-    'DscResource.AnalyzerRules'    = '0.3.0'
+    'DscResource.AnalyzerRules'    = @{
+        Version    = 'latest'
+        Parameters = @{
+            AllowPrerelease = $true
+        }
+    }
     'Indented.ScriptAnalyzerRules' = '1.1.0'
 
     # Prerequisite modules for documentation.
-    'DscResource.DocGenerator'     = '0.13.0'
+    'DscResource.DocGenerator'     = @{
+        Version    = 'latest'
+        Parameters = @{
+            AllowPrerelease = $true
+        }
+    }
     PlatyPS                        = '0.14.2'
 
     # Prerequisite module for generating DSC v3 adapted resource manifests.
-    'DscResource.Authoring'        = '0.2.0'
+    'DscResource.Authoring'        = @{
+        Version    = 'latest'
+        Parameters = @{
+            AllowPrerelease = $true
+        }
+    }
 
     # Prerequisites modules needed for examples or integration tests
     PSDscResources                 = '2.12.0.0'
