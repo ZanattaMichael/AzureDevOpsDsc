@@ -94,11 +94,33 @@ a shared or world-readable one), and run DSC as the same account that ran
 maps identity names to descriptors, so anything that can write it can redirect a
 permission grant.
 
-### *AZDO_WARNINGLOGGING_FILEPATH* and *AZDO_ERRORLOGGING_FILEPATH* Environment Variables
+### *AZDODSC_ALLOWED_API_HOSTS* Environment Variable
 
-The `AZDO_WARNINGLOGGING_FILEPATH` and `AZDO_ERRORLOGGING_FILEPATH`environment
-variables are typically used in Azure DevOps (AzDO) pipelines or custom scripts
-to specify file paths where warning and error logs should be stored.
+The module only sends its credential to Azure DevOps Services hosts: `dev.azure.com`,
+its service hosts (`vssps.`, `vsrm.`, `vsaex.`, `feeds.`, `auditservice.`,
+`extmgmt.dev.azure.com` and so on) and the legacy `<organization>.visualstudio.com`
+hosts. An authenticated request to any other host is refused before the
+`Authorization` header is built, with the error
+`Refusing to send the Azure DevOps credential to '<host>'`. Nothing needs to be
+configured for Azure DevOps Services.
+
+`AZDODSC_ALLOWED_API_HOSTS` adds hosts to that list. It is a comma separated list of
+host names (no scheme, port or path), each matched exactly, with no wildcards:
+
+```powershell
+$env:AZDODSC_ALLOWED_API_HOSTS = 'tfs.contoso.com'
+```
+
+It exists for Azure DevOps Server (on-premises) collections, which the module does
+not target yet (see `docs/AzureDevOpsServerSupport.md`). Every host named here
+receives the credential, so only name hosts you operate.
+
+### *AZDO_VERBOSELOGGING_FILEPATH*, *AZDO_WARNINGLOGGING_FILEPATH* and *AZDO_ERRORLOGGING_FILEPATH* Environment Variables
+
+The `AZDO_VERBOSELOGGING_FILEPATH`, `AZDO_WARNINGLOGGING_FILEPATH` and
+`AZDO_ERRORLOGGING_FILEPATH` environment variables are typically used in Azure
+DevOps (AzDO) pipelines or custom scripts to specify file paths where verbose,
+warning and error logs should be stored.
 These variables help manage logging by directing different types of log messages
 to separate files, aiding in better organization and analysis.
 
@@ -113,6 +135,27 @@ but do not halt the execution.
 designated for logging errors. Errors are typically more severe than warnings
 and might require immediate action or investigation.
 
+- **AZDO_VERBOSELOGGING_FILEPATH**: This variable specifies the path to a file
+that receives every verbose message. It is detailed and slows the module down, so
+set it only while troubleshooting.
+
+#### Secrets in logs and error messages
+
+Before a message reaches the verbose, warning or error stream, or one of these log
+files, anything shaped like a credential is replaced with `<redacted>`: `Basic` and
+`Bearer` header values, JSON Web Tokens (every Entra ID access token is one), Azure
+DevOps personal access tokens, and `name=value` pairs whose name says it is a secret
+(`client_secret`, `password`, `access_token`, `serviceprincipalkey` and similar). The
+same applies to error messages built from an API response, an identity provider
+error or Azure CLI output, and a quoted response body is cut off at 4,000
+characters.
+
+Redaction works on shape, so a secret with no recognisable shape, such as a short
+custom API key logged without a label, is not caught. Treat the log files as
+sensitive anyway: they name projects, identities and URIs. The module creates each
+log file with owner-only permissions (the same as the cache directory); a file that
+already exists keeps the permissions it has.
+
 ## Setting Up Managed Identity
 
 Please use the following [documentation](https://learn.microsoft.com/en-us/azure/devops/integrate/get-started/authentication/service-principal-managed-identity?view=azure-devops) as a guide to create a managed identity in Azure DevOps.
@@ -124,6 +167,12 @@ Prior to accessing any resources, it is necessary to configure authentication by
 ```powershell
 New-AzDoAuthenticationProvider -OrganizationName $AzureDevopsOrganizationName -UseManagedIdentity
 ```
+
+`-OrganizationName` is the organization's name only, not its URL: for
+`https://dev.azure.com/contoso` pass `contoso`. A value that is not 1 to 50 letters,
+digits or hyphens, starting and ending with a letter or digit, is refused before any
+token is requested. `-TenantId`, where an authentication type takes one, must be the
+tenant GUID or a verified domain name such as `contoso.onmicrosoft.com`.
 
 ## Sample Invocation
 

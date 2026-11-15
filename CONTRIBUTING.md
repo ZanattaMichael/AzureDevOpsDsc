@@ -782,6 +782,36 @@ Ensure that the necessary authentication protocols are properly implemented to f
 Next, apply the changes to the `Add-AuthenticationHTTPHeader` function.
 This involves updating the function to include the new authentication headers, ensuring that each HTTP request is authenticated correctly.
 
+## Secrets and Untrusted Text
+
+The module's `Write-Verbose`, `Write-Warning` and `Write-Error` redact credential-shaped
+text for you. A `throw` does not, and neither does anything written another way. When you
+add or change code:
+
+* Never put a token, client secret, password, request header table or token request body in
+  a log line or an error message.
+* Wrap text you did not write yourself (`$_`, a response body, the output of a native
+  command) in `Protect-AzDoSecretString` before putting it in an exception message:
+
+    ``` PowerShell
+    throw "[Get-Example] The request failed. Error: $(Protect-AzDoSecretString -InputString ([String]$_))"
+    ```
+
+* Send every Azure DevOps request through `Invoke-AzDevOpsApiRestMethod`. It enforces https,
+  refuses to send the credential to a host that is not Azure DevOps, and redacts errors. Do
+  not call `Invoke-RestMethod` or `Invoke-WebRequest` directly.
+* If a resource has a DSC property that carries a secret, return its name from
+  `GetDscResourceSecretPropertyNames()` so export and logging redact it.
+* If a resource caches a write response that can echo a secret, add its cache type to
+  `Protect-AzDoCacheSecret`.
+* Build fake credentials in tests at run time (by concatenation), not as literals.
+
+`tests\Unit\Modules\AzureDevOpsDsc.Common\Security\SecretLeakage.tests.ps1` enforces these
+rules and runs with the Common unit tests. It scans the source and the repository, and it
+plants canary credentials and searches every output stream, exception, log file and cache
+file for them. When it fails, fix the leak. Only extend one of its allow-lists when the
+flagged value is provably not a secret, and say why next to the entry.
+
 # Enable Verbose Logging
 
 > **IMPORTANT**: Enabling verbose logging will impact performance.
@@ -832,6 +862,8 @@ To enable `Write-Verbose` logging, follow these steps:
             ```
 
 By setting the `AZDO_VERBOSELOGGING_FILEPATH` environment variable, you direct the `Write-Verbose` output to the specified file, enabling detailed logging for troubleshooting and monitoring purposes.
+
+The file is created with owner-only permissions, and credential-shaped text is replaced with `<redacted>` before a line is written. It still names projects, identities and URIs, so do not attach it to a public issue without reading it first.
 
 Below is an example of the `Write-Verbose` logfile:
 

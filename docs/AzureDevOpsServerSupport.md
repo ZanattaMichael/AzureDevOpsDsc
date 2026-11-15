@@ -37,7 +37,13 @@ Server collection, which addresses every service through the same collection URL
    Workload Identity Federation tokens are all cloud-only (they authenticate against
    Microsoft Entra ID, which an on-premise collection does not use) and must be rejected
    with a clear error when `-ServerUrl` is set with anything other than
-   `PersonalAccessToken`.
+   `PersonalAccessToken`. Two checks added since this plan was written have to be
+   handled here too: `Invoke-AzDevOpsApiRestMethod` only sends the credential to Azure
+   DevOps Services hosts unless the host is named in `AZDODSC_ALLOWED_API_HOSTS`
+   (`Test-AzDoApiHost`), so the collection host must be allowed, either by that variable
+   or by having `Test-AzDoApiHost` accept the persisted `-ServerUrl` host; and
+   `New-AzDoAuthenticationProvider` validates `-OrganizationName` as a cloud organization
+   name, which a collection path such as `tfs/DefaultCollection` does not pass.
 
 3. **Mechanical per-subsystem replacement.** Replace the roughly 344 inlined
    `dev.azure.com` (and `vssps.`/`vsaex.`/`feeds.`/`auditservice.`/`vsrm.dev.azure.com`)
