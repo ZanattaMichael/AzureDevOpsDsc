@@ -49,9 +49,9 @@
         AZDO_ERRORLOGGING_FILEPATH     path for error log file
 
     AUTHENTICATION METHODS:
-      PAT          : -SecureStringPersonalAccessToken <SecureString>  (-PersonalAccessToken "<pat>" still works but warns: plain text)
+      PAT          : -SecureStringPersonalAccessToken <SecureString>
       Managed ID   : -useManagedIdentity
-      Service Prin : -TenantId -ClientId -ClientSecret
+      Service Prin : -TenantId -ClientId -SecureStringClientSecret <SecureString>
       Certificate  : -TenantId -ClientId (-CertificateThumbprint | -CertificatePath + -CertificatePassword)
       Azure CLI    : -useAzureCLI  (requires az login)
 #>
@@ -327,7 +327,7 @@ Write-Host '──────────────────────�
 
   # Service Principal -- Client Secret
   New-AzDoAuthenticationProvider -OrganizationName "<org>" `
-      -TenantId "<tenant-id>" -ClientId "<client-id>" -ClientSecret "<secret>"
+      -TenantId "<tenant-id>" -ClientId "<client-id>" -SecureStringClientSecret (Read-Host -Prompt 'Client secret' -AsSecureString)
 
   # Service Principal -- Certificate (Windows cert store)
   New-AzDoAuthenticationProvider -OrganizationName "<org>" `

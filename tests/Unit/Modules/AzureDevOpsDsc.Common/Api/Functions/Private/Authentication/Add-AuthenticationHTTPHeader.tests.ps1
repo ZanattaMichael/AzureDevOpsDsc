@@ -11,6 +11,8 @@ Describe "Add-AuthenticationHTTPHeader" -Tag "Unit", "Authentication" {
 
         # Load the functions to test
         $files = Get-FunctionItem (Find-MockedFunctions -TestFilePath $currentFile)
+        . (Get-FunctionItem 'Assert-AzDoCachePathIsPrivate.ps1').FullName
+        . (Get-FunctionItem 'Test-AzDoIsWindows.ps1').FullName
         . (Get-FunctionItem 'Register-AzDoSecretValue.ps1').FullName
         ForEach ($file in $files) {
             . $file.FullName

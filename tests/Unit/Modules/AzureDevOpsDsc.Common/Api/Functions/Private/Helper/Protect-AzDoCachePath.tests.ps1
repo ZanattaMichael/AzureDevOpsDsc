@@ -38,6 +38,25 @@ Describe "Protect-AzDoCachePath" -Tag "Unit", "Helper" {
         }
     }
 
+    Context "when the permissions cannot be restricted" {
+
+        BeforeAll {
+            Mock -CommandName Test-AzDoIsWindows -MockWith { throw 'permission change refused' }
+            $script:target = Join-Path -Path $TestDrive -ChildPath 'unprotectable'
+            $null = New-Item -Path $script:target -ItemType Directory -Force
+        }
+
+        It "warns and carries on by default" {
+            { Protect-AzDoCachePath -Path $script:target } | Should -Not -Throw
+
+            Should -Invoke -CommandName Write-Warning -Times 1 -ParameterFilter { $Message -like '*permission change refused*' }
+        }
+
+        It "throws with -Required, so the caller writes nothing" {
+            { Protect-AzDoCachePath -Path $script:target -Required } | Should -Throw '*nothing has been written*permission change refused*'
+        }
+    }
+
     Context "on a non-Windows platform" -Skip:$IsWindows {
 
         BeforeAll {

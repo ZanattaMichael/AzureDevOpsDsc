@@ -5,6 +5,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- **BREAKING:** `New-AzDoAuthenticationProvider` no longer has the plain-text
+  `-PersonalAccessToken` (alias `-PAT`) and `-ClientSecret` parameters, which only warned
+  until now. Pass `-SecureStringPersonalAccessToken` or `-SecureStringClientSecret`, for
+  example `ConvertTo-SecureString -String $env:AZDO_PAT -AsPlainText -Force` or
+  `Read-Host -AsSecureString`.
+
+### Changed
+
+- **BREAKING:** credential storage
+  - `New-AzDoAuthenticationProvider` fails, and writes no credential, when it cannot
+    restrict the permissions of `AZDODSC_CACHE_DIRECTORY` or `ModuleSettings.clixml`. It
+    used to warn and write the credential anyway.
+  - On Linux and macOS, `ModuleSettings.clixml` is only read when the cache directory is
+    owned by the current account (or root) and has no group or other permissions. A
+    directory that fails the check stops the run with the fix (`chmod 700`). Set
+    `AZDODSC_ALLOW_SHARED_CACHE_DIRECTORY=1` to get a warning instead, for a mounted
+    volume whose permissions cannot be changed.
+  - `ModuleSettings.clixml` no longer holds the access token for service principal,
+    certificate, Azure CLI and file or GitHub Actions workload identity sign-in: restoring
+    any of them already requested a new token. A managed identity access token is kept on
+    Windows, where the file is DPAPI-encrypted, and no longer written on Linux and macOS,
+    where a later session asks the identity endpoint again. A personal access token and a
+    manually supplied federated token are stored as before, since nothing else can
+    reproduce them.
+
 ### Security
 
 - Build and release pipeline
