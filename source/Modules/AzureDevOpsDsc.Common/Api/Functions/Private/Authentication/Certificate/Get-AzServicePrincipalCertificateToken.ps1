@@ -105,7 +105,7 @@ Function Get-AzServicePrincipalCertificateToken
     }
     catch
     {
-        throw "[Get-AzServicePrincipalCertificateToken] Failed to acquire token from '$tokenEndpoint'. Error: $_"
+        throw "[Get-AzServicePrincipalCertificateToken] Failed to acquire token from '$tokenEndpoint'. Error: $(Protect-AzDoSecretString -InputString ([String]$_))"
     }
 
     if ([String]::IsNullOrEmpty($response.access_token))

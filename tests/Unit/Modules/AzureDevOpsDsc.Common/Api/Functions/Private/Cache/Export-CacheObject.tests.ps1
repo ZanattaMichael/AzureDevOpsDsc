@@ -21,6 +21,7 @@ Describe "Export-CacheObject" -Tag "Unit", "Cache" {
         ForEach ($file in $files) {
             . $file.FullName
         }
+        . (Get-FunctionItem 'Protect-AzDoCacheSecret.ps1')
 
         . (Get-ClassFilePath '000.CacheItem')
 

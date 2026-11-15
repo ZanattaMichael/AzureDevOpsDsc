@@ -40,16 +40,21 @@ Function Get-AzCliToken
 
     if ($azResult.ExitCode -ne 0)
     {
-        throw "[Get-AzCliToken] The Azure CLI returned a non-zero exit code ($($azResult.ExitCode)). Ensure you are logged in with 'az login'. Output: $azOutput"
+        throw "[Get-AzCliToken] The Azure CLI returned a non-zero exit code ($($azResult.ExitCode)). Ensure you are logged in with 'az login'. Output: $(Protect-AzDoSecretString -InputString ($azOutput | Out-String).Trim())"
     }
+
+    # Invoke-AzCLICommand merges stderr into the output, so a warning from az (an upgrade notice,
+    # a deprecation) arrives as an ErrorRecord next to the JSON. Only stdout is parsed. On a
+    # successful exit the output holds the access token, so it is never put in an error message.
+    $azStandardOutput = @($azOutput | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] }) -join [System.Environment]::NewLine
 
     try
     {
-        $response = $azOutput | ConvertFrom-Json
+        $response = $azStandardOutput | ConvertFrom-Json -ErrorAction Stop
     }
     catch
     {
-        throw "[Get-AzCliToken] Failed to parse Azure CLI output as JSON. Output: $azOutput"
+        throw "[Get-AzCliToken] Failed to parse Azure CLI output as JSON. The output is not shown because it can contain the access token."
     }
 
     if ([String]::IsNullOrEmpty($response.accessToken))

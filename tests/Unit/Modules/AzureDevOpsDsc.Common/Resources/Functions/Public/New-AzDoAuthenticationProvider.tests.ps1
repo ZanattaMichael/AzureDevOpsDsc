@@ -317,7 +317,7 @@ Describe "New-AzDoAuthenticationProvider" -Tag "Unit", "Public" {
             $script:expectedSettingsPath = Join-Path -Path $TestDrive -ChildPath 'ModuleSettings.clixml'
         }
 
-        It "Should restrict the cache directory and then the settings file after exporting" {
+        It "Should restrict the cache directory and the settings file" {
             $secureStringPAT = ConvertTo-SecureString "dummySecurePat" -AsPlainText -Force
 
             New-AzDoAuthenticationProvider -OrganizationName "Contoso" -SecureStringPersonalAccessToken $secureStringPAT
@@ -335,13 +335,62 @@ Describe "New-AzDoAuthenticationProvider" -Tag "Unit", "Public" {
             Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 0
         }
 
-        It "Should not restrict the settings file when the export fails" {
-            Mock -CommandName Export-Clixml -MockWith { throw 'disk full' }
+        It "Should restrict the settings file before the credential is written into it" {
+            $script:callOrder = [System.Collections.Generic.List[String]]::new()
+            Mock -CommandName Protect-AzDoCachePath -MockWith { $script:callOrder.Add("protect:$Path") }
+            Mock -CommandName Export-Clixml -MockWith { $script:callOrder.Add('export') }
             $secureStringPAT = ConvertTo-SecureString "dummySecurePat" -AsPlainText -Force
 
-            { New-AzDoAuthenticationProvider -OrganizationName "Contoso" -SecureStringPersonalAccessToken $secureStringPAT } | Should -Throw
+            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -SecureStringPersonalAccessToken $secureStringPAT
 
-            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 0
+            $script:callOrder | Should -Be @("protect:$TestDrive", "protect:$($script:expectedSettingsPath)", 'export')
+            # The file exists (empty) by the time it is restricted, so there is something to restrict.
+            Test-Path -LiteralPath $script:expectedSettingsPath | Should -BeTrue
+        }
+    }
+
+    Context "Organization name and tenant id validation" {
+
+        It "Should refuse the organization name '<Name>' before any token is requested" -ForEach @(
+            @{ Name = 'contoso/_apis' }
+            @{ Name = 'https://dev.azure.com/contoso' }
+            @{ Name = 'contoso@example.org' }
+            @{ Name = 'contoso?x=1' }
+            @{ Name = 'con toso' }
+            @{ Name = '-contoso' }
+            @{ Name = 'contoso.example.org' }
+            @{ Name = ('a' * 51) }
+        ) {
+            $secureStringPAT = ConvertTo-SecureString "dummySecurePat" -AsPlainText -Force
+
+            { New-AzDoAuthenticationProvider -OrganizationName $Name -SecureStringPersonalAccessToken $secureStringPAT } |
+                Should -Throw -ExpectedMessage '*not a valid Azure DevOps organization name*'
+
+            Should -Invoke -CommandName Set-AzPersonalAccessToken -Exactly 0
+        }
+
+        It "Should refuse the tenant id '<Tenant>' before any token is requested" -ForEach @(
+            @{ Tenant = 'tenant/../common' }
+            @{ Tenant = 'tenant@example.org' }
+            @{ Tenant = 'tenant?x=1' }
+            @{ Tenant = 'ten ant' }
+        ) {
+            $secret = ConvertTo-SecureString "dummySecret" -AsPlainText -Force
+
+            { New-AzDoAuthenticationProvider -OrganizationName 'Contoso' -TenantId $Tenant -ClientId 'client' -SecureStringClientSecret $secret -NoVerify } |
+                Should -Throw -ExpectedMessage '*not a valid tenant id*'
+
+            Should -Invoke -CommandName Get-AzServicePrincipalToken -Exactly 0
+        }
+
+        It "Should accept a GUID and a domain name as the tenant id" -ForEach @(
+            @{ Tenant = '72f988bf-86f1-41af-91ab-2d7cd011db47' }
+            @{ Tenant = 'contoso.onmicrosoft.com' }
+        ) {
+            $secret = ConvertTo-SecureString "dummySecret" -AsPlainText -Force
+
+            { New-AzDoAuthenticationProvider -OrganizationName 'Contoso-01' -TenantId $Tenant -ClientId 'client' -SecureStringClientSecret $secret -NoVerify } |
+                Should -Not -Throw
         }
     }
 

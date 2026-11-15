@@ -69,7 +69,7 @@ Function Get-AzServicePrincipalToken
     }
     catch
     {
-        throw "[Get-AzServicePrincipalToken] Failed to acquire token from '$tokenEndpoint'. Error: $_"
+        throw "[Get-AzServicePrincipalToken] Failed to acquire token from '$tokenEndpoint'. Error: $(Protect-AzDoSecretString -InputString ([String]$_))"
     }
 
     if ([String]::IsNullOrEmpty($response.access_token))

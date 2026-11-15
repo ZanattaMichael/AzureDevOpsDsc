@@ -85,7 +85,7 @@ Function Get-AzFederatedAssertion
             }
             catch
             {
-                throw "[Get-AzFederatedAssertion] Failed to request a federated token from the GitHub Actions OIDC endpoint. Error: $_"
+                throw "[Get-AzFederatedAssertion] Failed to request a federated token from the GitHub Actions OIDC endpoint. Error: $(Protect-AzDoSecretString -InputString ([String]$_))"
             }
 
             if ([String]::IsNullOrEmpty($response.value))

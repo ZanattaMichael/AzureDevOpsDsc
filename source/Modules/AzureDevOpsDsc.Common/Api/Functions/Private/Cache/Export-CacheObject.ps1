@@ -79,6 +79,10 @@ Function Export-CacheObject
             $Content = [System.Collections.Generic.List[CacheItem]]::New()
         }
 
+        # A cached write response can echo the secrets that were sent. Blank them before the
+        # cache is written, so no secret variable value or service connection key reaches disk.
+        Protect-AzDoCacheSecret -CacheType $CacheType -Content $Content
+
         # Save content to cache file — must use -InputObject (not pipeline).
         Write-Verbose "[Export-ObjectCache] Saving content to cache file: $cacheFilePath"
         Export-Clixml -InputObject $Content -Depth $Depth -LiteralPath $cacheFilePath

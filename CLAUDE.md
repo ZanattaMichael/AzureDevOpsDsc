@@ -177,6 +177,17 @@ normalizer (`ConvertTo-NormalizedWiql`, `ConvertTo-NormalizedRuleClause`, `Forma
 `Format-AzDoPipelineFolderPath`) used **only for comparison** — what gets written back is always
 what the configuration supplied.
 
+### 10. Secrets in output, and where the credential may be sent
+`Protect-AzDoSecretString` redacts credential-shaped text. The `Write-Verbose`/`Write-Warning`/
+`Write-Error` proxies in `Helper/Logging/Proxy Functions` apply it to every message; a `throw`
+does not go through a proxy, so wrap any text you did not write yourself (`$_`, a response body,
+native command output) in it before putting it in an exception message.
+`Invoke-AzDevOpsApiRestMethod` refuses to attach the credential to a host `Test-AzDoApiHost` does
+not accept, and is the only place allowed to call `Invoke-RestMethod` apart from the token
+endpoint functions. `tests/Unit/Modules/AzureDevOpsDsc.Common/Security/SecretLeakage.tests.ps1`
+enforces all of this by scanning the source and by planting canary credentials; when it fails, fix
+the leak rather than extending an allow-list.
+
 ---
 
 ## Auth Helper Pattern for Integration Tests

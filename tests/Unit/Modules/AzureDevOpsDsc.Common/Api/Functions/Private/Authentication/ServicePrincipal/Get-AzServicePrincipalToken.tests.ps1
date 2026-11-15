@@ -12,6 +12,7 @@ Describe "Get-AzServicePrincipalToken Tests" -Tags "Unit", "Authentication" {
         ForEach ($file in $files) {
             . $file.FullName
         }
+        . (Get-FunctionItem 'Protect-AzDoSecretString.ps1')
 
         # Decodes the SecureString client secret; not mocked, so load it by name.
         . (Get-FunctionItem 'ConvertFrom-AzDoSecureString.ps1').FullName

@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- Secret leakage and untrusted input
+  - Everything written through the module's `Write-Verbose`, `Write-Warning` and
+    `Write-Error` proxies, and every error message built from text the module did not
+    write (an HTTP response body, an identity provider error, Azure CLI output), now
+    passes through a new private helper, `Protect-AzDoSecretString`. It replaces
+    `Basic`/`Bearer` header values, JSON Web Tokens, Azure DevOps personal access tokens
+    and `name=value` pairs with a secret-bearing name (`client_secret`, `password`,
+    `access_token`, ...) with `<redacted>`.
+  - `Invoke-AzDevOpsApiRestMethod` only attaches the credential to requests for an Azure
+    DevOps host (`dev.azure.com`, `*.dev.azure.com`, `*.visualstudio.com`), checked by the
+    new `Test-AzDoApiHost`. Any other host is refused before the Authorization header is
+    built. Azure DevOps Server hosts are named in the `AZDODSC_ALLOWED_API_HOSTS`
+    environment variable (comma separated, matched exactly).
+  - `Invoke-AzDevOpsApiRestMethod` escapes the continuation token it copies from a
+    response header into the next request URI, and caps the response body it quotes in
+    an error at 4,000 characters.
+  - `Get-AzCliToken` put the whole `az` output, access token included, in the error it
+    threw when that output could not be parsed as JSON, which happened whenever `az` also
+    wrote a warning to stderr. The output is no longer shown, and stderr lines are
+    ignored when parsing so the warning no longer breaks authentication.
+  - `Export-CacheObject` blanks secret variable values, service connection keys and
+    audit stream keys (`Protect-AzDoCacheSecret`) before a cache file is written, so a
+    write response that echoes the request cannot put a secret on disk.
+  - `New-AzDoAuthenticationProvider` validates the organization name and tenant id
+    before building a URI from them, and restricts `ModuleSettings.clixml` before the
+    credential is written into it instead of after.
+  - Log files written by the proxies are created owner-only.
+  - New test suite `tests/Unit/Modules/AzureDevOpsDsc.Common/Security/SecretLeakage.tests.ps1`:
+    scans the source for secret-bearing variables in log lines and error messages, web
+    requests that bypass the audited request path, secret-looking DSC properties not
+    declared secret, and credential-shaped text committed to the repository; and plants
+    canary credentials to check that none reaches an output stream, an exception, a log
+    file or a cache file.
+
 - Credential storage
   - `New-AzDoAuthenticationProvider` no longer leaves `ModuleSettings.clixml` and the cache
     directory with default permissions. A new private helper, `Protect-AzDoCachePath`,

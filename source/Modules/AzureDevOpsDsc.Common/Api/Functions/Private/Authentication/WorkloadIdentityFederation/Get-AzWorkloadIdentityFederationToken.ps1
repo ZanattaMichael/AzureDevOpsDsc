@@ -88,7 +88,7 @@ Function Get-AzWorkloadIdentityFederationToken
     }
     catch
     {
-        throw "[Get-AzWorkloadIdentityFederationToken] Failed to acquire token from '$tokenEndpoint'. Error: $_"
+        throw "[Get-AzWorkloadIdentityFederationToken] Failed to acquire token from '$tokenEndpoint'. Error: $(Protect-AzDoSecretString -InputString ([String]$_))"
     }
 
     if ([String]::IsNullOrEmpty($response.access_token))
