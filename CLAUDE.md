@@ -137,7 +137,11 @@ account can decrypt them with `[System.Runtime.InteropServices.Marshal]`. On Lin
 is no DPAPI: the SecureString is written as hex-encoded UTF-16, i.e. recoverable plaintext, and the
 file is protected only by its permissions. The module therefore sets owner-only permissions on the
 cache directory, `ModuleSettings.clixml` and every cache file it writes (`Protect-AzDoCachePath`),
-and warns on non-Windows. Keep `AZDODSC_CACHE_DIRECTORY` on a private path, never on a shared or
+and warns on non-Windows. `New-AzDoAuthenticationProvider` passes `-Required`, so it throws rather than
+write the credential where the permissions cannot be set, and `Assert-AzDoCachePathIsPrivate`
+refuses to read the settings from a directory another account could write (non-Windows only).
+`ConvertTo-AzDoStoredToken` drops the access token from the stored copy wherever sign-in can get
+another. Keep `AZDODSC_CACHE_DIRECTORY` on a private path, never on a shared or
 world-readable one, and run DSC as the account that ran `New-AzDoAuthenticationProvider`. The
 `Cache/` contents matter too: the identity caches map names to descriptors, so anyone who can
 write them can redirect a permission grant.

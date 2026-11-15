@@ -11,6 +11,8 @@ Describe "Get-AzManagedIdentityToken Tests" -Tag "Unit", "ManagedIdentity", "Aut
 
         # Load the functions to test
         $files = Get-FunctionItem (Find-MockedFunctions -TestFilePath $currentFile)
+        . (Get-FunctionItem 'Assert-AzDoCachePathIsPrivate.ps1').FullName
+        . (Get-FunctionItem 'Test-AzDoIsWindows.ps1').FullName
         ForEach ($file in $files) {
             . $file.FullName
         }

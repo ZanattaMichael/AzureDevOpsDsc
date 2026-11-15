@@ -46,7 +46,7 @@ Describe "Service Principal Authentication - Integration Tests" -Tags "Integrati
             -OrganizationName $env:AZ_ORG_NAME `
             -TenantId $env:SP_TENANT_ID `
             -ClientId $env:SP_CLIENT_ID `
-            -ClientSecret $env:SP_CLIENT_SECRET `
+            -SecureStringClientSecret (ConvertTo-SecureString -String $env:SP_CLIENT_SECRET -AsPlainText -Force) `
             -NoVerify
 
         $Global:DSCAZDO_AuthenticationToken | Should -Not -BeNullOrEmpty
@@ -58,7 +58,7 @@ Describe "Service Principal Authentication - Integration Tests" -Tags "Integrati
             -OrganizationName $env:AZ_ORG_NAME `
             -TenantId $env:SP_TENANT_ID `
             -ClientId $env:SP_CLIENT_ID `
-            -ClientSecret $env:SP_CLIENT_SECRET `
+            -SecureStringClientSecret (ConvertTo-SecureString -String $env:SP_CLIENT_SECRET -AsPlainText -Force) `
             -NoVerify
 
         $Global:DSCAZDO_AuthenticationToken.isExpired() | Should -Be $false
@@ -69,7 +69,7 @@ Describe "Service Principal Authentication - Integration Tests" -Tags "Integrati
             -OrganizationName $env:AZ_ORG_NAME `
             -TenantId $env:SP_TENANT_ID `
             -ClientId $env:SP_CLIENT_ID `
-            -ClientSecret $env:SP_CLIENT_SECRET `
+            -SecureStringClientSecret (ConvertTo-SecureString -String $env:SP_CLIENT_SECRET -AsPlainText -Force) `
             -NoVerify
 
         $header = Add-AuthenticationHTTPHeader
@@ -81,7 +81,7 @@ Describe "Service Principal Authentication - Integration Tests" -Tags "Integrati
             -OrganizationName $env:AZ_ORG_NAME `
             -TenantId $env:SP_TENANT_ID `
             -ClientId $env:SP_CLIENT_ID `
-            -ClientSecret $env:SP_CLIENT_SECRET `
+            -SecureStringClientSecret (ConvertTo-SecureString -String $env:SP_CLIENT_SECRET -AsPlainText -Force) `
             -NoVerify
 
         $result = Test-AzToken $Global:DSCAZDO_AuthenticationToken

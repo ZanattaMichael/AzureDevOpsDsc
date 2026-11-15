@@ -37,6 +37,7 @@ Describe "New-AzDoAuthenticationProvider" -Tag "Unit", "Public" {
         Mock -CommandName Initialize-CacheObject
         Mock -CommandName Export-Clixml
         Mock -CommandName Protect-AzDoCachePath
+        Mock -CommandName ConvertTo-AzDoStoredToken -MockWith { return $Token }
         Mock -CommandName Test-AzDoIsWindows -MockWith { return $true }
         Mock -CommandName Write-Warning
 
@@ -61,7 +62,7 @@ Describe "New-AzDoAuthenticationProvider" -Tag "Unit", "Public" {
 
             # Act & Assert
             {
-                New-AzDoAuthenticationProvider -OrganizationName "Contoso" -PersonalAccessToken "dummyPat"
+                New-AzDoAuthenticationProvider -OrganizationName "Contoso" -SecureStringPersonalAccessToken (ConvertTo-SecureString "dummyPat" -AsPlainText -Force)
             } | Should -Throw "*The Environment Variable 'AZDODSC_CACHE_DIRECTORY' is not set*"
         }
     }
@@ -74,37 +75,30 @@ Describe "New-AzDoAuthenticationProvider" -Tag "Unit", "Public" {
         }
     }
 
-    Context "Using PersonalAccessToken parameter set" {
-        It "Should set the global authentication token without verification" {
-            # Act
-            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -PersonalAccessToken "dummyPat" -NoVerify
+    Context "Plain-text secret parameters" {
 
-            # Assert
-            $Global:DSCAZDO_AuthenticationToken | Should -Be "mockedToken"
-            Assert-MockCalled -CommandName Set-AzPersonalAccessToken -Exactly 1
+        It "Has no <Name> parameter, so a secret cannot be typed on the command line" -ForEach @(
+            @{ Name = 'PersonalAccessToken' }
+            @{ Name = 'ClientSecret' }
+        ) {
+            (Get-Item -Path 'function:New-AzDoAuthenticationProvider').Parameters.ContainsKey($Name) | Should -BeFalse
         }
 
-        It "Should set the global authentication token with verification" {
-            # Act
-            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -PersonalAccessToken "dummyPat"
-
-            # Assert
-            $Global:DSCAZDO_AuthenticationToken | Should -Be "mockedToken"
-            Assert-MockCalled -CommandName Set-AzPersonalAccessToken -Exactly 1 -ParameterFilter { $Verify }
+        It "Has no <Name> parameter set" -ForEach @(
+            @{ Name = 'PersonalAccessToken' }
+            @{ Name = 'ServicePrincipal' }
+        ) {
+            (Get-Item -Path 'function:New-AzDoAuthenticationProvider').ParameterSets.Name | Should -Not -Contain $Name
         }
 
-        It "Should warn that the PAT was passed as plain text and name the SecureString parameter" {
-            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -PersonalAccessToken "dummyPat" -NoVerify
-
-            Should -Invoke -CommandName Write-Warning -Exactly 1 -ParameterFilter {
-                $Message -like '*plain text*' -and $Message -like '*-SecureStringPersonalAccessToken*'
-            }
+        It "Rejects a plain-text personal access token" {
+            { New-AzDoAuthenticationProvider -OrganizationName "Contoso" -PersonalAccessToken "dummyPat" } | Should -Throw
+            Should -Invoke -CommandName Set-AzPersonalAccessToken -Exactly 0
         }
 
-        It "Should still warn about plain text when isResource is set" {
-            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -PersonalAccessToken "dummyPat" -NoVerify -isResource
-
-            Should -Invoke -CommandName Write-Warning -Exactly 1 -ParameterFilter { $Message -like '*plain text*' }
+        It "Rejects a plain-text client secret" {
+            { New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "tenant" -ClientId "client" -ClientSecret "secret" } | Should -Throw
+            Should -Invoke -CommandName Get-AzServicePrincipalToken -Exactly 0
         }
     }
 
@@ -166,26 +160,12 @@ Describe "New-AzDoAuthenticationProvider" -Tag "Unit", "Public" {
 
     Context "Using ServicePrincipal parameter set" {
 
-        It "Should set the global authentication token without verification" {
-            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "tenant" -ClientId "client" -ClientSecret "secret" -NoVerify
-
-            $Global:DSCAZDO_AuthenticationToken | Should -Be "mockedSPToken"
-            Assert-MockCalled -CommandName Get-AzServicePrincipalToken -Exactly 1
-        }
-
-        It "Should set the global authentication token with verification" {
-            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "tenant" -ClientId "client" -ClientSecret "secret"
+        It "Should verify the token unless NoVerify is set" {
+            $securePwd = ConvertTo-SecureString "secret" -AsPlainText -Force
+            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "tenant" -ClientId "client" -SecureStringClientSecret $securePwd
 
             $Global:DSCAZDO_AuthenticationToken | Should -Be "mockedSPToken"
             Assert-MockCalled -CommandName Get-AzServicePrincipalToken -Exactly 1 -ParameterFilter { $Verify }
-        }
-
-        It "Should warn that the client secret was passed as plain text and name the SecureString parameter" {
-            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "tenant" -ClientId "client" -ClientSecret "secret" -NoVerify
-
-            Should -Invoke -CommandName Write-Warning -Exactly 1 -ParameterFilter {
-                $Message -like '*plain text*' -and $Message -like '*-SecureStringClientSecret*'
-            }
         }
 
         It "Should accept SecureString client secret" {
@@ -296,15 +276,16 @@ Describe "New-AzDoAuthenticationProvider" -Tag "Unit", "Public" {
     Context "Token export functionality" {
         It "Should export token information when isResource is not set" {
             # Act
-            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -PersonalAccessToken "dummyPat"
+            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -SecureStringPersonalAccessToken (ConvertTo-SecureString "dummyPat" -AsPlainText -Force)
 
             # Assert
             Assert-MockCalled -CommandName Export-Clixml -Exactly 1
+            Should -Invoke -CommandName ConvertTo-AzDoStoredToken -Exactly 1
         }
 
         It "Should not export token information when isResource is set" {
             # Act
-            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -PersonalAccessToken "dummyPat" -isResource
+            New-AzDoAuthenticationProvider -OrganizationName "Contoso" -SecureStringPersonalAccessToken (ConvertTo-SecureString "dummyPat" -AsPlainText -Force) -isResource
 
             # Assert
             Assert-MockCalled -CommandName Export-Clixml -Exactly 0
@@ -322,9 +303,19 @@ Describe "New-AzDoAuthenticationProvider" -Tag "Unit", "Public" {
 
             New-AzDoAuthenticationProvider -OrganizationName "Contoso" -SecureStringPersonalAccessToken $secureStringPAT
 
-            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 1 -ParameterFilter { $Path -eq $TestDrive }
-            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 1 -ParameterFilter { $Path -eq $script:expectedSettingsPath }
+            # -Required: a folder that cannot be restricted must stop the credential being written.
+            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 1 -ParameterFilter { $Path -eq $TestDrive -and $Required }
+            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 1 -ParameterFilter { $Path -eq $script:expectedSettingsPath -and $Required }
             Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 2
+        }
+
+        It "Should not write the credential when the cache directory cannot be restricted" {
+            Mock -CommandName Protect-AzDoCachePath -MockWith { throw 'cannot restrict' }
+            $secureStringPAT = ConvertTo-SecureString "dummySecurePat" -AsPlainText -Force
+
+            { New-AzDoAuthenticationProvider -OrganizationName "Contoso" -SecureStringPersonalAccessToken $secureStringPAT } | Should -Throw '*cannot restrict*'
+
+            Should -Invoke -CommandName Export-Clixml -Exactly 0
         }
 
         It "Should not touch any permissions when isResource is set" {

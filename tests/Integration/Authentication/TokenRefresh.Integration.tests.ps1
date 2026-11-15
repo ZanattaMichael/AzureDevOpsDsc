@@ -45,7 +45,7 @@ Describe "Token Auto-Refresh - Integration Tests" -Tags "Integration", "Authenti
             -OrganizationName $env:AZ_ORG_NAME `
             -TenantId $env:SP_TENANT_ID `
             -ClientId $env:SP_CLIENT_ID `
-            -ClientSecret $env:SP_CLIENT_SECRET `
+            -SecureStringClientSecret (ConvertTo-SecureString -String $env:SP_CLIENT_SECRET -AsPlainText -Force) `
             -NoVerify
 
         # Artificially expire the token

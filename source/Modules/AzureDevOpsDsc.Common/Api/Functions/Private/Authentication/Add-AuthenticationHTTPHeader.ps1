@@ -34,6 +34,7 @@ Function Add-AuthenticationHTTPHeader
             $settingsPath = Join-Path -Path $ENV:AZDODSC_CACHE_DIRECTORY -ChildPath 'ModuleSettings.clixml'
             if (Test-Path -LiteralPath $settingsPath)
             {
+                Assert-AzDoCachePathIsPrivate
                 $objectSettings = Import-Clixml -LiteralPath $settingsPath
                 $organizationName = $objectSettings.OrganizationName
                 # tokenType is serialized as an integer or string enum value:
@@ -42,7 +43,12 @@ Function Add-AuthenticationHTTPHeader
                 $tokenType = $objectSettings.Token.tokenType
                 try
                 {
-                    if ($tokenType -eq 'ManagedIdentity' -or $tokenType -eq 0)
+                    if (($tokenType -eq 'ManagedIdentity' -or $tokenType -eq 0) -and ($null -eq $objectSettings.Token.access_token))
+                    {
+                        # The access token is only stored on Windows (ConvertTo-AzDoStoredToken).
+                        New-AzDoAuthenticationProvider -OrganizationName $organizationName -useManagedIdentity -isResource -NoVerify
+                    }
+                    elseif ($tokenType -eq 'ManagedIdentity' -or $tokenType -eq 0)
                     {
                         # Reconstruct a live ManagedIdentityToken from the deserialized cached token.
                         # Avoid calling the IMDS endpoint (requires Azure Arc secret-file ACL access).
