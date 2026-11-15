@@ -17,8 +17,8 @@
           ClientId     - The Application (client) ID of the App Registration.
           ClientSecret - The client secret value generated in the App Registration, as a SecureString.
 
-        Always pass the client secret as a SecureString. A plain-text -ClientSecret still works but
-        lands in shell history, transcripts and process listings, and the module warns when it is used.
+        Always pass the client secret as a SecureString. There is no plain-text -ClientSecret
+        parameter: a secret typed on the command line lands in shell history, transcripts and process listings.
 #>
 
 # Interactive use: prompt for the secret so it never appears in the script or the shell history

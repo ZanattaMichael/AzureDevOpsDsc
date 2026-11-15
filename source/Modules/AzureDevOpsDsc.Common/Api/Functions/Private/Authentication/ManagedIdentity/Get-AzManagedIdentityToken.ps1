@@ -51,6 +51,7 @@ Function Get-AzManagedIdentityToken
         {
             try
             {
+                Assert-AzDoCachePathIsPrivate
                 $cachedSettings = Import-Clixml -LiteralPath $cachedSettingsPath -ErrorAction Stop
                 $cachedToken    = $cachedSettings.Token
                 $isMI = ($cachedToken.tokenType.ToString() -eq 'ManagedIdentity' -or [int]$cachedToken.tokenType -eq 0)

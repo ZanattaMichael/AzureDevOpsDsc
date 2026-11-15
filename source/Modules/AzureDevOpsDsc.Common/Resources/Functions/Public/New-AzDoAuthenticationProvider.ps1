@@ -11,32 +11,24 @@ Workload Identity Federation (file-based, GitHub Actions OIDC, or a manually-sup
 .PARAMETER OrganizationName
 Specifies the name of the Azure DevOps organization.
 
-.PARAMETER PersonalAccessToken
-The Personal Access Token as plain text. Prefer -SecureStringPersonalAccessToken: a plain-text
-secret on the command line lands in shell history, transcripts and process listings, and the
-function warns when this parameter is used.
-
 .PARAMETER SecureStringPersonalAccessToken
-The Personal Access Token as a SecureString. This is the default parameter set.
+The Personal Access Token as a SecureString. This is the default parameter set. There is no
+plain-text parameter: a secret typed on the command line lands in shell history, transcripts and
+process listings. Use Read-Host -AsSecureString, or ConvertTo-SecureString on a value read from an
+environment variable or a secret store.
 
-.PARAMETER ClientSecret
-The service principal client secret as plain text. Prefer -SecureStringClientSecret for the same
-reason as -PersonalAccessToken; the function warns when this parameter is used.
+.PARAMETER SecureStringClientSecret
+The service principal client secret as a SecureString. There is no plain-text parameter, for the
+same reason.
 
 .EXAMPLE
 New-AzDoAuthenticationProvider -OrganizationName "Contoso" -SecureStringPersonalAccessToken (Read-Host -Prompt 'PAT' -AsSecureString)
-
-.EXAMPLE
-New-AzDoAuthenticationProvider -OrganizationName "Contoso" -PersonalAccessToken "myPAT"
 
 .EXAMPLE
 New-AzDoAuthenticationProvider -OrganizationName "Contoso" -useManagedIdentity
 
 .EXAMPLE
 New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "..." -ClientId "..." -SecureStringClientSecret $secureSecret
-
-.EXAMPLE
-New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "..." -ClientId "..." -ClientSecret "..."
 
 .EXAMPLE
 New-AzDoAuthenticationProvider -OrganizationName "Contoso" -TenantId "..." -ClientId "..." -CertificateThumbprint "..."
@@ -58,10 +50,8 @@ Function New-AzDoAuthenticationProvider
     [CmdletBinding(DefaultParameterSetName = 'SecureStringPersonalAccessToken')]
     param (
         # Organization Name
-        [Parameter(Mandatory = $true, ParameterSetName = 'PersonalAccessToken')]
         [Parameter(Mandatory = $true, ParameterSetName = 'SecureStringPersonalAccessToken')]
         [Parameter(Mandatory = $true, ParameterSetName = 'ManagedIdentity')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'ServicePrincipal')]
         [Parameter(Mandatory = $true, ParameterSetName = 'SecureStringServicePrincipal')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Certificate')]
         [Parameter(Mandatory = $true, ParameterSetName = 'CertificateFile')]
@@ -73,11 +63,6 @@ Function New-AzDoAuthenticationProvider
         [String]
         $OrganizationName,
 
-        # Personal Access Token
-        [Parameter(Mandatory = $true, ParameterSetName = 'PersonalAccessToken')]
-        [Alias('PAT')]
-        [String]
-        $PersonalAccessToken,
 
         # SecureString Personal Access Token
         [Parameter(Mandatory = $true, ParameterSetName = 'SecureStringPersonalAccessToken')]
@@ -91,7 +76,6 @@ Function New-AzDoAuthenticationProvider
         $useManagedIdentity,
 
         # Service Principal parameters
-        [Parameter(Mandatory = $true, ParameterSetName = 'ServicePrincipal')]
         [Parameter(Mandatory = $true, ParameterSetName = 'SecureStringServicePrincipal')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Certificate')]
         [Parameter(Mandatory = $true, ParameterSetName = 'CertificateFile')]
@@ -101,7 +85,6 @@ Function New-AzDoAuthenticationProvider
         [String]
         $TenantId,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'ServicePrincipal')]
         [Parameter(Mandatory = $true, ParameterSetName = 'SecureStringServicePrincipal')]
         [Parameter(Mandatory = $true, ParameterSetName = 'Certificate')]
         [Parameter(Mandatory = $true, ParameterSetName = 'CertificateFile')]
@@ -111,9 +94,6 @@ Function New-AzDoAuthenticationProvider
         [String]
         $ClientId,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'ServicePrincipal')]
-        [String]
-        $ClientSecret,
 
         [Parameter(Mandatory = $true, ParameterSetName = 'SecureStringServicePrincipal')]
         [SecureString]
@@ -159,8 +139,6 @@ Function New-AzDoAuthenticationProvider
 
         # Don't verify the Token
         [Parameter(ParameterSetName = 'ManagedIdentity')]
-        [Parameter(ParameterSetName = 'PersonalAccessToken')]
-        [Parameter(ParameterSetName = 'ServicePrincipal')]
         [Parameter(ParameterSetName = 'SecureStringServicePrincipal')]
         [Parameter(ParameterSetName = 'Certificate')]
         [Parameter(ParameterSetName = 'CertificateFile')]
@@ -172,10 +150,8 @@ Function New-AzDoAuthenticationProvider
         $NoVerify,
 
         # Do not export the Token (used by DSC resources that inherit from base class)
-        [Parameter(ParameterSetName = 'PersonalAccessToken')]
         [Parameter(ParameterSetName = 'SecureStringPersonalAccessToken')]
         [Parameter(ParameterSetName = 'ManagedIdentity')]
-        [Parameter(ParameterSetName = 'ServicePrincipal')]
         [Parameter(ParameterSetName = 'SecureStringServicePrincipal')]
         [Parameter(ParameterSetName = 'Certificate')]
         [Parameter(ParameterSetName = 'CertificateFile')]
@@ -211,26 +187,8 @@ Function New-AzDoAuthenticationProvider
     $Global:DSCAZDO_AuthenticationToken = $null
 
     #
-    # If the parameterset is PersonalAccessToken
-    if ($PSCmdlet.ParameterSetName -eq 'PersonalAccessToken')
-    {
-
-        Write-Verbose "[New-AzDoAuthenticationProvider] Creating a new Personal Access Token with OrganizationName $OrganizationName."
-        Write-Warning "[New-AzDoAuthenticationProvider] The Personal Access Token was passed as plain text, so it can be recovered from shell history, transcripts and process listings. Pass it as a SecureString with -SecureStringPersonalAccessToken instead (for example from Read-Host -AsSecureString or ConvertTo-SecureString)."
-
-        # if the NoVerify switch is not set, verify the Token.
-        if ($NoVerify)
-        {
-            $Global:DSCAZDO_AuthenticationToken = Set-AzPersonalAccessToken -PersonalAccessToken $PersonalAccessToken -OrganizationName $OrganizationName
-        }
-        else
-        {
-            $Global:DSCAZDO_AuthenticationToken = Set-AzPersonalAccessToken -PersonalAccessToken $PersonalAccessToken -Verify -OrganizationName $OrganizationName
-        }
-
-    }
     # If the parameterset is ManagedIdentity
-    elseif ($PSCmdlet.ParameterSetName -eq 'ManagedIdentity')
+    if ($PSCmdlet.ParameterSetName -eq 'ManagedIdentity')
     {
 
         Write-Verbose "[New-AzDoAuthenticationProvider] Creating a new Azure Managed Identity with OrganizationName $OrganizationName."
@@ -250,21 +208,6 @@ Function New-AzDoAuthenticationProvider
     {
         Write-Verbose "[New-AzDoAuthenticationProvider] Creating a new Personal Access Token with OrganizationName $OrganizationName."
         $Global:DSCAZDO_AuthenticationToken = Set-AzPersonalAccessToken -SecureStringPersonalAccessToken $SecureStringPersonalAccessToken -OrganizationName $OrganizationName
-    }
-    # If the parameterset is ServicePrincipal
-    elseif ($PSCmdlet.ParameterSetName -eq 'ServicePrincipal')
-    {
-        Write-Verbose "[New-AzDoAuthenticationProvider] Creating a Service Principal token with OrganizationName $OrganizationName."
-        Write-Warning "[New-AzDoAuthenticationProvider] The client secret was passed as plain text, so it can be recovered from shell history, transcripts and process listings. Pass it as a SecureString with -SecureStringClientSecret instead (for example from Read-Host -AsSecureString or ConvertTo-SecureString)."
-
-        if ($NoVerify)
-        {
-            $Global:DSCAZDO_AuthenticationToken = Get-AzServicePrincipalToken -OrganizationName $OrganizationName -TenantId $TenantId -ClientId $ClientId -ClientSecret $ClientSecret
-        }
-        else
-        {
-            $Global:DSCAZDO_AuthenticationToken = Get-AzServicePrincipalToken -OrganizationName $OrganizationName -TenantId $TenantId -ClientId $ClientId -ClientSecret $ClientSecret -Verify
-        }
     }
     # If the parameterset is SecureStringServicePrincipal
     elseif ($PSCmdlet.ParameterSetName -eq 'SecureStringServicePrincipal')
@@ -399,7 +342,8 @@ Function New-AzDoAuthenticationProvider
 
     $objectSettings = [PSCustomObject]@{
         OrganizationName = (Get-AzDoOrganizationName)
-        Token = $Global:DSCAZDO_AuthenticationToken
+        # A copy for the file, without the access token wherever sign-in can get a new one.
+        Token = ConvertTo-AzDoStoredToken -Token $Global:DSCAZDO_AuthenticationToken
         SecurityDescriptorTypes = Join-Path -Path $ENV:AZDODSC_CACHE_DIRECTORY -ChildPath "SecurityDescriptors.clixml"
     }
 
@@ -414,12 +358,17 @@ Function New-AzDoAuthenticationProvider
     # settings file empty and restrict it before the credential is written into it. Writing first
     # and restricting afterwards left the credential readable with the default permissions for a
     # moment on every run.
-    Protect-AzDoCachePath -Path $ENV:AZDODSC_CACHE_DIRECTORY
+    # -Required: if either cannot be restricted this throws, and the credential is not written.
+    if (-not (Test-Path -LiteralPath $ENV:AZDODSC_CACHE_DIRECTORY))
+    {
+        $null = New-Item -Path $ENV:AZDODSC_CACHE_DIRECTORY -ItemType Directory -Force
+    }
+    Protect-AzDoCachePath -Path $ENV:AZDODSC_CACHE_DIRECTORY -Required
     if (-not (Test-Path -LiteralPath $moduleSettingsPath))
     {
         $null = New-Item -Path $moduleSettingsPath -ItemType File -Force
     }
-    Protect-AzDoCachePath -Path $moduleSettingsPath
+    Protect-AzDoCachePath -Path $moduleSettingsPath -Required
 
     # Export the Object to the Cache Directory
     $objectSettings | Export-Clixml -LiteralPath $moduleSettingsPath -Depth 5

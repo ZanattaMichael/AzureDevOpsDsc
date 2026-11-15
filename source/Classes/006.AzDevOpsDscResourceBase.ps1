@@ -35,6 +35,10 @@ class AzDevOpsDscResourceBase : AzDevOpsApiDscResourceBase
 
         Write-Verbose "[AzDevOpsDscResourceBase] Found ModuleSettings.clixml file."
 
+        # The file decides which credential is used, so it is only read from a directory no other
+        # account could have written to.
+        Assert-AzDoCachePathIsPrivate
+
         # Import the ModuleSettings.clixml file
         $objectSettings = Import-Clixml -LiteralPath $moduleSettingsPath
         Write-Verbose "[AzDevOpsDscResourceBase] Successfully imported ModuleSettings.clixml."

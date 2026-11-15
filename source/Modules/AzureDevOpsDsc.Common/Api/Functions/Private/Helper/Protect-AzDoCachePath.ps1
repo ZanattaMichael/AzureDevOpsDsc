@@ -23,6 +23,10 @@
 .PARAMETER Path
     The file or directory to protect.
 
+.PARAMETER Required
+    Throw when the permissions cannot be restricted, instead of warning. Used for the directory and
+    the file that hold the credential, so it is never written somewhere other accounts can read.
+
 .EXAMPLE
     Protect-AzDoCachePath -Path $ENV:AZDODSC_CACHE_DIRECTORY
     Protect-AzDoCachePath -Path (Join-Path $ENV:AZDODSC_CACHE_DIRECTORY 'ModuleSettings.clixml')
@@ -35,7 +39,11 @@ function Protect-AzDoCachePath
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [System.String]
-        $Path
+        $Path,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $Required
     )
 
     try
@@ -124,6 +132,11 @@ function Protect-AzDoCachePath
     }
     catch
     {
+        if ($Required.IsPresent)
+        {
+            throw "[Protect-AzDoCachePath] Could not restrict the permissions on '$Path', so nothing has been written to it. Point AZDODSC_CACHE_DIRECTORY at a folder this account owns on a file system that supports permissions. $($_.Exception.Message)"
+        }
+
         Write-Warning "[Protect-AzDoCachePath] Could not restrict the permissions on '$Path'. It may be readable by other accounts on this machine. $($_.Exception.Message)"
     }
 }

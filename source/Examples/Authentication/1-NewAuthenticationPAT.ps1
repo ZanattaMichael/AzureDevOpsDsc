@@ -5,8 +5,8 @@
         Personal Access Tokens are scoped credentials tied to a specific Azure DevOps user account.
         They do not expire automatically unless given an expiry date during creation in Azure DevOps.
 
-        Always pass the PAT as a SecureString. A plain-text -PersonalAccessToken still works but
-        lands in shell history, transcripts and process listings, and the module warns when it is used.
+        Always pass the PAT as a SecureString. There is no plain-text -PersonalAccessToken
+        parameter: a secret typed on the command line lands in shell history, transcripts and process listings.
 #>
 
 # Interactive use: prompt for the PAT so it never appears in the script or the shell history
