@@ -25,8 +25,9 @@
     xDscResourceDesigner           = '1.13.0.0'
     'DscResource.Common'           = '0.24.5'
 
+    # The two prerelease pins need AllowPrerelease, or the restore refuses the version.
     'DscResource.AnalyzerRules'    = @{
-        Version    = 'latest'
+        Version    = '0.3.0-preview0003'
         Parameters = @{
             AllowPrerelease = $true
         }
@@ -34,17 +35,12 @@
     'Indented.ScriptAnalyzerRules' = '1.1.0'
 
     # Prerequisite modules for documentation.
-    'DscResource.DocGenerator'     = @{
-        Version    = 'latest'
-        Parameters = @{
-            AllowPrerelease = $true
-        }
-    }
+    'DscResource.DocGenerator'     = '0.13.0'
     PlatyPS                        = '0.14.2'
 
     # Prerequisite module for generating DSC v3 adapted resource manifests.
     'DscResource.Authoring'        = @{
-        Version    = 'latest'
+        Version    = '0.2.0-preview0006'
         Parameters = @{
             AllowPrerelease = $true
         }
