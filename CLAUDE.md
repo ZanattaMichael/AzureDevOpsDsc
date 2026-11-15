@@ -146,6 +146,15 @@ world-readable one, and run DSC as the account that ran `New-AzDoAuthenticationP
 `Cache/` contents matter too: the identity caches map names to descriptors, so anyone who can
 write them can redirect a permission grant.
 
+Cache files are written and read only through `Write-AzDoCacheFile` / `Read-AzDoCacheFile`,
+never `Export-Clixml` / `Import-Clixml` directly. On Windows the file is a marker
+(`Get-AzDoCacheFileHeader`) followed by DPAPI-protected CLIXML, readable only by the account
+that wrote it; elsewhere it is plain CLIXML. A plain file is still read on any platform. The
+cache holds no secrets: `Protect-AzDoCacheSecret` blanks them in `Add-CacheItem`, on import and
+again on export. A new cache type that can carry a secret has to be added there and to the type
+check in `Add-CacheItem`. Do not add in-memory encryption of the cache: nothing in-process can
+enforce it.
+
 ### 5. CSS Security Namespace performance
 `AzDoAreaPermission`, `AzDoIterationPermission`, and `AzDoPipelinePermission` scan all org-level ACLs. Each test for these resources takes 200–400 seconds.
 

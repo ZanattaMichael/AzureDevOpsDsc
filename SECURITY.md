@@ -114,7 +114,8 @@ The module holds a credential that can administer an Azure DevOps organization, 
 - Tokens that can be requested again are not stored. For service principal, certificate, Azure CLI and file or GitHub Actions workload identity sign-in, no access token is written. A managed identity access token is kept only on Windows. A personal access token and a manually supplied federated token are stored, because nothing else can reproduce them.
 - `New-AzDoAuthenticationProvider` only accepts a personal access token or client secret as a `SecureString`. The plain-text parameters have been removed.
 - On Windows the stored credential is DPAPI-encrypted for the account that wrote it. On Linux and macOS there is no DPAPI: the credential is recoverable by anyone who can read the file, so the permissions are the only protection.
-- Secret variable values, service connection keys and audit stream keys are blanked before a cache file is written.
+- Secret variable values, service connection keys and audit stream keys are blanked as a value enters a cache, so they are held neither in memory nor in a cache file. A cache file written by an earlier version that holds one is cleaned and rewritten when it is first read.
+- On Windows every cache file is DPAPI-encrypted for the account that wrote it, so it can only be read by that account on that machine. On Linux and macOS there is no DPAPI and the cache files are plain CLIXML, protected by the owner-only permissions.
 
 ### On the network
 
@@ -145,7 +146,7 @@ The module holds a credential that can administer an Azure DevOps organization, 
 
 - Redaction recognises credential shapes and the secret values the module itself holds. A secret it was never given, with no recognisable shape and no label, or one shorter than eight characters, is not recognised. It is a safety net behind not logging secrets, not a guarantee.
 - Nothing protects against code running in the same process or as the same account: it can read the token directly.
-- The cached API data held in memory, and the parts of the cache files that are not blanked, are not encrypted.
+- The cached API data held in memory is not encrypted: code in the same PowerShell process can reach any key the module holds, so encrypting it would protect nothing. On Linux and macOS the cache files are not encrypted either. On Windows a cache file is written unencrypted, with a warning, if DPAPI is unavailable.
 - These protections have been verified by unit tests, not by an independent audit.
 
 ### What the operator has to do

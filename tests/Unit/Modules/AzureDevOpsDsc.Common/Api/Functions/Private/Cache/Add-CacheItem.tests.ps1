@@ -26,6 +26,7 @@ Describe "Add-CacheItem" -Tag "Unit", "Cache" {
         # Load Get-AzDoCacheObjects
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
         . (Get-FunctionItem 'Get-CacheKeyIndex.ps1')
+        . (Get-FunctionItem 'Protect-AzDoCacheSecret.ps1')
 
         # Mock dependencies
         Mock -CommandName Get-CacheObject -MockWith { return @() }
@@ -207,6 +208,56 @@ Describe "Add-CacheItem" -Tag "Unit", "Cache" {
             $script:liveCache.Count | Should -Be 2000
             # Generous bound: the old linear Where-Object scan took far longer than this.
             $timer.Elapsed.TotalSeconds | Should -BeLessThan 60
+        }
+    }
+
+    Context "when the value carries a secret" {
+
+        BeforeEach {
+            $script:liveCache = [System.Collections.Generic.List[CacheItem]]::new()
+            Remove-Variable -Name AzDoCacheKeyIndex -Scope Global -ErrorAction SilentlyContinue
+            Mock -CommandName Get-CacheObject -MockWith { return ,$script:liveCache }
+        }
+
+        AfterEach {
+            Remove-Variable -Name AzDoCacheKeyIndex -Scope Global -ErrorAction SilentlyContinue
+        }
+
+        It "should blank a secret variable value before the item is stored" {
+            $value = '{"id":1,"variables":{"PLAIN":{"value":"visible"},"API_KEY":{"value":"echoed-secret","isSecret":true}}}' | ConvertFrom-Json
+
+            Add-CacheItem -Key 'Project\Group' -Value $value -Type 'LiveVariableGroups'
+
+            $script:liveCache.Count | Should -Be 1
+            $script:liveCache[0].Value.variables.API_KEY.value | Should -BeNullOrEmpty
+            $script:liveCache[0].Value.variables.PLAIN.value   | Should -Be 'visible'
+        }
+
+        It "should blank a service connection key before the item is stored" {
+            $value = '{"id":"e1","authorization":{"parameters":{"tenantid":"tenant","serviceprincipalkey":"echoed-secret"}}}' | ConvertFrom-Json
+
+            Add-CacheItem -Key 'Project\Connection' -Value $value -Type 'LiveServiceConnections'
+
+            $script:liveCache[0].Value.authorization.parameters.serviceprincipalkey | Should -BeNullOrEmpty
+            $script:liveCache[0].Value.authorization.parameters.tenantid            | Should -Be 'tenant'
+        }
+
+        It "should blank an audit stream key before the item is stored" {
+            $value = '{"id":3,"consumerInputs":{"WorkspaceId":"workspace","SharedKey":"echoed-secret"}}' | ConvertFrom-Json
+
+            Add-CacheItem -Key 'Stream' -Value $value -Type 'LiveAuditStreams'
+
+            $script:liveCache[0].Value.consumerInputs.SharedKey   | Should -BeNullOrEmpty
+            $script:liveCache[0].Value.consumerInputs.WorkspaceId | Should -Be 'workspace'
+        }
+
+        It "should not look for secrets in a cache type that cannot hold one" {
+            Mock -CommandName Protect-AzDoCacheSecret
+
+            Add-CacheItem -Key 'Key1' -Value ([PSCustomObject]@{ password = 'not-a-cache-secret' }) -Type 'Project'
+
+            Should -Invoke -CommandName Protect-AzDoCacheSecret -Exactly 0
+            $script:liveCache[0].Value.password | Should -Be 'not-a-cache-secret'
         }
     }
 

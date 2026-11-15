@@ -23,6 +23,14 @@ Describe 'Test-CacheFileStamp' -Tag "Unit", "Cache" {
         . (Get-FunctionItem 'Set-CacheObject.ps1')
         . (Get-FunctionItem 'Refresh-CacheObject.ps1')
 
+        # The real file helpers, so these tests write and read a cache file the way the module
+        # does: encrypted with DPAPI on Windows, plain CLIXML elsewhere.
+        ForEach ($fn in 'Write-AzDoCacheFile', 'Read-AzDoCacheFile', 'Get-AzDoCacheFileHeader',
+                        'Protect-AzDoCacheData', 'Unprotect-AzDoCacheData', 'Test-AzDoIsWindows')
+        {
+            . (Get-FunctionItem "$fn.ps1")
+        }
+
         Mock -CommandName Protect-AzDoCachePath
 
         $script:previousCacheDirectory = $ENV:AZDODSC_CACHE_DIRECTORY
@@ -134,11 +142,11 @@ Describe 'Test-CacheFileStamp' -Tag "Unit", "Cache" {
             $Global:AzDoLiveTeams = New-TestCache -Keys 'A', 'B'
             $before = $Global:AzDoLiveTeams
             Export-CacheObject -CacheType 'LiveTeams' -Content $Global:AzDoLiveTeams
-            Mock -CommandName Import-Clixml
+            Mock -CommandName Read-AzDoCacheFile
 
             Refresh-CacheObject -CacheType 'LiveTeams'
 
-            Assert-MockCalled -CommandName Import-Clixml -Exactly 0
+            Assert-MockCalled -CommandName Read-AzDoCacheFile -Exactly 0
             [object]::ReferenceEquals($before, $Global:AzDoLiveTeams) | Should -BeTrue
         }
 

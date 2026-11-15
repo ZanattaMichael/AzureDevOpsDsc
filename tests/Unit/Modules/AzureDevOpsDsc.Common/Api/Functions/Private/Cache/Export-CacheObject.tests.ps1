@@ -31,7 +31,7 @@ Describe "Export-CacheObject" -Tag "Unit", "Cache" {
         Mock -CommandName Get-AzDoCacheObjects -MockWith { return @('Project', 'Team', 'Group', 'SecurityDescriptor') } -Verifiable
         Mock -CommandName Test-Path -MockWith { param ($Path) return $false } -Verifiable
         Mock -CommandName New-Item -MockWith { param ($Path, $ItemType) } -Verifiable
-        Mock -CommandName Export-Clixml -MockWith { param ($InputObject, $Depth, $LiteralPath) } -Verifiable
+        Mock -CommandName Write-AzDoCacheFile -MockWith { param ($Path, $InputObject, $Depth) } -Verifiable
         Mock -CommandName Protect-AzDoCachePath
 
     }
@@ -82,7 +82,7 @@ Describe "Export-CacheObject" -Tag "Unit", "Cache" {
 
         It "should save content to the cache file" {
 
-            Mock -CommandName Export-Clixml -Verifiable
+            Mock -CommandName Write-AzDoCacheFile -Verifiable
 
             $content = @(
                 [PSCustomObject]@{ Name = 'Project1'; Id = 1 },
@@ -90,13 +90,13 @@ Describe "Export-CacheObject" -Tag "Unit", "Cache" {
             )
 
             Export-CacheObject -CacheType 'Project' -Content $content
-            Assert-MockCalled -CommandName Export-Clixml -Times 1
+            Assert-MockCalled -CommandName Write-AzDoCacheFile -Times 1
 
         }
 
         It "should use the default depth value of 6" {
 
-            Mock -CommandName Export-Clixml
+            Mock -CommandName Write-AzDoCacheFile
 
             $content = @(
                 [PSCustomObject]@{ Name = 'Project1'; Id = 1 },
@@ -105,15 +105,15 @@ Describe "Export-CacheObject" -Tag "Unit", "Cache" {
 
             Export-CacheObject -CacheType 'Project' -Content $content
 
-            Assert-MockCalled -CommandName Export-Clixml -Times 1 -ParameterFilter {
+            Assert-MockCalled -CommandName Write-AzDoCacheFile -Times 1 -ParameterFilter {
                 $Depth       -eq 6 -and
-                $LiteralPath -eq "C:\Temp\AzDoCache\Cache\Project.clixml"
+                $Path        -eq "C:\Temp\AzDoCache\Cache\Project.clixml"
             }
         }
 
         It "should use the specified depth value" {
 
-            Mock -CommandName Export-Clixml
+            Mock -CommandName Write-AzDoCacheFile
 
             $content = @(
                 [PSCustomObject]@{ Name = 'Project1'; Id = 1 },
@@ -122,9 +122,9 @@ Describe "Export-CacheObject" -Tag "Unit", "Cache" {
 
             Export-CacheObject -CacheType 'Project' -Content $content -Depth 5
 
-            Assert-MockCalled -CommandName Export-Clixml -Times 1 -ParameterFilter {
+            Assert-MockCalled -CommandName Write-AzDoCacheFile -Times 1 -ParameterFilter {
                 $Depth       -eq 5 -and
-                $LiteralPath -eq "C:\Temp\AzDoCache\Cache\Project.clixml"
+                $Path        -eq "C:\Temp\AzDoCache\Cache\Project.clixml"
             }
         }
     }
@@ -138,35 +138,35 @@ Describe "Export-CacheObject" -Tag "Unit", "Cache" {
             $script:expectedFile      = Join-Path -Path $script:expectedDirectory -ChildPath 'Project.clixml'
         }
 
-        It "restricts the cache directory it creates and the cache file it writes" {
+        # Write-AzDoCacheFile restricts the file it writes (see its own tests); Export-CacheObject
+        # restricts the directory it creates and hands the file to Write-AzDoCacheFile.
+        It "restricts the cache directory it creates and writes the cache file through Write-AzDoCacheFile" {
             Mock -CommandName Test-Path -MockWith { $false }
             Mock -CommandName New-Item
-            Mock -CommandName Export-Clixml
+            Mock -CommandName Write-AzDoCacheFile
 
             Export-CacheObject -CacheType 'Project' -Content @()
 
             Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 1 -ParameterFilter { $Path -eq $script:expectedDirectory }
-            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 1 -ParameterFilter { $Path -eq $script:expectedFile }
+            Should -Invoke -CommandName Write-AzDoCacheFile -Exactly 1 -ParameterFilter { $Path -eq $script:expectedFile }
         }
 
-        It "restricts only the cache file when the directory already exists" {
+        It "does not restrict the directory again when it already exists" {
             Mock -CommandName Test-Path -MockWith { $true }
             Mock -CommandName New-Item
-            Mock -CommandName Export-Clixml
+            Mock -CommandName Write-AzDoCacheFile
 
             Export-CacheObject -CacheType 'Project' -Content @()
 
-            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 0 -ParameterFilter { $Path -eq $script:expectedDirectory }
-            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 1 -ParameterFilter { $Path -eq $script:expectedFile }
+            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 0
+            Should -Invoke -CommandName Write-AzDoCacheFile -Exactly 1 -ParameterFilter { $Path -eq $script:expectedFile }
         }
 
-        It "restricts the file only after it has been written" {
+        It "throws when the cache file cannot be written" {
             Mock -CommandName Test-Path -MockWith { $true }
-            Mock -CommandName Export-Clixml -MockWith { throw 'disk full' }
+            Mock -CommandName Write-AzDoCacheFile -MockWith { throw 'disk full' }
 
             { Export-CacheObject -CacheType 'Project' -Content @() } | Should -Throw
-
-            Should -Invoke -CommandName Protect-AzDoCachePath -Exactly 0
         }
     }
 

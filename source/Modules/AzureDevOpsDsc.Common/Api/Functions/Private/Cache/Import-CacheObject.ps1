@@ -67,7 +67,8 @@ function Import-CacheObject
 
         Write-Verbose "[Import-CacheObject] Importing content from cache file at path: $cacheFile"
 
-        $Content = Import-Clixml -Path $cacheFile
+        # Read-AzDoCacheFile decrypts a file this account encrypted and reads a plain one as before.
+        $Content = Read-AzDoCacheFile -Path $cacheFile
 
         #Set-Variable -Name "AzDo$CacheType" -Value $Content -Scope Global -Force
         Write-Verbose "[Import-CacheObject] Successfully imported cache object for type: $cacheFile"
@@ -93,8 +94,27 @@ function Import-CacheObject
             }
         }
 
+        # A file written by an earlier version of the module can hold a secret that a write
+        # response echoed. Blank it before the cache is used, so it is not held in memory either.
+        $blanked = Protect-AzDoCacheSecret -CacheType $CacheType -Content $newCache -PassThru
+
         # Update the new cache object
         Set-Variable -Name "AzDo$CacheType" -Value $newCache -Scope Global -Force
+
+        if ($blanked -gt 0)
+        {
+            # Rewrite the file so the secret does not stay on disk until the next cache write.
+            Write-Warning "[Import-CacheObject] The '$CacheType' cache file held $blanked secret value(s) written by an earlier version of the module. They have been removed from the cache and the file is being rewritten."
+            try
+            {
+                Export-CacheObject -CacheType $CacheType -Content $newCache
+            }
+            catch
+            {
+                Write-Warning "[Import-CacheObject] Could not rewrite the '$CacheType' cache file. Delete '$cacheFile' to remove the secret from disk. $_"
+            }
+        }
+
         # Note what was read, so a Refresh-CacheObject of an unchanged file does not read it again.
         Set-CacheFileStamp -CacheType $CacheType -Path $cacheFile -Content $newCache
         Write-Verbose "[Import-CacheObject] Cache object imported successfully for '$CacheType'."

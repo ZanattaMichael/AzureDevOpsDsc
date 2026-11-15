@@ -22,7 +22,7 @@ function Get-IdentityDescriptorIndex
     {
         try
         {
-            $imported = Import-Clixml -Path $path
+            $imported = Read-AzDoCacheFile -Path $path
             if ($imported -is [hashtable]) { $index = $imported }
         }
         catch

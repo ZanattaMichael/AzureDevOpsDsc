@@ -45,6 +45,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- Cache protection
+  - Secrets are kept out of the cache in memory as well as on disk. `Add-CacheItem` now
+    blanks secret variable values, service connection keys and audit stream keys
+    (`Protect-AzDoCacheSecret`) before an item is stored, where previously they stayed in
+    memory until the cache was next exported. `Import-CacheObject` does the same for a
+    cache file written by an earlier version, and rewrites the file when it held one.
+  - Cache files are encrypted at rest on Windows. `Export-CacheObject` and
+    `Save-IdentityDescriptorIndex` write through the new `Write-AzDoCacheFile`, which
+    encrypts the CLIXML with DPAPI for the current account, and `Import-CacheObject` and
+    `Get-IdentityDescriptorIndex` read through `Read-AzDoCacheFile`. On Linux and macOS,
+    where there is no DPAPI, the files stay plain CLIXML with owner-only permissions.
+  - **Behaviour change (Windows):** a cache file can only be read by the account that
+    wrote it, on the machine it was written on, and can no longer be opened with
+    `Import-Clixml`. This is the restriction `ModuleSettings.clixml` already has. A cache
+    directory copied to another machine or account must be rebuilt with
+    `New-AzDoAuthenticationProvider`; reading it fails with an error that says so. Cache
+    files written by earlier versions are still read and are encrypted on their next
+    write. If DPAPI is unavailable the file is written unencrypted with a warning.
+  - The cache is not encrypted in memory. Code in the same PowerShell process can reach
+    any key or decrypt function the module holds, so it would add cost to every lookup
+    without protecting anything.
 - Build and release pipeline
   - Every build module in `RequiredModules.psd1` is pinned to an exact version. They
     were restored at `latest`, three with prereleases allowed, in the job that holds

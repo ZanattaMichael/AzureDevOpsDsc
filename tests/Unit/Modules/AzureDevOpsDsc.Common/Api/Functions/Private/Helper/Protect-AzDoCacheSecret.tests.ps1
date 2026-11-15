@@ -109,4 +109,47 @@ Describe 'Protect-AzDoCacheSecret' -Tag 'Unit', 'Helper', 'Security' {
             { Protect-AzDoCacheSecret -CacheType 'LiveAuditStreams' -Content $Content }       | Should -Not -Throw
         }
     }
+
+    Context 'A single entry and -PassThru' {
+
+        It 'Accepts one entry that is not wrapped in an array' {
+            $entry = [PSCustomObject]@{
+                Key   = 'Project\Group'
+                Value = '{"variables":{"API_KEY":{"value":"echoed-secret","isSecret":true}}}' | ConvertFrom-Json
+            }
+
+            Protect-AzDoCacheSecret -CacheType 'LiveVariableGroups' -Content $entry
+
+            $entry.Value.variables.API_KEY.value | Should -BeNullOrEmpty
+        }
+
+        It 'Returns nothing without -PassThru' {
+            $entry = [PSCustomObject]@{ Key = 'k'; Value = '{"variables":{"API_KEY":{"value":"echoed-secret","isSecret":true}}}' | ConvertFrom-Json }
+
+            Protect-AzDoCacheSecret -CacheType 'LiveVariableGroups' -Content $entry | Should -BeNullOrEmpty
+            Protect-AzDoCacheSecret -CacheType 'LiveProjects' -Content $entry       | Should -BeNullOrEmpty
+        }
+
+        It 'Returns the number of values it blanked with -PassThru' {
+            $entries = @(
+                [PSCustomObject]@{ Key = 'a'; Value = '{"variables":{"ONE":{"value":"s1","isSecret":true},"TWO":{"value":"s2","isSecret":true},"PLAIN":{"value":"v"}}}' | ConvertFrom-Json }
+                [PSCustomObject]@{ Key = 'b'; Value = '{"variables":{"THREE":{"value":"s3","isSecret":true}}}' | ConvertFrom-Json }
+            )
+
+            Protect-AzDoCacheSecret -CacheType 'LiveVariableGroups' -Content $entries -PassThru | Should -Be 3
+        }
+
+        It 'Returns 0 with -PassThru when the secrets are already blank, as a read returns them' {
+            $entry = [PSCustomObject]@{ Key = 'a'; Value = '{"variables":{"ONE":{"value":null,"isSecret":true}}}' | ConvertFrom-Json }
+
+            Protect-AzDoCacheSecret -CacheType 'LiveVariableGroups' -Content $entry -PassThru | Should -Be 0
+        }
+
+        It 'Returns 0 with -PassThru for <Description>' -ForEach @(
+            @{ Description = 'a cache type that holds no secrets'; CacheType = 'LiveProjects';       Content = @([PSCustomObject]@{ Key = 'k'; Value = 1 }) }
+            @{ Description = 'null content';                       CacheType = 'LiveVariableGroups'; Content = $null }
+        ) {
+            Protect-AzDoCacheSecret -CacheType $CacheType -Content $Content -PassThru | Should -Be 0
+        }
+    }
 }
