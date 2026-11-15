@@ -282,7 +282,7 @@ Describe 'Secret leakage: behaviour' -Tag 'Unit', 'Security' {
         $files = Get-FunctionItem @(
             'Invoke-AzDevOpsApiRestMethod.ps1', 'Add-AuthenticationHTTPHeader.ps1', 'Test-AzDevOpsApiHttpRequestHeader.ps1',
             'Get-AzDevOpsApiVersion.ps1', 'Test-AzDoApiHost.ps1', 'Protect-AzDoSecretString.ps1', 'Protect-AzDoCacheSecret.ps1',
-            'Protect-AzDoCachePath.ps1', 'Test-AzDoIsWindows.ps1', 'Export-CacheObject.ps1', 'Get-AzDoCacheObjects.ps1',
+            'Protect-AzDoCachePath.ps1', 'Test-AzDoIsWindows.ps1', 'Export-CacheObject.ps1', 'Get-AzDoCacheObjects.ps1', 'Set-CacheFileStamp.ps1', 'Test-CacheFileStamp.ps1',
             'ConvertTo-Base64String.ps1', 'ConvertFrom-AzDoSecureString.ps1', 'Add-AzDoLogFileEntry.ps1',
             'Get-AzServicePrincipalToken.ps1', 'Get-AzWorkloadIdentityFederationToken.ps1', 'Get-AzFederatedAssertion.ps1',
             'Get-AzCliToken.ps1'

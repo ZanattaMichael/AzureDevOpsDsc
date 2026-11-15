@@ -41,7 +41,11 @@ function Get-CacheItem
         if ($null -ne $index)
         {
             $found = $null
-            $cacheItem = if ($index.TryGetValue($Key, [ref]$found)) { @($found) } else { $null }
+            $cacheItem = $null
+            if ($index.TryGetValue($Key, [ref]$found))
+            {
+                $cacheItem = $found
+            }
         }
         else
         {

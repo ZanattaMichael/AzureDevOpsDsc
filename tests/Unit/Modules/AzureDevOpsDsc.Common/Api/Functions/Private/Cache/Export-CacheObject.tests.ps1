@@ -24,6 +24,8 @@ Describe "Export-CacheObject" -Tag "Unit", "Cache" {
         . (Get-FunctionItem 'Protect-AzDoCacheSecret.ps1')
 
         . (Get-ClassFilePath '000.CacheItem')
+        . (Get-FunctionItem 'Set-CacheFileStamp.ps1')
+        . (Get-FunctionItem 'Test-CacheFileStamp.ps1')
 
         # Mock dependencies
         Mock -CommandName Get-AzDoCacheObjects -MockWith { return @('Project', 'Team', 'Group', 'SecurityDescriptor') } -Verifiable
