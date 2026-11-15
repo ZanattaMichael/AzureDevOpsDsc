@@ -23,7 +23,6 @@ Describe 'Cache file encryption' -Tag 'Unit', 'Helper', 'Security' {
         # The permission change itself is covered by Protect-AzDoCachePath's own tests.
         Mock -CommandName Protect-AzDoCachePath
 
-        $script:isWindowsHost = [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)
 
         # A stand-in for DPAPI that runs anywhere: reversible, and the output shares no text with the input.
         function Script:Invoke-TestCipher
@@ -204,7 +203,7 @@ Describe 'Cache file encryption' -Tag 'Unit', 'Helper', 'Security' {
 
     Context 'DPAPI' {
 
-        It 'Encrypts and decrypts for the current account' -Skip:(-not $script:isWindowsHost) {
+        It 'Encrypts and decrypts for the current account' -Skip:(-not [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)) {
             $clear     = [System.Text.Encoding]::UTF8.GetBytes('visible-name-one')
             $protected = Protect-AzDoCacheData -Data $clear
 
@@ -213,14 +212,14 @@ Describe 'Cache file encryption' -Tag 'Unit', 'Helper', 'Security' {
             [System.Text.Encoding]::UTF8.GetString((Unprotect-AzDoCacheData -Data $protected)) | Should -Be 'visible-name-one'
         }
 
-        It 'Does not decrypt data that has been changed' -Skip:(-not $script:isWindowsHost) {
+        It 'Does not decrypt data that has been changed' -Skip:(-not [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)) {
             $protected = Protect-AzDoCacheData -Data ([System.Text.Encoding]::UTF8.GetBytes('visible-name-one'))
             $protected[$protected.Length - 1] = $protected[$protected.Length - 1] -bxor 0xFF
 
             { Unprotect-AzDoCacheData -Data $protected } | Should -Throw
         }
 
-        It 'Writes a file on Windows that holds no readable content and reads it back' -Skip:(-not $script:isWindowsHost) {
+        It 'Writes a file on Windows that holds no readable content and reads it back' -Skip:(-not [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)) {
             Write-AzDoCacheFile -Path $script:path -InputObject (New-TestContent)
 
             $bytes = [System.IO.File]::ReadAllBytes($script:path)
@@ -232,7 +231,7 @@ Describe 'Cache file encryption' -Tag 'Unit', 'Helper', 'Security' {
             $read[1].Value.name | Should -Be 'visible-name-two'
         }
 
-        It 'Is not available outside Windows' -Skip:($script:isWindowsHost) {
+        It 'Is not available outside Windows' -Skip:([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)) {
             { Protect-AzDoCacheData -Data ([System.Byte[]]@(1, 2, 3)) } | Should -Throw
         }
     }
