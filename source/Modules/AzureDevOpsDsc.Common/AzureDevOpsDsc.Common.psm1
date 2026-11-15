@@ -152,6 +152,8 @@ Export-ModuleMember -Function 'Get-AzDoCacheObjects'
 Export-ModuleMember -Function '*-AzDoProjectGroup'
 Export-ModuleMember -Function 'Test-AzDevOpsProjectName'
 Export-ModuleMember -Function 'ConvertTo-Base64String'
+# Called by the resource base class before it reads ModuleSettings.clixml.
+Export-ModuleMember -Function 'Assert-AzDoCachePathIsPrivate'
 # Called by [AzDevOpsDscResourceBase]::ExportDscResourceInstances(), which runs in the class
 # module's scope and cannot see this module's unexported functions.
 Export-ModuleMember -Function 'Protect-AzDoExportedSecretProperty'
