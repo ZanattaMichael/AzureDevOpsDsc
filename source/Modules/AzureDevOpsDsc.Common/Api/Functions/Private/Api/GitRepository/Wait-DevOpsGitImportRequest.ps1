@@ -76,7 +76,7 @@ Function Wait-DevOpsGitImportRequest
     )
 
     $params = @{
-        ApiUri = '{0}/{1}/_apis/git/repositories/{2}/importRequests/{3}?api-version={4}' -f $ApiUri.TrimEnd('/'), $Project.name, $Repository.id, $ImportRequestId, $ApiVersion
+        ApiUri = '{0}/{1}/_apis/git/repositories/{2}/importRequests/{3}?api-version={4}' -f $ApiUri.TrimEnd('/'), [System.Uri]::EscapeDataString([String]$Project.name), $Repository.id, $ImportRequestId, $ApiVersion
         Method = 'GET'
     }
 

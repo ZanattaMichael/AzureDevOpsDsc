@@ -55,7 +55,7 @@ Function Update-WITTags
 
     $params = @{
         Uri             = 'https://dev.azure.com/{0}/{1}/_apis/wit/tags/{2}?api-version={3}' -f
-                            $Organization, $ProjectName, $TagId, $ApiVersion
+                            $Organization, [System.Uri]::EscapeDataString([String]$ProjectName), $TagId, $ApiVersion
         Method          = 'PATCH'
         HttpContentType = 'application/json'
         Body            = @{ name = $NewName } | ConvertTo-Json

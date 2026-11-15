@@ -88,7 +88,7 @@ Function New-GitImportRequest
 
     # Define parameters for creating the import request
     $params = @{
-        ApiUri = '{0}/{1}/_apis/git/repositories/{2}/importRequests?api-version={3}' -f $ApiUri.TrimEnd('/'), $Project.name, $Repository.id, $ApiVersion
+        ApiUri = '{0}/{1}/_apis/git/repositories/{2}/importRequests?api-version={3}' -f $ApiUri.TrimEnd('/'), [System.Uri]::EscapeDataString([String]$Project.name), $Repository.id, $ApiVersion
         Method = 'POST'
         ContentType = 'application/json'
         Body = $body | ConvertTo-Json -Depth 5

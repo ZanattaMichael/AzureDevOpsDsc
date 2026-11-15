@@ -281,7 +281,7 @@ Describe 'Secret leakage: behaviour' -Tag 'Unit', 'Security' {
         # Get-FunctionItem builds the file index that Import-Enums and Get-ClassFilePath read.
         $files = Get-FunctionItem @(
             'Invoke-AzDevOpsApiRestMethod.ps1', 'Add-AuthenticationHTTPHeader.ps1', 'Test-AzDevOpsApiHttpRequestHeader.ps1',
-            'Get-AzDevOpsApiVersion.ps1', 'Test-AzDoApiHost.ps1', 'Protect-AzDoSecretString.ps1', 'Protect-AzDoCacheSecret.ps1',
+            'Get-AzDevOpsApiVersion.ps1', 'Test-AzDoApiHost.ps1', 'Protect-AzDoSecretString.ps1', 'Register-AzDoSecretValue.ps1', 'Protect-AzDoCacheSecret.ps1',
             'Protect-AzDoCachePath.ps1', 'Test-AzDoIsWindows.ps1', 'Export-CacheObject.ps1', 'Get-AzDoCacheObjects.ps1', 'Set-CacheFileStamp.ps1', 'Test-CacheFileStamp.ps1',
             'ConvertTo-Base64String.ps1', 'ConvertFrom-AzDoSecureString.ps1', 'Add-AzDoLogFileEntry.ps1',
             'Get-AzServicePrincipalToken.ps1', 'Get-AzWorkloadIdentityFederationToken.ps1', 'Get-AzFederatedAssertion.ps1',
@@ -530,6 +530,20 @@ Describe 'Secret leakage: behaviour' -Tag 'Unit', 'Security' {
             $env:AZDO_VERBOSELOGGING_FILEPATH = $null
             $env:AZDO_WARNINGLOGGING_FILEPATH = $null
             $env:AZDO_ERRORLOGGING_FILEPATH   = $null
+        }
+
+        It 'Keeps a secret with no recognisable shape out of the streams once the module has been given it' {
+            $shapeless = 'CANARY shapeless value 42'
+            Register-AzDoSecretValue -Value $shapeless
+
+            $output = & {
+                Write-Verbose "stored $shapeless in the group" -Verbose
+                Write-Warning "stored $shapeless in the group"
+                Write-Error "stored $shapeless in the group" -ErrorAction Continue
+            } *>&1 | Out-String
+
+            $output | Should -Match 'stored <redacted> in the group'
+            $output.Contains($shapeless) | Should -BeFalse
         }
 
         It 'Keeps the credential out of the verbose, warning and error streams' {

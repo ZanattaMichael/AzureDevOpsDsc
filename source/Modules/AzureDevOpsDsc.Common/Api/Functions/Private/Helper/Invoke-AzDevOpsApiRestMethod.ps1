@@ -163,6 +163,34 @@ function Invoke-AzDevOpsApiRestMethod
         ResponseHeadersVariable     = 'responseHeaders'
     }
 
+    # Without a timeout Invoke-RestMethod waits for ever on a server that accepts the connection
+    # and then says nothing, and a DSC run hangs with it. TimeoutSec bounds the wait for the
+    # response; from PowerShell 7.4 that is only the connection and headers, and
+    # OperationTimeoutSeconds bounds a stall while the body is being read.
+    $requestTimeoutSeconds = 300
+    $configuredTimeout     = 0
+    if ([Int32]::TryParse([String]$env:AZDODSC_REQUEST_TIMEOUT_SECONDS, [ref]$configuredTimeout) -and ($configuredTimeout -gt 0))
+    {
+        $requestTimeoutSeconds = $configuredTimeout
+    }
+    $invokeRestMethodParameters.TimeoutSec = $requestTimeoutSeconds
+    if ($PSVersionTable.PSVersion -ge [System.Version]'7.4')
+    {
+        $invokeRestMethodParameters.OperationTimeoutSeconds = $requestTimeoutSeconds
+    }
+
+    # A response decides whether there is another page. A server (or something answering in its
+    # place) that keeps returning a continuation token would otherwise keep this loop, and the
+    # memory holding every page, growing without end.
+    $maximumPages    = 10000
+    $configuredPages = 0
+    if ([Int32]::TryParse([String]$env:AZDODSC_MAX_RESPONSE_PAGES, [ref]$configuredPages) -and ($configuredPages -gt 0))
+    {
+        $maximumPages = $configuredPages
+    }
+    $previousContinuationToken = $null
+    $pagingError               = $null
+
     foreach ($additionalHeaderName in $AdditionalHeaders.Keys)
     {
         $invokeRestMethodParameters.Headers[$additionalHeaderName] = $AdditionalHeaders[$additionalHeaderName]
@@ -363,6 +391,19 @@ function Invoke-AzDevOpsApiRestMethod
                 # Response headers are returned as string arrays; take the first value so the token
                 # is not stringified as 'System.String[]'.
                 $continuationToken = @($responseHeaders.'x-ms-continuationtoken')[0]
+
+                # The same token twice in a row is a page that points at itself.
+                if ([String]$continuationToken -ceq [String]$previousContinuationToken)
+                {
+                    $pagingError = "[Invoke-AzDevOpsApiRestMethod] The response repeated the continuation token of the previous page, so paging would never end. The request has been abandoned."
+                    break
+                }
+                if ($results.Count -ge $maximumPages)
+                {
+                    $pagingError = "[Invoke-AzDevOpsApiRestMethod] The response did not end after $maximumPages pages. The request has been abandoned. Set the AZDODSC_MAX_RESPONSE_PAGES environment variable to raise the limit."
+                    break
+                }
+                $previousContinuationToken = $continuationToken
                 # Update the URI to include the continuation token. $ApiUri already carries the
                 # correct 'api-version' query parameter, so only the continuation token is appended.
                 # (Previously a bare '&7.1' was appended, producing a malformed query and, for the
@@ -472,6 +513,12 @@ function Invoke-AzDevOpsApiRestMethod
             }
 
         } Until (-not $isContinuationToken)
+
+        # Thrown here, outside the try block, so it is not mistaken for a failed request and retried.
+        if ($null -ne $pagingError)
+        {
+            throw $pagingError
+        }
 
         # A non-transient error ends the retries straight away.
         if (-not $isTransient)

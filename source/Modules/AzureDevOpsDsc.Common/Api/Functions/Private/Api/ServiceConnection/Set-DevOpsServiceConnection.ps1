@@ -45,6 +45,16 @@ Function Set-DevOpsServiceConnection
         $Authorization = @{ scheme = $scheme; parameters = $parameters }
     }
 
+    # Every authorization parameter is treated as a secret: which of them is one depends on the
+    # connection type, and redacting a tenant id from a log costs nothing.
+    if ($Authorization['parameters'] -is [System.Collections.IDictionary])
+    {
+        foreach ($parameterValue in $Authorization['parameters'].Values)
+        {
+            Register-AzDoSecretValue -Value $parameterValue
+        }
+    }
+
     # NOTE: wrapped in @(...) - see New-DevOpsServiceConnection for why (CLAUDE.md gotcha #7:
     # a one-element array emitted from an if/else expression unrolls to a bare hashtable,
     # which ConvertTo-Json then serializes as an object instead of an array).
@@ -57,7 +67,7 @@ Function Set-DevOpsServiceConnection
     })
 
     $params = @{
-        Uri         = '{0}/{1}/_apis/serviceendpoint/endpoints/{2}?api-version={3}' -f $ApiUri.TrimEnd('/'), $ProjectName, $ServiceConnectionId, $ApiVersion
+        Uri         = '{0}/{1}/_apis/serviceendpoint/endpoints/{2}?api-version={3}' -f $ApiUri.TrimEnd('/'), [System.Uri]::EscapeDataString([String]$ProjectName), $ServiceConnectionId, $ApiVersion
         Method      = 'PUT'
         ContentType = 'application/json'
         Body        = @{

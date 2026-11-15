@@ -55,6 +55,11 @@ Function Set-DevOpsPipelineVariables
         $allowOverride = if ($variable.ContainsKey('AllowOverride')) { [bool]$variable.AllowOverride } else { $false }
         $value = if ($null -eq $variable.Value) { '' } else { [string]$variable.Value }
 
+        if ($isSecret)
+        {
+            Register-AzDoSecretValue -Value $value
+        }
+
         $entry = [PSCustomObject]@{
             value         = $value
             isSecret      = $isSecret

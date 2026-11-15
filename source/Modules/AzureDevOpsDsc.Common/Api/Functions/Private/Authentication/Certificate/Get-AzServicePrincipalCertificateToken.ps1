@@ -81,6 +81,7 @@ Function Get-AzServicePrincipalCertificateToken
         }
 
         $plainPassword = ConvertFrom-AzDoSecureString -SecureString $CertificatePassword
+        Register-AzDoSecretValue -Value $plainPassword
 
         $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
             $CertificatePath,

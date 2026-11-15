@@ -7,7 +7,7 @@ Function List-DevOpsWikis
         [Parameter()][string]$ApiVersion = '7.1'
     )
     $uri = '{0}/_apis/wiki/wikis?api-version={1}' -f $ApiUri.TrimEnd('/'), $ApiVersion
-    if ($ProjectName) { $uri += '&project={0}' -f $ProjectName }
+    if ($ProjectName) { $uri += '&project={0}' -f [System.Uri]::EscapeDataString([String]$ProjectName) }
     $params = @{
         Uri    = $uri
         Method = 'GET'

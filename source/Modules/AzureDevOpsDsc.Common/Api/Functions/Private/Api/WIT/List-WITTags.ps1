@@ -20,7 +20,7 @@ Function List-WITTags {
 
     # Validate the parameters
     $params = @{
-        Uri              = 'https://dev.azure.com/{0}/{1}/_apis/wit/tags?api-version={2}' -f $Organization, $ProjectName, $ApiVersion
+        Uri              = 'https://dev.azure.com/{0}/{1}/_apis/wit/tags?api-version={2}' -f $Organization, [System.Uri]::EscapeDataString([String]$ProjectName), $ApiVersion
         Method           = "GET"
     }
 

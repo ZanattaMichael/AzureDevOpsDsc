@@ -182,7 +182,7 @@ Function Get-AzDoGitPermission
         if (-not $repositoryCache)
         {
             Write-Verbose "[Get-AzDoGitPermission] Repository '$RepositoryName' not in cache — falling back to live API lookup."
-            $allRepos        = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/$ProjectName/_apis/git/repositories?api-version=7.1-preview.1" -Method Get
+            $allRepos        = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrganizationName/$([System.Uri]::EscapeDataString([String]$ProjectName))/_apis/git/repositories?api-version=7.1-preview.1" -Method Get
             $repositoryCache = $allRepos.value | Where-Object { $_.name -eq $RepositoryName } | Select-Object -First 1
             if ($repositoryCache) { Add-CacheItem -Key $repoCacheKey -Value $repositoryCache -Type 'LiveRepositories' }
         }

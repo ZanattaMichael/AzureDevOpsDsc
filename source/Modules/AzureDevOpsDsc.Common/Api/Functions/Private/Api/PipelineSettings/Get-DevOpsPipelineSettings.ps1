@@ -39,7 +39,7 @@ function Get-DevOpsPipelineSettings
     )
 
     $params = @{
-        Uri    = 'https://dev.azure.com/{0}/{1}/_apis/build/generalsettings?api-version={2}' -f $Organization, $ProjectName, $ApiVersion
+        Uri    = 'https://dev.azure.com/{0}/{1}/_apis/build/generalsettings?api-version={2}' -f $Organization, [System.Uri]::EscapeDataString([String]$ProjectName), $ApiVersion
         Method = 'Get'
     }
 

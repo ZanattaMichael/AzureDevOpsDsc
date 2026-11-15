@@ -19,8 +19,11 @@ It does not know the live credential - it recognises the shapes a credential tak
 
 Text that matches none of these is returned unchanged, so ordinary messages are not altered.
 Pattern matching cannot recognise a secret with no recognisable shape (a short custom API key
-logged without a label), so this is a safety net behind not logging secrets in the first place,
-not a replacement for it.
+logged without a label). For those, every secret the module holds is registered with
+Register-AzDoSecretValue - the credential it signs in with, and each secret value a configuration
+asks it to store - and the exact text is replaced as well. A secret the module was never given
+(one that only ever appears in an API response) is still only caught by its shape, so this
+remains a safety net behind not logging secrets in the first place, not a replacement for it.
 
 .PARAMETER InputString
 The text to redact. $null and the empty string are returned as an empty string.
@@ -82,5 +85,20 @@ function Protect-AzDoSecretString
         }
     }
 
-    return $script:AzDoSecretStringPattern.Replace($InputString, $script:AzDoSecretStringEvaluator)
+    $result = $script:AzDoSecretStringPattern.Replace($InputString, $script:AzDoSecretStringEvaluator)
+
+    # Then the secrets the module actually holds (Register-AzDoSecretValue), by exact value. This is
+    # what catches a secret with no recognisable shape.
+    if ($null -ne $script:AzDoKnownSecretValueList)
+    {
+        foreach ($secretValue in $script:AzDoKnownSecretValueList)
+        {
+            if ($result.Contains($secretValue))
+            {
+                $result = $result.Replace($secretValue, '<redacted>')
+            }
+        }
+    }
+
+    return $result
 }

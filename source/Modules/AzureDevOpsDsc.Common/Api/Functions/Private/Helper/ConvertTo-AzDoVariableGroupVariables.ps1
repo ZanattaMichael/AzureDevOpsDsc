@@ -152,6 +152,11 @@ function ConvertTo-AzDoVariableGroupVariables
             $value = ''
         }
 
+        if ($isSecret)
+        {
+            Register-AzDoSecretValue -Value $value
+        }
+
         $normalizedEntry = @{
             value    = $value
             isSecret = $isSecret

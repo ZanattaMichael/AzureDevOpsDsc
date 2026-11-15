@@ -150,7 +150,7 @@ Function Get-AzDoBranchPolicy
             $repositoryCache = Get-CacheItem -Key $repoCacheKey -Type 'LiveRepositories'
             if (-not $repositoryCache)
             {
-                $allRepos        = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrgName/$ProjectName/_apis/git/repositories?api-version=7.1-preview.1" -Method Get
+                $allRepos        = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrgName/$([System.Uri]::EscapeDataString([String]$ProjectName))/_apis/git/repositories?api-version=7.1-preview.1" -Method Get
                 $repositoryCache = $allRepos.value | Where-Object { $_.name -eq $RepositoryName } | Select-Object -First 1
                 if ($repositoryCache) { Add-CacheItem -Key $repoCacheKey -Value $repositoryCache -Type 'LiveRepositories' }
             }

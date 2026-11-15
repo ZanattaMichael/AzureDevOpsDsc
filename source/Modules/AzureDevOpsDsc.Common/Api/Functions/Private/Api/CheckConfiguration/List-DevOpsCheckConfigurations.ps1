@@ -8,8 +8,8 @@ Function List-DevOpsCheckConfigurations
         [Parameter()][string]$ResourceId,
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )
-    $uri = '{0}/{1}/_apis/pipelines/checks/configurations?api-version={2}' -f $ApiUri.TrimEnd('/'), $ProjectName, $ApiVersion
-    if ($ResourceType) { $uri += '&resourceType={0}' -f $ResourceType }
+    $uri = '{0}/{1}/_apis/pipelines/checks/configurations?api-version={2}' -f $ApiUri.TrimEnd('/'), [System.Uri]::EscapeDataString([String]$ProjectName), $ApiVersion
+    if ($ResourceType) { $uri += '&resourceType={0}' -f [System.Uri]::EscapeDataString([String]$ResourceType) }
     if ($ResourceId)   { $uri += '&resourceId={0}'   -f $ResourceId }
     $params = @{
         Uri    = $uri
