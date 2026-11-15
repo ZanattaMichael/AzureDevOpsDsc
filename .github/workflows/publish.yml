@@ -54,8 +54,12 @@ jobs:
       - name: Derive module version from tag
         id: derive
         shell: pwsh
+        # The tag name reaches the script through the environment, never by interpolation
+        # into it: a ref name may contain `$(...)`, which PowerShell would execute.
+        env:
+          TAG_NAME: ${{ github.ref_name }}
         run: |
-          $tag = "${{ github.ref_name }}"
+          $tag = $env:TAG_NAME
           $version = $tag -replace '^v', ''
           # Accept X.Y.Z and X.Y.Z-<prerelease>. The PowerShell Gallery requires the
           # prerelease suffix to be alphanumeric only - no dots, no extra hyphens.
@@ -72,11 +76,13 @@ jobs:
       # through the Unit Tests workflow on main. Refuse to release from such a tag.
       - name: Verify tag is on main
         shell: pwsh
+        env:
+          TAG_NAME: ${{ github.ref_name }}
         run: |
           git fetch origin +refs/heads/main:refs/remotes/origin/main --quiet
           git merge-base --is-ancestor HEAD origin/main
           if ($LASTEXITCODE -ne 0) {
-              Write-Error "Tag '${{ github.ref_name }}' does not point at a commit contained in main. Releases must be tagged from main."
+              Write-Error "Tag '$($env:TAG_NAME)' does not point at a commit contained in main. Releases must be tagged from main."
               exit 1
           }
           Write-Host "Tag commit is contained in main."
@@ -101,7 +107,10 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/integration-tests.yml
-    secrets: inherit
+    # Only the secret the suite uses. `secrets: inherit` would also hand the self-hosted
+    # runners GALLERY_API_TOKEN, which nothing there needs.
+    secrets:
+      AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
     with:
       moduleVersion: ${{ needs.validate.outputs.version }}
       allowFailures: ${{ needs.validate.outputs.isPrerelease == 'true' }}
@@ -117,7 +126,8 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/integration-tests-v3.yml
-    secrets: inherit
+    secrets:
+      AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
     with:
       moduleVersion: ${{ needs.validate.outputs.version }}
       allowFailures: ${{ needs.validate.outputs.isPrerelease == 'true' }}
@@ -126,11 +136,20 @@ jobs:
     name: Build, Test, and Publish Release
     needs: [validate, integration-tests, integration-tests-v3]
     runs-on: windows-latest
+    # The `release` environment is where GALLERY_API_TOKEN belongs. Stored as an
+    # environment secret it is readable by this job only, and the environment's protection
+    # rules (a required reviewer, deployment limited to `v*` tags) put a human approval in
+    # front of every publish. While the secret is still a repository secret this line
+    # changes nothing; see 'Release environment' in CONTRIBUTING.md for the one-time setup.
+    environment: release
     # The only job that writes: `contents: write` for the GitHub Release and the wiki
     # push, `pull-requests: write` for the changelog roll-over pull request.
+    # `id-token: write` and `attestations: write` are for the build provenance attestation.
     permissions:
       contents: write
       pull-requests: write
+      id-token: write
+      attestations: write
     env:
       # $env:ModuleVersion has to be set before the *first* `build` task runs (not just
       # before pack), since that is what bakes the version into the psd1. Setting it at
@@ -202,6 +221,15 @@ jobs:
         shell: pwsh
         run: |
           ./build.ps1 -Tasks dscv3,package_module_nupkg
+
+      # Signed statement, stored by GitHub, that this exact package was built by this
+      # workflow from this commit. Anyone can check a downloaded package with
+      #   gh attestation verify <file>.nupkg --repo <owner>/<repo>
+      # It runs before anything is published, so a package never goes out without one.
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
+        with:
+          subject-path: output/*.nupkg
 
       # Both sub-tasks self-guard on their own token being set, so this is safe to run
       # even if GALLERY_API_TOKEN isn't configured yet - it just skips the Gallery

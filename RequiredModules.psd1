@@ -1,4 +1,5 @@
 @{
+    # Every module below is pinned to an exact version - see the note in CONTRIBUTING.md.
     PSDependOptions                = @{
         AddToPath  = $true
         Target     = 'output\RequiredModules'
