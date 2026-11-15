@@ -53,7 +53,9 @@ Function Set-DevOpsPipelineVariables
         $name = [string]$variable.Name
         $isSecret = if ($variable.ContainsKey('IsSecret')) { [bool]$variable.IsSecret } else { $false }
         $allowOverride = if ($variable.ContainsKey('AllowOverride')) { [bool]$variable.AllowOverride } else { $false }
-        $value = if ($null -eq $variable.Value) { '' } else { [string]$variable.Value }
+        # The value may be a secret reference instead of the secret (Resolve-AzDoSecretReference).
+        $variableValue = Resolve-AzDoSecretReference -Value $variable.Value
+        $value = if ($null -eq $variableValue) { '' } else { [string]$variableValue }
 
         if ($isSecret)
         {

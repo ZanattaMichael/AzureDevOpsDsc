@@ -20,6 +20,10 @@ Function Set-AzDoServiceConnection
 
     Write-Verbose "[Set-AzDoServiceConnection] Updating service connection '$ConnectionName'."
 
+    # A value in Authorization may be a secret reference instead of the secret; fetch those now.
+    # See Resolve-AzDoSecretReference.
+    $Authorization = Resolve-AzDoSecretReferenceTable -Table $Authorization
+
     $orgName   = Get-AzDoOrganizationName
     $orgApiUri = 'https://dev.azure.com/{0}/' -f $orgName
     $project   = Resolve-AzDoProject -ProjectName $ProjectName

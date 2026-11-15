@@ -16,6 +16,9 @@ Describe "Get-AzDoAuditStream" -Tag "Unit", "AuditStream" {
         }
 
         $files = Get-FunctionItem (Find-MockedFunctions -TestFilePath $currentFile)
+        . (Get-FunctionItem 'Resolve-AzDoSecretReference.ps1').FullName
+        . (Get-FunctionItem 'Resolve-AzDoSecretReferenceTable.ps1').FullName
+        . (Get-FunctionItem 'Register-AzDoSecretValue.ps1').FullName
         ForEach ($file in $files) { . $file.FullName }
 
         . (Get-ClassFilePath 'DSCGetSummaryState')
