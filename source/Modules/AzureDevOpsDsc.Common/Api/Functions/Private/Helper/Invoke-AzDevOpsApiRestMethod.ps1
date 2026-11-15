@@ -143,6 +143,17 @@ function Invoke-AzDevOpsApiRestMethod
         }
     }
 
+    # The credential is only ever attached to a request for an Azure DevOps host. A URI is text
+    # that can come from configuration, a cache file or an API response, and a request to any
+    # other host would hand that host the token. Callers passing -NoAuthentication (the token
+    # endpoints) add no credential here and are not restricted.
+    if ((-not $NoAuthentication.IsPresent) -and (-not (Test-AzDoApiHost -Uri $requestUri)))
+    {
+        throw ("[Invoke-AzDevOpsApiRestMethod] Refusing to send the Azure DevOps credential to '{0}': it is not an " +
+               "Azure DevOps host (dev.azure.com, *.dev.azure.com, *.visualstudio.com). For Azure DevOps Server, name " +
+               "the host in the AZDODSC_ALLOWED_API_HOSTS environment variable.") -f $requestUri.DnsSafeHost
+    }
+
     $invokeRestMethodParameters = @{
         Uri                         = $ApiUri
         Method                      = $HttpMethod
@@ -356,7 +367,10 @@ function Invoke-AzDevOpsApiRestMethod
                 # correct 'api-version' query parameter, so only the continuation token is appended.
                 # (Previously a bare '&7.1' was appended, producing a malformed query and, for the
                 # preview-only graph endpoints, a 'version 7.1 is under preview' 400 error.)
-                $invokeRestMethodParameters.Uri = '{0}&continuationToken={1}' -f $ApiUri, $continuationToken
+                # The token is a response header, so it is escaped: unescaped, a value containing
+                # '&' or '#' would add or cut off query parameters of the next request.
+                $continuationSeparator = if ($ApiUri.Contains('?')) { '&' } else { '?' }
+                $invokeRestMethodParameters.Uri = '{0}{1}continuationToken={2}' -f $ApiUri, $continuationSeparator, [System.Uri]::EscapeDataString([String]$continuationToken)
                 # Reset the RetryAttempts counter
                 $CurrentNoOfRetryAttempts = -1
 
@@ -390,7 +404,16 @@ function Invoke-AzDevOpsApiRestMethod
                         $responseBody = [System.IO.StreamReader]::new($stream).ReadToEnd()
                     } catch {}
                 }
+                # A response body is text from outside the module and ends up in an exception that
+                # DSC logs. It is capped (an error page can be megabytes) and anything in it or in
+                # the exception message that looks like a credential is redacted.
+                $responseBody = [String]$responseBody
+                if ($responseBody.Length -gt 4000)
+                {
+                    $responseBody = $responseBody.Substring(0, 4000) + '... (truncated)'
+                }
                 $restMethodExceptionMessage = if ($responseBody) { "$($_.Exception.Message) | ResponseBody: $responseBody" } else { $_.Exception.Message }
+                $restMethodExceptionMessage = Protect-AzDoSecretString -InputString $restMethodExceptionMessage
 
                 # Only a timeout, throttling or a server error can succeed on a second try. Any
                 # other 4xx (bad request, unauthorized, forbidden, not found, conflict) gives the

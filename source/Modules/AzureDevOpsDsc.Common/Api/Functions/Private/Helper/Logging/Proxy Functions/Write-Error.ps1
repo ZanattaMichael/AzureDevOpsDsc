@@ -36,16 +36,18 @@ Function Write-Error
         [string]$LogFilePath = "$($env:AZDO_ERRORLOGGING_FILEPATH)"
     )
 
-    #  Call the original Write-Error cmdlet to display the message
-    Microsoft.PowerShell.Utility\Write-Error $Message
-    $VerbosePreference = $originalPreference
+    # Anything that looks like a credential is redacted before the message reaches the error
+    # stream (which DSC captures into its own logs) or the log file.
+    $writeToLogFile = -not [String]::IsNullOrEmpty($LogFilePath)
+    $Message = Protect-AzDoSecretString -InputString $Message
 
-    # Test if the env:enableVerboseLogging variable is set to true
-    if (-not [String]::IsNullOrEmpty($LogFilePath))
+    # Call the original Write-Error cmdlet
+    Microsoft.PowerShell.Utility\Write-Error $Message
+
+    # Append the message to the log file, created owner-only
+    if ($writeToLogFile)
     {
-        # Append the message to the log file
-        $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-        Add-Content -Path $LogFilePath -Value "[$timestamp] $Message"
+        Add-AzDoLogFileEntry -LogFilePath $LogFilePath -Message $Message
     }
 
 }

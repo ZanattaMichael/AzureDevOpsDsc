@@ -17,6 +17,7 @@ Describe 'Test-CacheFileStamp' -Tag "Unit", "Cache" {
         . (Get-ClassFilePath '000.CacheItem')
         . (Get-FunctionItem 'Get-AzDoCacheObjects.ps1')
         . (Get-FunctionItem 'Set-CacheFileStamp.ps1')
+        . (Get-FunctionItem 'Protect-AzDoCacheSecret.ps1')
         . (Get-FunctionItem 'Export-CacheObject.ps1')
         . (Get-FunctionItem 'Import-CacheObject.ps1')
         . (Get-FunctionItem 'Set-CacheObject.ps1')

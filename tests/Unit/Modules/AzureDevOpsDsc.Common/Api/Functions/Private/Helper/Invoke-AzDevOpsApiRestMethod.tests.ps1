@@ -14,6 +14,8 @@ Describe 'Invoke-AzDevOpsApiRestMethod' -Tag "Unit", "Helper" {
         ForEach ($file in $files) {
             . $file.FullName
         }
+        . (Get-FunctionItem 'Protect-AzDoSecretString.ps1')
+        . (Get-FunctionItem 'Test-AzDoApiHost.ps1')
 
         # Get 007.APIRateLimit.ps1
         . (Get-ClassFilePath '007.APIRateLimit')
@@ -84,8 +86,105 @@ Describe 'Invoke-AzDevOpsApiRestMethod' -Tag "Unit", "Helper" {
             Assert-MockCalled -CommandName Invoke-RestMethod -Exactly -Times 1
         }
 
-        It 'Allows https to any host' {
+        It 'Allows https to an Azure DevOps host' {
             { Invoke-AzDevOpsApiRestMethod @defaultParameters } | Should -Not -Throw
+        }
+    }
+
+    Context 'Credential destination' {
+
+        BeforeAll {
+            Mock -CommandName Invoke-RestMethod -MockWith { return @{ value = 'ok' } }
+            $script:originalAllowedHosts = $env:AZDODSC_ALLOWED_API_HOSTS
+        }
+
+        BeforeEach {
+            $env:AZDODSC_ALLOWED_API_HOSTS = $null
+        }
+
+        AfterAll {
+            $env:AZDODSC_ALLOWED_API_HOSTS = $script:originalAllowedHosts
+        }
+
+        It 'Refuses to send the credential to <Uri> and builds no header' -ForEach @(
+            @{ Uri = 'https://example.org/someOrganizationName/_apis/projects' }
+            @{ Uri = 'https://dev.azure.com.example.org/someOrganizationName/_apis/projects' }
+            @{ Uri = 'https://dev.azure.com@example.org/someOrganizationName/_apis/projects' }
+            @{ Uri = 'https://example.org/dev.azure.com/_apis/projects' }
+            @{ Uri = 'https://login.microsoftonline.com/tenant/oauth2/token' }
+        ) {
+            $parameters = $defaultParameters.Clone()
+            $parameters.ApiUri = $Uri
+
+            { Invoke-AzDevOpsApiRestMethod @parameters } | Should -Throw '*Refusing to send the Azure DevOps credential*'
+            Assert-MockCalled -CommandName Add-AuthenticationHTTPHeader -Exactly -Times 0
+            Assert-MockCalled -CommandName Invoke-RestMethod -Exactly -Times 0
+        }
+
+        It 'Sends the credential to the Azure DevOps host <Uri>' -ForEach @(
+            @{ Uri = 'https://vssps.dev.azure.com/someOrganizationName/_apis/graph/groups' }
+            @{ Uri = 'https://someOrganizationName.visualstudio.com/_apis/projects' }
+        ) {
+            $parameters = $defaultParameters.Clone()
+            $parameters.ApiUri = $Uri
+
+            { Invoke-AzDevOpsApiRestMethod @parameters } | Should -Not -Throw
+            Assert-MockCalled -CommandName Add-AuthenticationHTTPHeader -Exactly -Times 1
+        }
+
+        It 'Sends the credential to an Azure DevOps Server host named in AZDODSC_ALLOWED_API_HOSTS' {
+            $env:AZDODSC_ALLOWED_API_HOSTS = 'tfs.contoso.com'
+            $parameters = $defaultParameters.Clone()
+            $parameters.ApiUri = 'https://tfs.contoso.com/tfs/DefaultCollection/_apis/projects'
+
+            { Invoke-AzDevOpsApiRestMethod @parameters } | Should -Not -Throw
+            Assert-MockCalled -CommandName Add-AuthenticationHTTPHeader -Exactly -Times 1
+        }
+
+        It 'Does not restrict the host when the caller adds no credential (-NoAuthentication)' {
+            $parameters = $defaultParameters.Clone()
+            $parameters.ApiUri = 'https://example.org/token'
+            $parameters.NoAuthentication = $true
+
+            { Invoke-AzDevOpsApiRestMethod @parameters } | Should -Not -Throw
+            Assert-MockCalled -CommandName Add-AuthenticationHTTPHeader -Exactly -Times 0
+            Assert-MockCalled -CommandName Invoke-RestMethod -Exactly -Times 1
+        }
+    }
+
+    Context 'Error messages built from the response' {
+
+        BeforeAll {
+            $script:leakedJwt = 'eyJ' + ('hbGciOiJSUzI1NiIs' * 2) + '.eyJ' + ('hdWQiOiI0OTliODRh' * 3) + '.' + ('c2lnbmF0dXJl' * 4)
+        }
+
+        It 'Redacts a credential echoed in the error text' {
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                throw [CustomException]::new("Unauthorized. Header was 'Authorization: Bearer $($script:leakedJwt)' and client_secret=hunter2-Value", [System.Net.WebExceptionStatus]::ProtocolError, @{}, [System.Net.HttpStatusCode]::Unauthorized)
+            }
+
+            $thrown = $null
+            try { Invoke-AzDevOpsApiRestMethod @defaultParameters } catch { $thrown = $_ }
+
+            $thrown | Should -Not -BeNullOrEmpty
+            $text = ($thrown | Out-String) + $thrown.Exception.Message
+            $text | Should -Not -Match ([regex]::Escape($script:leakedJwt))
+            $text | Should -Not -Match 'hunter2'
+            $text | Should -Match 'Unauthorized'
+        }
+
+        It 'Caps an oversized error text' {
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                $record = [System.Management.Automation.ErrorRecord]::new([System.Exception]::new('Bad Request'), 'x', 'InvalidOperation', $null)
+                $record.ErrorDetails = [System.Management.Automation.ErrorDetails]::new(('<html>' + ('A' * 500000) + '</html>'))
+                throw $record
+            }
+
+            $thrown = $null
+            try { Invoke-AzDevOpsApiRestMethod @defaultParameters } catch { $thrown = $_ }
+
+            $thrown.Exception.Message.Length | Should -BeLessThan 6000
+            $thrown.Exception.Message | Should -Match 'truncated'
         }
     }
 

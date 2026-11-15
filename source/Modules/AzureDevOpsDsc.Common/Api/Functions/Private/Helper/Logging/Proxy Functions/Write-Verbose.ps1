@@ -31,15 +31,22 @@ Function Write-Verbose
         [string]$LogFilePath = "$($env:AZDO_VERBOSELOGGING_FILEPATH)"
     )
 
-    # Call the original Write-Verbose cmdlet to display the message if verbose preference is enabled
+    # Anything that looks like a credential is redacted before the message reaches the verbose
+    # stream (which DSC captures into its own logs) or the log file. Skipped when the message
+    # goes nowhere - verbose output is off and there is no log file - to keep that path cheap.
+    $writeToLogFile = -not [String]::IsNullOrEmpty($LogFilePath)
+    if ($writeToLogFile -or ($VerbosePreference -ne 'SilentlyContinue'))
+    {
+        $Message = Protect-AzDoSecretString -InputString $Message
+    }
+
+    # Call the original Write-Verbose cmdlet
     Microsoft.PowerShell.Utility\Write-Verbose $Message
 
-    # Test if the env:enableVerboseLogging variable is set to true
-    if (-not [String]::IsNullOrEmpty($LogFilePath))
+    # Append the message to the log file, created owner-only
+    if ($writeToLogFile)
     {
-        # Append the message to the log file
-        $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-        Add-Content -Path $LogFilePath -Value "[$timestamp] $Message"
+        Add-AzDoLogFileEntry -LogFilePath $LogFilePath -Message $Message
     }
 
 }

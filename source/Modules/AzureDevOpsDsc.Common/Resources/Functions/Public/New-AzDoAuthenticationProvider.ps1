@@ -194,6 +194,18 @@ Function New-AzDoAuthenticationProvider
         Throw "[New-AzDoAuthenticationProvider] The Environment Variable 'AZDODSC_CACHE_DIRECTORY' is not set. Please set the Environment Variable 'AZDODSC_CACHE_DIRECTORY' to the Cache Directory."
     }
 
+    # The organization name becomes part of every request URI, and the tenant id part of the token
+    # endpoint URI. Neither is free text: refuse anything that could change which host or path a
+    # credential is sent to (a slash, '@', '?', '#', whitespace) instead of building a URI from it.
+    if ($OrganizationName -notmatch '^[A-Za-z0-9](?:[A-Za-z0-9-]{0,48}[A-Za-z0-9])?$')
+    {
+        Throw "[New-AzDoAuthenticationProvider] '$OrganizationName' is not a valid Azure DevOps organization name. A name is 1 to 50 letters, digits or hyphens and starts and ends with a letter or digit - pass the name only, not a URL."
+    }
+    if ($PSBoundParameters.ContainsKey('TenantId') -and ($TenantId -notmatch '^[A-Za-z0-9](?:[A-Za-z0-9.-]{0,252}[A-Za-z0-9])?$'))
+    {
+        Throw "[New-AzDoAuthenticationProvider] '$TenantId' is not a valid tenant id. Pass the tenant GUID or a verified domain name (for example contoso.onmicrosoft.com)."
+    }
+
     # Set the Global Variables
     $Global:DSCAZDO_OrganizationName = $OrganizationName
     $Global:DSCAZDO_AuthenticationToken = $null
@@ -398,11 +410,18 @@ Function New-AzDoAuthenticationProvider
         Write-Warning "[New-AzDoAuthenticationProvider] On this platform '$moduleSettingsPath' stores the credential in a recoverable form that is protected only by file permissions, which the module sets to owner-only. Keep AZDODSC_CACHE_DIRECTORY on a private path and run DSC as the same account that ran New-AzDoAuthenticationProvider."
     }
 
+    # Restrict the cache directory first (so anything created under it inherits), then create the
+    # settings file empty and restrict it before the credential is written into it. Writing first
+    # and restricting afterwards left the credential readable with the default permissions for a
+    # moment on every run.
+    Protect-AzDoCachePath -Path $ENV:AZDODSC_CACHE_DIRECTORY
+    if (-not (Test-Path -LiteralPath $moduleSettingsPath))
+    {
+        $null = New-Item -Path $moduleSettingsPath -ItemType File -Force
+    }
+    Protect-AzDoCachePath -Path $moduleSettingsPath
+
     # Export the Object to the Cache Directory
     $objectSettings | Export-Clixml -LiteralPath $moduleSettingsPath -Depth 5
-
-    # Restrict the cache directory (so anything created under it inherits) and then the settings file.
-    Protect-AzDoCachePath -Path $ENV:AZDODSC_CACHE_DIRECTORY
-    Protect-AzDoCachePath -Path $moduleSettingsPath
 
 }
