@@ -46,7 +46,7 @@ The layout/structure of the module and it's resources/components is designed to:
 
 ## Using the Caching Mechanism
 
-The caching mechanism implemented in this module leverages CLIXML (Command-Line Interface XML) to store cached content. This approach ensures that the cached data is serialized into a structured XML format.
+The caching mechanism implemented in this module leverages CLIXML (Command-Line Interface XML) to store cached content. This approach ensures that the cached data is serialized into a structured XML format. Cache files are written and read through `Write-AzDoCacheFile` and `Read-AzDoCacheFile`: on Windows the CLIXML is encrypted with DPAPI for the account that wrote it, so read a cache file with `Read-AzDoCacheFile`, not `Import-Clixml`.
 
 ### Cache Initialization
 

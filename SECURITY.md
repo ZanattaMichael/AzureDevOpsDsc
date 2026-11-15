@@ -29,10 +29,10 @@ This module manages Azure DevOps resources via PowerShell DSC and the Azure DevO
 
 What the module does on its own, so a report can say which of these did not hold:
 
-- **Credential storage.** `ModuleSettings.clixml`, the cache and the log files are created owner-only. On Windows the stored credential is DPAPI-encrypted; on Linux and macOS it is recoverable by anyone who can read the file, so the permissions are the protection. See `USAGE.md`.
+- **Credential storage.** `ModuleSettings.clixml`, the cache and the log files are created owner-only. On Windows the cache files are also DPAPI-encrypted for the account that wrote them. On Windows the stored credential is DPAPI-encrypted; on Linux and macOS it is recoverable by anyone who can read the file, so the permissions are the protection. See `USAGE.md`.
 - **Credential destination.** The credential is only attached to requests for Azure DevOps hosts (`dev.azure.com`, `*.dev.azure.com`, `*.visualstudio.com`, plus any host named in `AZDODSC_ALLOWED_API_HOSTS`), over https.
 - **Redaction.** Credential-shaped text is replaced with `<redacted>` in the verbose, warning and error streams, the log files, and error messages built from API responses, identity provider errors and Azure CLI output. This is pattern based and is a safety net, not a guarantee.
-- **Cache contents.** Secret variable values, service connection keys and audit stream keys are blanked before a cache file is written.
+- **Cache contents.** Secret variable values, service connection keys and audit stream keys are blanked as a value enters a cache, so they are held neither in memory nor in a cache file. The cache is not encrypted in memory: code running in the same PowerShell process can read it, and no in-process scheme can prevent that.
 - **Export.** Properties a resource declares secret are replaced with a placeholder in exported configuration.
 - **Input checks.** The organization name and tenant id are validated before a URI is built from them, and a continuation token taken from a response is escaped.
 

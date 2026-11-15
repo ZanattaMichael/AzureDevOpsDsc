@@ -94,6 +94,16 @@ a shared or world-readable one), and run DSC as the same account that ran
 maps identity names to descriptors, so anything that can write it can redirect a
 permission grant.
 
+The cache holds no secrets: secret variable values, service connection keys and audit
+stream keys are removed before a value is cached. On Windows each cache file is also
+encrypted with DPAPI for the account that wrote it, so, like `ModuleSettings.clixml`,
+it can only be read by that account on that machine and cannot be opened with
+`Import-Clixml`. A cache directory copied to another machine or account has to be
+rebuilt by running `New-AzDoAuthenticationProvider` there. On Linux and macOS the
+cache files are plain CLIXML protected by the owner-only permissions. Cache files
+written by an earlier version are still read, and are encrypted the next time they
+are written.
+
 ### *AZDODSC_ALLOWED_API_HOSTS* Environment Variable
 
 The module only sends its credential to Azure DevOps Services hosts: `dev.azure.com`,

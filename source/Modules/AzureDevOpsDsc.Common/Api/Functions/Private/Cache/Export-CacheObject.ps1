@@ -79,16 +79,15 @@ Function Export-CacheObject
             $Content = [System.Collections.Generic.List[CacheItem]]::New()
         }
 
-        # A cached write response can echo the secrets that were sent. Blank them before the
-        # cache is written, so no secret variable value or service connection key reaches disk.
+        # A cached write response can echo the secrets that were sent. Add-CacheItem blanks them
+        # as they enter the cache; this is the last check before the file is written, for content
+        # that reached here another way.
         Protect-AzDoCacheSecret -CacheType $CacheType -Content $Content
 
-        # Save content to cache file — must use -InputObject (not pipeline).
+        # Save content to cache file: encrypted for this account on Windows, and owner-only
+        # everywhere (the identity caches decide who a permission grant resolves to).
         Write-Verbose "[Export-ObjectCache] Saving content to cache file: $cacheFilePath"
-        Export-Clixml -InputObject $Content -Depth $Depth -LiteralPath $cacheFilePath
-
-        # The identity caches decide who a permission grant resolves to, so keep them owner-only.
-        Protect-AzDoCachePath -Path $cacheFilePath
+        Write-AzDoCacheFile -Path $cacheFilePath -InputObject $Content -Depth $Depth
 
         # Note what was written, so a Refresh-CacheObject that follows does not read it back in.
         Set-CacheFileStamp -CacheType $CacheType -Path $cacheFilePath -Content $Content

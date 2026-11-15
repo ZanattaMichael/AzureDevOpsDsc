@@ -285,7 +285,11 @@ Describe 'Secret leakage: behaviour' -Tag 'Unit', 'Security' {
             'Protect-AzDoCachePath.ps1', 'Test-AzDoIsWindows.ps1', 'Export-CacheObject.ps1', 'Get-AzDoCacheObjects.ps1', 'Set-CacheFileStamp.ps1', 'Test-CacheFileStamp.ps1',
             'ConvertTo-Base64String.ps1', 'ConvertFrom-AzDoSecureString.ps1', 'Add-AzDoLogFileEntry.ps1',
             'Get-AzServicePrincipalToken.ps1', 'Get-AzWorkloadIdentityFederationToken.ps1', 'Get-AzFederatedAssertion.ps1',
-            'Get-AzCliToken.ps1'
+            'Get-AzCliToken.ps1',
+            # The cache layer: what puts a value in a cache, and what writes and reads a cache file.
+            'Add-CacheItem.ps1', 'Get-CacheObject.ps1', 'Get-CacheKeyIndex.ps1', 'Import-CacheObject.ps1',
+            'Write-AzDoCacheFile.ps1', 'Read-AzDoCacheFile.ps1',
+            'Get-AzDoCacheFileHeader.ps1', 'Protect-AzDoCacheData.ps1', 'Unprotect-AzDoCacheData.ps1'
         )
         Import-Enums | ForEach-Object { . $_.FullName }
 
@@ -568,6 +572,91 @@ Describe 'Secret leakage: behaviour' -Tag 'Unit', 'Security' {
             $env:AZDODSC_CACHE_DIRECTORY = Join-Path -Path $TestDrive -ChildPath 'cache'
             $null = New-Item -Path $env:AZDODSC_CACHE_DIRECTORY -ItemType Directory -Force
             $script:cacheDirectory = Join-Path -Path $env:AZDODSC_CACHE_DIRECTORY -ChildPath 'Cache'
+
+            # What a cache file holds, as text. The file is encrypted on Windows, so it is read
+            # back the way the module reads it and serialized again.
+            function Get-CacheFileText
+            {
+                param ([string]$CacheType)
+                $path = Join-Path -Path $script:cacheDirectory -ChildPath "$CacheType.clixml"
+                return [System.Management.Automation.PSSerializer]::Serialize((Read-AzDoCacheFile -Path $path), 6)
+            }
+
+            # Everything a cache holds in memory, as text.
+            function Get-CacheMemoryText
+            {
+                param ([string]$CacheType)
+                $cache = Get-Variable -Name "AzDo$CacheType" -Scope Global -ValueOnly
+                return [System.Management.Automation.PSSerializer]::Serialize(@($cache), 6)
+            }
+
+            $script:echoedVariableGroup     = '{"id":1,"name":"Group","variables":{"PLAIN":{"value":"plain-value"},"API_KEY":{"value":"' + $script:canaryVariable + '","isSecret":true}}}'
+            $script:echoedServiceConnection = '{"id":"e1","name":"Connection","authorization":{"scheme":"ServicePrincipal","parameters":{"tenantid":"tenant-value","serviceprincipalid":"client","serviceprincipalkey":"' + $script:canarySecret + '"}}}'
+            $script:echoedAuditStream       = '{"id":3,"consumerType":"AzureMonitorLogs","consumerInputs":{"WorkspaceId":"workspace-value","SharedKey":"' + $script:canarySecret + '"}}'
+        }
+
+        BeforeEach {
+            foreach ($type in 'LiveVariableGroups', 'LiveServiceConnections', 'LiveAuditStreams')
+            {
+                Remove-Variable -Name "AzDo$type" -Scope Global -ErrorAction SilentlyContinue
+            }
+            Remove-Variable -Name AzDoCacheKeyIndex -Scope Global -ErrorAction SilentlyContinue
+            Remove-Variable -Name AzDoCacheFileStamp -Scope Global -ErrorAction SilentlyContinue
+            Get-ChildItem -LiteralPath $script:cacheDirectory -File -ErrorAction SilentlyContinue | Remove-Item -Force
+        }
+
+        AfterAll {
+            foreach ($type in 'LiveVariableGroups', 'LiveServiceConnections', 'LiveAuditStreams')
+            {
+                Remove-Variable -Name "AzDo$type" -Scope Global -ErrorAction SilentlyContinue
+            }
+        }
+
+        It 'Never holds a secret echoed by a write response in memory: <CacheType>' -ForEach @(
+            @{ CacheType = 'LiveVariableGroups';     Echoed = 'echoedVariableGroup';     Kept = 'plain-value' }
+            @{ CacheType = 'LiveServiceConnections'; Echoed = 'echoedServiceConnection'; Kept = 'tenant-value' }
+            @{ CacheType = 'LiveAuditStreams';       Echoed = 'echoedAuditStream';       Kept = 'workspace-value' }
+        ) {
+            $value = (Get-Variable -Name $Echoed -Scope Script -ValueOnly) | ConvertFrom-Json
+
+            Add-CacheItem -Key 'Project\Item' -Value $value -Type $CacheType
+
+            $text = Get-CacheMemoryText -CacheType $CacheType
+            $text | Should -Match $Kept
+            Assert-NoCanary -Text $text -Because 'a cache must not hold a secret in memory'
+        }
+
+        It 'Removes a secret from a cache file written by an earlier version, in memory and on disk' {
+            # An earlier version of the module wrote the echoed secret to the file as it was.
+            $legacy = [System.Collections.Generic.List[CacheItem]]::new()
+            $legacy.Add([CacheItem]::new('Project\Group', ($script:echoedVariableGroup | ConvertFrom-Json)))
+            $null = New-Item -Path $script:cacheDirectory -ItemType Directory -Force
+            $path = Join-Path -Path $script:cacheDirectory -ChildPath 'LiveVariableGroups.clixml'
+            Export-Clixml -InputObject $legacy -Depth 6 -LiteralPath $path
+            (Get-Content -LiteralPath $path -Raw) | Should -Match ([regex]::Escape($script:canaryVariable))
+
+            $null = Import-CacheObject -CacheType 'LiveVariableGroups' -WarningAction SilentlyContinue
+
+            Assert-NoCanary -Text (Get-CacheMemoryText -CacheType 'LiveVariableGroups') -Because 'an imported cache must not hold a secret in memory'
+            $text = Get-CacheFileText -CacheType 'LiveVariableGroups'
+            $text | Should -Match 'plain-value'
+            Assert-NoCanary -Text $text -Because 'the file must be rewritten without the secret'
+            Assert-NoCanary -Text (Get-Content -LiteralPath $path -Raw) -Because 'the file must be rewritten without the secret'
+        }
+
+        It 'Encrypts a cache file on Windows so its content cannot be read from the file' -Skip:(-not [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)) {
+            $cache = [System.Collections.Generic.List[CacheItem]]::new()
+            $cache.Add([CacheItem]::new('Project\Connection', ('{"id":"e1","name":"plain-connection-name"}' | ConvertFrom-Json)))
+
+            Export-CacheObject -CacheType 'LiveServiceConnections' -Content $cache
+
+            $path  = Join-Path -Path $script:cacheDirectory -ChildPath 'LiveServiceConnections.clixml'
+            $bytes = [System.IO.File]::ReadAllBytes($path)
+            foreach ($encoding in [System.Text.Encoding]::UTF8, [System.Text.Encoding]::Unicode)
+            {
+                $encoding.GetString($bytes) | Should -Not -Match 'plain-connection-name'
+            }
+            (Get-CacheFileText -CacheType 'LiveServiceConnections') | Should -Match 'plain-connection-name'
         }
 
         It 'Never writes a secret variable value echoed by a write response to the variable group cache' {
@@ -577,7 +666,7 @@ Describe 'Secret leakage: behaviour' -Tag 'Unit', 'Security' {
 
             Export-CacheObject -CacheType 'LiveVariableGroups' -Content $cache
 
-            $text = Get-Content -LiteralPath (Join-Path -Path $script:cacheDirectory -ChildPath 'LiveVariableGroups.clixml') -Raw
+            $text = Get-CacheFileText -CacheType 'LiveVariableGroups'
             $text | Should -Match 'plain-value'
             $text | Should -Match 'API_KEY'
             Assert-NoCanary -Text $text -Because 'a cache file must not hold a secret variable value'
@@ -590,7 +679,7 @@ Describe 'Secret leakage: behaviour' -Tag 'Unit', 'Security' {
 
             Export-CacheObject -CacheType 'LiveServiceConnections' -Content $cache
 
-            $text = Get-Content -LiteralPath (Join-Path -Path $script:cacheDirectory -ChildPath 'LiveServiceConnections.clixml') -Raw
+            $text = Get-CacheFileText -CacheType 'LiveServiceConnections'
             $text | Should -Match 'tenant-value'
             Assert-NoCanary -Text $text -Because 'a cache file must not hold a service connection key'
         }
@@ -602,15 +691,23 @@ Describe 'Secret leakage: behaviour' -Tag 'Unit', 'Security' {
 
             Export-CacheObject -CacheType 'LiveAuditStreams' -Content $cache
 
-            $text = Get-Content -LiteralPath (Join-Path -Path $script:cacheDirectory -ChildPath 'LiveAuditStreams.clixml') -Raw
+            $text = Get-CacheFileText -CacheType 'LiveAuditStreams'
             $text | Should -Match 'workspace-value'
             Assert-NoCanary -Text $text -Because 'a cache file must not hold an audit stream key'
         }
 
         It 'Writes cache files and the cache directory readable by their owner only' -Skip:([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)) {
+            # Start without the directory, so the module creates it as it would on a first run.
+            Remove-Item -LiteralPath $script:cacheDirectory -Recurse -Force -ErrorAction SilentlyContinue
+            $cache = [System.Collections.Generic.List[CacheItem]]::new()
+            $cache.Add([CacheItem]::new('Project\Group', ('{"id":1,"name":"Group"}' | ConvertFrom-Json)))
+            Export-CacheObject -CacheType 'LiveVariableGroups' -Content $cache
+
             [String](Get-Item -LiteralPath $script:cacheDirectory).UnixMode | Should -Be 'drwx------'
 
-            foreach ($file in (Get-ChildItem -LiteralPath $script:cacheDirectory -File))
+            $files = @(Get-ChildItem -LiteralPath $script:cacheDirectory -File)
+            $files.Count | Should -BeGreaterThan 0
+            foreach ($file in $files)
             {
                 [String]$file.UnixMode | Should -Be '-rw-------' -Because "$($file.Name) names the identities permission grants resolve to"
             }

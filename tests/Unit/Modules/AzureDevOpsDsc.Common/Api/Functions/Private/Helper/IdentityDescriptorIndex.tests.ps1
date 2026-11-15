@@ -24,6 +24,14 @@ Describe "IdentityDescriptorIndex" -Tag "Unit", "Helper" {
 
         . (Get-ClassFilePath '000.CacheItem')
 
+        # The real file helpers, so these tests write and read a cache file the way the module
+        # does: encrypted with DPAPI on Windows, plain CLIXML elsewhere.
+        ForEach ($fn in 'Write-AzDoCacheFile', 'Read-AzDoCacheFile', 'Get-AzDoCacheFileHeader',
+                        'Protect-AzDoCacheData', 'Unprotect-AzDoCacheData', 'Test-AzDoIsWindows')
+        {
+            . (Get-FunctionItem "$fn.ps1")
+        }
+
         # Save-IdentityDescriptorIndex restricts what it writes; the permission change itself is
         # covered by Protect-AzDoCachePath's own tests.
         Mock -CommandName Protect-AzDoCachePath

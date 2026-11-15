@@ -1,13 +1,13 @@
 <#
 .SYNOPSIS
-Blanks the secret-bearing fields of cache entries before a cache is written to disk.
+Blanks the secret-bearing fields of cache entries, so no secret is held in a cache.
 
 .DESCRIPTION
 The Live* caches hold what the Azure DevOps API returned, and a read never returns a secret: a
 secret variable comes back with a null value and a service connection's key comes back blank. A
 write response is different - it can echo the request, secrets included - and New-/Set- functions
-cache write responses. This function is the guarantee that such an echo never reaches a cache
-file, whatever a particular endpoint happens to return:
+cache write responses. This function is the guarantee that such an echo is never held in a cache,
+in memory or on disk, whatever a particular endpoint happens to return:
 
   - LiveVariableGroups:     the 'value' of every variable marked 'isSecret';
   - LiveServiceConnections: every 'authorization.parameters' entry whose name says it is a
@@ -15,17 +15,24 @@ file, whatever a particular endpoint happens to return:
   - LiveAuditStreams:       every such entry of 'consumerInputs'.
 
 A blanked field is set to $null, which is exactly what a read of the same object returns, so
-nothing that compares against the cache sees a difference. Entries are changed in place - the
-in-memory cache and the file agree. Other cache types are returned untouched.
+nothing that compares against the cache sees a difference. Entries are changed in place. Other
+cache types are returned untouched.
+
+It runs at every point a value enters a cache: Add-CacheItem (one entry, before it is stored),
+Import-CacheObject (a file written by an earlier version may still hold a secret) and
+Export-CacheObject (a last check before the file is written).
 
 .PARAMETER CacheType
 The cache the content belongs to.
 
 .PARAMETER Content
-The cache entries (objects with a 'Value' property).
+The cache entry or entries (objects with a 'Value' property).
+
+.PARAMETER PassThru
+Return the number of values that were blanked.
 
 .OUTPUTS
-None. The entries are modified in place.
+None, or System.Int32 with -PassThru. The entries are modified in place.
 #>
 function Protect-AzDoCacheSecret
 {
@@ -36,17 +43,26 @@ function Protect-AzDoCacheSecret
         [System.String]
         $CacheType,
 
+        # Untyped, so binding does not enumerate or copy a whole cache. A single entry is accepted.
         [Parameter()]
         [AllowNull()]
         [AllowEmptyCollection()]
-        [System.Object[]]
-        $Content
+        [System.Object]
+        $Content,
+
+        [Parameter()]
+        [System.Management.Automation.SwitchParameter]
+        $PassThru
     )
 
     if (($CacheType -notin @('LiveVariableGroups', 'LiveServiceConnections', 'LiveAuditStreams')) -or ($null -eq $Content))
     {
+        if ($PassThru.IsPresent) { return 0 }
         return
     }
+
+    # A one-element array, so the nested helper can count without a script-scope variable.
+    $blanked = @(0)
 
     $secretNamePattern = '(?i)key|password|passwd|pwd|secret|token|certificate|credential|sas'
 
@@ -70,8 +86,16 @@ function Protect-AzDoCacheSecret
     function Clear-BagValue
     {
         param ($Bag, [System.String]$Name)
-        if ($Bag -is [System.Collections.IDictionary]) { $Bag[$Name] = $null }
-        else { $Bag.PSObject.Properties[$Name].Value = $null }
+        if ($Bag -is [System.Collections.IDictionary])
+        {
+            if ($null -ne $Bag[$Name]) { $blanked[0]++ }
+            $Bag[$Name] = $null
+        }
+        else
+        {
+            if ($null -ne $Bag.PSObject.Properties[$Name].Value) { $blanked[0]++ }
+            $Bag.PSObject.Properties[$Name].Value = $null
+        }
     }
 
     foreach ($entry in $Content)
@@ -124,4 +148,6 @@ function Protect-AzDoCacheSecret
             }
         }
     }
+
+    if ($PassThru.IsPresent) { return $blanked[0] }
 }

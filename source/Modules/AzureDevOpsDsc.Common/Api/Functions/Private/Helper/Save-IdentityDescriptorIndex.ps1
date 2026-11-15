@@ -24,10 +24,9 @@ function Save-IdentityDescriptorIndex
             New-Item -ItemType Directory -Path $parent -Force | Out-Null
             Protect-AzDoCachePath -Path $parent
         }
-        Export-Clixml -InputObject $index -Path $path -Depth 3
-
-        # The index maps descriptors to identities, so it has to stay owner-only like the other caches.
-        Protect-AzDoCachePath -Path $path
+        # The index maps descriptors to identities, so it is encrypted for this account on Windows
+        # and kept owner-only everywhere, like the other caches.
+        Write-AzDoCacheFile -Path $path -InputObject $index -Depth 3
     }
     catch
     {

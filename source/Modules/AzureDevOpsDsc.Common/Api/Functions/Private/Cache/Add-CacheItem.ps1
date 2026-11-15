@@ -69,6 +69,14 @@ Function Add-CacheItem
     if ($writeVerbose) { Write-Verbose "[Add-CacheItem] Creating new cache item with key: '$Key'." }
     $cacheItem = [CacheItem]::New($Key, $Value)
 
+    # A write response can echo the secrets that were sent (a secret variable's value, a service
+    # connection's key). Blank them before the item is stored, so the cache never holds one, in
+    # memory or on disk. Only three cache types can carry one; the rest skip the call.
+    if (($Type -eq 'LiveVariableGroups') -or ($Type -eq 'LiveServiceConnections') -or ($Type -eq 'LiveAuditStreams'))
+    {
+        Protect-AzDoCacheSecret -CacheType $Type -Content $cacheItem
+    }
+
     if ($writeVerbose) { Write-Verbose "[Add-CacheItem] Checking if the cache already contains the key: '$Key'." }
     # A dictionary lookup instead of a Where-Object scan, which made filling a cache quadratic.
     $index = Get-CacheKeyIndex -Type $Type -Cache $cache
