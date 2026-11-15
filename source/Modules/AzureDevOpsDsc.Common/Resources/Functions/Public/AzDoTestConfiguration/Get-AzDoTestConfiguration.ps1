@@ -100,7 +100,9 @@ Function Get-AzDoTestConfiguration
         try
         {
             $testVariables = Get-DevOpsTestVariable -Organization $organization -ProjectName $ProjectName
-            $null = ConvertTo-AzDoTestConfigurationValue -Values $Values -TestVariables $testVariables -ConfigurationName $Name
+            # The parsed values are handed on to New-/Set-AzDoTestConfiguration through the
+            # lookup result, so that they do not list the project's test variables a second time.
+            $result.parsedValues = ConvertTo-AzDoTestConfigurationValue -Values $Values -TestVariables $testVariables -ConfigurationName $Name
         }
         catch
         {

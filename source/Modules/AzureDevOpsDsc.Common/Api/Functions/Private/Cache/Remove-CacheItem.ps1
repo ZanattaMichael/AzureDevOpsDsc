@@ -59,11 +59,40 @@ Function Remove-CacheItem
     # The previous form - '0 .. $cache.Count | ... | ForEach-Object { $cache.RemoveAt($_) }' -
     # was wrong twice over: the range is inclusive, so it indexed one past the end, and
     # removing by index while later indexes were still pending shifted them underneath it.
-    for ($index = $cache.Count - 1; $index -ge 0; $index--)
+    #
+    # The key index (see Get-CacheKeyIndex) answers whether the key is cached at all, so a key
+    # that is absent costs no scan, and one that is present is removed from the index as well.
+    # The index then still matches the list, and the Add-CacheItem that usually follows a removal
+    # does not have to rebuild it. A cache that cannot be indexed is scanned as before.
+    $removedByIndex = $false
+    $keyIndex = Get-CacheKeyIndex -Type $Type -Cache $cache
+
+    if ($null -ne $keyIndex)
     {
-        if ($cache[$index].Key -eq $Key)
+        $existingItem = $null
+        if ($keyIndex.TryGetValue($Key, [ref]$existingItem))
         {
-            $cache.RemoveAt($index)
+            if ($cache.Remove($existingItem))
+            {
+                $null = $keyIndex.Remove($Key)
+                $removedByIndex = $true
+            }
+        }
+        else
+        {
+            # Not cached: there is nothing to remove.
+            $removedByIndex = $true
+        }
+    }
+
+    if (-not $removedByIndex)
+    {
+        for ($index = $cache.Count - 1; $index -ge 0; $index--)
+        {
+            if ($cache[$index].Key -eq $Key)
+            {
+                $cache.RemoveAt($index)
+            }
         }
     }
 

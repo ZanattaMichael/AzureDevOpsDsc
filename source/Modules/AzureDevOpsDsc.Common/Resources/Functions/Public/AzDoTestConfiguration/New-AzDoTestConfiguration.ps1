@@ -85,8 +85,16 @@ Function New-AzDoTestConfiguration
 
     if ($Values.Count -gt 0)
     {
-        $testVariables = Get-DevOpsTestVariable -Organization $organization -ProjectName $ProjectName
-        $parsedValues  = ConvertTo-AzDoTestConfigurationValue -Values $Values -TestVariables $testVariables -ConfigurationName $Name
+        if (($null -ne $LookupResult) -and $LookupResult.ContainsKey('parsedValues'))
+        {
+            # Get-AzDoTestConfiguration already validated and parsed these Values.
+            $parsedValues = $LookupResult.parsedValues
+        }
+        else
+        {
+            $testVariables = Get-DevOpsTestVariable -Organization $organization -ProjectName $ProjectName
+            $parsedValues  = ConvertTo-AzDoTestConfigurationValue -Values $Values -TestVariables $testVariables -ConfigurationName $Name
+        }
     }
 
     $params = @{
