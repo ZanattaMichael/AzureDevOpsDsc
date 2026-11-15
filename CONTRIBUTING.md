@@ -1001,6 +1001,47 @@ To create the Gallery API key: sign in at
 package versions*, and glob the package name to `AzureDevOpsDscNative` so the
 key cannot publish anything else.
 
+#### Release environment
+
+The publish job runs in a GitHub Environment named `release`. Set it up once so
+the Gallery key is only reachable by that job, after a person has approved it:
+
+1. **Settings → Environments → New environment**, named `release` (GitHub creates
+   an unprotected one by itself the first time the job runs).
+2. Under **Deployment protection rules**, tick **Required reviewers** and add
+   yourself. Each publish then waits for an approval.
+3. Under **Deployment branches and tags**, choose **Selected branches and tags**
+   and add a tag rule `v*`, so nothing but a version tag can use the environment.
+4. Under **Environment secrets**, add `GALLERY_API_TOKEN`, then delete the
+   repository-level secret of the same name. While the repository-level secret
+   exists, any workflow on any branch a collaborator can push to can read it.
+
+Leave `AZURE_DEVOPS_PAT` at repository level: the integration jobs do not run in
+an environment. Prefer leaving it empty and using the runner's Managed Identity.
+If a PAT is used, create it for the test organization only, with a short expiry.
+`publish.yml` passes the integration workflows that one secret and nothing else,
+so the Gallery key never reaches the self-hosted runners.
+
+#### Pinned build dependencies
+
+Every module in `RequiredModules.psd1` is pinned to an exact version. The build
+runs those modules in the job that holds the Gallery key, so a new upstream
+release must not be picked up without anyone looking at it. To update one, change
+its version in a pull request; the **List restored build modules** step in the
+Build workflow log shows what was restored.
+
+#### Build provenance
+
+The publish job attests the `.nupkg` it built before publishing anything. To
+check a downloaded package:
+
+```powershell
+gh attestation verify .\AzureDevOpsDscNative.<version>.nupkg --repo <owner>/<repository>
+```
+
+The module is not Authenticode signed. Signing needs a code-signing certificate,
+which this project does not have.
+
 ### Cutting a release
 
 1. Make sure `main` is green — both the Build and Unit Tests workflows must be

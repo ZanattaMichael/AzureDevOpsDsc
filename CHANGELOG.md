@@ -34,6 +34,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- Build and release pipeline
+  - Every build module in `RequiredModules.psd1` is pinned to an exact version. They
+    were restored at `latest`, three with prereleases allowed, in the job that holds
+    the PowerShell Gallery API key. The Build workflow now lists the versions restored.
+  - `publish.yml` passes the integration test workflows `AZURE_DEVOPS_PAT` only. With
+    `secrets: inherit` the Gallery API key was also available on the self-hosted runners.
+  - The publish job runs in a `release` environment, so the Gallery API key can be an
+    environment secret behind a required reviewer and a `v*` tag rule. `CONTRIBUTING.md`
+    has the one-time setup.
+  - The publish job attests the build provenance of the `.nupkg` before publishing.
+  - The release tag name is passed to the validation script through the environment
+    instead of being interpolated into it.
 - Requests and redaction
   - `Protect-AzDoSecretString` now also redacts the exact value of every secret the
     module holds, whatever its shape: the credential it signs in with, a client secret
