@@ -164,13 +164,55 @@ Function Get-AzDoGroupMember
     {
         # Users on the left side are in the comparison object but not in the reference object are to be added.
         # Users on the right side are in the reference object but not in the comparison object are to be removed.
+        #
+        # Each difference is paired with the identity it refers to. The identities are indexed by
+        # originId once (compared the way '-eq' compares strings) so that a difference is one
+        # lookup rather than a scan of both member lists.
+        $indexByOriginId = {
+            param ($Identities)
+
+            $index = [System.Collections.Generic.Dictionary[System.String, System.Collections.Generic.List[System.Object]]]::new([System.StringComparer]::InvariantCultureIgnoreCase)
+            foreach ($identity in $Identities)
+            {
+                if ($identity.originId -isnot [System.String]) { continue }
+
+                $bucket = $null
+                if (-not $index.TryGetValue($identity.originId, [ref]$bucket))
+                {
+                    $bucket = [System.Collections.Generic.List[System.Object]]::new()
+                    $index[$identity.originId] = $bucket
+                }
+                $bucket.Add($identity)
+            }
+
+            return $index
+        }
+
+        $desiredByOriginId = & $indexByOriginId $FormattedParametersGroups
+        $liveByOriginId    = & $indexByOriginId $FormattedLiveGroups
+
         $getGroupResult.propertiesChanged += $members | ForEach-Object {
             $originId = $_.originId
+
+            if ($originId -is [System.String])
+            {
+                $bucket = $null
+                $value  = $null
+                if ($desiredByOriginId.TryGetValue($originId, [ref]$bucket) -or $liveByOriginId.TryGetValue($originId, [ref]$bucket))
+                {
+                    $value = if ($bucket.Count -eq 1) { $bucket[0] } else { $bucket.ToArray() }
+                }
+            }
+            else
+            {
+                # Not a string originId, so it cannot be looked up: compare as before.
+                $value = ($FormattedParametersGroups | Where-Object { $_.originId -eq $originId }) ??
+                         ($FormattedLiveGroups | Where-Object { $_.originId -eq $originId })
+            }
+
             @{
                 action = ($_.SideIndicator -eq '<=') ? 'Add' : 'Remove'
-                value = ($FormattedParametersGroups | Where-Object { $_.originId -eq $originId }) ??
-                        ($FormattedLiveGroups | Where-Object { $_.originId -eq $originId })
-
+                value = $value
             }
         }
         # The group has changed.

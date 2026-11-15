@@ -70,4 +70,15 @@ Describe "Set-AzDoTestConfiguration" -Tag "Unit", "TestManagement" {
             Assert-MockCalled -CommandName Update-DevOpsTestConfiguration -Exactly -Times 0
         }
     }
+
+    Context "when the lookup result already holds the parsed values" {
+
+        It "updates the configuration without listing the test variables again" {
+            Set-AzDoTestConfiguration -ProjectName 'TestProject' -Name 'Windows 11 + Edge' -Values @('Browser=Chrome') -LookupResult @{ liveCache = @{ id = 42 }; parsedValues = @(@{ name = 'Browser'; value = 'Chrome' }) }
+            Assert-MockCalled -CommandName Get-DevOpsTestVariable -Exactly -Times 0
+            Assert-MockCalled -CommandName Update-DevOpsTestConfiguration -Exactly -Times 1 -ParameterFilter {
+                $TestConfigurationId -eq 42 -and $Values[0].name -eq 'Browser' -and $Values[0].value -eq 'Chrome'
+            }
+        }
+    }
 }

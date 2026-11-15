@@ -126,6 +126,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     exported instance. A personal access token is never kept this way, and a
     session that holds no token, such as the fresh runspace `Invoke-DscResource`
     starts, restores it exactly as before.
+  - `AzDoWIPTagHygiene`: `Get-AzDoTagMisalignment` works out each canonical
+    tag's normalized and digit-free forms once instead of once for every live
+    tag it is compared with, and skips the edit distance for a pair whose
+    lengths alone put it below `SimilarityThreshold`. Matching 982 live tags
+    against 100 canonical tags went from about 16 seconds to about 2. The
+    misalignments reported, their scores and their order are unchanged.
+  - `AzDoIterationNodes`: `Get-AzDoIterationNodes` and
+    `Format-AzDoIterationNodes` match nodes by path through an index instead of
+    scanning the other list for every node. With 750 desired iterations in a
+    project that has 750, `Get` went from about 7.7 seconds to under one.
+  - `AzDoAreaNodes`: `Get-AzDoAreaNodes` clears the project's stale entries
+    from the area node cache in one pass rather than rescanning the cache for
+    every node. Reading a project with about 1,300 area nodes went from about
+    4.8 seconds to about 1.5 (excluding the API call).
+  - `AzDoAreaNodes`, `AzDoAreaPermission` and `AzDoIterationNodes`:
+    `Get-AllAzDoClassificationNodePaths` collects the parent paths through a
+    set rather than searching, and copying, an array for each one.
+  - `AzDoGroupMember`: `Get-AzDoGroupMember` pairs each membership difference
+    with its identity through an index by `originId`. Comparing 1,300 desired
+    members with 1,400 live ones went from about 3.3 seconds to under 0.1.
+  - `AzDoTestSuite`: `Get-AzDoTestSuite` hands the suite a missing suite has
+    to be created under to `New-AzDoTestSuite` as `LookupResult.parentSuiteId`,
+    so creating a suite no longer lists the project's test plans and the
+    plan's suites a second time.
+  - `AzDoTestConfiguration`: `Get-AzDoTestConfiguration` hands the `Values` it
+    has already validated and parsed to `New-`/`Set-AzDoTestConfiguration` as
+    `LookupResult.parsedValues`, so neither lists the project's test variables
+    a second time.
+  - Every resource: `DscResourceBase` remembers, per resource class, which
+    properties are DSC properties and which one is the key. Both were read
+    through reflection several times in each `Get()`, `Test()` and `Set()`.
+  - Every resource: `Remove-CacheItem` finds the key through the cache key
+    index, so removing a key that is not cached no longer scans the cache, and
+    the index stays valid for the `Add-CacheItem` that usually follows instead
+    of being rebuilt. `Import-CacheObject` fills the cache with a loop rather
+    than a pipeline.
 - Documentation
   - `docs/ResourceRoadmap.md` gains §12, the resources a code review found
     missing that neither the roadmap nor an open issue tracked: permission

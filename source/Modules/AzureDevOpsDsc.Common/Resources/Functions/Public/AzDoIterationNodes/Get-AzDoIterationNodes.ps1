@@ -158,12 +158,57 @@ Function Get-AzDoIterationNodes {
     $formattedCachedIterationNodes = $cachedIterationNodes | Where-Object { $_.Path -ne "\$ProjectName\Iteration" }
     $formattedIterationNodes = $FormattedIterationAttributes | Where-Object { $_.Path -ne "\$ProjectName\Iteration" }
 
+    #
+    # Both lists are indexed by path once, so matching a node against the other list is one
+    # lookup instead of a scan of that list for every node. Paths are compared the way '-eq'
+    # compares strings. A list holding a path that is not a string is not indexed and is
+    # scanned as before.
+    $indexByPath = {
+        param ($Nodes)
+
+        $index = [System.Collections.Generic.Dictionary[System.String, System.Collections.Generic.List[System.Object]]]::new([System.StringComparer]::InvariantCultureIgnoreCase)
+        foreach ($indexedNode in $Nodes)
+        {
+            if ($indexedNode.Path -isnot [System.String]) { return $null }
+
+            $bucket = $null
+            if (-not $index.TryGetValue($indexedNode.Path, [ref]$bucket))
+            {
+                $bucket = [System.Collections.Generic.List[System.Object]]::new()
+                $index[$indexedNode.Path] = $bucket
+            }
+            $bucket.Add($indexedNode)
+        }
+
+        return $index
+    }
+
+    $findByPath = {
+        param ($Index, $Nodes, $Path)
+
+        if (($null -eq $Index) -or ($Path -isnot [System.String]))
+        {
+            return @($Nodes | Where-Object { $_.Path -eq $Path })
+        }
+
+        $bucket = $null
+        if ($Index.TryGetValue($Path, [ref]$bucket)) { return $bucket.ToArray() }
+        return @()
+    }
+
+    $desiredNodesByPath = & $indexByPath $formattedIterationNodes
+    $cachedNodesByPath  = & $indexByPath $formattedCachedIterationNodes
+
+    $nodesToRemove = [System.Collections.Generic.List[System.Object]]::new()
+    $nodesToUpdate = [System.Collections.Generic.List[System.Object]]::new()
+    $nodesToAdd    = [System.Collections.Generic.List[System.Object]]::new()
+
     # Iterate Through the Cached Iteration Nodes
     ForEach ($node in $formattedCachedIterationNodes) {
         Write-Verbose "[Get-AzDoIterationNodes] Processing cached node: $($node.Path)"
 
         # Attempt to perform a lookup and find the corresponding path in FormattedIterationAttributes
-        $matched = @($formattedIterationNodes | Where-Object { $_.Path -eq $node.Path })
+        $matched = @(& $findByPath $desiredNodesByPath $formattedIterationNodes $node.Path)
         # Test if the result has been matched.
 
         if ($matched.Count -eq 1) {
@@ -171,7 +216,7 @@ Function Get-AzDoIterationNodes {
 
             # If ensure is absent and it's present in the source list. Delete!
             if ($Ensure -eq [Ensure]::Absent) {
-                $getIterationResult.propertiesChanged.toRemove += $node
+                $nodesToRemove.Add($node)
                 continue
             }
 
@@ -192,11 +237,11 @@ Function Get-AzDoIterationNodes {
 
             if (($cachedStartDate -ne $matchedStartDate) -or ($cachedEndDate -ne $matchedEndDate)) {
                 Write-Verbose "[Get-AzDoIterationNodes] DateTimes differ, updating node: $($node.Path)"
-                $getIterationResult.propertiesChanged.ToUpdate += @{
+                $nodesToUpdate.Add(@{
                     StartDate = $matchedNode.StartDate
                     EndDate   = $matchedNode.EndDate
                     Path      = $matchedNode.Path
-                }
+                })
             }
             # Move to the next item
             continue
@@ -209,7 +254,7 @@ Function Get-AzDoIterationNodes {
         } else {
             # It's not present in the source list but it's active - delete it.
             Write-Verbose "[Get-AzDoIterationNodes] Node not in source list, deleting: $($node.Path)"
-            $getIterationResult.propertiesChanged.toRemove += $node
+            $nodesToRemove.Add($node)
             continue
         }
     }
@@ -219,7 +264,7 @@ Function Get-AzDoIterationNodes {
         Write-Verbose "[Get-AzDoIterationNodes] Processing formatted node: $($node.Path)"
 
         # Attempt to perform a lookup and find the corresponding path in FormattedIterationAttributes
-        $matched = @($formattedCachedIterationNodes | Where-Object { $_.Path -eq $node.Path })
+        $matched = @(& $findByPath $cachedNodesByPath $formattedCachedIterationNodes $node.Path)
         # Test if the result has been matched.
         if ($matched.Count -eq 1) {
             # We don't need to test the properties since they were tested in the earlier look. Continue
@@ -233,10 +278,14 @@ Function Get-AzDoIterationNodes {
         } else {
             # It's not present online but defined in the source list. Add it.
             Write-Verbose "[Get-AzDoIterationNodes] Node not online, adding: $($node.Path)"
-            $getIterationResult.propertiesChanged.toAdd += $node
+            $nodesToAdd.Add($node)
             continue
         }
     }
+
+    $getIterationResult.propertiesChanged.toRemove = $nodesToRemove.ToArray()
+    $getIterationResult.propertiesChanged.toUpdate = $nodesToUpdate.ToArray()
+    $getIterationResult.propertiesChanged.toAdd    = $nodesToAdd.ToArray()
 
     # Update status based on differences between current and desired states
     if ($getIterationResult.propertiesChanged.ToUpdate.count -ne 0) {

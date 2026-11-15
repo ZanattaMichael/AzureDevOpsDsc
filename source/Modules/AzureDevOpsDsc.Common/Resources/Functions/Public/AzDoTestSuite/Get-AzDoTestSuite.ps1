@@ -119,6 +119,22 @@ Function Get-AzDoTestSuite
     if ($null -eq $suite)
     {
         Write-Verbose "[Get-AzDoTestSuite] Suite '$normalizedPath' does not exist in plan '$PlanName'."
+
+        # The suite New-AzDoTestSuite has to create this one under is already known here. Handing
+        # it on saves New from listing the project's plans and the plan's suites a second time.
+        # A parent that does not exist is left out, and New reports it as it always has.
+        $segments = @($normalizedPath -split '/' | Where-Object { -not [String]::IsNullOrWhiteSpace($_) })
+        if ($segments.Count -eq 1)
+        {
+            $result.parentSuiteId = $plan.rootSuite.id
+        }
+        elseif ($segments.Count -gt 1)
+        {
+            $parentPath  = $segments[0..($segments.Count - 2)] -join '/'
+            $parentSuite = Resolve-AzDoTestSuitePath -Suites $suites -RootSuiteId $plan.rootSuite.id -Path $parentPath
+            if ($null -ne $parentSuite) { $result.parentSuiteId = $parentSuite.id }
+        }
+
         $result.status = [DSCGetSummaryState]::NotFound
         return $result
     }

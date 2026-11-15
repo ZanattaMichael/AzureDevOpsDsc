@@ -90,4 +90,35 @@ Describe "Get-AzDoTestSuite" -Tag "Unit", "TestManagement" {
             $result.reason | Should -Be 'PlanNotFound'
         }
     }
+
+    Context "when the suite does not exist but its parent does" {
+
+        BeforeEach {
+            Mock -CommandName Get-DevOpsTestSuite -MockWith {
+                return @(
+                    @{ id = 100; name = 'Root'; parentSuite = $null; suiteType = 'StaticTestSuite' }
+                    @{ id = 101; name = 'Regression'; parentSuite = @{ id = 100 }; suiteType = 'StaticTestSuite' }
+                )
+            }
+        }
+
+        It "hands the root suite on as the parent of a top-level suite" {
+            $result = Get-AzDoTestSuite -ProjectName 'Contoso' -PlanName 'Sprint 1' -Path 'Missing'
+            $result.status | Should -Be 'NotFound'
+            $result.planId | Should -Be 1
+            $result.parentSuiteId | Should -Be 100
+        }
+
+        It "hands the resolved parent suite on for a nested suite" {
+            $result = Get-AzDoTestSuite -ProjectName 'Contoso' -PlanName 'Sprint 1' -Path 'Regression/Missing'
+            $result.status | Should -Be 'NotFound'
+            $result.parentSuiteId | Should -Be 101
+        }
+
+        It "leaves the parent out when the parent does not exist either" {
+            $result = Get-AzDoTestSuite -ProjectName 'Contoso' -PlanName 'Sprint 1' -Path 'Nowhere/Missing'
+            $result.status | Should -Be 'NotFound'
+            $result.ContainsKey('parentSuiteId') | Should -BeFalse
+        }
+    }
 }
