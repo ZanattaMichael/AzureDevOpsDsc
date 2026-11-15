@@ -99,59 +99,41 @@ Function Get-AzDoTagMisalignment
         ($value -replace '[^\p{L}\p{N}]', '').ToLowerInvariant()
     }
 
-    # Levenshtein distance, used for the fuzzy score.
-    $distance = {
-        param([string]$a, [string]$b)
-
-        if ([String]::IsNullOrEmpty($a)) { return $b.Length }
-        if ([String]::IsNullOrEmpty($b)) { return $a.Length }
-
-        $previous = New-Object 'int[]' ($b.Length + 1)
-        $current  = New-Object 'int[]' ($b.Length + 1)
-
-        for ($j = 0; $j -le $b.Length; $j++) { $previous[$j] = $j }
-
-        for ($i = 1; $i -le $a.Length; $i++)
-        {
-            $current[0] = $i
-
-            for ($j = 1; $j -le $b.Length; $j++)
-            {
-                $cost = if ($a[$i - 1] -eq $b[$j - 1]) { 0 } else { 1 }
-
-                $deletion     = $previous[$j] + 1
-                $insertion    = $current[$j - 1] + 1
-                $substitution = $previous[$j - 1] + $cost
-
-                $current[$j] = [Math]::Min([Math]::Min($deletion, $insertion), $substitution)
-            }
-
-            for ($j = 0; $j -le $b.Length; $j++) { $previous[$j] = $current[$j] }
-        }
-
-        return $previous[$b.Length]
-    }
-
-    # True when two tags are the same once digits are removed but differ with them - the
-    # Sprint1/Sprint2 case. Always refused, at any threshold.
-    $differsOnlyInDigits = {
-        param([string]$a, [string]$b)
-
-        if ($a -eq $b) { return $false }
-
-        $strippedA = ($a -replace '\d', '')
-        $strippedB = ($b -replace '\d', '')
-
-        return ($strippedA -eq $strippedB)
-    }
-
-    $results = @()
+    $results = [System.Collections.Generic.List[System.Collections.Hashtable]]::new()
 
     $canonicalSet   = @($CanonicalTags | Where-Object { -not [String]::IsNullOrWhiteSpace($_) })
     $excludedLookup = @{}
     foreach ($excluded in $ExcludedTags) {
         if (-not [String]::IsNullOrWhiteSpace($excluded)) { $excludedLookup[$excluded] = $true }
     }
+
+    # Every live tag is compared with every canonical tag, so everything that depends on the
+    # canonical tag alone is worked out once here rather than once per pair: its normalized form
+    # and the digit-free forms the Sprint1/Sprint2 guard compares. A canonical tag that
+    # normalizes to nothing can never match and is dropped.
+    $canonicalLookup = [System.Collections.Generic.HashSet[System.String]]::new([System.StringComparer]::InvariantCulture)
+    $canonicalInfo   = [System.Collections.Generic.List[System.Object[]]]::new()
+    foreach ($canonical in $canonicalSet)
+    {
+        $canonicalText = [System.String]$canonical
+        $null = $canonicalLookup.Add($canonicalText)
+
+        $normalizedCanonical = & $normalize $canonicalText
+        if ([String]::IsNullOrWhiteSpace($normalizedCanonical)) { continue }
+
+        # 0: the tag as supplied, 1: as text, 2: normalized, 3: text without digits,
+        # 4: normalized without digits
+        $canonicalInfo.Add(@(
+            $canonical,
+            $canonicalText,
+            $normalizedCanonical,
+            ($canonicalText -replace '\d', ''),
+            ($normalizedCanonical -replace '\d', '')
+        ))
+    }
+
+    $matchExact = $MatchStrategy -in @('Exact', 'Both')
+    $matchFuzzy = $MatchStrategy -in @('Fuzzy', 'Both')
 
     # Explicit aliases first. They are the user's own statement of intent, so they are applied
     # regardless of strategy or threshold - but never to an excluded tag.
@@ -175,7 +157,7 @@ Function Get-AzDoTagMisalignment
             # An alias pointing a tag at itself is a no-op, not a merge.
             if ($target -ne $tag)
             {
-                $results += @{ From = $tag; To = $target; Reason = 'Alias'; Score = 100 }
+                $results.Add(@{ From = $tag; To = $target; Reason = 'Alias'; Score = 100 })
             }
 
             continue
@@ -183,26 +165,35 @@ Function Get-AzDoTagMisalignment
 
         # A tag that is already part of the vocabulary is correct by definition. This is what
         # stops two intentionally similar canonical tags from collapsing into each other.
-        if ($canonicalSet -ccontains $tag) { continue }
+        $tagText = [System.String]$tag
+        if ($canonicalLookup.Contains($tagText)) { continue }
 
-        $normalizedTag = & $normalize $tag
+        $normalizedTag = & $normalize $tagText
         if ([String]::IsNullOrWhiteSpace($normalizedTag)) { continue }
+
+        $tagNoDigits           = $tagText -replace '\d', ''
+        $normalizedTagNoDigits = $normalizedTag -replace '\d', ''
+        $tagLength             = $tagText.Length
+        $normalizedTagLength   = $normalizedTag.Length
+        $tagChars              = $null
 
         $bestTarget = $null
         $bestScore  = -1
         $bestReason = $null
         $ambiguous  = $false
 
-        foreach ($canonical in $canonicalSet)
+        foreach ($info in $canonicalInfo)
         {
-            if ($canonical -ceq $tag) { continue }
+            $canonical           = $info[0]
+            $canonicalText       = $info[1]
+            $normalizedCanonical = $info[2]
 
-            $normalizedCanonical = & $normalize $canonical
-            if ([String]::IsNullOrWhiteSpace($normalizedCanonical)) { continue }
-
-            # The digit guard applies to both the raw and normalized forms, so that 'Sprint 1'
-            # against 'Sprint-2' is caught as well as 'Sprint1' against 'Sprint2'.
-            if ((& $differsOnlyInDigits $tag $canonical) -or (& $differsOnlyInDigits $normalizedTag $normalizedCanonical))
+            # The digit guard - the same once digits are removed, but different with them: the
+            # Sprint1/Sprint2 case, always refused at any threshold. It applies to both the raw
+            # and normalized forms, so that 'Sprint 1' against 'Sprint-2' is caught as well as
+            # 'Sprint1' against 'Sprint2'.
+            if ((($tagText -ne $canonicalText) -and ($tagNoDigits -eq $info[3])) -or
+                (($normalizedTag -ne $normalizedCanonical) -and ($normalizedTagNoDigits -eq $info[4])))
             {
                 continue
             }
@@ -213,21 +204,61 @@ Function Get-AzDoTagMisalignment
             if ($normalizedTag -eq $normalizedCanonical)
             {
                 # Same tag, written differently.
-                if ($MatchStrategy -in @('Exact', 'Both'))
+                if ($matchExact)
                 {
                     $score  = 100
                     $reason = 'Exact'
                 }
             }
-            elseif ($MatchStrategy -in @('Fuzzy', 'Both'))
+            elseif ($matchFuzzy)
             {
-                if ($tag.Length -ge $MinimumTagLength -and $canonical.Length -ge $MinimumTagLength)
+                if ($tagLength -ge $MinimumTagLength -and $canonicalText.Length -ge $MinimumTagLength)
                 {
-                    $maxLength = [Math]::Max($normalizedTag.Length, $normalizedCanonical.Length)
+                    $canonicalLength = $normalizedCanonical.Length
+                    $maxLength       = if ($normalizedTagLength -gt $canonicalLength) { $normalizedTagLength } else { $canonicalLength }
 
-                    if ($maxLength -gt 0)
+                    # The edit distance is never less than the difference in length. When even
+                    # that many edits score below the threshold the pair cannot match, and the
+                    # distance - by far the most expensive step - is not worked out at all.
+                    $lengthDifference = [Math]::Abs($normalizedTagLength - $canonicalLength)
+
+                    if (($maxLength -gt 0) -and
+                        ([int][Math]::Round((1 - ($lengthDifference / $maxLength)) * 100) -ge $SimilarityThreshold))
                     {
-                        $editDistance = & $distance $normalizedTag $normalizedCanonical
+                        # Levenshtein distance, two rows at a time.
+                        if ($null -eq $tagChars) { $tagChars = $normalizedTag.ToCharArray() }
+                        $canonicalChars = $normalizedCanonical.ToCharArray()
+
+                        $previous = [int[]]::new($canonicalLength + 1)
+                        $current  = [int[]]::new($canonicalLength + 1)
+
+                        for ($j = 0; $j -le $canonicalLength; $j++) { $previous[$j] = $j }
+
+                        for ($i = 1; $i -le $normalizedTagLength; $i++)
+                        {
+                            $current[0] = $i
+                            $tagChar    = $tagChars[$i - 1]
+
+                            for ($j = 1; $j -le $canonicalLength; $j++)
+                            {
+                                $best = $previous[$j - 1]
+                                if ($tagChar -ne $canonicalChars[$j - 1]) { $best++ }
+
+                                $deletion = $previous[$j] + 1
+                                if ($deletion -lt $best) { $best = $deletion }
+
+                                $insertion = $current[$j - 1] + 1
+                                if ($insertion -lt $best) { $best = $insertion }
+
+                                $current[$j] = $best
+                            }
+
+                            $swap     = $previous
+                            $previous = $current
+                            $current  = $swap
+                        }
+
+                        $editDistance = $previous[$canonicalLength]
                         $similarity   = [int][Math]::Round((1 - ($editDistance / $maxLength)) * 100)
 
                         if ($similarity -ge $SimilarityThreshold)
@@ -258,7 +289,7 @@ Function Get-AzDoTagMisalignment
 
         if ($null -ne $bestTarget -and (-not $ambiguous))
         {
-            $results += @{ From = $tag; To = $bestTarget; Reason = $bestReason; Score = $bestScore }
+            $results.Add(@{ From = $tag; To = $bestTarget; Reason = $bestReason; Score = $bestScore })
         }
         elseif ($ambiguous)
         {
@@ -271,5 +302,5 @@ Function Get-AzDoTagMisalignment
     # indexing it - writing @(Get-AzDoTagMisalignment ...) - which is what the resource functions
     # do. Returning a nested or comma-wrapped array to dodge this instead makes every element an
     # array, which is worse.
-    return $results
+    return $results.ToArray()
 }

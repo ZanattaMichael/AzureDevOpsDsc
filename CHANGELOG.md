@@ -94,6 +94,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     status code package: Not Found`, which stopped the build and unit test
     workflows before any module code ran.
 - Performance
+  - Cache lookups are about three times faster. `Get-CacheObject` reads the
+    cache variable once instead of twice and no longer builds a directory path
+    it never used, `Get-CacheKeyIndex` no longer walks the whole cache while
+    binding its parameter, and `Get-CacheObject`, `Add-CacheItem`,
+    `Remove-CacheItem` and `Get-CacheKeyIndex` only call `Write-Verbose` when
+    verbose output is on or `AZDO_VERBOSELOGGING_FILEPATH` is set. With a
+    5,000-item cache, 1,000 `Get-CacheItem` calls take about 0.55 s instead
+    of 2 s, and filling a 5,000-item cache with `Add-CacheItem` takes about
+    2 s instead of 3.5 s.
+  - `Add-CacheItem` replaces an existing key through the key index instead of
+    scanning the whole cache: 1,000 replacements in a 5,000-item cache take
+    about 1 s instead of 3.7 s.
+  - `Refresh-CacheObject` no longer reads a cache file back in when the cache
+    in memory is exactly what this session last wrote to, or read from, that
+    file. `New-` and `Set-` functions export a cache and then refresh it, so
+    each one read back the file it had just written. `Export-CacheObject`,
+    `Set-CacheObject` and `Import-CacheObject` record the file's last write
+    time and length with the items involved (new private helpers
+    `Set-CacheFileStamp` and `Test-CacheFileStamp`); a file changed by another
+    process, or a cache changed in memory since, is reloaded as before. For a
+    5,000-item cache this saves about 150 ms per `New-`/`Set-` call. Within
+    the same session the cached values are then the objects that were added,
+    not copies that have been through `Export-Clixml` and `Import-Clixml`.
+    `CONTRIBUTING.md` and `CLAUDE.md` describe this and the verbose guard.
   - `Find-Identity` scans the group, user and service-principal caches with a
     plain loop instead of invoking a filter scriptblock for every cached
     identity. It runs once per ACE, so this is the largest part of formatting
@@ -126,6 +150,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     exported instance. A personal access token is never kept this way, and a
     session that holds no token, such as the fresh runspace `Invoke-DscResource`
     starts, restores it exactly as before.
+  - `AzDoWIPTagHygiene`: `Get-AzDoTagMisalignment` works out each canonical
+    tag's normalized and digit-free forms once instead of once for every live
+    tag it is compared with, and skips the edit distance for a pair whose
+    lengths alone put it below `SimilarityThreshold`. Matching 982 live tags
+    against 100 canonical tags went from about 16 seconds to about 2. The
+    misalignments reported, their scores and their order are unchanged.
+  - `AzDoIterationNodes`: `Get-AzDoIterationNodes` and
+    `Format-AzDoIterationNodes` match nodes by path through an index instead of
+    scanning the other list for every node. With 750 desired iterations in a
+    project that has 750, `Get` went from about 7.7 seconds to under one.
+  - `AzDoAreaNodes`: `Get-AzDoAreaNodes` clears the project's stale entries
+    from the area node cache in one pass rather than rescanning the cache for
+    every node. Reading a project with about 1,300 area nodes went from about
+    4.8 seconds to about 1.5 (excluding the API call).
+  - `AzDoAreaNodes`, `AzDoAreaPermission` and `AzDoIterationNodes`:
+    `Get-AllAzDoClassificationNodePaths` collects the parent paths through a
+    set rather than searching, and copying, an array for each one.
+  - `AzDoGroupMember`: `Get-AzDoGroupMember` pairs each membership difference
+    with its identity through an index by `originId`. Comparing 1,300 desired
+    members with 1,400 live ones went from about 3.3 seconds to under 0.1.
+  - `AzDoTestSuite`: `Get-AzDoTestSuite` hands the suite a missing suite has
+    to be created under to `New-AzDoTestSuite` as `LookupResult.parentSuiteId`,
+    so creating a suite no longer lists the project's test plans and the
+    plan's suites a second time.
+  - `AzDoTestConfiguration`: `Get-AzDoTestConfiguration` hands the `Values` it
+    has already validated and parsed to `New-`/`Set-AzDoTestConfiguration` as
+    `LookupResult.parsedValues`, so neither lists the project's test variables
+    a second time.
+  - Every resource: `DscResourceBase` remembers, per resource class, which
+    properties are DSC properties and which one is the key. Both were read
+    through reflection several times in each `Get()`, `Test()` and `Set()`.
+  - Every resource: `Remove-CacheItem` finds the key through the cache key
+    index, so removing a key that is not cached no longer scans the cache, and
+    the index stays valid for the `Add-CacheItem` that usually follows instead
+    of being rebuilt. `Import-CacheObject` fills the cache with a loop rather
+    than a pipeline.
 - Documentation
   - `docs/ResourceRoadmap.md` gains §12, the resources a code review found
     missing that neither the roadmap nor an open issue tracked: permission
@@ -162,6 +222,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     so it passes on Linux. The known Linux-only failure count in the Common suite drops
     from 28 to 9 (the remaining `C:\`-path tests in `Export-CacheObject.tests.ps1` and
     `Initialize-CacheObject.tests.ps1`).
+
+### Removed
+
+- Unused code
+  - Removed private functions that nothing called: `Resolve-ACLToken`,
+    `New-AzDevOpsACLToken` and `Format-DescriptorType`, with their unit tests.
+  - Removed `Write-Log.ps1`, `Initialize-Log.ps1` and `Flush-Log.ps1`, which
+    held only commented-out code but were still read on every module import,
+    and `Initalize-AzDevOpsCache.ps1`, whose function (`Initialize-Cache`) was
+    never exported under that name and was not called.
 
 ### Fixed
 

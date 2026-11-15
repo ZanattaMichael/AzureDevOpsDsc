@@ -93,4 +93,24 @@ Describe "Get-AzDoTestConfiguration" -Tag "Unit", "TestManagement" {
             Assert-MockCalled -CommandName Get-DevOpsTestConfiguration -Exactly -Times 0
         }
     }
+
+    Context "when Values are valid" {
+
+        BeforeEach {
+            Mock -CommandName Get-DevOpsTestConfiguration -MockWith { return $null }
+        }
+
+        It "hands the parsed values on in the lookup result" {
+            $result = Get-AzDoTestConfiguration -ProjectName 'TestProject' -Name 'Windows 11 + Edge' -Values @('Browser=Edge')
+            $result.status | Should -Be 'NotFound'
+            @($result.parsedValues).Count | Should -Be 1
+            @($result.parsedValues)[0].name | Should -Be 'Browser'
+            @($result.parsedValues)[0].value | Should -Be 'Edge'
+        }
+
+        It "leaves the parsed values out when no Values were given" {
+            $result = Get-AzDoTestConfiguration -ProjectName 'TestProject' -Name 'Windows 11 + Edge'
+            $result.ContainsKey('parsedValues') | Should -BeFalse
+        }
+    }
 }

@@ -78,20 +78,25 @@ function Import-CacheObject
         # If the content is null, skip!
         if ($null -ne $Content)
         {
-            $Content | ForEach-Object {
+            # A loop rather than a pipeline: every resource invocation imports the caches it
+            # reads, and a cache can hold thousands of items.
+            foreach ($importedItem in $Content)
+            {
                 # If the key is empty, skip the item
-                if ([string]::IsNullOrEmpty($_.Key))
+                if ([string]::IsNullOrEmpty($importedItem.Key))
                 {
-                    return
+                    continue
                 }
 
                 # Create a new CacheItem object and add it to the list
-                $newCache.Add([CacheItem]::New($_.Key, $_.Value))
+                $newCache.Add([CacheItem]::New($importedItem.Key, $importedItem.Value))
             }
         }
 
         # Update the new cache object
         Set-Variable -Name "AzDo$CacheType" -Value $newCache -Scope Global -Force
+        # Note what was read, so a Refresh-CacheObject of an unchanged file does not read it again.
+        Set-CacheFileStamp -CacheType $CacheType -Path $cacheFile -Content $newCache
         Write-Verbose "[Import-CacheObject] Cache object imported successfully for '$CacheType'."
 
         # Return the imported cache so Get-CacheObject's import branch yields the collection rather than

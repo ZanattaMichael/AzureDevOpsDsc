@@ -19,6 +19,8 @@ Describe "Import-CacheObject Tests" -Tag "Unit", "Cache" {
         }
 
         . (Get-ClassFilePath '000.CacheItem')
+        . (Get-FunctionItem 'Set-CacheFileStamp.ps1')
+        . (Get-FunctionItem 'Test-CacheFileStamp.ps1')
 
         # Mock the necessary Commands and Variables
         Mock -CommandName Get-AzDoCacheObjects -MockWith { return @('Project', 'Team', 'Group', 'SecurityDescriptor') }

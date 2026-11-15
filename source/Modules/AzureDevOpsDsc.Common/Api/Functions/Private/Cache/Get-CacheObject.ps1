@@ -43,33 +43,42 @@ function Get-CacheObject
         [string]$CacheType
     )
 
-    # Write initial verbose message
-    Write-Verbose "[Get-ObjectCache] Attempting to retrieve cache object for type: $CacheType"
-
-    # Use the Enviroment Variables to set the Cache Directory Path
-    if ($ENV:AZDODSC_CACHE_DIRECTORY)
+    # This function runs on every cache read. A Write-Verbose call costs a few tenths of a
+    # millisecond even when nothing is listening, so the messages are only written when verbose
+    # output is on or the module's Write-Verbose is logging to a file.
+    $writeVerbose = ($VerbosePreference -ne 'SilentlyContinue') -or (-not [string]::IsNullOrEmpty($env:AZDO_VERBOSELOGGING_FILEPATH))
+    if ($writeVerbose)
     {
-        $CacheDirectoryPath = Join-Path -Path $ENV:AZDODSC_CACHE_DIRECTORY -ChildPath "Cache"
+        Write-Verbose "[Get-ObjectCache] Attempting to retrieve cache object for type: $CacheType"
     }
-    else
+
+    # The cache directory comes from the environment. It is only needed here to import a cache
+    # that is not in memory yet, which Import-CacheObject does.
+    if (-not $ENV:AZDODSC_CACHE_DIRECTORY)
     {
         Throw "The environment variable 'AZDODSC_CACHE_DIRECTORY' is not set. Please set the variable to the path of the cache directory."
     }
 
     try
     {
-        # Attempt to get the variable from the global scope
-        $var = Get-Variable -Name "AzDo$CacheType" -Scope Global -ErrorAction SilentlyContinue
+        # Attempt to get the variable from the global scope. One lookup through the session state
+        # rather than two Get-Variable calls.
+        $variable = $ExecutionContext.SessionState.PSVariable.Get("Global:AzDo$CacheType")
 
-        if ($var)
+        if ($null -ne $variable)
         {
-            Write-Verbose "[Get-ObjectCache] Cache object found in memory for type: $CacheType"
-            # If the variable is found, return the content of the cache. Dont use $var here, since it will a different object type.
-            $var = Get-Variable -Name "AzDo$CacheType" -ValueOnly -Scope Global
+            if ($writeVerbose)
+            {
+                Write-Verbose "[Get-ObjectCache] Cache object found in memory for type: $CacheType"
+            }
+            $var = $variable.Value
         }
         else
         {
-            Write-Verbose "[Get-ObjectCache] Cache object not found in memory, attempting to import for type: $CacheType"
+            if ($writeVerbose)
+            {
+                Write-Verbose "[Get-ObjectCache] Cache object not found in memory, attempting to import for type: $CacheType"
+            }
             $imported = Import-CacheObject -CacheType $CacheType
             # Import-CacheObject sets the global. Read it back rather than using the return value,
             # which PowerShell has already unrolled into a copy (or $null, for an empty cache).
@@ -102,7 +111,10 @@ function Get-CacheObject
 
         # Return the live cache, not a copy. A bare 'return $var' unrolls the list, so every call
         # copied the whole cache and Add-CacheItem then copied it again into a new list.
-        Write-Verbose "[Get-ObjectCache] Returning cache object for type: $CacheType"
+        if ($writeVerbose)
+        {
+            Write-Verbose "[Get-ObjectCache] Returning cache object for type: $CacheType"
+        }
         return ,$var
 
     }

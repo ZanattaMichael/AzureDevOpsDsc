@@ -37,11 +37,19 @@ function Get-CacheKeyIndex
         [string]
         $Type,
 
-        [Parameter(Mandatory = $true)]
-        [AllowEmptyCollection()]
-        [System.Collections.Generic.List[CacheItem]]
+        # Untyped and not mandatory on purpose: binding a mandatory, typed collection parameter
+        # walks the whole list, which cost more than the dictionary lookup this function exists
+        # to provide. The type is checked below instead.
+        [Parameter()]
+        [AllowNull()]
+        [object]
         $Cache
     )
+
+    if ($Cache -isnot [System.Collections.Generic.List[CacheItem]])
+    {
+        return $null
+    }
 
     if ($Global:AzDoCacheKeyIndex -isnot [hashtable])
     {
@@ -54,7 +62,10 @@ function Get-CacheKeyIndex
         return ,$entry.Map
     }
 
-    Write-Verbose "[Get-CacheKeyIndex] Building the key index for cache '$Type' ($($Cache.Count) items)."
+    if (($VerbosePreference -ne 'SilentlyContinue') -or (-not [string]::IsNullOrEmpty($env:AZDO_VERBOSELOGGING_FILEPATH)))
+    {
+        Write-Verbose "[Get-CacheKeyIndex] Building the key index for cache '$Type' ($($Cache.Count) items)."
+    }
 
     $map = [System.Collections.Generic.Dictionary[string, CacheItem]]::new([System.StringComparer]::OrdinalIgnoreCase)
     foreach ($item in $Cache)

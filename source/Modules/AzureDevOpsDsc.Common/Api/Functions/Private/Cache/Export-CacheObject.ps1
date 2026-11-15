@@ -86,6 +86,9 @@ Function Export-CacheObject
         # The identity caches decide who a permission grant resolves to, so keep them owner-only.
         Protect-AzDoCachePath -Path $cacheFilePath
 
+        # Note what was written, so a Refresh-CacheObject that follows does not read it back in.
+        Set-CacheFileStamp -CacheType $CacheType -Path $cacheFilePath -Content $Content
+
         # Confirm completion of export process
         Write-Verbose "[Export-ObjectCache] Export process completed successfully for cache type: $CacheType"
 

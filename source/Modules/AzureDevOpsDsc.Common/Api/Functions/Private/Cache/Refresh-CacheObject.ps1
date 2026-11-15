@@ -28,6 +28,28 @@ Function Refresh-CacheObject
         $CacheType
     )
 
+    # New- and Set- functions export a cache and then refresh it. When the file is the one this
+    # session last wrote or read, and the cache in memory is still what went into it, reading it
+    # back would change nothing, so skip the reload. A file written by another process, or a
+    # cache changed in memory since, still reloads.
+    if ($ENV:AZDODSC_CACHE_DIRECTORY)
+    {
+        $cacheFilePath = [System.IO.Path]::Combine($ENV:AZDODSC_CACHE_DIRECTORY, 'Cache', "$CacheType.clixml")
+        if (Test-CacheFileStamp -CacheType $CacheType -Path $cacheFilePath)
+        {
+            Write-Verbose "[Refresh-CacheObject] The cache object of type '$CacheType' already matches its file. Skipping the reload."
+            # Keep the global a List[CacheItem], as a reload would have left it.
+            $current = $ExecutionContext.SessionState.PSVariable.GetValue("Global:AzDo$CacheType")
+            if ($current -isnot [System.Collections.Generic.List[CacheItem]])
+            {
+                $list = [System.Collections.Generic.List[CacheItem]]::new()
+                foreach ($item in $current) { $list.Add($item) }
+                Set-Variable -Name "AzDo$CacheType" -Value $list -Scope Global -Force
+            }
+            return
+        }
+    }
+
     Write-Verbose "[Refresh-CacheObject] Unloading the cache object of type '$CacheType'."
 
     # Unload the current cache object

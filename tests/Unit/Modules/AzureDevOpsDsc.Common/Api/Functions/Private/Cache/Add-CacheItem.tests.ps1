@@ -51,7 +51,8 @@ Describe "Add-CacheItem" -Tag "Unit", "Cache" {
             Mock -CommandName Write-Verbose
             Mock -CommandName Set-Variable -Verifiable
 
-            Add-CacheItem -Key 'MyKey' -Value 'MyValue' -Type 'Project'
+            # The messages are only written when verbose output is on.
+            Add-CacheItem -Key 'MyKey' -Value 'MyValue' -Type 'Project' -Verbose
 
             Assert-MockCalled -CommandName Write-Verbose -Exactly 1 -ParameterFilter {
                 $Message -eq '[Add-CacheItem] Cache is empty. Creating new cache.'
@@ -111,12 +112,37 @@ Describe "Add-CacheItem" -Tag "Unit", "Cache" {
             Mock -CommandName Write-Warning
             Mock -CommandName Write-Verbose
 
-            Add-CacheItem -Key 'MyKey' -Value 'MyValue' -Type 'Project' -SuppressWarning
-            Add-CacheItem -Key 'MyKey' -Value 'NewValue' -Type 'Project' -SuppressWarning
+            Add-CacheItem -Key 'MyKey' -Value 'MyValue' -Type 'Project' -SuppressWarning -Verbose
+            Add-CacheItem -Key 'MyKey' -Value 'NewValue' -Type 'Project' -SuppressWarning -Verbose
 
             Assert-MockCalled -CommandName Write-Warning -Exactly 0
             Assert-MockCalled -CommandName Write-Verbose -Times 3
 
+        }
+
+        It "should not call Write-Verbose when verbose output is off" {
+            Mock -CommandName Write-Verbose
+
+            Add-CacheItem -Key 'MyKey' -Value 'MyValue' -Type 'Project' -SuppressWarning
+
+            Assert-MockCalled -CommandName Write-Verbose -Exactly 0
+        }
+
+        It "should still call Write-Verbose when verbose messages are logged to a file" {
+            Mock -CommandName Write-Verbose
+            $previous = $env:AZDO_VERBOSELOGGING_FILEPATH
+            $env:AZDO_VERBOSELOGGING_FILEPATH = Join-Path -Path $TestDrive -ChildPath 'verbose.log'
+
+            try
+            {
+                Add-CacheItem -Key 'MyKey' -Value 'MyValue' -Type 'Project' -SuppressWarning
+            }
+            finally
+            {
+                $env:AZDO_VERBOSELOGGING_FILEPATH = $previous
+            }
+
+            Assert-MockCalled -CommandName Write-Verbose -Times 3
         }
 
         It "should display a warning if SuppressWarning switch is not present" {

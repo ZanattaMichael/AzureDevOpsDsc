@@ -32,25 +32,30 @@ Function Remove-CacheItem
         $Type
     )
 
-    Write-Verbose "[Remove-CacheItem] Retrieving the current cache."
-    #$cache = Get-AzDevOpsCache -CacheType $Type
-    [System.Collections.Generic.List[CacheItem]]$cache = Get-CacheObject -CacheType $Type
+    # Only write the messages when someone is listening: see Add-CacheItem.
+    $writeVerbose = ($VerbosePreference -ne 'SilentlyContinue') -or (-not [string]::IsNullOrEmpty($env:AZDO_VERBOSELOGGING_FILEPATH))
 
-    Write-Verbose "[Remove-CacheItem] Removing the cache item with the key: '$Key'."
+    if ($writeVerbose) { Write-Verbose "[Remove-CacheItem] Retrieving the current cache." }
+    $liveCache = Get-CacheObject -CacheType $Type
+    [System.Collections.Generic.List[CacheItem]]$cache = $liveCache
+    # True when Get-CacheObject handed back the list the global variable already holds.
+    $isLiveCache = ($null -ne $cache) -and [object]::ReferenceEquals($liveCache, $cache)
+
+    if ($writeVerbose) { Write-Verbose "[Remove-CacheItem] Removing the cache item with the key: '$Key'." }
 
     # An absent or empty cache is not an error - there is simply nothing to remove. Without
     # this guard $cache.Count is $null, '0 .. $null' evaluates to 0..0, and the indexing below
     # fails with "Cannot index into a null array". AzDoSecureFile's Remove hit exactly that.
     if ($null -eq $cache -or $cache.Count -eq 0)
     {
-        Write-Verbose "[Remove-CacheItem] Cache '$Type' is empty - nothing to remove."
+        if ($writeVerbose) { Write-Verbose "[Remove-CacheItem] Cache '$Type' is empty - nothing to remove." }
         return
     }
 
     # If the cache has a length of 1, and the key matches, remove the cache
     if ($cache.Count -eq 1 -and $cache[0].Key -eq $Key)
     {
-        Write-Verbose "[Remove-CacheItem] Cache has a length of 1 and the key matches. Removing the cache."
+        if ($writeVerbose) { Write-Verbose "[Remove-CacheItem] Cache has a length of 1 and the key matches. Removing the cache." }
         Set-Variable -Name "AzDo$Type" -Value ([System.Collections.Generic.List[CacheItem]]::New()) -Scope Global
         return
     }
@@ -59,15 +64,47 @@ Function Remove-CacheItem
     # The previous form - '0 .. $cache.Count | ... | ForEach-Object { $cache.RemoveAt($_) }' -
     # was wrong twice over: the range is inclusive, so it indexed one past the end, and
     # removing by index while later indexes were still pending shifted them underneath it.
-    for ($index = $cache.Count - 1; $index -ge 0; $index--)
+    #
+    # The key index (see Get-CacheKeyIndex) answers whether the key is cached at all, so a key
+    # that is absent costs no scan, and one that is present is removed from the index as well.
+    # The index then still matches the list, and the Add-CacheItem that usually follows a removal
+    # does not have to rebuild it. A cache that cannot be indexed is scanned as before.
+    $removedByIndex = $false
+    $keyIndex = Get-CacheKeyIndex -Type $Type -Cache $cache
+
+    if ($null -ne $keyIndex)
     {
-        if ($cache[$index].Key -eq $Key)
+        $existingItem = $null
+        if ($keyIndex.TryGetValue($Key, [ref]$existingItem))
         {
-            $cache.RemoveAt($index)
+            if ($cache.Remove($existingItem))
+            {
+                $null = $keyIndex.Remove($Key)
+                $removedByIndex = $true
+            }
+        }
+        else
+        {
+            # Not cached: there is nothing to remove.
+            $removedByIndex = $true
         }
     }
 
-    # Update the memory cache
-    Set-Variable -Name "AzDo$Type" -Value $cache -Scope Global
+    if (-not $removedByIndex)
+    {
+        for ($index = $cache.Count - 1; $index -ge 0; $index--)
+        {
+            if ($cache[$index].Key -eq $Key)
+            {
+                $cache.RemoveAt($index)
+            }
+        }
+    }
+
+    # Update the memory cache. The live list was changed in place, so there is nothing to store.
+    if (-not $isLiveCache)
+    {
+        Set-Variable -Name "AzDo$Type" -Value $cache -Scope Global
+    }
 
 }
