@@ -31,7 +31,7 @@ Function Update-ClassificationNode {
 
     $params = @{
         Uri = 'https://dev.azure.com/{0}/{1}/_apis/wit/classificationnodes/{2}/{3}?api-version={4}' -f $OrganizationName,
-                                                                                            $ProjectName,
+                                                                                            [System.Uri]::EscapeDataString([String]$ProjectName),
                                                                                             $StructureType,
                                                                                             $Path,
                                                                                             $ApiVersion

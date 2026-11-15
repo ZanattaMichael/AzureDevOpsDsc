@@ -17,6 +17,7 @@ Describe 'Get-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
         }
 
         $files = Get-FunctionItem (Find-MockedFunctions -TestFilePath $currentFile)
+        . (Get-FunctionItem 'Register-AzDoSecretValue.ps1').FullName
         ForEach ($file in $files) { . $file.FullName }
 
         # The comparison helpers are the behaviour under test; load them rather than mock them.

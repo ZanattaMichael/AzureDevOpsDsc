@@ -8,7 +8,7 @@ Function Remove-DevOpsArtifactFeedView
         [Parameter(Mandatory)][string]$ViewId,
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )
-    $baseUri = if ($ProjectName) { '{0}/{1}' -f $ApiUri.TrimEnd('/'), $ProjectName } else { $ApiUri.TrimEnd('/') }
+    $baseUri = if ($ProjectName) { '{0}/{1}' -f $ApiUri.TrimEnd('/'), [System.Uri]::EscapeDataString([String]$ProjectName) } else { $ApiUri.TrimEnd('/') }
     $params = @{
         Uri    = '{0}/_apis/packaging/feeds/{1}/views/{2}?api-version={3}' -f $baseUri, $FeedId, $ViewId, $ApiVersion
         Method = 'DELETE'

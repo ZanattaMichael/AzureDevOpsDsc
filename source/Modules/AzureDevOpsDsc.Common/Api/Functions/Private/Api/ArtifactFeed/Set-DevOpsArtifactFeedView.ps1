@@ -11,7 +11,7 @@ Function Set-DevOpsArtifactFeedView
         [Parameter()][string]$ViewVisibility,
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )
-    $baseUri = if ($ProjectName) { '{0}/{1}' -f $ApiUri.TrimEnd('/'), $ProjectName } else { $ApiUri.TrimEnd('/') }
+    $baseUri = if ($ProjectName) { '{0}/{1}' -f $ApiUri.TrimEnd('/'), [System.Uri]::EscapeDataString([String]$ProjectName) } else { $ApiUri.TrimEnd('/') }
 
     $body = @{}
     if ($ViewName)       { $body.name       = $ViewName }

@@ -89,7 +89,7 @@ Function New-GitRepository
 
     # Define parameters for creating a new DevOps group
     $params = @{
-        ApiUri = '{0}/{1}/_apis/git/repositories?api-version={2}' -f $ApiUri.TrimEnd('/'), $Project.name, $ApiVersion
+        ApiUri = '{0}/{1}/_apis/git/repositories?api-version={2}' -f $ApiUri.TrimEnd('/'), [System.Uri]::EscapeDataString([String]$Project.name), $ApiVersion
         Method = 'POST'
         ContentType = 'application/json'
         Body = $body | ConvertTo-Json -Depth 5

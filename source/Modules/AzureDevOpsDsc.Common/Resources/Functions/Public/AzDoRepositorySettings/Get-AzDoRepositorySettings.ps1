@@ -26,7 +26,7 @@ Function Get-AzDoRepositorySettings
     if (-not $repository)
     {
         Write-Verbose "[Get-AzDoRepositorySettings] Repository '$RepositoryName' not in cache — falling back to live API lookup."
-        $allRepos   = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrgName/$ProjectName/_apis/git/repositories?api-version=7.1-preview.1" -Method Get
+        $allRepos   = Invoke-AzDevOpsApiRestMethod -Uri "https://dev.azure.com/$OrgName/$([System.Uri]::EscapeDataString([String]$ProjectName))/_apis/git/repositories?api-version=7.1-preview.1" -Method Get
         $repository = $allRepos.value | Where-Object { $_.name -eq $RepositoryName } | Select-Object -First 1
         if ($repository) { Add-CacheItem -Key $repoCacheKey -Value $repository -Type 'LiveRepositories' }
     }

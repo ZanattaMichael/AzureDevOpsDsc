@@ -7,8 +7,8 @@ Function List-DevOpsServiceConnections
         [Parameter()][string]$Type,
         [Parameter()][string]$ApiVersion = '7.1-preview.4'
     )
-    $uri = '{0}/{1}/_apis/serviceendpoint/endpoints?api-version={2}' -f $ApiUri.TrimEnd('/'), $ProjectName, $ApiVersion
-    if ($Type) { $uri += '&type={0}' -f $Type }
+    $uri = '{0}/{1}/_apis/serviceendpoint/endpoints?api-version={2}' -f $ApiUri.TrimEnd('/'), [System.Uri]::EscapeDataString([String]$ProjectName), $ApiVersion
+    if ($Type) { $uri += '&type={0}' -f [System.Uri]::EscapeDataString([String]$Type) }
     $params = @{
         Uri    = $uri
         Method = 'GET'

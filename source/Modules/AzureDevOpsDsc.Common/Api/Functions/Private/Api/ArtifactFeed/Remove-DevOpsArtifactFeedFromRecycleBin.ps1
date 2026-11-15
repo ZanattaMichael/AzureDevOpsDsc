@@ -8,7 +8,7 @@ Function Remove-DevOpsArtifactFeedFromRecycleBin
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )
     $baseUri = if ($ProjectName) {
-        'https://feeds.dev.azure.com/{0}/{1}' -f $OrganizationName, $ProjectName
+        'https://feeds.dev.azure.com/{0}/{1}' -f $OrganizationName, [System.Uri]::EscapeDataString([String]$ProjectName)
     } else {
         'https://feeds.dev.azure.com/{0}' -f $OrganizationName
     }

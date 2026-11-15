@@ -14,7 +14,7 @@ function List-DevOpsClassificationNodes
     )
 
     $params = @{
-        Uri = 'https://dev.azure.com/{0}/{1}/_apis/wit/classificationnodes?$depth=100' -f $OrganizationName, $ProjectName
+        Uri = 'https://dev.azure.com/{0}/{1}/_apis/wit/classificationnodes?$depth=100' -f $OrganizationName, [System.Uri]::EscapeDataString([String]$ProjectName)
         Method = 'Get'
     }
 

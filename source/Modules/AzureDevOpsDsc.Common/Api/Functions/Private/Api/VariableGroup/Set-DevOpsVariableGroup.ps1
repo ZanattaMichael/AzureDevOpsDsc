@@ -16,7 +16,7 @@ Function Set-DevOpsVariableGroup
     $normalizedVariables = ConvertTo-AzDoVariableGroupVariables -Variables $Variables
 
     $params = @{
-        Uri         = '{0}/{1}/_apis/distributedtask/variablegroups/{2}?api-version={3}' -f $ApiUri.TrimEnd('/'), $ProjectName, $VariableGroupId, $ApiVersion
+        Uri         = '{0}/{1}/_apis/distributedtask/variablegroups/{2}?api-version={3}' -f $ApiUri.TrimEnd('/'), [System.Uri]::EscapeDataString([String]$ProjectName), $VariableGroupId, $ApiVersion
         Method      = 'PUT'
         ContentType = 'application/json'
         Body        = @{

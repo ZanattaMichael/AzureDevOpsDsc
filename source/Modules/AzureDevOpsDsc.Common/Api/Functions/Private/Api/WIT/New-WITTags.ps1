@@ -35,7 +35,7 @@ Function New-WITTags {
     # Validate the parameters
     $NewWIPTagParams = @{
         # https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/${type}?api-version=7.1
-        Uri              = 'https://dev.azure.com/{0}/{1}/_apis/wit/workitems/${2}?api-version={3}' -f $Organization, $ProjectName, $WorkItemType, $ApiVersion
+        Uri              = 'https://dev.azure.com/{0}/{1}/_apis/wit/workitems/${2}?api-version={3}' -f $Organization, [System.Uri]::EscapeDataString([String]$ProjectName), [System.Uri]::EscapeDataString([String]$WorkItemType), $ApiVersion
         HttpContentType  =  "application/json-patch+json"
         Method           =  "POST"
         Body             = @(
@@ -70,7 +70,7 @@ Function New-WITTags {
     # Validate the parameters
     $DeleteWIPTagParams = @{
         # https://dev.azure.com/{organization}/{project}/_apis/wit/workitems/{id}?api-version=7.1
-        Uri              = 'https://dev.azure.com/{0}/{1}/_apis/wit/workitems/{2}?api-version={3}' -f $Organization, $ProjectName, $createdWorkItem.Id, $ApiVersion
+        Uri              = 'https://dev.azure.com/{0}/{1}/_apis/wit/workitems/{2}?api-version={3}' -f $Organization, [System.Uri]::EscapeDataString([String]$ProjectName), $createdWorkItem.Id, $ApiVersion
         Method           = "DELETE"
     }
 

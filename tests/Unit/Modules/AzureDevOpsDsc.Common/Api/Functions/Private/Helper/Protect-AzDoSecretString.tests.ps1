@@ -12,6 +12,7 @@ Describe 'Protect-AzDoSecretString' -Tag 'Unit', 'Helper', 'Security' {
         ForEach ($file in $files) {
             . $file.FullName
         }
+        . (Get-FunctionItem 'Register-AzDoSecretValue.ps1').FullName
 
         # Built at run time so no credential-shaped literal sits in the repository.
         $script:jwt       = 'eyJ' + ('hbGciOiJSUzI1NiIs' * 2) + '.eyJ' + ('hdWQiOiI0OTliODRh' * 3) + '.' + ('c2lnbmF0dXJl' * 4)
@@ -102,6 +103,66 @@ Describe 'Protect-AzDoSecretString' -Tag 'Unit', 'Helper', 'Security' {
         It 'Returns an empty string for null or empty input' {
             Protect-AzDoSecretString -InputString $null | Should -BeExactly ''
             Protect-AzDoSecretString -InputString ''    | Should -BeExactly ''
+        }
+    }
+
+    Context 'Secrets the module was given (Register-AzDoSecretValue)' {
+
+        BeforeEach {
+            $script:AzDoKnownSecretValues    = $null
+            $script:AzDoKnownSecretValueList = $null
+        }
+
+        AfterAll {
+            $script:AzDoKnownSecretValues    = $null
+            $script:AzDoKnownSecretValueList = $null
+        }
+
+        It 'Redacts a registered secret that has no recognisable shape' {
+            Protect-AzDoSecretString -InputString 'sent hunter2-shapeless to the API' | Should -BeExactly 'sent hunter2-shapeless to the API'
+
+            Register-AzDoSecretValue -Value 'hunter2-shapeless'
+
+            Protect-AzDoSecretString -InputString 'sent hunter2-shapeless to the API' | Should -BeExactly 'sent <redacted> to the API'
+        }
+
+        It 'Redacts a registered SecureString' {
+            Register-AzDoSecretValue -Value (ConvertTo-SecureString -String 'shapeless-secure-value' -AsPlainText -Force)
+
+            Protect-AzDoSecretString -InputString 'value shapeless-secure-value!' | Should -BeExactly 'value <redacted>!'
+        }
+
+        It 'Redacts the JSON-escaped and the URL-escaped form of a registered secret' {
+            $secret = 'pa"ss\word &more'
+            Register-AzDoSecretValue -Value $secret
+
+            $json = @{ field = $secret } | ConvertTo-Json -Compress
+            Protect-AzDoSecretString -InputString $json | Should -BeExactly '{"field":"<redacted>"}'
+            Protect-AzDoSecretString -InputString ('x=' + [Uri]::EscapeDataString($secret) + '&y=1') | Should -BeExactly 'x=<redacted>&y=1'
+        }
+
+        It 'Replaces the longer of two overlapping secrets whole' {
+            Register-AzDoSecretValue -Value 'overlap-secret'
+            Register-AzDoSecretValue -Value 'overlap-secret-with-a-tail'
+
+            Protect-AzDoSecretString -InputString 'a overlap-secret-with-a-tail b' | Should -BeExactly 'a <redacted> b'
+        }
+
+        It 'Ignores <Name>, which would otherwise wipe ordinary words from every log line' -ForEach @(
+            @{ Name = 'a value shorter than eight characters'; Value = 'true' }
+            @{ Name = 'an empty string';                       Value = '' }
+            @{ Name = 'null';                                  Value = $null }
+            @{ Name = 'a value that is not text';              Value = 12345678 }
+        ) {
+            Register-AzDoSecretValue -Value $Value
+
+            Protect-AzDoSecretString -InputString 'true 12345678 stays' | Should -BeExactly 'true 12345678 stays'
+        }
+
+        It 'Matches a registered secret by exact case only' {
+            Register-AzDoSecretValue -Value 'CaseSensitiveSecret'
+
+            Protect-AzDoSecretString -InputString 'casesensitivesecret' | Should -BeExactly 'casesensitivesecret'
         }
     }
 

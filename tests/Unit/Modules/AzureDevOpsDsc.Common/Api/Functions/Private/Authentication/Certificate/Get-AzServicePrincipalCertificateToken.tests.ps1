@@ -9,6 +9,7 @@ Describe "Get-AzServicePrincipalCertificateToken Tests" -Tags "Unit", "Authentic
         }
 
         $files = Get-FunctionItem (Find-MockedFunctions -TestFilePath $currentFile)
+        . (Get-FunctionItem 'Register-AzDoSecretValue.ps1').FullName
         ForEach ($file in $files) {
             . $file.FullName
         }
