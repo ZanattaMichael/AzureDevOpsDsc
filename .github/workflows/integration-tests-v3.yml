@@ -13,7 +13,9 @@ name: DSC v3 Integration Tests
 # One-time repository setup required (repository scope, NOT an Environment) - the same
 # variable and secret integration-tests.yml uses:
 #   1. Add repository variable:  AzureDevOpsOrg   (your Azure DevOps org name)
-#   2. Add repository secret:    AZURE_DEVOPS_PAT (a PAT with full-access scopes)
+#   2. Add repository secret:    AZURE_DEVOPS_PAT (a PAT for the TEST organization only, with
+#      the shortest expiry you can live with. Prefer Managed Identity, below: it leaves
+#      no long-lived secret in the repository at all.)
 #      Leave AZURE_DEVOPS_PAT empty to use Managed Identity instead
 #      (only valid when AZDO-AGENT runs on an Azure VM/Arc machine).
 
@@ -54,6 +56,11 @@ on:
         required: false
         default: false
         type: boolean
+    # Declared so the caller passes exactly this secret instead of `secrets: inherit`.
+    secrets:
+      AZURE_DEVOPS_PAT:
+        description: PAT for the live organization. Empty selects Managed Identity.
+        required: false
 
 permissions:
   contents: read
