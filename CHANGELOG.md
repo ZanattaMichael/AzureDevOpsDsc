@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   example `ConvertTo-SecureString -String $env:AZDO_PAT -AsPlainText -Force` or
   `Read-Host -AsSecureString`.
 
+- Unused code
+  - Removed private functions that nothing called: `Resolve-ACLToken`,
+    `New-AzDevOpsACLToken` and `Format-DescriptorType`, with their unit tests.
+  - Removed `Write-Log.ps1`, `Initialize-Log.ps1` and `Flush-Log.ps1`, which
+    held only commented-out code but were still read on every module import,
+    and `Initalize-AzDevOpsCache.ps1`, whose function (`Initialize-Cache`) was
+    never exported under that name and was not called.
+
 ### Added
 
 - Secret references. Wherever a resource takes a secret, a configuration can give
@@ -23,6 +31,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ConsumerInputs` of `AzDoServiceHook` and `AzDoAuditStream`, and `AzDoPipeline` variable
   values. A reference that cannot be resolved fails the resource. Literal values still
   work. See 'Keeping Secrets out of a Configuration' in `USAGE.md`.
+
+- CI
+  - `Create Tag` workflow (`.github/workflows/create-tag.yml`), run manually from the
+    Actions tab. It creates and pushes an annotated version tag on `main` (or a given
+    branch or commit contained in `main`). The tag is either supplied (`vX.Y.Z` or
+    `vX.Y.Z-<prerelease>`) or derived by bumping the patch, minor or major part of the
+    highest existing `vX.Y.Z` tag. An existing tag is never moved. Because a tag pushed
+    with `GITHUB_TOKEN` does not trigger other workflows, creating a tag this way does
+    not cut a release unless the `publish` option is ticked, which dispatches the
+    Publish workflow on the new tag.
 
 ### Changed
 
@@ -42,178 +60,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     where a later session asks the identity endpoint again. A personal access token and a
     manually supplied federated token are stored as before, since nothing else can
     reproduce them.
-
-### Security
-
-- Cache protection
-  - Secrets are kept out of the cache in memory as well as on disk. `Add-CacheItem` now
-    blanks secret variable values, service connection keys and audit stream keys
-    (`Protect-AzDoCacheSecret`) before an item is stored, where previously they stayed in
-    memory until the cache was next exported. `Import-CacheObject` does the same for a
-    cache file written by an earlier version, and rewrites the file when it held one.
-  - Cache files are encrypted at rest on Windows. `Export-CacheObject` and
-    `Save-IdentityDescriptorIndex` write through the new `Write-AzDoCacheFile`, which
-    encrypts the CLIXML with DPAPI for the current account, and `Import-CacheObject` and
-    `Get-IdentityDescriptorIndex` read through `Read-AzDoCacheFile`. On Linux and macOS,
-    where there is no DPAPI, the files stay plain CLIXML with owner-only permissions.
-  - **Behaviour change (Windows):** a cache file can only be read by the account that
-    wrote it, on the machine it was written on, and can no longer be opened with
-    `Import-Clixml`. This is the restriction `ModuleSettings.clixml` already has. A cache
-    directory copied to another machine or account must be rebuilt with
-    `New-AzDoAuthenticationProvider`; reading it fails with an error that says so. Cache
-    files written by earlier versions are still read and are encrypted on their next
-    write. If DPAPI is unavailable the file is written unencrypted with a warning.
-  - The cache is not encrypted in memory. Code in the same PowerShell process can reach
-    any key or decrypt function the module holds, so it would add cost to every lookup
-    without protecting anything.
-- Build and release pipeline
-  - Every build module in `RequiredModules.psd1` is pinned to an exact version. They
-    were restored at `latest`, three with prereleases allowed, in the job that holds
-    the PowerShell Gallery API key. The Build workflow now lists the versions restored.
-  - `publish.yml` passes the integration test workflows `AZURE_DEVOPS_PAT` only. With
-    `secrets: inherit` the Gallery API key was also available on the self-hosted runners.
-  - The publish job runs in a `release` environment, so the Gallery API key can be an
-    environment secret behind a required reviewer and a `v*` tag rule. `CONTRIBUTING.md`
-    has the one-time setup.
-  - The publish job attests the build provenance of the `.nupkg` before publishing.
-  - The release tag name is passed to the validation script through the environment
-    instead of being interpolated into it.
-- Requests and redaction
-  - `Protect-AzDoSecretString` now also redacts the exact value of every secret the
-    module holds, whatever its shape: the credential it signs in with, a client secret
-    or certificate password, each variable group or pipeline variable marked secret, and
-    the authorization parameters of a service connection. A new private helper,
-    `Register-AzDoSecretValue`, records them in memory. Values shorter than eight
-    characters are not recorded. A service connection's tenant and client ids are
-    therefore also shown as `<redacted>` in verbose output.
-  - Project names, feed names, extension ids and work item type names are escaped where
-    they are put into a request path or query string. A name containing `/`, `?`, `#`
-    or `..` could address a different endpoint; a name with such a character now also
-    works where it previously produced a malformed request.
-  - `Invoke-AzDevOpsApiRestMethod` sends every request with a timeout (300 seconds, or
-    `AZDODSC_REQUEST_TIMEOUT_SECONDS`) and stops paging when a response repeats its
-    continuation token or after 10000 pages (`AZDODSC_MAX_RESPONSE_PAGES`). A request
-    could previously wait, or page, for ever.
-
-- `SECURITY.md` is now a full security policy. It adds the supported versions, what is in
-  and out of scope, and the process a vulnerability report goes through (acknowledge,
-  triage with a severity and a target for the fix, fix, release, coordinated disclosure).
-  The list of built-in protections is expanded into a summary of how the module protects
-  the credential in memory, on disk, on the network and in logs, what that does not
-  cover, and what the operator has to do.
-- Secret leakage and untrusted input
-  - Everything written through the module's `Write-Verbose`, `Write-Warning` and
-    `Write-Error` proxies, and every error message built from text the module did not
-    write (an HTTP response body, an identity provider error, Azure CLI output), now
-    passes through a new private helper, `Protect-AzDoSecretString`. It replaces
-    `Basic`/`Bearer` header values, JSON Web Tokens, Azure DevOps personal access tokens
-    and `name=value` pairs with a secret-bearing name (`client_secret`, `password`,
-    `access_token`, ...) with `<redacted>`.
-  - `Invoke-AzDevOpsApiRestMethod` only attaches the credential to requests for an Azure
-    DevOps host (`dev.azure.com`, `*.dev.azure.com`, `*.visualstudio.com`), checked by the
-    new `Test-AzDoApiHost`. Any other host is refused before the Authorization header is
-    built. Azure DevOps Server hosts are named in the `AZDODSC_ALLOWED_API_HOSTS`
-    environment variable (comma separated, matched exactly).
-  - `Invoke-AzDevOpsApiRestMethod` escapes the continuation token it copies from a
-    response header into the next request URI, and caps the response body it quotes in
-    an error at 4,000 characters.
-  - `Get-AzCliToken` put the whole `az` output, access token included, in the error it
-    threw when that output could not be parsed as JSON, which happened whenever `az` also
-    wrote a warning to stderr. The output is no longer shown, and stderr lines are
-    ignored when parsing so the warning no longer breaks authentication.
-  - `Export-CacheObject` blanks secret variable values, service connection keys and
-    audit stream keys (`Protect-AzDoCacheSecret`) before a cache file is written, so a
-    write response that echoes the request cannot put a secret on disk.
-  - `New-AzDoAuthenticationProvider` validates the organization name and tenant id
-    before building a URI from them, and restricts `ModuleSettings.clixml` before the
-    credential is written into it instead of after.
-  - Log files written by the proxies are created owner-only.
-  - New test suite `tests/Unit/Modules/AzureDevOpsDsc.Common/Security/SecretLeakage.tests.ps1`:
-    scans the source for secret-bearing variables in log lines and error messages, web
-    requests that bypass the audited request path, secret-looking DSC properties not
-    declared secret, and credential-shaped text committed to the repository; and plants
-    canary credentials to check that none reaches an output stream, an exception, a log
-    file or a cache file.
-
-- Credential storage
-  - `New-AzDoAuthenticationProvider` no longer leaves `ModuleSettings.clixml` and the cache
-    directory with default permissions. A new private helper, `Protect-AzDoCachePath`,
-    restricts everything the module writes under `AZDODSC_CACHE_DIRECTORY` to its owner:
-    on Windows the ACL is replaced with an explicit, non-inherited DACL granting
-    FullControl to the current user, SYSTEM and BUILTIN\Administrators only; on Linux and
-    macOS files are set to mode 600 and directories to 700. `New-AzDoAuthenticationProvider`,
-    `Export-CacheObject`, `Initialize-CacheObject` and `Save-IdentityDescriptorIndex` apply
-    it to every directory they create and file they write, so the identity caches and
-    `IdentityDescriptorIndex.clixml`, which decide which identity a permission grant
-    resolves to, are covered as well. A permissions failure is a warning, never an error.
-  - On Linux and macOS `Export-Clixml` stores a SecureString as hex-encoded UTF-16, so
-    `ModuleSettings.clixml` holds the credential in a recoverable form.
-    `New-AzDoAuthenticationProvider` now warns on those platforms that the file is
-    protected only by the owner-only permissions it sets, that `AZDODSC_CACHE_DIRECTORY`
-    must be a private path, and that DSC must run as the same account. `USAGE.md` and
-    `CLAUDE.md` describe this.
-  - `New-AzDoAuthenticationProvider` defaults to the `SecureStringPersonalAccessToken`
-    parameter set. The plain-text `-PersonalAccessToken` and `-ClientSecret` parameters
-    still work but warn that the secret lands in shell history, transcripts and process
-    listings, and name the `-SecureStringPersonalAccessToken` / `-SecureStringClientSecret`
-    alternative. Every example and the integration test framework use the SecureString
-    parameters.
-- Transport
-  - `Invoke-AzDevOpsApiRestMethod` refuses any request that is not https before it builds
-    an Authorization header. The only exceptions are the two instance metadata endpoints
-    that answer http only: IMDS (`169.254.169.254`) and the Azure Arc agent on `localhost`.
-    `Test-AzDevOpsApiUri` accepts https only.
-- Azure Arc
-  - `Get-AzManagedIdentityToken` validates both Azure Arc inputs before using them, as
-    Microsoft's reference implementations do. `IDENTITY_ENDPOINT` must be an absolute
-    http/https URI on `localhost`, `127.0.0.1` or `::1`; the secret file path from the 401
-    challenge (`WWW-Authenticate: Basic realm=<path>`) must be a `.key` file directly inside
-    the Arc tokens directory (`%ProgramData%\AzureConnectedMachineAgent\Tokens` on Windows,
-    `/var/opt/azcmagent/tokens` on Linux). Anything else throws, naming the value, before a
-    request is sent or a file is read. New private helpers `Test-AzDoArcSecretFilePath`
-    and `Get-AzDoArcTokensDirectory`.
-- Token guard
-  - `AuthenticationToken.TestCaller()` no longer carries the `Write-*` and `Out-File`
-    checks, which could never fire (`TestCallStack` compares whole command names, and
-    arguments are evaluated before a cmdlet is on the stack). The comments above it and
-    above `ServicePrincipalToken.GetClientSecret()` now say what the remaining call-stack
-    check is: a guard against accidental use of the plain token outside the module's
-    request path, not a security boundary. The allowed-callers behaviour is unchanged.
-- Secrets in logs and exports
-  - `AzDevOpsDscResourceBase` gains `FormatPropertiesForLog()`, which renders
-    current-state properties for verbose logging with secret properties (those named by
-    `GetDscResourceSecretPropertyNames()`) shown as `<redacted>` and hashtable-valued
-    properties shown as key names only. `AzDoVariableGroup`, `AzDoServiceConnection`,
-    `AzDoAuditStream` and `AzDoServiceHook` log through it, so variable values, a service
-    connection's `serviceprincipalkey` and consumer credentials no longer reach DSC
-    verbose logs.
-  - `AzDoServiceConnection` declares `Authorization`, and `AzDoAuditStream` and
-    `AzDoServiceHook` declare `ConsumerInputs`, as secret properties, so `Export()` redacts
-    them through `Protect-AzDoExportedSecretProperty` instead of writing them out.
-  - `AzDoVariableGroup` can create secret variables: `Variables` accepts
-    `@{ NAME = @{ value = 'v'; isSecret = $true } }` alongside `@{ NAME = 'value' }`. A
-    secret variable's value is never read back, compared or logged.
-- CI
-  - The integration test workflow no longer admits pull requests from forks. Both
-    `integration-tests.yml` jobs require the pull request's head repository to be this
-    repository in addition to the `resource-add/` branch prefix, and the test framework
-    configuration step refuses to fall back to Managed Identity on a `pull_request` run
-    (it throws if `AZURE_DEVOPS_PAT` is empty). Previously a fork's code could have run on
-    the self-hosted runner under the runner VM's identity.
-  - Both integration workflows wipe the module cache directory before the run and, in a
-    final `if: always()` step, remove it again and restore
-    `tests/Integration/TestFrameworkConfiguration.json` from git, so neither
-    `ModuleSettings.clixml` nor the plain-text PAT survives the job on the runner.
-  - `publish.yml` token permissions moved from workflow level to job level; only the
-    `publish` job holds `contents: write` and `pull-requests: write`; the release-gate jobs
-    on the self-hosted runners get `contents: read`.
-  - `actions/checkout`, `actions/cache` and `actions/upload-artifact` are pinned to commit
-    SHAs (v4.4.0, v4.3.0, v4.6.2) in every workflow.
-  - New `script-analysis` job in `unit-tests.yml` runs PSScriptAnalyzer 1.24.0 over
-    `source/Classes`, `source/Modules` and `source/Enum` with the security-focused rule
-    set in the new `PSScriptAnalyzerSettings.psd1`; any finding fails the job.
-
-### Changed
 
 - Build
   - `Resolve-Dependency.psd1` pins `PSResourceGetVersion` to `1.2.0`. It was
@@ -314,6 +160,183 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     the index stays valid for the `Add-CacheItem` that usually follows instead
     of being rebuilt. `Import-CacheObject` fills the cache with a loop rather
     than a pipeline.
+
+### Security
+
+- Cache protection
+  - Secrets are kept out of the cache in memory as well as on disk. `Add-CacheItem` now
+    blanks secret variable values, service connection keys and audit stream keys
+    (`Protect-AzDoCacheSecret`) before an item is stored, where previously they stayed in
+    memory until the cache was next exported. `Import-CacheObject` does the same for a
+    cache file written by an earlier version, and rewrites the file when it held one.
+  - Cache files are encrypted at rest on Windows. `Export-CacheObject` and
+    `Save-IdentityDescriptorIndex` write through the new `Write-AzDoCacheFile`, which
+    encrypts the CLIXML with DPAPI for the current account, and `Import-CacheObject` and
+    `Get-IdentityDescriptorIndex` read through `Read-AzDoCacheFile`. On Linux and macOS,
+    where there is no DPAPI, the files stay plain CLIXML with owner-only permissions.
+  - **Behaviour change (Windows):** a cache file can only be read by the account that
+    wrote it, on the machine it was written on, and can no longer be opened with
+    `Import-Clixml`. This is the restriction `ModuleSettings.clixml` already has. A cache
+    directory copied to another machine or account must be rebuilt with
+    `New-AzDoAuthenticationProvider`; reading it fails with an error that says so. Cache
+    files written by earlier versions are still read and are encrypted on their next
+    write. If DPAPI is unavailable the file is written unencrypted with a warning.
+  - The cache is not encrypted in memory. Code in the same PowerShell process can reach
+    any key or decrypt function the module holds, so it would add cost to every lookup
+    without protecting anything.
+- Build and release pipeline
+  - Every build module in `RequiredModules.psd1` is pinned to an exact version. They
+    were restored at `latest`, three with prereleases allowed, in the job that holds
+    the PowerShell Gallery API key. The Build workflow now lists the versions restored.
+  - `publish.yml` passes the integration test workflows `AZURE_DEVOPS_PAT` only. With
+    `secrets: inherit` the Gallery API key was also available on the self-hosted runners.
+  - The publish job runs in a `release` environment, so the Gallery API key can be an
+    environment secret behind a required reviewer and a `v*` tag rule. `CONTRIBUTING.md`
+    has the one-time setup.
+  - The publish job attests the build provenance of the `.nupkg` before publishing.
+  - The release tag name is passed to the validation script through the environment
+    instead of being interpolated into it.
+- Requests and redaction
+  - `Protect-AzDoSecretString` now also redacts the exact value of every secret the
+    module holds, whatever its shape: the credential it signs in with, a client secret
+    or certificate password, each variable group or pipeline variable marked secret, and
+    the authorization parameters of a service connection. A new private helper,
+    `Register-AzDoSecretValue`, records them in memory. Values shorter than eight
+    characters are not recorded. A service connection's tenant and client ids are
+    therefore also shown as `<redacted>` in verbose output.
+  - Project names, feed names, extension ids and work item type names are escaped where
+    they are put into a request path or query string. A name containing `/`, `?`, `#`
+    or `..` could address a different endpoint; a name with such a character now also
+    works where it previously produced a malformed request.
+  - `Invoke-AzDevOpsApiRestMethod` sends every request with a timeout (300 seconds, or
+    `AZDODSC_REQUEST_TIMEOUT_SECONDS`) and stops paging when a response repeats its
+    continuation token or after 10000 pages (`AZDODSC_MAX_RESPONSE_PAGES`). A request
+    could previously wait, or page, for ever.
+
+- `SECURITY.md` is now a full security policy. It adds the supported versions, what is in
+  and out of scope, and the process a vulnerability report goes through (acknowledge,
+  triage with a severity and a target for the fix, fix, release, coordinated disclosure).
+  The list of built-in protections is expanded into a summary of how the module protects
+  the credential in memory, on disk, on the network and in logs, what that does not
+  cover, and what the operator has to do.
+- Secret leakage and untrusted input
+  - Everything written through the module's `Write-Verbose`, `Write-Warning` and
+    `Write-Error` proxies, and every error message built from text the module did not
+    write (an HTTP response body, an identity provider error, Azure CLI output), now
+    passes through a new private helper, `Protect-AzDoSecretString`. It replaces
+    `Basic`/`Bearer` header values, JSON Web Tokens, Azure DevOps personal access tokens
+    and `name=value` pairs with a secret-bearing name (`client_secret`, `password`,
+    `access_token`, ...) with `<redacted>`.
+  - `Invoke-AzDevOpsApiRestMethod` only attaches the credential to requests for an Azure
+    DevOps host (`dev.azure.com`, `*.dev.azure.com`, `*.visualstudio.com`), checked by the
+    new `Test-AzDoApiHost`. Any other host is refused before the Authorization header is
+    built. Azure DevOps Server hosts are named in the `AZDODSC_ALLOWED_API_HOSTS`
+    environment variable (comma separated, matched exactly).
+  - `Invoke-AzDevOpsApiRestMethod` escapes the continuation token it copies from a
+    response header into the next request URI, and caps the response body it quotes in
+    an error at 4,000 characters.
+  - `Get-AzCliToken` put the whole `az` output, access token included, in the error it
+    threw when that output could not be parsed as JSON, which happened whenever `az` also
+    wrote a warning to stderr. The output is no longer shown, and stderr lines are
+    ignored when parsing so the warning no longer breaks authentication.
+  - `Export-CacheObject` blanks secret variable values, service connection keys and
+    audit stream keys (`Protect-AzDoCacheSecret`) before a cache file is written, so a
+    write response that echoes the request cannot put a secret on disk.
+  - `New-AzDoAuthenticationProvider` validates the organization name and tenant id
+    before building a URI from them, and restricts `ModuleSettings.clixml` before the
+    credential is written into it instead of after.
+  - Log files written by the proxies are created owner-only.
+  - New test suite `tests/Unit/Modules/AzureDevOpsDsc.Common/Security/SecretLeakage.tests.ps1`:
+    scans the source for secret-bearing variables in log lines and error messages, web
+    requests that bypass the audited request path, secret-looking DSC properties not
+    declared secret, and credential-shaped text committed to the repository; and plants
+    canary credentials to check that none reaches an output stream, an exception, a log
+    file or a cache file.
+
+## [1.3.0] - 2026-11-08
+
+### Security
+
+- Credential storage
+  - `New-AzDoAuthenticationProvider` no longer leaves `ModuleSettings.clixml` and the cache
+    directory with default permissions. A new private helper, `Protect-AzDoCachePath`,
+    restricts everything the module writes under `AZDODSC_CACHE_DIRECTORY` to its owner:
+    on Windows the ACL is replaced with an explicit, non-inherited DACL granting
+    FullControl to the current user, SYSTEM and BUILTIN\Administrators only; on Linux and
+    macOS files are set to mode 600 and directories to 700. `New-AzDoAuthenticationProvider`,
+    `Export-CacheObject`, `Initialize-CacheObject` and `Save-IdentityDescriptorIndex` apply
+    it to every directory they create and file they write, so the identity caches and
+    `IdentityDescriptorIndex.clixml`, which decide which identity a permission grant
+    resolves to, are covered as well. A permissions failure is a warning, never an error.
+  - On Linux and macOS `Export-Clixml` stores a SecureString as hex-encoded UTF-16, so
+    `ModuleSettings.clixml` holds the credential in a recoverable form.
+    `New-AzDoAuthenticationProvider` now warns on those platforms that the file is
+    protected only by the owner-only permissions it sets, that `AZDODSC_CACHE_DIRECTORY`
+    must be a private path, and that DSC must run as the same account. `USAGE.md` and
+    `CLAUDE.md` describe this.
+  - `New-AzDoAuthenticationProvider` defaults to the `SecureStringPersonalAccessToken`
+    parameter set. The plain-text `-PersonalAccessToken` and `-ClientSecret` parameters
+    still work but warn that the secret lands in shell history, transcripts and process
+    listings, and name the `-SecureStringPersonalAccessToken` / `-SecureStringClientSecret`
+    alternative. Every example and the integration test framework use the SecureString
+    parameters.
+- Transport
+  - `Invoke-AzDevOpsApiRestMethod` refuses any request that is not https before it builds
+    an Authorization header. The only exceptions are the two instance metadata endpoints
+    that answer http only: IMDS (`169.254.169.254`) and the Azure Arc agent on `localhost`.
+    `Test-AzDevOpsApiUri` accepts https only.
+- Azure Arc
+  - `Get-AzManagedIdentityToken` validates both Azure Arc inputs before using them, as
+    Microsoft's reference implementations do. `IDENTITY_ENDPOINT` must be an absolute
+    http/https URI on `localhost`, `127.0.0.1` or `::1`; the secret file path from the 401
+    challenge (`WWW-Authenticate: Basic realm=<path>`) must be a `.key` file directly inside
+    the Arc tokens directory (`%ProgramData%\AzureConnectedMachineAgent\Tokens` on Windows,
+    `/var/opt/azcmagent/tokens` on Linux). Anything else throws, naming the value, before a
+    request is sent or a file is read. New private helpers `Test-AzDoArcSecretFilePath`
+    and `Get-AzDoArcTokensDirectory`.
+- Token guard
+  - `AuthenticationToken.TestCaller()` no longer carries the `Write-*` and `Out-File`
+    checks, which could never fire (`TestCallStack` compares whole command names, and
+    arguments are evaluated before a cmdlet is on the stack). The comments above it and
+    above `ServicePrincipalToken.GetClientSecret()` now say what the remaining call-stack
+    check is: a guard against accidental use of the plain token outside the module's
+    request path, not a security boundary. The allowed-callers behaviour is unchanged.
+- Secrets in logs and exports
+  - `AzDevOpsDscResourceBase` gains `FormatPropertiesForLog()`, which renders
+    current-state properties for verbose logging with secret properties (those named by
+    `GetDscResourceSecretPropertyNames()`) shown as `<redacted>` and hashtable-valued
+    properties shown as key names only. `AzDoVariableGroup`, `AzDoServiceConnection`,
+    `AzDoAuditStream` and `AzDoServiceHook` log through it, so variable values, a service
+    connection's `serviceprincipalkey` and consumer credentials no longer reach DSC
+    verbose logs.
+  - `AzDoServiceConnection` declares `Authorization`, and `AzDoAuditStream` and
+    `AzDoServiceHook` declare `ConsumerInputs`, as secret properties, so `Export()` redacts
+    them through `Protect-AzDoExportedSecretProperty` instead of writing them out.
+  - `AzDoVariableGroup` can create secret variables: `Variables` accepts
+    `@{ NAME = @{ value = 'v'; isSecret = $true } }` alongside `@{ NAME = 'value' }`. A
+    secret variable's value is never read back, compared or logged.
+- CI
+  - The integration test workflow no longer admits pull requests from forks. Both
+    `integration-tests.yml` jobs require the pull request's head repository to be this
+    repository in addition to the `resource-add/` branch prefix, and the test framework
+    configuration step refuses to fall back to Managed Identity on a `pull_request` run
+    (it throws if `AZURE_DEVOPS_PAT` is empty). Previously a fork's code could have run on
+    the self-hosted runner under the runner VM's identity.
+  - Both integration workflows wipe the module cache directory before the run and, in a
+    final `if: always()` step, remove it again and restore
+    `tests/Integration/TestFrameworkConfiguration.json` from git, so neither
+    `ModuleSettings.clixml` nor the plain-text PAT survives the job on the runner.
+  - `publish.yml` token permissions moved from workflow level to job level; only the
+    `publish` job holds `contents: write` and `pull-requests: write`; the release-gate jobs
+    on the self-hosted runners get `contents: read`.
+  - `actions/checkout`, `actions/cache` and `actions/upload-artifact` are pinned to commit
+    SHAs (v4.4.0, v4.3.0, v4.6.2) in every workflow.
+  - New `script-analysis` job in `unit-tests.yml` runs PSScriptAnalyzer 1.24.0 over
+    `source/Classes`, `source/Modules` and `source/Enum` with the security-focused rule
+    set in the new `PSScriptAnalyzerSettings.psd1`; any finding fails the job.
+
+### Changed
+
 - Documentation
   - `docs/ResourceRoadmap.md` gains §12, the resources a code review found
     missing that neither the roadmap nor an open issue tracked: permission
@@ -351,16 +374,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     from 28 to 9 (the remaining `C:\`-path tests in `Export-CacheObject.tests.ps1` and
     `Initialize-CacheObject.tests.ps1`).
 
-### Removed
-
-- Unused code
-  - Removed private functions that nothing called: `Resolve-ACLToken`,
-    `New-AzDevOpsACLToken` and `Format-DescriptorType`, with their unit tests.
-  - Removed `Write-Log.ps1`, `Initialize-Log.ps1` and `Flush-Log.ps1`, which
-    held only commented-out code but were still read on every module import,
-    and `Initalize-AzDevOpsCache.ps1`, whose function (`Initialize-Cache`) was
-    never exported under that name and was not called.
-
 ### Fixed
 
 - AzureDevOpsDscNative
@@ -395,15 +408,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- CI
-  - `Create Tag` workflow (`.github/workflows/create-tag.yml`), run manually from the
-    Actions tab. It creates and pushes an annotated version tag on `main` (or a given
-    branch or commit contained in `main`). The tag is either supplied (`vX.Y.Z` or
-    `vX.Y.Z-<prerelease>`) or derived by bumping the patch, minor or major part of the
-    highest existing `vX.Y.Z` tag. An existing tag is never moved. Because a tag pushed
-    with `GITHUB_TOKEN` does not trigger other workflows, creating a tag this way does
-    not cut a release unless the `publish` option is ticked, which dispatches the
-    Publish workflow on the new tag.
 - AzureDevOpsDscNative
   - Private helpers `Protect-AzDoCachePath`, `Test-AzDoIsWindows`,
     `ConvertFrom-AzDoSecureString`, `Test-AzDoArcSecretFilePath`,
