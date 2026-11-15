@@ -35,10 +35,14 @@ jobs:
       - name: List restored build modules
         shell: pwsh
         run: |
-          Get-ChildItem -Path output/RequiredModules -Directory | ForEach-Object {
-              $name = $_.Name
-              Get-ChildItem -Path $_.FullName -Directory | ForEach-Object { '{0} = {1}' -f $name, $_.Name }
-          }
+          Get-ChildItem -Path output/RequiredModules -Filter *.psd1 -Depth 2 -File |
+              Where-Object { $_.BaseName -eq $_.Directory.Parent.Name } |
+              ForEach-Object {
+                  $manifest   = Import-PowerShellDataFile -LiteralPath $_.FullName
+                  $prerelease = $manifest.PrivateData.PSData.Prerelease
+                  $version    = if ($prerelease) { '{0}-{1}' -f $manifest.ModuleVersion, $prerelease.TrimStart('-') } else { $manifest.ModuleVersion }
+                  "{0} = '{1}'" -f $_.BaseName, $version
+              }
 
       # The publish workflow runs `docs` as part of packaging a release, so it is
       # exercised here on every push and PR - a broken doc-generation task should
