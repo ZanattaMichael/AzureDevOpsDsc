@@ -94,6 +94,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     status code package: Not Found`, which stopped the build and unit test
     workflows before any module code ran.
 - Performance
+  - Cache lookups are about three times faster. `Get-CacheObject` reads the
+    cache variable once instead of twice and no longer builds a directory path
+    it never used, `Get-CacheKeyIndex` no longer walks the whole cache while
+    binding its parameter, and `Get-CacheObject`, `Add-CacheItem`,
+    `Remove-CacheItem` and `Get-CacheKeyIndex` only call `Write-Verbose` when
+    verbose output is on or `AZDO_VERBOSELOGGING_FILEPATH` is set. With a
+    5,000-item cache, 1,000 `Get-CacheItem` calls take about 0.55 s instead
+    of 2 s, and filling a 5,000-item cache with `Add-CacheItem` takes about
+    2 s instead of 3.5 s.
+  - `Add-CacheItem` replaces an existing key through the key index instead of
+    scanning the whole cache: 1,000 replacements in a 5,000-item cache take
+    about 1 s instead of 3.7 s.
+  - `Refresh-CacheObject` no longer reads a cache file back in when the cache
+    in memory is exactly what this session last wrote to, or read from, that
+    file. `New-` and `Set-` functions export a cache and then refresh it, so
+    each one read back the file it had just written. `Export-CacheObject`,
+    `Set-CacheObject` and `Import-CacheObject` record the file's last write
+    time and length with the items involved (new private helpers
+    `Set-CacheFileStamp` and `Test-CacheFileStamp`); a file changed by another
+    process, or a cache changed in memory since, is reloaded as before. For a
+    5,000-item cache this saves about 150 ms per `New-`/`Set-` call. Within
+    the same session the cached values are then the objects that were added,
+    not copies that have been through `Export-Clixml` and `Import-Clixml`.
+    `CONTRIBUTING.md` and `CLAUDE.md` describe this and the verbose guard.
   - `Find-Identity` scans the group, user and service-principal caches with a
     plain loop instead of invoking a filter scriptblock for every cached
     identity. It runs once per ACE, so this is the largest part of formatting
@@ -198,6 +222,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     so it passes on Linux. The known Linux-only failure count in the Common suite drops
     from 28 to 9 (the remaining `C:\`-path tests in `Export-CacheObject.tests.ps1` and
     `Initialize-CacheObject.tests.ps1`).
+
+### Removed
+
+- Unused code
+  - Removed private functions that nothing called: `Resolve-ACLToken`,
+    `New-AzDevOpsACLToken` and `Format-DescriptorType`, with their unit tests.
+  - Removed `Write-Log.ps1`, `Initialize-Log.ps1` and `Flush-Log.ps1`, which
+    held only commented-out code but were still read on every module import,
+    and `Initalize-AzDevOpsCache.ps1`, whose function (`Initialize-Cache`) was
+    never exported under that name and was not called.
 
 ### Fixed
 

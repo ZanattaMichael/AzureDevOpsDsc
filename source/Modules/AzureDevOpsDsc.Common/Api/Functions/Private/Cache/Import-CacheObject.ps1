@@ -95,6 +95,8 @@ function Import-CacheObject
 
         # Update the new cache object
         Set-Variable -Name "AzDo$CacheType" -Value $newCache -Scope Global -Force
+        # Note what was read, so a Refresh-CacheObject of an unchanged file does not read it again.
+        Set-CacheFileStamp -CacheType $CacheType -Path $cacheFile -Content $newCache
         Write-Verbose "[Import-CacheObject] Cache object imported successfully for '$CacheType'."
 
         # Return the imported cache so Get-CacheObject's import branch yields the collection rather than
