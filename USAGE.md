@@ -280,6 +280,44 @@ every exporter and is exercised with a synthetic resource in
 Replace the placeholder with the real value by hand before applying an exported configuration that
 contains one.
 
+## Keeping Secrets out of a Configuration
+
+A configuration document is a file: it is committed, copied, and compiled into a MOF. A secret
+written into it as a literal travels with it. Wherever one of these resources takes a secret,
+give a *reference* instead, and the module fetches the secret on the machine applying the
+configuration:
+
+| Reference | Where the secret comes from |
+|-----------|-----------------------------|
+| `@{ SecretEnvironmentVariable = 'NAME' }` | The environment variable `NAME` of the process running DSC. |
+| `@{ SecretName = 'Name' }` | `Microsoft.PowerShell.SecretManagement`, default vault. |
+| `@{ SecretName = 'Name'; SecretVault = 'Vault' }` | `Microsoft.PowerShell.SecretManagement`, named vault. |
+
+References are accepted in:
+
+- `AzDoVariableGroup` — as a variable: `Variables = @{ API_KEY = @{ SecretEnvironmentVariable = 'API_KEY' } }`.
+  The variable is stored as a secret.
+- `AzDoServiceConnection` — as any value in `Authorization`, including under `parameters`.
+- `AzDoServiceHook` and `AzDoAuditStream` — as any value in `ConsumerInputs`.
+- `AzDoPipeline` — as the `Value` of a variable. Set `IsSecret = $true` on it as well.
+
+```powershell
+AzDoVariableGroup 'Deployment' {
+    ProjectName       = 'Contoso'
+    VariableGroupName = 'Deployment'
+    Variables         = @{
+        Region  = 'australiaeast'
+        API_KEY = @{ SecretEnvironmentVariable = 'DEPLOYMENT_API_KEY' }
+        DB_PWD  = @{ SecretName = 'DeploymentDbPassword'; SecretVault = 'Production' }
+    }
+}
+```
+
+A reference that cannot be resolved (variable not set, secret not found, SecretManagement not
+installed) fails the resource rather than storing an empty secret. The secret is needed for
+`Test` and `Get` as well as `Set`, so it has to be available to every DSC run. A literal value
+still works. Every resolved secret is redacted from the module's verbose, warning and error output.
+
 ## Implementation using `Dsc.PipelineRunner`
 
 [Current Source](https://github.com/ZanattaMichael/Dsc.PipelineRunner/)

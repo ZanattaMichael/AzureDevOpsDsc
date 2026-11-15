@@ -9,6 +9,8 @@ Describe "ConvertTo-AzDoVariableGroupVariables" -Tag "Unit", "VariableGroup" {
         }
 
         $files = Get-FunctionItem (Find-MockedFunctions -TestFilePath $currentFile)
+        . (Get-FunctionItem 'Resolve-AzDoSecretReference.ps1').FullName
+        . (Get-FunctionItem 'Resolve-AzDoSecretReferenceTable.ps1').FullName
         . (Get-FunctionItem 'Register-AzDoSecretValue.ps1').FullName
         ForEach ($file in $files) { . $file.FullName }
     }
@@ -103,6 +105,41 @@ Describe "ConvertTo-AzDoVariableGroupVariables" -Tag "Unit", "VariableGroup" {
         It "throws on an unrecognised key rather than silently storing a would-be secret in the clear" {
             { ConvertTo-AzDoVariableGroupVariables -Variables @{ APP_KEY = @{ value = 'x'; secret = $true } } } |
                 Should -Throw "*APP_KEY*unrecognised key 'secret'*"
+        }
+    }
+
+    Context "when a variable is a secret reference" {
+
+        BeforeEach {
+            $env:AZDODSC_TEST_VARIABLE_SECRET = 'secret-from-the-environment'
+        }
+
+        AfterEach {
+            $env:AZDODSC_TEST_VARIABLE_SECRET = $null
+        }
+
+        It "stores the referenced value as a secret" {
+            $result = ConvertTo-AzDoVariableGroupVariables -Variables @{ API_KEY = @{ SecretEnvironmentVariable = 'AZDODSC_TEST_VARIABLE_SECRET' } }
+
+            $result.API_KEY.value    | Should -BeExactly 'secret-from-the-environment'
+            $result.API_KEY.isSecret | Should -BeTrue
+        }
+
+        It "throws when the referenced variable is not set" {
+            $env:AZDODSC_TEST_VARIABLE_SECRET = $null
+
+            { ConvertTo-AzDoVariableGroupVariables -Variables @{ API_KEY = @{ SecretEnvironmentVariable = 'AZDODSC_TEST_VARIABLE_SECRET' } } } |
+                Should -Throw '*is not set*'
+        }
+
+        It "throws when a reference is given together with a value" {
+            { ConvertTo-AzDoVariableGroupVariables -Variables @{ API_KEY = @{ value = 'x'; SecretEnvironmentVariable = 'AZDODSC_TEST_VARIABLE_SECRET' } } } |
+                Should -Throw "*both a 'value' and a secret reference*"
+        }
+
+        It "throws when a reference is marked as not secret" {
+            { ConvertTo-AzDoVariableGroupVariables -Variables @{ API_KEY = @{ isSecret = $false; SecretEnvironmentVariable = 'AZDODSC_TEST_VARIABLE_SECRET' } } } |
+                Should -Throw "*cannot have 'isSecret' set to false*"
         }
     }
 

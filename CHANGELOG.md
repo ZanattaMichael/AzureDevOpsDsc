@@ -13,6 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   example `ConvertTo-SecureString -String $env:AZDO_PAT -AsPlainText -Force` or
   `Read-Host -AsSecureString`.
 
+### Added
+
+- Secret references. Wherever a resource takes a secret, a configuration can give
+  `@{ SecretEnvironmentVariable = 'NAME' }` or `@{ SecretName = 'Name'; SecretVault = 'Vault' }`
+  (Microsoft.PowerShell.SecretManagement) instead of the secret, so it no longer has to be
+  written into the configuration document or the MOF. Accepted for `AzDoVariableGroup`
+  variables, values in `AzDoServiceConnection` `Authorization`, values in the
+  `ConsumerInputs` of `AzDoServiceHook` and `AzDoAuditStream`, and `AzDoPipeline` variable
+  values. A reference that cannot be resolved fails the resource. Literal values still
+  work. See 'Keeping Secrets out of a Configuration' in `USAGE.md`.
+
 ### Changed
 
 - **BREAKING:** credential storage

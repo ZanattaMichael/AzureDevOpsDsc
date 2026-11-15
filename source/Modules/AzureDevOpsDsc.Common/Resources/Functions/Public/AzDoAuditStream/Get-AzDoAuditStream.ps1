@@ -12,6 +12,10 @@ Function Get-AzDoAuditStream
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
     )
     Write-Verbose "[Get-AzDoAuditStream] Started."
+
+    # A value in ConsumerInputs may be a secret reference instead of the secret; fetch those now.
+    # See Resolve-AzDoSecretReference.
+    $ConsumerInputs = Resolve-AzDoSecretReferenceTable -Table $ConsumerInputs
     $result = @{ Ensure = [Ensure]::Absent; propertiesChanged = @(); status = $null }
     $stream = Get-CacheItem -Key $StreamName -Type 'LiveAuditStreams'
     if ($stream) { $result.liveCache = $stream; $result.status = [DSCGetSummaryState]::Unchanged }

@@ -11,6 +11,10 @@ Function Set-AzDoAuditStream
         [Parameter()][System.Management.Automation.SwitchParameter]$Force
     )
     Write-Verbose "[Set-AzDoAuditStream] Updating audit stream '$StreamName'."
+
+    # A value in ConsumerInputs may be a secret reference instead of the secret; fetch those now.
+    # See Resolve-AzDoSecretReference.
+    $ConsumerInputs = Resolve-AzDoSecretReferenceTable -Table $ConsumerInputs
     $stream = Get-CacheItem -Key $StreamName -Type 'LiveAuditStreams'
     if (-not $stream) { Write-Error "[Set-AzDoAuditStream] Stream not found."; return }
     $params = @{

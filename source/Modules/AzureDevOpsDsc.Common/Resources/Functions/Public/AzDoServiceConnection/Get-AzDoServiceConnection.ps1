@@ -19,6 +19,10 @@ Function Get-AzDoServiceConnection
 
     Write-Verbose "[Get-AzDoServiceConnection] Started."
 
+    # A value in Authorization may be a secret reference instead of the secret; fetch those now.
+    # See Resolve-AzDoSecretReference.
+    $Authorization = Resolve-AzDoSecretReferenceTable -Table $Authorization
+
     $result = @{
         Ensure            = [Ensure]::Absent
         propertiesChanged = @()

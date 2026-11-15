@@ -18,6 +18,10 @@ Function New-AzDoServiceConnection
 
     Write-Verbose "[New-AzDoServiceConnection] Creating service connection '$ConnectionName'."
 
+    # A value in Authorization may be a secret reference instead of the secret; fetch those now.
+    # See Resolve-AzDoSecretReference.
+    $Authorization = Resolve-AzDoSecretReferenceTable -Table $Authorization
+
     $project = Resolve-AzDoProject -ProjectName $ProjectName
 
     if (-not $project)
