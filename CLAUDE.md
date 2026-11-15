@@ -193,7 +193,11 @@ functions that also append to the file named by `AZDO_VERBOSELOGGING_FILEPATH`. 
 variable; a guard that checks only the preference silently drops file logging.
 
 ### 12. Secrets in output, and where the credential may be sent
-`Protect-AzDoSecretString` redacts credential-shaped text. The `Write-Verbose`/`Write-Warning`/
+`Protect-AzDoSecretString` redacts credential-shaped text, and the exact value of anything passed
+to `Register-AzDoSecretValue`. Call that wherever the module is handed a new kind of secret (a
+sign-in credential, a secret a resource stores); a unit test that runs such a function for real
+dot-sources `Register-AzDoSecretValue.ps1`. Escape any name put into a request path with
+`[System.Uri]::EscapeDataString([String]$Name)`. The `Write-Verbose`/`Write-Warning`/
 `Write-Error` proxies in `Helper/Logging/Proxy Functions` apply it to every message; a `throw`
 does not go through a proxy, so wrap any text you did not write yourself (`$_`, a response body,
 native command output) in it before putting it in an exception message.

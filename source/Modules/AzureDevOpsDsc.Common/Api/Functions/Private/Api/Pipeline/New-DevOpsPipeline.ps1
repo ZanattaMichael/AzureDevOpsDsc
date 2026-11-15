@@ -36,7 +36,7 @@ Function New-DevOpsPipeline
         }
     }
     $params = @{
-        Uri         = '{0}/{1}/_apis/pipelines?api-version={2}' -f $ApiUri.TrimEnd('/'), $ProjectName, $ApiVersion
+        Uri         = '{0}/{1}/_apis/pipelines?api-version={2}' -f $ApiUri.TrimEnd('/'), [System.Uri]::EscapeDataString([String]$ProjectName), $ApiVersion
         Method      = 'POST'
         ContentType = 'application/json'
         Body        = @{

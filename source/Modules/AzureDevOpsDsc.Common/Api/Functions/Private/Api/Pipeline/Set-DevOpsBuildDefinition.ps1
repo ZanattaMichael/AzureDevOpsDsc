@@ -34,7 +34,7 @@ Function Set-DevOpsBuildDefinition
         [Parameter()][string]$ApiVersion = '7.1'
     )
     $params = @{
-        Uri         = '{0}/{1}/_apis/build/definitions/{2}?api-version={3}' -f $ApiUri.TrimEnd('/'), $ProjectName, $DefinitionId, $ApiVersion
+        Uri         = '{0}/{1}/_apis/build/definitions/{2}?api-version={3}' -f $ApiUri.TrimEnd('/'), [System.Uri]::EscapeDataString([String]$ProjectName), $DefinitionId, $ApiVersion
         Method      = 'PUT'
         ContentType = 'application/json'
         Body        = $Definition | ConvertTo-Json -Depth 20

@@ -28,7 +28,7 @@ Function Remove-WITTags {
     {
         # Validate the parameters
         $params = @{
-            Uri              = 'https://dev.azure.com/{0}/{1}/_apis/wit/tags/{2}?api-version={3}' -f $Organization, $ProjectName, $TagId, $ApiVersion
+            Uri              = 'https://dev.azure.com/{0}/{1}/_apis/wit/tags/{2}?api-version={3}' -f $Organization, [System.Uri]::EscapeDataString([String]$ProjectName), $TagId, $ApiVersion
             Method           = "DELETE"
         }
 

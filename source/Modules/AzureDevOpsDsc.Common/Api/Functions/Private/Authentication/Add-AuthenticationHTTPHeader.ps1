@@ -193,6 +193,10 @@ Function Add-AuthenticationHTTPHeader
 
     }
 
+    # Register the credential itself, so its exact text is redacted from anything logged or
+    # thrown from here on, whatever shape it has.
+    Register-AzDoSecretValue -Value (($headerValue -split ' ')[-1])
+
     Write-Verbose "[Add-AuthenticationHTTPHeader] Adding Header"
 
     # Return the header value

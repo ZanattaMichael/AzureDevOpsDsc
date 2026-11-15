@@ -15,6 +15,7 @@ Describe 'New-AzDoVariableGroup Tests' -Tag "Unit", "VariableGroup" {
         }
 
         $files = Get-FunctionItem (Find-MockedFunctions -TestFilePath $currentFile)
+        . (Get-FunctionItem 'Register-AzDoSecretValue.ps1').FullName
         ForEach ($file in $files) { . $file.FullName }
 
         # The variable normalizer decides what is sent; load it rather than mock it.

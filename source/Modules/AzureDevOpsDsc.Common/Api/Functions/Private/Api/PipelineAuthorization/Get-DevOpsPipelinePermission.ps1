@@ -39,7 +39,7 @@ Function Get-DevOpsPipelinePermission
     )
 
     $params = @{
-        Uri    = '{0}/{1}/_apis/pipelines/pipelinePermissions/{2}/{3}?api-version={4}' -f $ApiUri.TrimEnd('/'), $ProjectName, $ResourceType, $ResourceId, $ApiVersion
+        Uri    = '{0}/{1}/_apis/pipelines/pipelinePermissions/{2}/{3}?api-version={4}' -f $ApiUri.TrimEnd('/'), [System.Uri]::EscapeDataString([String]$ProjectName), $ResourceType, $ResourceId, $ApiVersion
         Method = 'GET'
     }
 

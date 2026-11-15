@@ -8,6 +8,7 @@ Describe 'Set-DevOpsPipelineVariables' -Tag "Unit", "Pipeline", "API" {
         }
 
         $files = Get-FunctionItem (Find-MockedFunctions -TestFilePath $currentFile)
+        . (Get-FunctionItem 'Register-AzDoSecretValue.ps1').FullName
         ForEach ($file in $files) { . $file.FullName }
 
         Mock -CommandName Set-DevOpsBuildDefinition -MockWith { param($ApiUri, $ProjectName, $DefinitionId, $Definition) return $Definition }

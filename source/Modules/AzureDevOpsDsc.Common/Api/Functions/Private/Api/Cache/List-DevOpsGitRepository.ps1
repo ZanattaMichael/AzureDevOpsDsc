@@ -40,7 +40,7 @@ function List-DevOpsGitRepository
     )
 
     $params = @{
-        Uri = "https://dev.azure.com/$OrganizationName/$ProjectName/_apis/git/repositories"
+        Uri = "https://dev.azure.com/$OrganizationName/$([System.Uri]::EscapeDataString([String]$ProjectName))/_apis/git/repositories"
         Method = 'Get'
     }
 

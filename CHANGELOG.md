@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- Requests and redaction
+  - `Protect-AzDoSecretString` now also redacts the exact value of every secret the
+    module holds, whatever its shape: the credential it signs in with, a client secret
+    or certificate password, each variable group or pipeline variable marked secret, and
+    the authorization parameters of a service connection. A new private helper,
+    `Register-AzDoSecretValue`, records them in memory. Values shorter than eight
+    characters are not recorded. A service connection's tenant and client ids are
+    therefore also shown as `<redacted>` in verbose output.
+  - Project names, feed names, extension ids and work item type names are escaped where
+    they are put into a request path or query string. A name containing `/`, `?`, `#`
+    or `..` could address a different endpoint; a name with such a character now also
+    works where it previously produced a malformed request.
+  - `Invoke-AzDevOpsApiRestMethod` sends every request with a timeout (300 seconds, or
+    `AZDODSC_REQUEST_TIMEOUT_SECONDS`) and stops paging when a response repeats its
+    continuation token or after 10000 pages (`AZDODSC_MAX_RESPONSE_PAGES`). A request
+    could previously wait, or page, for ever.
+
 - Secret leakage and untrusted input
   - Everything written through the module's `Write-Verbose`, `Write-Warning` and
     `Write-Error` proxies, and every error message built from text the module did not

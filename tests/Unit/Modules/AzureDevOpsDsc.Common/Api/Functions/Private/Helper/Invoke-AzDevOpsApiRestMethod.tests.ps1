@@ -424,6 +424,64 @@ Describe 'Invoke-AzDevOpsApiRestMethod' -Tag "Unit", "Helper" {
         }
     }
 
+    Context 'Paging and timeout limits' {
+
+        AfterEach {
+            Remove-Variable -Name ResponseHeaders -Scope Global -ErrorAction SilentlyContinue
+            $env:AZDODSC_MAX_RESPONSE_PAGES      = $null
+            $env:AZDODSC_REQUEST_TIMEOUT_SECONDS = $null
+        }
+
+        It 'Gives up when the response repeats the same continuation token, without retrying' {
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                Set-Variable responseHeaders -Value @{ 'x-ms-continuationtoken' = 'same-token' } -Scope Global
+                return @{ success = $true }
+            }
+
+            $parameters = $defaultParameters.Clone()
+            { Invoke-AzDevOpsApiRestMethod @parameters } | Should -Throw '*repeated the continuation token*'
+
+            Should -Invoke -CommandName Invoke-RestMethod -Exactly 2
+        }
+
+        It 'Gives up after AZDODSC_MAX_RESPONSE_PAGES pages' {
+            $env:AZDODSC_MAX_RESPONSE_PAGES = '3'
+            $script:page = 0
+            Mock -CommandName Invoke-RestMethod -MockWith {
+                $script:page++
+                Set-Variable responseHeaders -Value @{ 'x-ms-continuationtoken' = "token-$($script:page)" } -Scope Global
+                return @{ success = $true }
+            }
+
+            $parameters = $defaultParameters.Clone()
+            { Invoke-AzDevOpsApiRestMethod @parameters } | Should -Throw '*did not end after 3 pages*'
+
+            Should -Invoke -CommandName Invoke-RestMethod -Exactly 3
+        }
+
+        It 'Sends every request with a timeout, 300 seconds unless configured' {
+            Mock -CommandName Invoke-RestMethod -MockWith { return @{ success = $true } }
+
+            $parameters = $defaultParameters.Clone()
+            $null = Invoke-AzDevOpsApiRestMethod @parameters
+            Should -Invoke -CommandName Invoke-RestMethod -Exactly 1 -ParameterFilter { $TimeoutSec -eq 300 }
+
+            $env:AZDODSC_REQUEST_TIMEOUT_SECONDS = '45'
+            $null = Invoke-AzDevOpsApiRestMethod @parameters
+            Should -Invoke -CommandName Invoke-RestMethod -Exactly 1 -ParameterFilter { $TimeoutSec -eq 45 }
+        }
+
+        It 'Ignores a timeout setting that is not a positive number' {
+            Mock -CommandName Invoke-RestMethod -MockWith { return @{ success = $true } }
+            $env:AZDODSC_REQUEST_TIMEOUT_SECONDS = 'never'
+
+            $parameters = $defaultParameters.Clone()
+            $null = Invoke-AzDevOpsApiRestMethod @parameters
+
+            Should -Invoke -CommandName Invoke-RestMethod -Exactly 1 -ParameterFilter { $TimeoutSec -eq 300 }
+        }
+    }
+
     Context 'HTTP 429 Handling' {
 
         AfterAll {

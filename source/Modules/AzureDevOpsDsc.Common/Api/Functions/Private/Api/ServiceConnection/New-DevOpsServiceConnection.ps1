@@ -48,6 +48,16 @@ Function New-DevOpsServiceConnection
         $Authorization = @{ scheme = $scheme; parameters = $parameters }
     }
 
+    # Every authorization parameter is treated as a secret: which of them is one depends on the
+    # connection type, and redacting a tenant id from a log costs nothing.
+    if ($Authorization['parameters'] -is [System.Collections.IDictionary])
+    {
+        foreach ($parameterValue in $Authorization['parameters'].Values)
+        {
+            Register-AzDoSecretValue -Value $parameterValue
+        }
+    }
+
     # NOTE: the if/else is wrapped in @(...) because PowerShell unrolls a one-element array
     # emitted from an if/else expression the same way it unrolls a one-element array returned
     # from a function (CLAUDE.md gotcha #7). Without the outer @(), a single project reference
@@ -62,7 +72,7 @@ Function New-DevOpsServiceConnection
     })
 
     $params = @{
-        Uri         = '{0}/{1}/_apis/serviceendpoint/endpoints?api-version={2}' -f $ApiUri.TrimEnd('/'), $ProjectName, $ApiVersion
+        Uri         = '{0}/{1}/_apis/serviceendpoint/endpoints?api-version={2}' -f $ApiUri.TrimEnd('/'), [System.Uri]::EscapeDataString([String]$ProjectName), $ApiVersion
         Method      = 'POST'
         ContentType = 'application/json'
         Body        = @{

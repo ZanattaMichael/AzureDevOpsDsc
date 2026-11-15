@@ -60,6 +60,8 @@ Function Get-AzServicePrincipalToken
         $secureForStorage = $ClientSecret | ConvertTo-SecureString -AsPlainText -Force
     }
 
+    Register-AzDoSecretValue -Value $ClientSecret
+
     $tokenEndpoint = "https://login.microsoftonline.com/$TenantId/oauth2/token"
     $body = "grant_type=client_credentials&client_id=$([Uri]::EscapeDataString($ClientId))&client_secret=$([Uri]::EscapeDataString($ClientSecret))&resource=499b84ac-1321-427f-aa17-267ca6975798"
 

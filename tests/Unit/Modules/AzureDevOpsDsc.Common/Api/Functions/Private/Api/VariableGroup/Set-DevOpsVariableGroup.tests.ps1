@@ -8,6 +8,7 @@ Describe 'Set-DevOpsVariableGroup' -Tag "Unit", "VariableGroup", "API" {
         }
 
         $files = Get-FunctionItem (Find-MockedFunctions -TestFilePath $currentFile)
+        . (Get-FunctionItem 'Register-AzDoSecretValue.ps1').FullName
         ForEach ($file in $files) { . $file.FullName }
 
         # The variable normalizer is a real dependency of the body shape; load it rather than mock it.

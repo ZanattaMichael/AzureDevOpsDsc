@@ -7,7 +7,7 @@ Function Get-DevOpsBranchPolicy
         [Parameter(Mandatory)][Object]$PolicyId,
         [Parameter()][string]$ApiVersion = '7.1'
     )
-    $uri = '{0}/{1}/_apis/policy/configurations/{2}?api-version={3}' -f $ApiUri.TrimEnd('/'), $ProjectName, $PolicyId, $ApiVersion
+    $uri = '{0}/{1}/_apis/policy/configurations/{2}?api-version={3}' -f $ApiUri.TrimEnd('/'), [System.Uri]::EscapeDataString([String]$ProjectName), $PolicyId, $ApiVersion
     $params = @{
         Uri    = $uri
         Method = 'GET'

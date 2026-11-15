@@ -10,7 +10,7 @@ Function New-DevOpsArtifactFeed
         [Parameter()][bool]$BadgesEnabled = $false,
         [Parameter()][string]$ApiVersion = '7.1-preview.1'
     )
-    $baseUri = if ($ProjectName) { '{0}/{1}' -f $ApiUri.TrimEnd('/'), $ProjectName } else { $ApiUri }
+    $baseUri = if ($ProjectName) { '{0}/{1}' -f $ApiUri.TrimEnd('/'), [System.Uri]::EscapeDataString([String]$ProjectName) } else { $ApiUri }
     $params = @{
         Uri         = '{0}/_apis/packaging/feeds?api-version={1}' -f $baseUri, $ApiVersion
         Method      = 'POST'
@@ -34,7 +34,7 @@ Function New-DevOpsArtifactFeed
         {
             Write-Verbose "[New-DevOpsArtifactFeed] Feed '$FeedName' conflict (409). Fetching existing feed by name..."
             $getUriParams = @{
-                Uri    = '{0}/_apis/packaging/feeds/{1}?api-version={2}' -f $baseUri, $FeedName, $ApiVersion
+                Uri    = '{0}/_apis/packaging/feeds/{1}?api-version={2}' -f $BaseUri, [System.Uri]::EscapeDataString([String]$FeedName), $ApiVersion
                 Method = 'GET'
             }
             try
@@ -47,7 +47,7 @@ Function New-DevOpsArtifactFeed
             # Try org-scope direct GET as fallback
             $orgBaseUri = $ApiUri.TrimEnd('/')
             $getOrgParams = @{
-                Uri    = '{0}/_apis/packaging/feeds/{1}?api-version={2}' -f $orgBaseUri, $FeedName, $ApiVersion
+                Uri    = '{0}/_apis/packaging/feeds/{1}?api-version={2}' -f $orgBaseUri, [System.Uri]::EscapeDataString([String]$FeedName), $ApiVersion
                 Method = 'GET'
             }
             try
