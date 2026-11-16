@@ -11,3 +11,6 @@
 *.xl* binary
 *.pfx binary
 coverage.xml
+
+# Logo and image exports are binary
+*.png binary
