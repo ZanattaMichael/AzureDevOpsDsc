@@ -1,296 +1,273 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1010 780" width="1010" height="780" role="img" aria-labelledby="t d">
-  <title id="t">AzureDevOpsDscNative resource mind map</title>
-  <desc id="d">The 84 DSC resources of AzureDevOpsDscNative, grouped by area. Projects &amp; teams: AzDoProject, AzDoProjectServices, AzDoOrganizationSettings, AzDoProjectGroup, AzDoOrganizationGroup, AzDoGroupMember, AzDoTeam, AzDoTeamMember, AzDoTeamSettings, AzDoUserEntitlement, AzDoGroupEntitlement, AzDoServicePrincipalEntitlement; Repositories: AzDoGitRepository, AzDoRepositorySettings, AzDoBranchPolicy; Permissions: AzDoProjectPermission, AzDoOrganizationPermission, AzDoGitPermission, AzDoAreaPermission, AzDoIterationPermission, AzDoAgentPoolPermission, AzDoEnvironmentPermission, AzDoPipelinePermission, AzDoPipelineFolderPermission, AzDoServiceConnectionPermission, AzDoVariableGroupPermission, AzDoSecureFilePermission, AzDoArtifactFeedPermission, AzDoSecurityNamespacePermission, AzDoGroupPermission, AzDoQueryPermission, AzDoReleaseFolderPermission, AzDoReleaseDefinitionPermission, AzDoTaggingPermission, AzDoAnalyticsPermission, AzDoAnalyticsViewsPermission; Classic releases: AzDoReleaseFolder; Test management: AzDoTestVariable, AzDoTestConfiguration, AzDoTestPlan, AzDoTestSuite; Pipelines: AzDoPipeline, AzDoPipelineFolder, AzDoPipelineEnvironment, AzDoEnvironmentApproval, AzDoEnvironmentKubernetesResource, AzDoEnvironmentVMResource, AzDoCheckConfiguration, AzDoPipelineAuthorization, AzDoDeploymentGroup, AzDoDeploymentGroupTarget, AzDoAgentPool, AzDoAgentQueue, AzDoTaskGroup, AzDoTaskGroupPermission, AzDoVariableGroup, AzDoSecureFile, AzDoServiceConnection, AzDoPipelineSettings, AzDoBuildRetentionSettings; Boards: AzDoAreaNodes, AzDoIterationNodes, AzDoWIPTags, AzDoWIPTagHygiene, AzDoQueryFolder, AzDoWorkItemQuery, AzDoNotificationSubscription, AzDoDashboard; Process: AzDoProcess, AzDoPicklist, AzDoProcessWorkItemType, AzDoProcessField, AzDoProcessState, AzDoProcessRule, AzDoProcessBehavior, AzDoProcessPermission; Artifacts &amp; more: AzDoArtifactFeed, AzDoArtifactFeedSettings, AzDoArtifactFeedView, AzDoWiki, AzDoWikiPage, AzDoExtension, AzDoAuditStream, AzDoServiceHook.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1089 753" width="1089" height="753" role="img" aria-labelledby="t d">
+  <title id="t">AzureDevOpsDscNative resource map</title>
+  <desc id="d">The 84 DSC resources of AzureDevOpsDscNative drawn as a solar system: the module is the sun, each resource area is a planet and each resource is a moon. Projects &amp; teams: AzDoProject, AzDoProjectServices, AzDoOrganizationSettings, AzDoProjectGroup, AzDoOrganizationGroup, AzDoGroupMember, AzDoTeam, AzDoTeamMember, AzDoTeamSettings, AzDoUserEntitlement, AzDoGroupEntitlement, AzDoServicePrincipalEntitlement; Repositories: AzDoGitRepository, AzDoRepositorySettings, AzDoBranchPolicy; Permissions: AzDoProjectPermission, AzDoOrganizationPermission, AzDoGitPermission, AzDoAreaPermission, AzDoIterationPermission, AzDoAgentPoolPermission, AzDoEnvironmentPermission, AzDoPipelinePermission, AzDoPipelineFolderPermission, AzDoServiceConnectionPermission, AzDoVariableGroupPermission, AzDoSecureFilePermission, AzDoArtifactFeedPermission, AzDoSecurityNamespacePermission, AzDoGroupPermission, AzDoQueryPermission, AzDoReleaseFolderPermission, AzDoReleaseDefinitionPermission, AzDoTaggingPermission, AzDoAnalyticsPermission, AzDoAnalyticsViewsPermission; Classic releases: AzDoReleaseFolder; Test management: AzDoTestVariable, AzDoTestConfiguration, AzDoTestPlan, AzDoTestSuite; Pipelines: AzDoPipeline, AzDoPipelineFolder, AzDoPipelineEnvironment, AzDoEnvironmentApproval, AzDoEnvironmentKubernetesResource, AzDoEnvironmentVMResource, AzDoCheckConfiguration, AzDoPipelineAuthorization, AzDoDeploymentGroup, AzDoDeploymentGroupTarget, AzDoAgentPool, AzDoAgentQueue, AzDoTaskGroup, AzDoTaskGroupPermission, AzDoVariableGroup, AzDoSecureFile, AzDoServiceConnection, AzDoPipelineSettings, AzDoBuildRetentionSettings; Boards: AzDoAreaNodes, AzDoIterationNodes, AzDoWIPTags, AzDoWIPTagHygiene, AzDoQueryFolder, AzDoWorkItemQuery, AzDoNotificationSubscription, AzDoDashboard; Process: AzDoProcess, AzDoPicklist, AzDoProcessWorkItemType, AzDoProcessField, AzDoProcessState, AzDoProcessRule, AzDoProcessBehavior, AzDoProcessPermission; Artifacts &amp; more: AzDoArtifactFeed, AzDoArtifactFeedSettings, AzDoArtifactFeedView, AzDoWiki, AzDoWikiPage, AzDoExtension, AzDoAuditStream, AzDoServiceHook.</desc>
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0B5CAD"/><stop offset="1" stop-color="#28A8EA"/></linearGradient>
+    <clipPath id="panel"><rect width="1089" height="753" rx="20"/></clipPath>
+    <radialGradient id="sun" cx="0.36" cy="0.3" r="0.8"><stop offset="0" stop-color="#7FD3FA"/><stop offset="0.45" stop-color="#28A8EA"/><stop offset="1" stop-color="#0B4F96"/></radialGradient>
+    <radialGradient id="glow"><stop offset="0.35" stop-color="#28A8EA" stop-opacity="0.38"/><stop offset="1" stop-color="#28A8EA" stop-opacity="0"/></radialGradient>
+    <radialGradient id="moon" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#FFFFFF"/><stop offset="0.6" stop-color="#C3CCD8"/><stop offset="1" stop-color="#5D6878"/></radialGradient>
+    <radialGradient id="p0" cx="0.34" cy="0.28" r="0.85"><stop offset="0" stop-color="#D4F0FF"/><stop offset="0.4" stop-color="#5CC2F2"/><stop offset="1" stop-color="#0E4C7A"/></radialGradient>
+    <radialGradient id="p1" cx="0.34" cy="0.28" r="0.85"><stop offset="0" stop-color="#DDFBEF"/><stop offset="0.4" stop-color="#7BE8BF"/><stop offset="1" stop-color="#136B4C"/></radialGradient>
+    <radialGradient id="p2" cx="0.34" cy="0.28" r="0.85"><stop offset="0" stop-color="#FFEFC9"/><stop offset="0.4" stop-color="#F5C26B"/><stop offset="1" stop-color="#8A5A0B"/></radialGradient>
+    <radialGradient id="p3" cx="0.34" cy="0.28" r="0.85"><stop offset="0" stop-color="#FFE0CC"/><stop offset="0.4" stop-color="#F59E6B"/><stop offset="1" stop-color="#8A3F12"/></radialGradient>
+    <radialGradient id="p4" cx="0.34" cy="0.28" r="0.85"><stop offset="0" stop-color="#FFE0EC"/><stop offset="0.4" stop-color="#F29CC0"/><stop offset="1" stop-color="#8A2A55"/></radialGradient>
+    <radialGradient id="p5" cx="0.34" cy="0.28" r="0.85"><stop offset="0" stop-color="#E0EAFF"/><stop offset="0.4" stop-color="#8FB4FF"/><stop offset="1" stop-color="#27448F"/></radialGradient>
+    <radialGradient id="p6" cx="0.34" cy="0.28" r="0.85"><stop offset="0" stop-color="#E6F9D2"/><stop offset="0.4" stop-color="#A5E075"/><stop offset="1" stop-color="#3F7313"/></radialGradient>
+    <radialGradient id="p7" cx="0.34" cy="0.28" r="0.85"><stop offset="0" stop-color="#EEE7FF"/><stop offset="0.4" stop-color="#C4B0FA"/><stop offset="1" stop-color="#4E3A99"/></radialGradient>
+    <radialGradient id="p8" cx="0.34" cy="0.28" r="0.85"><stop offset="0" stop-color="#D5F7F1"/><stop offset="0.4" stop-color="#5FD4C4"/><stop offset="1" stop-color="#11695D"/></radialGradient>
   </defs>
-  <rect width="1010" height="780" rx="20" fill="#0D1117"/>
-  <g fill="none" stroke-linecap="round">
-    <path d="M431.0 390.0C413.5 390.0 413.5 129.2 396.0 129.2" stroke="#5CC2F2" stroke-width="2.5" opacity="0.9"/>
-    <path d="M258.0 129.2C243.5 129.2 243.5 44.0 229.0 44.0" stroke="#5CC2F2" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 129.2C243.5 129.2 243.5 59.5 229.0 59.5" stroke="#5CC2F2" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 129.2C243.5 129.2 243.5 75.0 229.0 75.0" stroke="#5CC2F2" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 129.2C243.5 129.2 243.5 90.5 229.0 90.5" stroke="#5CC2F2" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 129.2C243.5 129.2 243.5 106.0 229.0 106.0" stroke="#5CC2F2" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 129.2C243.5 129.2 243.5 121.5 229.0 121.5" stroke="#5CC2F2" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 129.2C243.5 129.2 243.5 137.0 229.0 137.0" stroke="#5CC2F2" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 129.2C243.5 129.2 243.5 152.5 229.0 152.5" stroke="#5CC2F2" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 129.2C243.5 129.2 243.5 168.0 229.0 168.0" stroke="#5CC2F2" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 129.2C243.5 129.2 243.5 183.5 229.0 183.5" stroke="#5CC2F2" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 129.2C243.5 129.2 243.5 199.0 229.0 199.0" stroke="#5CC2F2" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 129.2C243.5 129.2 243.5 214.5 229.0 214.5" stroke="#5CC2F2" stroke-width="1.1" opacity="0.6"/>
-    <path d="M431.0 390.0C413.5 390.0 413.5 263.5 396.0 263.5" stroke="#9FF3D0" stroke-width="2.5" opacity="0.9"/>
-    <path d="M258.0 263.5C243.5 263.5 243.5 248.0 229.0 248.0" stroke="#9FF3D0" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 263.5C243.5 263.5 243.5 263.5 229.0 263.5" stroke="#9FF3D0" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 263.5C243.5 263.5 243.5 279.0 229.0 279.0" stroke="#9FF3D0" stroke-width="1.1" opacity="0.6"/>
-    <path d="M431.0 390.0C413.5 390.0 413.5 467.5 396.0 467.5" stroke="#F5C26B" stroke-width="2.5" opacity="0.9"/>
-    <path d="M258.0 467.5C243.5 467.5 243.5 312.5 229.0 312.5" stroke="#F5C26B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 467.5C243.5 467.5 243.5 328.0 229.0 328.0" stroke="#F5C26B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 467.5C243.5 467.5 243.5 343.5 229.0 343.5" stroke="#F5C26B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 467.5C243.5 467.5 243.5 359.0 229.0 359.0" stroke="#F5C26B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 467.5C243.5 467.5 243.5 374.5 229.0 374.5" stroke="#F5C26B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 467.5C243.5 467.5 243.5 390.0 229.0 390.0" stroke="#F5C26B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 467.5C243.5 467.5 243.5 405.5 229.0 405.5" stroke="#F5C26B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 467.5C243.5 467.5 243.5 421.0 229.0 421.0" stroke="#F5C26B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 467.5C243.5 467.5 243.5 436.5 229.0 436.5" stroke="#F5C26B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 467.5C243.5 467.5 243.5 452.0 229.0 452.0" stroke="#F5C26B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 467.5C243.5 467.5 243.5 467.5 229.0 467.5" stroke="#F5C26B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 467.5C243.5 467.5 243.5 483.0 229.0 483.0" stroke="#F5C26B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 467.5C243.5 467.5 243.5 498.5 229.0 498.5" stroke="#F5C26B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 467.5C243.5 467.5 243.5 514.0 229.0 514.0" stroke="#F5C26B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 467.5C243.5 467.5 243.5 529.5 229.0 529.5" stroke="#F5C26B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 467.5C243.5 467.5 243.5 545.0 229.0 545.0" stroke="#F5C26B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 467.5C243.5 467.5 243.5 560.5 229.0 560.5" stroke="#F5C26B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 467.5C243.5 467.5 243.5 576.0 229.0 576.0" stroke="#F5C26B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 467.5C243.5 467.5 243.5 591.5 229.0 591.5" stroke="#F5C26B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 467.5C243.5 467.5 243.5 607.0 229.0 607.0" stroke="#F5C26B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 467.5C243.5 467.5 243.5 622.5 229.0 622.5" stroke="#F5C26B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M431.0 390.0C413.5 390.0 413.5 656.0 396.0 656.0" stroke="#F59E6B" stroke-width="2.5" opacity="0.9"/>
-    <path d="M258.0 656.0C243.5 656.0 243.5 656.0 229.0 656.0" stroke="#F59E6B" stroke-width="1.1" opacity="0.6"/>
-    <path d="M431.0 390.0C413.5 390.0 413.5 712.8 396.0 712.8" stroke="#F29CC0" stroke-width="2.5" opacity="0.9"/>
-    <path d="M258.0 712.8C243.5 712.8 243.5 689.5 229.0 689.5" stroke="#F29CC0" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 712.8C243.5 712.8 243.5 705.0 229.0 705.0" stroke="#F29CC0" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 712.8C243.5 712.8 243.5 720.5 229.0 720.5" stroke="#F29CC0" stroke-width="1.1" opacity="0.6"/>
-    <path d="M258.0 712.8C243.5 712.8 243.5 736.0 229.0 736.0" stroke="#F29CC0" stroke-width="1.1" opacity="0.6"/>
-    <path d="M579.0 390.0C596.5 390.0 596.5 177.0 614.0 177.0" stroke="#8FB4FF" stroke-width="2.5" opacity="0.9"/>
-    <path d="M752.0 177.0C766.5 177.0 766.5 37.5 781.0 37.5" stroke="#8FB4FF" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 177.0C766.5 177.0 766.5 53.0 781.0 53.0" stroke="#8FB4FF" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 177.0C766.5 177.0 766.5 68.5 781.0 68.5" stroke="#8FB4FF" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 177.0C766.5 177.0 766.5 84.0 781.0 84.0" stroke="#8FB4FF" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 177.0C766.5 177.0 766.5 99.5 781.0 99.5" stroke="#8FB4FF" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 177.0C766.5 177.0 766.5 115.0 781.0 115.0" stroke="#8FB4FF" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 177.0C766.5 177.0 766.5 130.5 781.0 130.5" stroke="#8FB4FF" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 177.0C766.5 177.0 766.5 146.0 781.0 146.0" stroke="#8FB4FF" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 177.0C766.5 177.0 766.5 161.5 781.0 161.5" stroke="#8FB4FF" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 177.0C766.5 177.0 766.5 177.0 781.0 177.0" stroke="#8FB4FF" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 177.0C766.5 177.0 766.5 192.5 781.0 192.5" stroke="#8FB4FF" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 177.0C766.5 177.0 766.5 208.0 781.0 208.0" stroke="#8FB4FF" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 177.0C766.5 177.0 766.5 223.5 781.0 223.5" stroke="#8FB4FF" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 177.0C766.5 177.0 766.5 239.0 781.0 239.0" stroke="#8FB4FF" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 177.0C766.5 177.0 766.5 254.5 781.0 254.5" stroke="#8FB4FF" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 177.0C766.5 177.0 766.5 270.0 781.0 270.0" stroke="#8FB4FF" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 177.0C766.5 177.0 766.5 285.5 781.0 285.5" stroke="#8FB4FF" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 177.0C766.5 177.0 766.5 301.0 781.0 301.0" stroke="#8FB4FF" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 177.0C766.5 177.0 766.5 316.5 781.0 316.5" stroke="#8FB4FF" stroke-width="1.1" opacity="0.6"/>
-    <path d="M579.0 390.0C596.5 390.0 596.5 404.2 614.0 404.2" stroke="#A5E075" stroke-width="2.5" opacity="0.9"/>
-    <path d="M752.0 404.2C766.5 404.2 766.5 350.0 781.0 350.0" stroke="#A5E075" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 404.2C766.5 404.2 766.5 365.5 781.0 365.5" stroke="#A5E075" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 404.2C766.5 404.2 766.5 381.0 781.0 381.0" stroke="#A5E075" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 404.2C766.5 404.2 766.5 396.5 781.0 396.5" stroke="#A5E075" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 404.2C766.5 404.2 766.5 412.0 781.0 412.0" stroke="#A5E075" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 404.2C766.5 404.2 766.5 427.5 781.0 427.5" stroke="#A5E075" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 404.2C766.5 404.2 766.5 443.0 781.0 443.0" stroke="#A5E075" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 404.2C766.5 404.2 766.5 458.5 781.0 458.5" stroke="#A5E075" stroke-width="1.1" opacity="0.6"/>
-    <path d="M579.0 390.0C596.5 390.0 596.5 546.2 614.0 546.2" stroke="#C4B0FA" stroke-width="2.5" opacity="0.9"/>
-    <path d="M752.0 546.2C766.5 546.2 766.5 492.0 781.0 492.0" stroke="#C4B0FA" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 546.2C766.5 546.2 766.5 507.5 781.0 507.5" stroke="#C4B0FA" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 546.2C766.5 546.2 766.5 523.0 781.0 523.0" stroke="#C4B0FA" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 546.2C766.5 546.2 766.5 538.5 781.0 538.5" stroke="#C4B0FA" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 546.2C766.5 546.2 766.5 554.0 781.0 554.0" stroke="#C4B0FA" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 546.2C766.5 546.2 766.5 569.5 781.0 569.5" stroke="#C4B0FA" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 546.2C766.5 546.2 766.5 585.0 781.0 585.0" stroke="#C4B0FA" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 546.2C766.5 546.2 766.5 600.5 781.0 600.5" stroke="#C4B0FA" stroke-width="1.1" opacity="0.6"/>
-    <path d="M579.0 390.0C596.5 390.0 596.5 688.2 614.0 688.2" stroke="#5FD4C4" stroke-width="2.5" opacity="0.9"/>
-    <path d="M752.0 688.2C766.5 688.2 766.5 634.0 781.0 634.0" stroke="#5FD4C4" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 688.2C766.5 688.2 766.5 649.5 781.0 649.5" stroke="#5FD4C4" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 688.2C766.5 688.2 766.5 665.0 781.0 665.0" stroke="#5FD4C4" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 688.2C766.5 688.2 766.5 680.5 781.0 680.5" stroke="#5FD4C4" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 688.2C766.5 688.2 766.5 696.0 781.0 696.0" stroke="#5FD4C4" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 688.2C766.5 688.2 766.5 711.5 781.0 711.5" stroke="#5FD4C4" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 688.2C766.5 688.2 766.5 727.0 781.0 727.0" stroke="#5FD4C4" stroke-width="1.1" opacity="0.6"/>
-    <path d="M752.0 688.2C766.5 688.2 766.5 742.5 781.0 742.5" stroke="#5FD4C4" stroke-width="1.1" opacity="0.6"/>
+  <rect width="1089" height="753" rx="20" fill="#0D1117"/>
+  <g clip-path="url(#panel)">
+    <g fill="#DCE6F2"><circle cx="797" cy="688" r="0.5" opacity="0.7"/><circle cx="5" cy="748" r="0.8" opacity="0.35"/><circle cx="501" cy="643" r="0.8" opacity="0.35"/><circle cx="593" cy="569" r="0.8" opacity="0.7"/><circle cx="434" cy="674" r="0.8" opacity="0.35"/><circle cx="137" cy="707" r="0.5" opacity="0.25"/><circle cx="163" cy="376" r="0.8" opacity="0.25"/><circle cx="13" cy="152" r="1.0" opacity="0.35"/><circle cx="319" cy="85" r="0.5" opacity="0.25"/><circle cx="593" cy="350" r="0.5" opacity="0.35"/><circle cx="830" cy="745" r="1.0" opacity="0.25"/><circle cx="775" cy="474" r="0.6" opacity="0.35"/><circle cx="171" cy="140" r="0.8" opacity="0.5"/><circle cx="164" cy="609" r="1.0" opacity="0.7"/><circle cx="188" cy="694" r="0.5" opacity="0.25"/><circle cx="14" cy="642" r="1.2" opacity="0.5"/><circle cx="1009" cy="479" r="0.6" opacity="0.7"/><circle cx="574" cy="669" r="1.0" opacity="0.5"/><circle cx="386" cy="501" r="0.8" opacity="0.5"/><circle cx="112" cy="597" r="0.8" opacity="0.5"/><circle cx="970" cy="522" r="0.8" opacity="0.25"/><circle cx="619" cy="166" r="1.0" opacity="0.5"/><circle cx="818" cy="247" r="0.8" opacity="0.5"/><circle cx="953" cy="2" r="0.5" opacity="0.5"/><circle cx="893" cy="101" r="0.8" opacity="0.7"/><circle cx="193" cy="361" r="0.6" opacity="0.7"/><circle cx="678" cy="198" r="0.5" opacity="0.25"/><circle cx="1072" cy="412" r="0.6" opacity="0.35"/><circle cx="994" cy="323" r="0.8" opacity="0.25"/><circle cx="708" cy="650" r="1.2" opacity="0.7"/><circle cx="119" cy="274" r="0.6" opacity="0.5"/><circle cx="376" cy="698" r="1.0" opacity="0.25"/><circle cx="305" cy="679" r="0.8" opacity="0.25"/><circle cx="1082" cy="509" r="0.8" opacity="0.5"/><circle cx="844" cy="418" r="1.2" opacity="0.25"/><circle cx="495" cy="250" r="0.8" opacity="0.5"/><circle cx="124" cy="232" r="0.8" opacity="0.5"/><circle cx="241" cy="120" r="1.0" opacity="0.25"/><circle cx="507" cy="562" r="1.2" opacity="0.5"/><circle cx="758" cy="724" r="1.0" opacity="0.7"/><circle cx="753" cy="476" r="0.8" opacity="0.25"/><circle cx="1077" cy="38" r="0.5" opacity="0.25"/><circle cx="118" cy="73" r="1.0" opacity="0.5"/><circle cx="95" cy="365" r="1.2" opacity="0.5"/><circle cx="498" cy="26" r="1.0" opacity="0.35"/><circle cx="425" cy="429" r="0.8" opacity="0.5"/><circle cx="617" cy="678" r="0.5" opacity="0.25"/><circle cx="774" cy="275" r="1.0" opacity="0.5"/><circle cx="540" cy="247" r="1.0" opacity="0.25"/><circle cx="903" cy="8" r="0.8" opacity="0.25"/><circle cx="917" cy="495" r="0.6" opacity="0.25"/><circle cx="309" cy="154" r="0.6" opacity="0.5"/><circle cx="155" cy="701" r="0.5" opacity="0.35"/><circle cx="980" cy="249" r="1.2" opacity="0.5"/><circle cx="949" cy="495" r="1.2" opacity="0.35"/><circle cx="512" cy="9" r="1.0" opacity="0.7"/><circle cx="461" cy="193" r="0.8" opacity="0.25"/><circle cx="507" cy="190" r="1.0" opacity="0.5"/><circle cx="271" cy="359" r="1.2" opacity="0.7"/><circle cx="311" cy="418" r="0.5" opacity="0.7"/><circle cx="527" cy="160" r="1.0" opacity="0.35"/><circle cx="658" cy="248" r="1.0" opacity="0.5"/><circle cx="1036" cy="10" r="0.5" opacity="0.7"/><circle cx="891" cy="548" r="0.6" opacity="0.5"/><circle cx="881" cy="673" r="1.2" opacity="0.5"/><circle cx="87" cy="175" r="0.6" opacity="0.35"/><circle cx="954" cy="238" r="1.2" opacity="0.35"/><circle cx="16" cy="425" r="1.2" opacity="0.35"/><circle cx="610" cy="95" r="0.5" opacity="0.25"/><circle cx="764" cy="398" r="0.8" opacity="0.25"/><circle cx="989" cy="305" r="1.2" opacity="0.35"/><circle cx="619" cy="409" r="1.0" opacity="0.7"/><circle cx="226" cy="519" r="1.2" opacity="0.7"/><circle cx="2" cy="565" r="0.5" opacity="0.5"/><circle cx="855" cy="204" r="0.8" opacity="0.25"/><circle cx="815" cy="669" r="0.5" opacity="0.7"/><circle cx="477" cy="659" r="1.2" opacity="0.5"/><circle cx="148" cy="568" r="0.6" opacity="0.7"/><circle cx="162" cy="624" r="0.8" opacity="0.35"/><circle cx="350" cy="260" r="1.0" opacity="0.35"/><circle cx="1045" cy="332" r="0.8" opacity="0.7"/><circle cx="753" cy="645" r="0.5" opacity="0.7"/><circle cx="286" cy="749" r="1.0" opacity="0.25"/><circle cx="1080" cy="182" r="1.0" opacity="0.7"/><circle cx="201" cy="385" r="0.5" opacity="0.35"/><circle cx="986" cy="2" r="0.6" opacity="0.5"/><circle cx="798" cy="645" r="1.0" opacity="0.35"/><circle cx="280" cy="613" r="0.6" opacity="0.35"/><circle cx="1077" cy="378" r="1.0" opacity="0.35"/><circle cx="1081" cy="565" r="1.0" opacity="0.25"/><circle cx="916" cy="709" r="0.6" opacity="0.35"/><circle cx="199" cy="51" r="1.2" opacity="0.25"/><circle cx="860" cy="430" r="1.2" opacity="0.5"/><circle cx="219" cy="673" r="1.0" opacity="0.7"/><circle cx="628" cy="372" r="0.6" opacity="0.5"/><circle cx="861" cy="39" r="0.5" opacity="0.5"/><circle cx="693" cy="177" r="1.2" opacity="0.5"/><circle cx="1023" cy="56" r="0.5" opacity="0.5"/><circle cx="415" cy="214" r="0.8" opacity="0.7"/><circle cx="647" cy="107" r="0.6" opacity="0.5"/><circle cx="362" cy="253" r="0.6" opacity="0.35"/><circle cx="117" cy="483" r="0.6" opacity="0.25"/><circle cx="621" cy="87" r="1.0" opacity="0.35"/><circle cx="929" cy="111" r="0.6" opacity="0.7"/><circle cx="264" cy="644" r="0.5" opacity="0.35"/><circle cx="125" cy="702" r="1.2" opacity="0.25"/><circle cx="22" cy="373" r="0.6" opacity="0.7"/><circle cx="967" cy="271" r="0.6" opacity="0.5"/><circle cx="39" cy="118" r="1.0" opacity="0.5"/><circle cx="569" cy="738" r="1.2" opacity="0.35"/><circle cx="693" cy="604" r="0.8" opacity="0.35"/><circle cx="317" cy="475" r="0.6" opacity="0.7"/><circle cx="1069" cy="55" r="0.6" opacity="0.5"/><circle cx="462" cy="655" r="1.0" opacity="0.7"/><circle cx="130" cy="352" r="0.8" opacity="0.7"/><circle cx="188" cy="526" r="0.6" opacity="0.7"/><circle cx="336" cy="722" r="0.6" opacity="0.35"/><circle cx="1028" cy="67" r="0.8" opacity="0.25"/><circle cx="16" cy="620" r="0.5" opacity="0.7"/><circle cx="709" cy="269" r="0.6" opacity="0.35"/><circle cx="1039" cy="162" r="0.6" opacity="0.7"/><circle cx="999" cy="309" r="1.2" opacity="0.25"/><circle cx="309" cy="9" r="1.2" opacity="0.7"/><circle cx="961" cy="670" r="0.6" opacity="0.7"/><circle cx="955" cy="528" r="0.8" opacity="0.5"/><circle cx="21" cy="254" r="0.8" opacity="0.7"/><circle cx="660" cy="599" r="1.0" opacity="0.7"/><circle cx="100" cy="70" r="0.6" opacity="0.5"/><circle cx="637" cy="517" r="0.5" opacity="0.5"/><circle cx="232" cy="101" r="0.8" opacity="0.35"/><circle cx="954" cy="695" r="0.5" opacity="0.25"/><circle cx="298" cy="576" r="0.8" opacity="0.5"/><circle cx="929" cy="668" r="0.6" opacity="0.7"/><circle cx="450" cy="381" r="1.0" opacity="0.25"/><circle cx="80" cy="285" r="1.2" opacity="0.35"/><circle cx="800" cy="651" r="0.5" opacity="0.25"/><circle cx="50" cy="77" r="0.6" opacity="0.5"/><circle cx="579" cy="512" r="0.6" opacity="0.35"/><circle cx="448" cy="705" r="0.6" opacity="0.35"/><circle cx="600" cy="489" r="0.5" opacity="0.7"/><circle cx="466" cy="538" r="0.5" opacity="0.7"/><circle cx="475" cy="98" r="0.6" opacity="0.7"/><circle cx="272" cy="751" r="1.0" opacity="0.25"/><circle cx="598" cy="604" r="0.8" opacity="0.35"/><circle cx="827" cy="27" r="1.2" opacity="0.5"/><circle cx="891" cy="391" r="0.6" opacity="0.7"/><circle cx="1058" cy="128" r="0.6" opacity="0.25"/><circle cx="575" cy="550" r="0.8" opacity="0.5"/><circle cx="535" cy="685" r="1.0" opacity="0.25"/><circle cx="489" cy="65" r="1.0" opacity="0.7"/></g>
+    <g fill="none" stroke="#8FB4FF" stroke-opacity="0.16" stroke-width="1">
+      <ellipse cx="544.5" cy="308.0" rx="383.9" ry="238.0"/>
+      <ellipse cx="544.5" cy="308.0" rx="382.7" ry="237.3"/>
+      <ellipse cx="544.5" cy="308.0" rx="238.0" ry="147.6"/>
+      <ellipse cx="544.5" cy="308.0" rx="236.1" ry="146.4"/>
+      <ellipse cx="544.5" cy="308.0" rx="420.7" ry="260.9"/>
+      <ellipse cx="544.5" cy="308.0" rx="649.3" ry="402.6"/>
+      <ellipse cx="544.5" cy="308.0" rx="352.0" ry="218.2"/>
+      <ellipse cx="544.5" cy="308.0" rx="492.7" ry="305.5"/>
+      <ellipse cx="544.5" cy="308.0" rx="648.3" ry="402.0"/>
+    </g>
+    <circle cx="544.5" cy="308.0" r="144" fill="url(#glow)"/>
   </g>
   <g font-family="'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif">
-    <circle cx="229.0" cy="44.0" r="2" fill="#5CC2F2"/>
-    <text x="222.0" y="48.2" text-anchor="end" font-size="12.5" fill="#E6EDF3">Project</text>
-    <circle cx="229.0" cy="59.5" r="2" fill="#5CC2F2"/>
-    <text x="222.0" y="63.7" text-anchor="end" font-size="12.5" fill="#E6EDF3">ProjectServices</text>
-    <circle cx="229.0" cy="75.0" r="2" fill="#5CC2F2"/>
-    <text x="222.0" y="79.2" text-anchor="end" font-size="12.5" fill="#E6EDF3">OrganizationSettings</text>
-    <circle cx="229.0" cy="90.5" r="2" fill="#5CC2F2"/>
-    <text x="222.0" y="94.7" text-anchor="end" font-size="12.5" fill="#E6EDF3">ProjectGroup</text>
-    <circle cx="229.0" cy="106.0" r="2" fill="#5CC2F2"/>
-    <text x="222.0" y="110.2" text-anchor="end" font-size="12.5" fill="#E6EDF3">OrganizationGroup</text>
-    <circle cx="229.0" cy="121.5" r="2" fill="#5CC2F2"/>
-    <text x="222.0" y="125.7" text-anchor="end" font-size="12.5" fill="#E6EDF3">GroupMember</text>
-    <circle cx="229.0" cy="137.0" r="2" fill="#5CC2F2"/>
-    <text x="222.0" y="141.2" text-anchor="end" font-size="12.5" fill="#E6EDF3">Team</text>
-    <circle cx="229.0" cy="152.5" r="2" fill="#5CC2F2"/>
-    <text x="222.0" y="156.7" text-anchor="end" font-size="12.5" fill="#E6EDF3">TeamMember</text>
-    <circle cx="229.0" cy="168.0" r="2" fill="#5CC2F2"/>
-    <text x="222.0" y="172.2" text-anchor="end" font-size="12.5" fill="#E6EDF3">TeamSettings</text>
-    <circle cx="229.0" cy="183.5" r="2" fill="#5CC2F2"/>
-    <text x="222.0" y="187.7" text-anchor="end" font-size="12.5" fill="#E6EDF3">UserEntitlement</text>
-    <circle cx="229.0" cy="199.0" r="2" fill="#5CC2F2"/>
-    <text x="222.0" y="203.2" text-anchor="end" font-size="12.5" fill="#E6EDF3">GroupEntitlement</text>
-    <circle cx="229.0" cy="214.5" r="2" fill="#5CC2F2"/>
-    <text x="222.0" y="218.7" text-anchor="end" font-size="12.5" fill="#E6EDF3">ServicePrincipalEntitlement</text>
-    <rect x="258.0" y="116.2" width="138" height="26" rx="13" fill="#161B22" stroke="#5CC2F2" stroke-width="1.5"/>
-    <text x="327.0" y="133.8" text-anchor="middle" font-size="12.5" font-weight="600" fill="#5CC2F2">Projects &amp; teams <tspan font-weight="400" fill="#94A3B8">12</tspan></text>
-    <circle cx="229.0" cy="248.0" r="2" fill="#9FF3D0"/>
-    <text x="222.0" y="252.2" text-anchor="end" font-size="12.5" fill="#E6EDF3">GitRepository</text>
-    <circle cx="229.0" cy="263.5" r="2" fill="#9FF3D0"/>
-    <text x="222.0" y="267.7" text-anchor="end" font-size="12.5" fill="#E6EDF3">RepositorySettings</text>
-    <circle cx="229.0" cy="279.0" r="2" fill="#9FF3D0"/>
-    <text x="222.0" y="283.2" text-anchor="end" font-size="12.5" fill="#E6EDF3">BranchPolicy</text>
-    <rect x="258.0" y="250.5" width="138" height="26" rx="13" fill="#161B22" stroke="#9FF3D0" stroke-width="1.5"/>
-    <text x="327.0" y="268.0" text-anchor="middle" font-size="12.5" font-weight="600" fill="#9FF3D0">Repositories <tspan font-weight="400" fill="#94A3B8">3</tspan></text>
-    <circle cx="229.0" cy="312.5" r="2" fill="#F5C26B"/>
-    <text x="222.0" y="316.7" text-anchor="end" font-size="12.5" fill="#E6EDF3">ProjectPermission</text>
-    <circle cx="229.0" cy="328.0" r="2" fill="#F5C26B"/>
-    <text x="222.0" y="332.2" text-anchor="end" font-size="12.5" fill="#E6EDF3">OrganizationPermission</text>
-    <circle cx="229.0" cy="343.5" r="2" fill="#F5C26B"/>
-    <text x="222.0" y="347.7" text-anchor="end" font-size="12.5" fill="#E6EDF3">GitPermission</text>
-    <circle cx="229.0" cy="359.0" r="2" fill="#F5C26B"/>
-    <text x="222.0" y="363.2" text-anchor="end" font-size="12.5" fill="#E6EDF3">AreaPermission</text>
-    <circle cx="229.0" cy="374.5" r="2" fill="#F5C26B"/>
-    <text x="222.0" y="378.7" text-anchor="end" font-size="12.5" fill="#E6EDF3">IterationPermission</text>
-    <circle cx="229.0" cy="390.0" r="2" fill="#F5C26B"/>
-    <text x="222.0" y="394.2" text-anchor="end" font-size="12.5" fill="#E6EDF3">AgentPoolPermission</text>
-    <circle cx="229.0" cy="405.5" r="2" fill="#F5C26B"/>
-    <text x="222.0" y="409.7" text-anchor="end" font-size="12.5" fill="#E6EDF3">EnvironmentPermission</text>
-    <circle cx="229.0" cy="421.0" r="2" fill="#F5C26B"/>
-    <text x="222.0" y="425.2" text-anchor="end" font-size="12.5" fill="#E6EDF3">PipelinePermission</text>
-    <circle cx="229.0" cy="436.5" r="2" fill="#F5C26B"/>
-    <text x="222.0" y="440.7" text-anchor="end" font-size="12.5" fill="#E6EDF3">PipelineFolderPermission</text>
-    <circle cx="229.0" cy="452.0" r="2" fill="#F5C26B"/>
-    <text x="222.0" y="456.2" text-anchor="end" font-size="12.5" fill="#E6EDF3">ServiceConnectionPermission</text>
-    <circle cx="229.0" cy="467.5" r="2" fill="#F5C26B"/>
-    <text x="222.0" y="471.7" text-anchor="end" font-size="12.5" fill="#E6EDF3">VariableGroupPermission</text>
-    <circle cx="229.0" cy="483.0" r="2" fill="#F5C26B"/>
-    <text x="222.0" y="487.2" text-anchor="end" font-size="12.5" fill="#E6EDF3">SecureFilePermission</text>
-    <circle cx="229.0" cy="498.5" r="2" fill="#F5C26B"/>
-    <text x="222.0" y="502.7" text-anchor="end" font-size="12.5" fill="#E6EDF3">ArtifactFeedPermission</text>
-    <circle cx="229.0" cy="514.0" r="2" fill="#F5C26B"/>
-    <text x="222.0" y="518.2" text-anchor="end" font-size="12.5" fill="#E6EDF3">SecurityNamespacePermission</text>
-    <circle cx="229.0" cy="529.5" r="2" fill="#F5C26B"/>
-    <text x="222.0" y="533.7" text-anchor="end" font-size="12.5" fill="#E6EDF3">GroupPermission</text>
-    <circle cx="229.0" cy="545.0" r="2" fill="#F5C26B"/>
-    <text x="222.0" y="549.2" text-anchor="end" font-size="12.5" fill="#E6EDF3">QueryPermission</text>
-    <circle cx="229.0" cy="560.5" r="2" fill="#F5C26B"/>
-    <text x="222.0" y="564.7" text-anchor="end" font-size="12.5" fill="#E6EDF3">ReleaseFolderPermission</text>
-    <circle cx="229.0" cy="576.0" r="2" fill="#F5C26B"/>
-    <text x="222.0" y="580.2" text-anchor="end" font-size="12.5" fill="#E6EDF3">ReleaseDefinitionPermission</text>
-    <circle cx="229.0" cy="591.5" r="2" fill="#F5C26B"/>
-    <text x="222.0" y="595.7" text-anchor="end" font-size="12.5" fill="#E6EDF3">TaggingPermission</text>
-    <circle cx="229.0" cy="607.0" r="2" fill="#F5C26B"/>
-    <text x="222.0" y="611.2" text-anchor="end" font-size="12.5" fill="#E6EDF3">AnalyticsPermission</text>
-    <circle cx="229.0" cy="622.5" r="2" fill="#F5C26B"/>
-    <text x="222.0" y="626.7" text-anchor="end" font-size="12.5" fill="#E6EDF3">AnalyticsViewsPermission</text>
-    <rect x="258.0" y="454.5" width="138" height="26" rx="13" fill="#161B22" stroke="#F5C26B" stroke-width="1.5"/>
-    <text x="327.0" y="472.0" text-anchor="middle" font-size="12.5" font-weight="600" fill="#F5C26B">Permissions <tspan font-weight="400" fill="#94A3B8">21</tspan></text>
-    <circle cx="229.0" cy="656.0" r="2" fill="#F59E6B"/>
-    <text x="222.0" y="660.2" text-anchor="end" font-size="12.5" fill="#E6EDF3">ReleaseFolder</text>
-    <rect x="258.0" y="643.0" width="138" height="26" rx="13" fill="#161B22" stroke="#F59E6B" stroke-width="1.5"/>
-    <text x="327.0" y="660.5" text-anchor="middle" font-size="12.5" font-weight="600" fill="#F59E6B">Classic releases <tspan font-weight="400" fill="#94A3B8">1</tspan></text>
-    <circle cx="229.0" cy="689.5" r="2" fill="#F29CC0"/>
-    <text x="222.0" y="693.7" text-anchor="end" font-size="12.5" fill="#E6EDF3">TestVariable</text>
-    <circle cx="229.0" cy="705.0" r="2" fill="#F29CC0"/>
-    <text x="222.0" y="709.2" text-anchor="end" font-size="12.5" fill="#E6EDF3">TestConfiguration</text>
-    <circle cx="229.0" cy="720.5" r="2" fill="#F29CC0"/>
-    <text x="222.0" y="724.7" text-anchor="end" font-size="12.5" fill="#E6EDF3">TestPlan</text>
-    <circle cx="229.0" cy="736.0" r="2" fill="#F29CC0"/>
-    <text x="222.0" y="740.2" text-anchor="end" font-size="12.5" fill="#E6EDF3">TestSuite</text>
-    <rect x="258.0" y="699.8" width="138" height="26" rx="13" fill="#161B22" stroke="#F29CC0" stroke-width="1.5"/>
-    <text x="327.0" y="717.2" text-anchor="middle" font-size="12.5" font-weight="600" fill="#F29CC0">Test management <tspan font-weight="400" fill="#94A3B8">4</tspan></text>
-    <circle cx="781.0" cy="37.5" r="2" fill="#8FB4FF"/>
-    <text x="788.0" y="41.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">Pipeline</text>
-    <circle cx="781.0" cy="53.0" r="2" fill="#8FB4FF"/>
-    <text x="788.0" y="57.2" text-anchor="start" font-size="12.5" fill="#E6EDF3">PipelineFolder</text>
-    <circle cx="781.0" cy="68.5" r="2" fill="#8FB4FF"/>
-    <text x="788.0" y="72.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">PipelineEnvironment</text>
-    <circle cx="781.0" cy="84.0" r="2" fill="#8FB4FF"/>
-    <text x="788.0" y="88.2" text-anchor="start" font-size="12.5" fill="#E6EDF3">EnvironmentApproval</text>
-    <circle cx="781.0" cy="99.5" r="2" fill="#8FB4FF"/>
-    <text x="788.0" y="103.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">EnvironmentKubernetesResource</text>
-    <circle cx="781.0" cy="115.0" r="2" fill="#8FB4FF"/>
-    <text x="788.0" y="119.2" text-anchor="start" font-size="12.5" fill="#E6EDF3">EnvironmentVMResource</text>
-    <circle cx="781.0" cy="130.5" r="2" fill="#8FB4FF"/>
-    <text x="788.0" y="134.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">CheckConfiguration</text>
-    <circle cx="781.0" cy="146.0" r="2" fill="#8FB4FF"/>
-    <text x="788.0" y="150.2" text-anchor="start" font-size="12.5" fill="#E6EDF3">PipelineAuthorization</text>
-    <circle cx="781.0" cy="161.5" r="2" fill="#8FB4FF"/>
-    <text x="788.0" y="165.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">DeploymentGroup</text>
-    <circle cx="781.0" cy="177.0" r="2" fill="#8FB4FF"/>
-    <text x="788.0" y="181.2" text-anchor="start" font-size="12.5" fill="#E6EDF3">DeploymentGroupTarget</text>
-    <circle cx="781.0" cy="192.5" r="2" fill="#8FB4FF"/>
-    <text x="788.0" y="196.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">AgentPool</text>
-    <circle cx="781.0" cy="208.0" r="2" fill="#8FB4FF"/>
-    <text x="788.0" y="212.2" text-anchor="start" font-size="12.5" fill="#E6EDF3">AgentQueue</text>
-    <circle cx="781.0" cy="223.5" r="2" fill="#8FB4FF"/>
-    <text x="788.0" y="227.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">TaskGroup</text>
-    <circle cx="781.0" cy="239.0" r="2" fill="#8FB4FF"/>
-    <text x="788.0" y="243.2" text-anchor="start" font-size="12.5" fill="#E6EDF3">TaskGroupPermission</text>
-    <circle cx="781.0" cy="254.5" r="2" fill="#8FB4FF"/>
-    <text x="788.0" y="258.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">VariableGroup</text>
-    <circle cx="781.0" cy="270.0" r="2" fill="#8FB4FF"/>
-    <text x="788.0" y="274.2" text-anchor="start" font-size="12.5" fill="#E6EDF3">SecureFile</text>
-    <circle cx="781.0" cy="285.5" r="2" fill="#8FB4FF"/>
-    <text x="788.0" y="289.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">ServiceConnection</text>
-    <circle cx="781.0" cy="301.0" r="2" fill="#8FB4FF"/>
-    <text x="788.0" y="305.2" text-anchor="start" font-size="12.5" fill="#E6EDF3">PipelineSettings</text>
-    <circle cx="781.0" cy="316.5" r="2" fill="#8FB4FF"/>
-    <text x="788.0" y="320.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">BuildRetentionSettings</text>
-    <rect x="614.0" y="164.0" width="138" height="26" rx="13" fill="#161B22" stroke="#8FB4FF" stroke-width="1.5"/>
-    <text x="683.0" y="181.5" text-anchor="middle" font-size="12.5" font-weight="600" fill="#8FB4FF">Pipelines <tspan font-weight="400" fill="#94A3B8">19</tspan></text>
-    <circle cx="781.0" cy="350.0" r="2" fill="#A5E075"/>
-    <text x="788.0" y="354.2" text-anchor="start" font-size="12.5" fill="#E6EDF3">AreaNodes</text>
-    <circle cx="781.0" cy="365.5" r="2" fill="#A5E075"/>
-    <text x="788.0" y="369.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">IterationNodes</text>
-    <circle cx="781.0" cy="381.0" r="2" fill="#A5E075"/>
-    <text x="788.0" y="385.2" text-anchor="start" font-size="12.5" fill="#E6EDF3">WIPTags</text>
-    <circle cx="781.0" cy="396.5" r="2" fill="#A5E075"/>
-    <text x="788.0" y="400.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">WIPTagHygiene</text>
-    <circle cx="781.0" cy="412.0" r="2" fill="#A5E075"/>
-    <text x="788.0" y="416.2" text-anchor="start" font-size="12.5" fill="#E6EDF3">QueryFolder</text>
-    <circle cx="781.0" cy="427.5" r="2" fill="#A5E075"/>
-    <text x="788.0" y="431.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">WorkItemQuery</text>
-    <circle cx="781.0" cy="443.0" r="2" fill="#A5E075"/>
-    <text x="788.0" y="447.2" text-anchor="start" font-size="12.5" fill="#E6EDF3">NotificationSubscription</text>
-    <circle cx="781.0" cy="458.5" r="2" fill="#A5E075"/>
-    <text x="788.0" y="462.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">Dashboard</text>
-    <rect x="614.0" y="391.2" width="138" height="26" rx="13" fill="#161B22" stroke="#A5E075" stroke-width="1.5"/>
-    <text x="683.0" y="408.8" text-anchor="middle" font-size="12.5" font-weight="600" fill="#A5E075">Boards <tspan font-weight="400" fill="#94A3B8">8</tspan></text>
-    <circle cx="781.0" cy="492.0" r="2" fill="#C4B0FA"/>
-    <text x="788.0" y="496.2" text-anchor="start" font-size="12.5" fill="#E6EDF3">Process</text>
-    <circle cx="781.0" cy="507.5" r="2" fill="#C4B0FA"/>
-    <text x="788.0" y="511.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">Picklist</text>
-    <circle cx="781.0" cy="523.0" r="2" fill="#C4B0FA"/>
-    <text x="788.0" y="527.2" text-anchor="start" font-size="12.5" fill="#E6EDF3">ProcessWorkItemType</text>
-    <circle cx="781.0" cy="538.5" r="2" fill="#C4B0FA"/>
-    <text x="788.0" y="542.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">ProcessField</text>
-    <circle cx="781.0" cy="554.0" r="2" fill="#C4B0FA"/>
-    <text x="788.0" y="558.2" text-anchor="start" font-size="12.5" fill="#E6EDF3">ProcessState</text>
-    <circle cx="781.0" cy="569.5" r="2" fill="#C4B0FA"/>
-    <text x="788.0" y="573.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">ProcessRule</text>
-    <circle cx="781.0" cy="585.0" r="2" fill="#C4B0FA"/>
-    <text x="788.0" y="589.2" text-anchor="start" font-size="12.5" fill="#E6EDF3">ProcessBehavior</text>
-    <circle cx="781.0" cy="600.5" r="2" fill="#C4B0FA"/>
-    <text x="788.0" y="604.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">ProcessPermission</text>
-    <rect x="614.0" y="533.2" width="138" height="26" rx="13" fill="#161B22" stroke="#C4B0FA" stroke-width="1.5"/>
-    <text x="683.0" y="550.8" text-anchor="middle" font-size="12.5" font-weight="600" fill="#C4B0FA">Process <tspan font-weight="400" fill="#94A3B8">8</tspan></text>
-    <circle cx="781.0" cy="634.0" r="2" fill="#5FD4C4"/>
-    <text x="788.0" y="638.2" text-anchor="start" font-size="12.5" fill="#E6EDF3">ArtifactFeed</text>
-    <circle cx="781.0" cy="649.5" r="2" fill="#5FD4C4"/>
-    <text x="788.0" y="653.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">ArtifactFeedSettings</text>
-    <circle cx="781.0" cy="665.0" r="2" fill="#5FD4C4"/>
-    <text x="788.0" y="669.2" text-anchor="start" font-size="12.5" fill="#E6EDF3">ArtifactFeedView</text>
-    <circle cx="781.0" cy="680.5" r="2" fill="#5FD4C4"/>
-    <text x="788.0" y="684.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">Wiki</text>
-    <circle cx="781.0" cy="696.0" r="2" fill="#5FD4C4"/>
-    <text x="788.0" y="700.2" text-anchor="start" font-size="12.5" fill="#E6EDF3">WikiPage</text>
-    <circle cx="781.0" cy="711.5" r="2" fill="#5FD4C4"/>
-    <text x="788.0" y="715.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">Extension</text>
-    <circle cx="781.0" cy="727.0" r="2" fill="#5FD4C4"/>
-    <text x="788.0" y="731.2" text-anchor="start" font-size="12.5" fill="#E6EDF3">AuditStream</text>
-    <circle cx="781.0" cy="742.5" r="2" fill="#5FD4C4"/>
-    <text x="788.0" y="746.7" text-anchor="start" font-size="12.5" fill="#E6EDF3">ServiceHook</text>
-    <rect x="614.0" y="675.2" width="138" height="26" rx="13" fill="#161B22" stroke="#5FD4C4" stroke-width="1.5"/>
-    <text x="683.0" y="692.8" text-anchor="middle" font-size="12.5" font-weight="600" fill="#5FD4C4">Artifacts &amp; more <tspan font-weight="400" fill="#94A3B8">8</tspan></text>
-    <rect x="431" y="344" width="148" height="92" rx="22" fill="url(#bg)"/>
-    <text x="505" y="378" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">AzureDevOpsDsc</text>
-    <text x="505" y="397" text-anchor="middle" font-size="15" fill="#E3F4FD">Native</text>
-    <text x="505" y="418" text-anchor="middle" font-size="11.5" fill="#FFFFFF" opacity="0.9">84 DSC resources</text>
-    <text x="505" y="762" text-anchor="middle" font-size="11" fill="#94A3B8">Names are shown without their AzDo prefix</text>
+    <g>
+      <path d="M243.0 121.0A64.0 41.7 0 0 1 371.0 121.0" fill="none" stroke="#5CC2F2" stroke-opacity="0.3" stroke-width="1"/>
+      <ellipse cx="310.0" cy="143.2" rx="22.9" ry="5.3" fill="#000000" opacity="0.35"/>
+      <circle cx="307.0" cy="121.0" r="24.1" fill="url(#p0)"/>
+      <path d="M243.0 121.0A64.0 41.7 0 0 0 371.0 121.0" fill="none" stroke="#5CC2F2" stroke-opacity="0.7" stroke-width="1.6"/>
+      <text x="307.0" y="70.3" text-anchor="middle" font-size="14" font-weight="700" fill="#5CC2F2">Projects &amp; teams <tspan font-weight="400" fill="#94A3B8">12</tspan></text>
+      <circle cx="279.1" cy="83.5" r="2.9" fill="url(#moon)" opacity="0.76"/>
+      <text x="269.7" y="87.9" text-anchor="end" font-size="13" fill="#E6EDF3">ProjectServices</text>
+      <circle cx="253.2" cy="98.5" r="3.4" fill="url(#moon)" opacity="0.81"/>
+      <text x="243.3" y="102.9" text-anchor="end" font-size="13" fill="#E6EDF3">OrganizationSettings</text>
+      <circle cx="244.1" cy="113.5" r="3.8" fill="url(#moon)" opacity="0.85"/>
+      <text x="233.8" y="117.9" text-anchor="end" font-size="13" fill="#E6EDF3">OrganizationGroup</text>
+      <circle cx="244.1" cy="128.5" r="4.2" fill="url(#moon)" opacity="0.90"/>
+      <text x="233.4" y="132.9" text-anchor="end" font-size="13" fill="#E6EDF3">UserEntitlement</text>
+      <circle cx="253.2" cy="143.5" r="4.6" fill="url(#moon)" opacity="0.94"/>
+      <text x="242.0" y="147.9" text-anchor="end" font-size="13" fill="#E6EDF3">GroupEntitlement</text>
+      <circle cx="279.1" cy="158.5" r="5.1" fill="url(#moon)" opacity="0.99"/>
+      <text x="267.6" y="162.9" text-anchor="end" font-size="13" fill="#E6EDF3">ServicePrincipalEntitlement</text>
+      <circle cx="334.9" cy="83.5" r="2.9" fill="url(#moon)" opacity="0.76"/>
+      <text x="344.4" y="87.9" text-anchor="start" font-size="13" fill="#E6EDF3">Project</text>
+      <circle cx="360.9" cy="98.5" r="3.4" fill="url(#moon)" opacity="0.81"/>
+      <text x="370.8" y="102.9" text-anchor="start" font-size="13" fill="#E6EDF3">ProjectGroup</text>
+      <circle cx="370.0" cy="113.5" r="3.8" fill="url(#moon)" opacity="0.85"/>
+      <text x="380.3" y="117.9" text-anchor="start" font-size="13" fill="#E6EDF3">GroupMember</text>
+      <circle cx="370.0" cy="128.5" r="4.2" fill="url(#moon)" opacity="0.90"/>
+      <text x="380.7" y="132.9" text-anchor="start" font-size="13" fill="#E6EDF3">Team</text>
+      <circle cx="360.9" cy="143.5" r="4.6" fill="url(#moon)" opacity="0.94"/>
+      <text x="372.1" y="147.9" text-anchor="start" font-size="13" fill="#E6EDF3">TeamMember</text>
+      <circle cx="334.9" cy="158.5" r="5.1" fill="url(#moon)" opacity="0.99"/>
+      <text x="346.5" y="162.9" text-anchor="start" font-size="13" fill="#E6EDF3">TeamSettings</text>
+    </g>
+    <g>
+      <path d="M701.3 121.0A78.8 75.0 0 0 1 858.8 121.0" fill="none" stroke="#8FB4FF" stroke-opacity="0.3" stroke-width="1"/>
+      <ellipse cx="783.0" cy="145.8" rx="25.6" ry="5.9" fill="#000000" opacity="0.35"/>
+      <circle cx="780.0" cy="121.0" r="26.9" fill="url(#p5)"/>
+      <path d="M701.3 121.0A78.8 75.0 0 0 0 858.8 121.0" fill="none" stroke="#8FB4FF" stroke-opacity="0.7" stroke-width="1.6"/>
+      <text x="780.0" y="37.0" text-anchor="middle" font-size="14" font-weight="700" fill="#8FB4FF">Pipelines <tspan font-weight="400" fill="#94A3B8">19</tspan></text>
+      <circle cx="814.4" cy="53.5" r="2.9" fill="url(#moon)" opacity="0.76"/>
+      <text x="823.8" y="57.9" text-anchor="start" font-size="13" fill="#E6EDF3">PipelineEnvironment</text>
+      <circle cx="836.3" cy="68.5" r="3.2" fill="url(#moon)" opacity="0.79"/>
+      <text x="845.9" y="72.9" text-anchor="start" font-size="13" fill="#E6EDF3">EnvironmentApproval</text>
+      <circle cx="848.2" cy="83.5" r="3.4" fill="url(#moon)" opacity="0.81"/>
+      <text x="858.1" y="87.9" text-anchor="start" font-size="13" fill="#E6EDF3">EnvironmentKubernetesResource</text>
+      <circle cx="855.2" cy="98.5" r="3.6" fill="url(#moon)" opacity="0.84"/>
+      <text x="865.3" y="102.9" text-anchor="start" font-size="13" fill="#E6EDF3">EnvironmentVMResource</text>
+      <circle cx="858.4" cy="113.5" r="3.9" fill="url(#moon)" opacity="0.86"/>
+      <text x="868.8" y="117.9" text-anchor="start" font-size="13" fill="#E6EDF3">CheckConfiguration</text>
+      <circle cx="858.4" cy="128.5" r="4.1" fill="url(#moon)" opacity="0.89"/>
+      <text x="869.0" y="132.9" text-anchor="start" font-size="13" fill="#E6EDF3">PipelineAuthorization</text>
+      <circle cx="855.2" cy="143.5" r="4.4" fill="url(#moon)" opacity="0.91"/>
+      <text x="866.0" y="147.9" text-anchor="start" font-size="13" fill="#E6EDF3">DeploymentGroupTarget</text>
+      <circle cx="848.2" cy="158.5" r="4.6" fill="url(#moon)" opacity="0.94"/>
+      <text x="859.3" y="162.9" text-anchor="start" font-size="13" fill="#E6EDF3">TaskGroupPermission</text>
+      <circle cx="836.3" cy="173.5" r="4.8" fill="url(#moon)" opacity="0.96"/>
+      <text x="847.6" y="177.9" text-anchor="start" font-size="13" fill="#E6EDF3">ServiceConnection</text>
+      <circle cx="814.4" cy="188.5" r="5.1" fill="url(#moon)" opacity="0.99"/>
+      <text x="826.0" y="192.9" text-anchor="start" font-size="13" fill="#E6EDF3">BuildRetentionSettings</text>
+      <circle cx="732.8" cy="61.0" r="3.0" fill="url(#moon)" opacity="0.78"/>
+      <text x="723.3" y="65.4" text-anchor="end" font-size="13" fill="#E6EDF3">Pipeline</text>
+      <circle cx="717.0" cy="76.0" r="3.3" fill="url(#moon)" opacity="0.80"/>
+      <text x="707.3" y="80.4" text-anchor="end" font-size="13" fill="#E6EDF3">PipelineFolder</text>
+      <circle cx="707.9" cy="91.0" r="3.5" fill="url(#moon)" opacity="0.82"/>
+      <text x="697.9" y="95.4" text-anchor="end" font-size="13" fill="#E6EDF3">DeploymentGroup</text>
+      <circle cx="702.9" cy="106.0" r="3.8" fill="url(#moon)" opacity="0.85"/>
+      <text x="692.6" y="110.4" text-anchor="end" font-size="13" fill="#E6EDF3">AgentPool</text>
+      <circle cx="701.3" cy="121.0" r="4.0" fill="url(#moon)" opacity="0.88"/>
+      <text x="690.8" y="125.4" text-anchor="end" font-size="13" fill="#E6EDF3">AgentQueue</text>
+      <circle cx="702.9" cy="136.0" r="4.2" fill="url(#moon)" opacity="0.90"/>
+      <text x="692.2" y="140.4" text-anchor="end" font-size="13" fill="#E6EDF3">TaskGroup</text>
+      <circle cx="707.9" cy="151.0" r="4.5" fill="url(#moon)" opacity="0.93"/>
+      <text x="696.9" y="155.4" text-anchor="end" font-size="13" fill="#E6EDF3">VariableGroup</text>
+      <circle cx="717.0" cy="166.0" r="4.7" fill="url(#moon)" opacity="0.95"/>
+      <text x="705.8" y="170.4" text-anchor="end" font-size="13" fill="#E6EDF3">SecureFile</text>
+      <circle cx="732.8" cy="181.0" r="5.0" fill="url(#moon)" opacity="0.97"/>
+      <text x="721.3" y="185.4" text-anchor="end" font-size="13" fill="#E6EDF3">PipelineSettings</text>
+    </g>
+    <g>
+      <path d="M243.0 318.0A64.0 30.0 0 0 1 371.0 318.0" fill="none" stroke="#7BE8BF" stroke-opacity="0.3" stroke-width="1"/>
+      <ellipse cx="310.0" cy="335.1" rx="17.6" ry="4.1" fill="#000000" opacity="0.35"/>
+      <circle cx="307.0" cy="318.0" r="18.5" fill="url(#p1)"/>
+      <path d="M243.0 318.0A64.0 30.0 0 0 0 371.0 318.0" fill="none" stroke="#7BE8BF" stroke-opacity="0.7" stroke-width="1.6"/>
+      <text x="307.0" y="279.0" text-anchor="middle" font-size="14" font-weight="700" fill="#7BE8BF">Repositories <tspan font-weight="400" fill="#94A3B8">3</tspan></text>
+      <circle cx="245.1" cy="310.5" r="3.7" fill="url(#moon)" opacity="0.84"/>
+      <text x="234.9" y="314.9" text-anchor="end" font-size="13" fill="#E6EDF3">GitRepository</text>
+      <circle cx="245.1" cy="325.5" r="4.3" fill="url(#moon)" opacity="0.91"/>
+      <text x="234.3" y="329.9" text-anchor="end" font-size="13" fill="#E6EDF3">RepositorySettings</text>
+      <circle cx="371.0" cy="318.0" r="4.0" fill="url(#moon)" opacity="0.88"/>
+      <text x="381.5" y="322.4" text-anchor="start" font-size="13" fill="#E6EDF3">BranchPolicy</text>
+    </g>
+    <g>
+      <path d="M716.0 318.0A64.0 30.0 0 0 1 844.0 318.0" fill="none" stroke="#F59E6B" stroke-opacity="0.3" stroke-width="1"/>
+      <ellipse cx="783.0" cy="332.9" rx="15.4" ry="3.6" fill="#000000" opacity="0.35"/>
+      <circle cx="780.0" cy="318.0" r="16.2" fill="url(#p3)"/>
+      <path d="M716.0 318.0A64.0 30.0 0 0 0 844.0 318.0" fill="none" stroke="#F59E6B" stroke-opacity="0.7" stroke-width="1.6"/>
+      <text x="780.0" y="279.0" text-anchor="middle" font-size="14" font-weight="700" fill="#F59E6B">Classic releases <tspan font-weight="400" fill="#94A3B8">1</tspan></text>
+      <circle cx="844.0" cy="318.0" r="4.0" fill="url(#moon)" opacity="0.88"/>
+      <text x="854.5" y="322.4" text-anchor="start" font-size="13" fill="#E6EDF3">ReleaseFolder</text>
+    </g>
+    <g>
+      <path d="M219.5 523.3A87.5 83.3 0 0 1 394.5 523.3" fill="none" stroke="#F5C26B" stroke-opacity="0.3" stroke-width="1"/>
+      <ellipse cx="310.0" cy="548.8" rx="26.3" ry="6.1" fill="#000000" opacity="0.35"/>
+      <circle cx="307.0" cy="523.3" r="27.7" fill="url(#p2)"/>
+      <path d="M219.5 523.3A87.5 83.3 0 0 0 394.5 523.3" fill="none" stroke="#F5C26B" stroke-opacity="0.7" stroke-width="1.6"/>
+      <text x="307.0" y="431.0" text-anchor="middle" font-size="14" font-weight="700" fill="#F5C26B">Permissions <tspan font-weight="400" fill="#94A3B8">21</tspan></text>
+      <circle cx="268.9" cy="448.3" r="2.9" fill="url(#moon)" opacity="0.76"/>
+      <text x="259.5" y="452.7" text-anchor="end" font-size="13" fill="#E6EDF3">OrganizationPermission</text>
+      <circle cx="246.3" cy="463.3" r="3.1" fill="url(#moon)" opacity="0.79"/>
+      <text x="236.7" y="467.7" text-anchor="end" font-size="13" fill="#E6EDF3">EnvironmentPermission</text>
+      <circle cx="233.4" cy="478.3" r="3.4" fill="url(#moon)" opacity="0.81"/>
+      <text x="223.5" y="482.7" text-anchor="end" font-size="13" fill="#E6EDF3">PipelineFolderPermission</text>
+      <circle cx="225.4" cy="493.3" r="3.6" fill="url(#moon)" opacity="0.83"/>
+      <text x="215.3" y="497.7" text-anchor="end" font-size="13" fill="#E6EDF3">ServiceConnectionPermission</text>
+      <circle cx="221.0" cy="508.3" r="3.8" fill="url(#moon)" opacity="0.85"/>
+      <text x="210.7" y="512.7" text-anchor="end" font-size="13" fill="#E6EDF3">VariableGroupPermission</text>
+      <circle cx="219.5" cy="523.3" r="4.0" fill="url(#moon)" opacity="0.88"/>
+      <text x="209.0" y="527.7" text-anchor="end" font-size="13" fill="#E6EDF3">SecureFilePermission</text>
+      <circle cx="221.0" cy="538.3" r="4.2" fill="url(#moon)" opacity="0.90"/>
+      <text x="210.3" y="542.7" text-anchor="end" font-size="13" fill="#E6EDF3">ArtifactFeedPermission</text>
+      <circle cx="225.4" cy="553.3" r="4.4" fill="url(#moon)" opacity="0.92"/>
+      <text x="214.5" y="557.7" text-anchor="end" font-size="13" fill="#E6EDF3">SecurityNamespacePermission</text>
+      <circle cx="233.4" cy="568.3" r="4.6" fill="url(#moon)" opacity="0.94"/>
+      <text x="222.2" y="572.7" text-anchor="end" font-size="13" fill="#E6EDF3">ReleaseFolderPermission</text>
+      <circle cx="246.3" cy="583.3" r="4.9" fill="url(#moon)" opacity="0.97"/>
+      <text x="235.0" y="587.7" text-anchor="end" font-size="13" fill="#E6EDF3">ReleaseDefinitionPermission</text>
+      <circle cx="268.9" cy="598.3" r="5.1" fill="url(#moon)" opacity="0.99"/>
+      <text x="257.3" y="602.7" text-anchor="end" font-size="13" fill="#E6EDF3">AnalyticsViewsPermission</text>
+      <circle cx="358.4" cy="455.8" r="3.0" fill="url(#moon)" opacity="0.77"/>
+      <text x="367.9" y="460.2" text-anchor="start" font-size="13" fill="#E6EDF3">ProjectPermission</text>
+      <circle cx="375.0" cy="470.8" r="3.2" fill="url(#moon)" opacity="0.80"/>
+      <text x="384.7" y="475.2" text-anchor="start" font-size="13" fill="#E6EDF3">GitPermission</text>
+      <circle cx="385.2" cy="485.8" r="3.5" fill="url(#moon)" opacity="0.82"/>
+      <text x="395.1" y="490.2" text-anchor="start" font-size="13" fill="#E6EDF3">AreaPermission</text>
+      <circle cx="391.3" cy="500.8" r="3.7" fill="url(#moon)" opacity="0.84"/>
+      <text x="401.5" y="505.2" text-anchor="start" font-size="13" fill="#E6EDF3">IterationPermission</text>
+      <circle cx="394.2" cy="515.8" r="3.9" fill="url(#moon)" opacity="0.86"/>
+      <text x="404.6" y="520.2" text-anchor="start" font-size="13" fill="#E6EDF3">AgentPoolPermission</text>
+      <circle cx="394.2" cy="530.8" r="4.1" fill="url(#moon)" opacity="0.89"/>
+      <text x="404.8" y="535.2" text-anchor="start" font-size="13" fill="#E6EDF3">PipelinePermission</text>
+      <circle cx="391.3" cy="545.8" r="4.3" fill="url(#moon)" opacity="0.91"/>
+      <text x="402.1" y="550.2" text-anchor="start" font-size="13" fill="#E6EDF3">GroupPermission</text>
+      <circle cx="385.2" cy="560.8" r="4.5" fill="url(#moon)" opacity="0.93"/>
+      <text x="396.2" y="565.2" text-anchor="start" font-size="13" fill="#E6EDF3">QueryPermission</text>
+      <circle cx="375.0" cy="575.8" r="4.8" fill="url(#moon)" opacity="0.95"/>
+      <text x="386.2" y="580.2" text-anchor="start" font-size="13" fill="#E6EDF3">TaggingPermission</text>
+      <circle cx="358.4" cy="590.8" r="5.0" fill="url(#moon)" opacity="0.98"/>
+      <text x="369.8" y="595.2" text-anchor="start" font-size="13" fill="#E6EDF3">AnalyticsPermission</text>
+    </g>
+    <g>
+      <path d="M243.0 682.7A64.0 30.0 0 0 1 371.0 682.7" fill="none" stroke="#F29CC0" stroke-opacity="0.3" stroke-width="1"/>
+      <ellipse cx="310.0" cy="700.5" rx="18.4" ry="4.3" fill="#000000" opacity="0.35"/>
+      <circle cx="307.0" cy="682.7" r="19.4" fill="url(#p4)"/>
+      <path d="M243.0 682.7A64.0 30.0 0 0 0 371.0 682.7" fill="none" stroke="#F29CC0" stroke-opacity="0.7" stroke-width="1.6"/>
+      <text x="307.0" y="643.7" text-anchor="middle" font-size="14" font-weight="700" fill="#F29CC0">Test management <tspan font-weight="400" fill="#94A3B8">4</tspan></text>
+      <circle cx="245.1" cy="675.2" r="3.7" fill="url(#moon)" opacity="0.84"/>
+      <text x="234.9" y="679.6" text-anchor="end" font-size="13" fill="#E6EDF3">TestVariable</text>
+      <circle cx="245.1" cy="690.2" r="4.3" fill="url(#moon)" opacity="0.91"/>
+      <text x="234.3" y="694.6" text-anchor="end" font-size="13" fill="#E6EDF3">TestConfiguration</text>
+      <circle cx="369.0" cy="675.2" r="3.7" fill="url(#moon)" opacity="0.84"/>
+      <text x="379.2" y="679.6" text-anchor="start" font-size="13" fill="#E6EDF3">TestPlan</text>
+      <circle cx="369.0" cy="690.2" r="4.3" fill="url(#moon)" opacity="0.91"/>
+      <text x="379.8" y="694.6" text-anchor="start" font-size="13" fill="#E6EDF3">TestSuite</text>
+    </g>
+    <g>
+      <path d="M716.0 470.2A64.0 30.0 0 0 1 844.0 470.2" fill="none" stroke="#A5E075" stroke-opacity="0.3" stroke-width="1"/>
+      <ellipse cx="783.0" cy="490.5" rx="20.9" ry="4.9" fill="#000000" opacity="0.35"/>
+      <circle cx="780.0" cy="470.2" r="22.1" fill="url(#p6)"/>
+      <path d="M716.0 470.2A64.0 30.0 0 0 0 844.0 470.2" fill="none" stroke="#A5E075" stroke-opacity="0.7" stroke-width="1.6"/>
+      <text x="780.0" y="431.2" text-anchor="middle" font-size="14" font-weight="700" fill="#A5E075">Boards <tspan font-weight="400" fill="#94A3B8">8</tspan></text>
+      <circle cx="822.4" cy="447.7" r="3.1" fill="url(#moon)" opacity="0.78"/>
+      <text x="832.0" y="452.1" text-anchor="start" font-size="13" fill="#E6EDF3">IterationNodes</text>
+      <circle cx="842.0" cy="462.7" r="3.7" fill="url(#moon)" opacity="0.84"/>
+      <text x="852.2" y="467.1" text-anchor="start" font-size="13" fill="#E6EDF3">WIPTagHygiene</text>
+      <circle cx="842.0" cy="477.7" r="4.3" fill="url(#moon)" opacity="0.91"/>
+      <text x="852.8" y="482.1" text-anchor="start" font-size="13" fill="#E6EDF3">WorkItemQuery</text>
+      <circle cx="822.4" cy="492.7" r="4.9" fill="url(#moon)" opacity="0.97"/>
+      <text x="833.8" y="497.1" text-anchor="start" font-size="13" fill="#E6EDF3">NotificationSubscription</text>
+      <circle cx="737.7" cy="447.7" r="3.1" fill="url(#moon)" opacity="0.78"/>
+      <text x="728.1" y="452.1" text-anchor="end" font-size="13" fill="#E6EDF3">AreaNodes</text>
+      <circle cx="718.1" cy="462.7" r="3.7" fill="url(#moon)" opacity="0.84"/>
+      <text x="707.9" y="467.1" text-anchor="end" font-size="13" fill="#E6EDF3">WIPTags</text>
+      <circle cx="718.1" cy="477.7" r="4.3" fill="url(#moon)" opacity="0.91"/>
+      <text x="707.3" y="482.1" text-anchor="end" font-size="13" fill="#E6EDF3">QueryFolder</text>
+      <circle cx="737.7" cy="492.7" r="4.9" fill="url(#moon)" opacity="0.97"/>
+      <text x="726.3" y="497.1" text-anchor="end" font-size="13" fill="#E6EDF3">Dashboard</text>
+    </g>
+    <g>
+      <path d="M716.0 576.3A64.0 30.0 0 0 1 844.0 576.3" fill="none" stroke="#C4B0FA" stroke-opacity="0.3" stroke-width="1"/>
+      <ellipse cx="783.0" cy="596.6" rx="20.9" ry="4.9" fill="#000000" opacity="0.35"/>
+      <circle cx="780.0" cy="576.3" r="22.1" fill="url(#p7)"/>
+      <path d="M716.0 576.3A64.0 30.0 0 0 0 844.0 576.3" fill="none" stroke="#C4B0FA" stroke-opacity="0.7" stroke-width="1.6"/>
+      <text x="780.0" y="537.3" text-anchor="middle" font-size="14" font-weight="700" fill="#C4B0FA">Process <tspan font-weight="400" fill="#94A3B8">8</tspan></text>
+      <circle cx="822.4" cy="553.8" r="3.1" fill="url(#moon)" opacity="0.78"/>
+      <text x="832.0" y="558.2" text-anchor="start" font-size="13" fill="#E6EDF3">ProcessWorkItemType</text>
+      <circle cx="842.0" cy="568.8" r="3.7" fill="url(#moon)" opacity="0.84"/>
+      <text x="852.2" y="573.2" text-anchor="start" font-size="13" fill="#E6EDF3">ProcessField</text>
+      <circle cx="842.0" cy="583.8" r="4.3" fill="url(#moon)" opacity="0.91"/>
+      <text x="852.8" y="588.2" text-anchor="start" font-size="13" fill="#E6EDF3">ProcessBehavior</text>
+      <circle cx="822.4" cy="598.8" r="4.9" fill="url(#moon)" opacity="0.97"/>
+      <text x="833.8" y="603.2" text-anchor="start" font-size="13" fill="#E6EDF3">ProcessPermission</text>
+      <circle cx="737.7" cy="553.8" r="3.1" fill="url(#moon)" opacity="0.78"/>
+      <text x="728.1" y="558.2" text-anchor="end" font-size="13" fill="#E6EDF3">Process</text>
+      <circle cx="718.1" cy="568.8" r="3.7" fill="url(#moon)" opacity="0.84"/>
+      <text x="707.9" y="573.2" text-anchor="end" font-size="13" fill="#E6EDF3">Picklist</text>
+      <circle cx="718.1" cy="583.8" r="4.3" fill="url(#moon)" opacity="0.91"/>
+      <text x="707.3" y="588.2" text-anchor="end" font-size="13" fill="#E6EDF3">ProcessState</text>
+      <circle cx="737.7" cy="598.8" r="4.9" fill="url(#moon)" opacity="0.97"/>
+      <text x="726.3" y="603.2" text-anchor="end" font-size="13" fill="#E6EDF3">ProcessRule</text>
+    </g>
+    <g>
+      <path d="M716.0 682.5A64.0 30.0 0 0 1 844.0 682.5" fill="none" stroke="#5FD4C4" stroke-opacity="0.3" stroke-width="1"/>
+      <ellipse cx="783.0" cy="702.8" rx="20.9" ry="4.9" fill="#000000" opacity="0.35"/>
+      <circle cx="780.0" cy="682.5" r="22.1" fill="url(#p8)"/>
+      <path d="M716.0 682.5A64.0 30.0 0 0 0 844.0 682.5" fill="none" stroke="#5FD4C4" stroke-opacity="0.7" stroke-width="1.6"/>
+      <text x="780.0" y="643.5" text-anchor="middle" font-size="14" font-weight="700" fill="#5FD4C4">Artifacts &amp; more <tspan font-weight="400" fill="#94A3B8">8</tspan></text>
+      <circle cx="822.4" cy="660.0" r="3.1" fill="url(#moon)" opacity="0.78"/>
+      <text x="832.0" y="664.4" text-anchor="start" font-size="13" fill="#E6EDF3">ArtifactFeed</text>
+      <circle cx="842.0" cy="675.0" r="3.7" fill="url(#moon)" opacity="0.84"/>
+      <text x="852.2" y="679.4" text-anchor="start" font-size="13" fill="#E6EDF3">ArtifactFeedSettings</text>
+      <circle cx="842.0" cy="690.0" r="4.3" fill="url(#moon)" opacity="0.91"/>
+      <text x="852.8" y="694.4" text-anchor="start" font-size="13" fill="#E6EDF3">ArtifactFeedView</text>
+      <circle cx="822.4" cy="705.0" r="4.9" fill="url(#moon)" opacity="0.97"/>
+      <text x="833.8" y="709.4" text-anchor="start" font-size="13" fill="#E6EDF3">ServiceHook</text>
+      <circle cx="737.7" cy="660.0" r="3.1" fill="url(#moon)" opacity="0.78"/>
+      <text x="728.1" y="664.4" text-anchor="end" font-size="13" fill="#E6EDF3">Wiki</text>
+      <circle cx="718.1" cy="675.0" r="3.7" fill="url(#moon)" opacity="0.84"/>
+      <text x="707.9" y="679.4" text-anchor="end" font-size="13" fill="#E6EDF3">WikiPage</text>
+      <circle cx="718.1" cy="690.0" r="4.3" fill="url(#moon)" opacity="0.91"/>
+      <text x="707.3" y="694.4" text-anchor="end" font-size="13" fill="#E6EDF3">Extension</text>
+      <circle cx="737.7" cy="705.0" r="4.9" fill="url(#moon)" opacity="0.97"/>
+      <text x="726.3" y="709.4" text-anchor="end" font-size="13" fill="#E6EDF3">AuditStream</text>
+    </g>
+    <circle cx="544.5" cy="308.0" r="76" fill="url(#sun)"/>
+    <text x="544.5" y="298.0" text-anchor="middle" font-size="15.5" font-weight="700" fill="#FFFFFF">AzureDevOpsDsc</text>
+    <text x="544.5" y="317.0" text-anchor="middle" font-size="15.5" fill="#E8F6FE">Native</text>
+    <text x="544.5" y="338.0" text-anchor="middle" font-size="11.5" fill="#FFFFFF">84 DSC resources</text>
+    <text x="544.5" y="737" text-anchor="middle" font-size="11.5" fill="#94A3B8">Each planet is a resource area and each moon a resource. Names are shown without their AzDo prefix.</text>
   </g>
 </svg>
