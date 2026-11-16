@@ -77,7 +77,8 @@ Describe "AzDoArtifactFeedPermission Integration Tests" -Tag "Integration", "Art
 
         It "Should return True after changing permissions" {
             $parameters.Method = 'Test'
-            $result = Invoke-DscResource @parameters
+            # The feed can return the earlier permissions for a moment after the change.
+            $result = Wait-TestDesiredState -Parameters $parameters
             $result.InDesiredState | Should -BeTrue
         }
     }

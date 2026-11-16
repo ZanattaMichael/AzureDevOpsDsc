@@ -91,7 +91,8 @@ Describe "AzDoPicklist Integration Tests" -Tag "Integration", "Process" {
             { Invoke-DscResource @parameters } | Should -Not -Throw
 
             $parameters.Method = 'Test'
-            (Invoke-DscResource @parameters).InDesiredState | Should -BeTrue
+            # The list can be returned with its earlier items for a moment after the update.
+            (Wait-TestDesiredState -Parameters $parameters).InDesiredState | Should -BeTrue
         }
     }
 

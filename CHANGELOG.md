@@ -253,6 +253,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     canary credentials to check that none reaches an output stream, an exception, a log
     file or a cache file.
 
+### Fixed
+
+- Integration tests
+  - The `AzDoArtifactFeedPermission`, `AzDoArtifactFeedView` and `AzDoPicklist` tests no
+    longer fail when Azure DevOps returns the earlier state for a moment after a change.
+    The `Test` that follows the change is repeated for up to about ten seconds
+    (`Wait-TestDesiredState`).
+
 ## [1.3.0] - 2026-11-08
 
 ### Security
