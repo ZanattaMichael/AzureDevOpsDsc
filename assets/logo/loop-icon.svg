@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-labelledby="t">
+  <title id="t">AzureDevOpsDscNative logo: a loop returning to a fixed point</title>
+  <defs>
+    <linearGradient id="arc" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#2B88D8"/>
+      <stop offset="1" stop-color="#5EEAD4"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="#0F172A"/>
+  <path d="M64 28a36 36 0 1 0 36 36" fill="none" stroke="url(#arc)" stroke-width="9" stroke-linecap="round"/>
+  <path d="M52 16l14 12l-14 12" fill="none" stroke="#2B88D8" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M64 46l15.6 9v18L64 82l-15.6-9V55z" fill="#F8FAFC"/>
+  <circle cx="100" cy="64" r="7" fill="#5EEAD4"/>
+</svg>
