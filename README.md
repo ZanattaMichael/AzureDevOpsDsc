@@ -1,8 +1,5 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/logo/wordmark-dark.svg">
-    <img src="assets/logo/wordmark-light.svg" alt="AzureDevOpsDscNative" width="560">
-  </picture>
+  <img src="assets/logo/wordmark-banner.svg" alt="AzureDevOpsDscNative" width="640">
 </p>
 
 [![Build](https://github.com/ZanattaMichael/AzureDevOpsDsc/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/ZanattaMichael/AzureDevOpsDsc/actions/workflows/build.yml?query=branch%3Amain)
