@@ -5,8 +5,6 @@
   </picture>
 </p>
 
-# AzureDevOpsDscNative
-
 [![Build](https://github.com/ZanattaMichael/AzureDevOpsDsc/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/ZanattaMichael/AzureDevOpsDsc/actions/workflows/build.yml?query=branch%3Amain)
 [![Unit Tests](https://github.com/ZanattaMichael/AzureDevOpsDsc/actions/workflows/unit-tests.yml/badge.svg?branch=main)](https://github.com/ZanattaMichael/AzureDevOpsDsc/actions/workflows/unit-tests.yml?query=branch%3Amain)
 [![Publish](https://github.com/ZanattaMichael/AzureDevOpsDsc/actions/workflows/publish.yml/badge.svg)](https://github.com/ZanattaMichael/AzureDevOpsDsc/actions/workflows/publish.yml)
