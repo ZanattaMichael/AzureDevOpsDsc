@@ -170,10 +170,10 @@ Please report a vulnerability privately, as set out in the
 ## Resources
 
 <p align="center">
-  <a href="assets/resource-mind-map.svg"><img src="assets/resource-mind-map.svg" alt="Map of the 84 AzureDevOpsDscNative resources as a solar system: each resource area is a planet and each resource is a moon" width="830"></a>
+  <a href="assets/resource-mind-map.svg"><img src="assets/resource-mind-map.svg" alt="Animated map of the AzureDevOpsDscNative resources as a solar system: each resource area is a planet, circled by the names of its resources" width="830"></a>
 </p>
 
-The map shows every resource as a moon of its area. The tables below describe each one and link to its
+In the map, each planet is a resource area and its resources circle it. The tables below describe each one and link to its
 example/usage documentation.
 
 ### Projects, organization, groups and teams
