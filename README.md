@@ -169,7 +169,12 @@ Please report a vulnerability privately, as set out in the
 
 ## Resources
 
-Each resource links to its example/usage documentation.
+<p align="center">
+  <a href="assets/resource-mind-map.svg"><img src="assets/resource-mind-map.svg" alt="Mind map of the 84 AzureDevOpsDscNative resources, grouped by area as in the tables below" width="830"></a>
+</p>
+
+The map shows every resource by area. The tables below describe each one and link to its
+example/usage documentation.
 
 ### Projects, organization, groups and teams
 
