@@ -332,3 +332,66 @@ function Enable-TestClassicPipeline
 
     return $enabled
 }
+
+# ---------------------------------------------------------------------------
+# Read-after-write helper
+# ---------------------------------------------------------------------------
+
+<#
+.SYNOPSIS
+Runs a resource's Test method until it reports the expected state, and returns the last result.
+
+.DESCRIPTION
+Azure DevOps does not always return what was just written: for a second or two after a change a
+read can still give the earlier state. A Test that runs straight after a Set then reports the
+wrong state, and passes on the next attempt. This repeats the Test a few times, a few seconds
+apart, and stops as soon as InDesiredState is the expected value.
+
+It only waits for a change that has been made to become visible. A resource that never reaches
+the state still fails the assertion on the returned result, after about ten seconds.
+
+.PARAMETER Parameters
+The Invoke-DscResource parameters used by the test. The Method entry is ignored; Test is used.
+
+.PARAMETER Expected
+The InDesiredState value to wait for. Defaults to $true.
+
+.EXAMPLE
+(Wait-TestDesiredState -Parameters $parameters).InDesiredState | Should -BeTrue
+#>
+function Wait-TestDesiredState
+{
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [hashtable]$Parameters,
+
+        [Parameter()]
+        [bool]$Expected = $true,
+
+        [Parameter()]
+        [int]$Attempts = 5,
+
+        [Parameter()]
+        [int]$DelaySeconds = 3
+    )
+
+    $testParameters = $Parameters.Clone()
+    $testParameters.Method = 'Test'
+
+    $result = $null
+    for ($attempt = 1; $attempt -le $Attempts; $attempt++)
+    {
+        $result = Invoke-DscResource @testParameters
+        if ([bool]$result.InDesiredState -eq $Expected) { break }
+
+        if ($attempt -lt $Attempts)
+        {
+            Write-Warning ("[Wait-TestDesiredState] '$($testParameters.Name)' reported InDesiredState = " +
+                "$($result.InDesiredState) on attempt $attempt of $Attempts; expected $Expected. Retrying in $DelaySeconds seconds.")
+            Start-Sleep -Seconds $DelaySeconds
+        }
+    }
+
+    return $result
+}

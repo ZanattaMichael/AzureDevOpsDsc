@@ -94,7 +94,8 @@ Describe "AzDoArtifactFeedView Integration Tests" -Tag "Integration", "ArtifactF
 
         It "Should return True (Absent is desired state)" {
             $parameters.Method = 'Test'
-            $result = Invoke-DscResource @parameters
+            # The view can still be listed for a moment after it is removed.
+            $result = Wait-TestDesiredState -Parameters $parameters
             $result.InDesiredState | Should -BeTrue
         }
     }
