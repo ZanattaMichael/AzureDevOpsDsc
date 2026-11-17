@@ -24,6 +24,18 @@ Pass `-SecureStringPersonalAccessToken` or `-SecureStringClientSecret`. See
 [Upgrading to 2.0](Upgrading-to-2.0#1-replace-the-removed-plain-text-parameters). If the call is
 made by a tool such as Dsc.PipelineRunner, that tool needs updating.
 
+### `Parameter set cannot be resolved using the specified named parameters`
+
+If every resource fails with this after a personal access token sign-in, the module is 2.0.0 or
+earlier. A resource restores the stored sign-in each time it runs, and in those versions the call
+it makes for a personal access token is one `New-AzDoAuthenticationProvider` rejects. Update to
+the release after 2.0.0. Until then, sign in with a managed identity, a service principal, the
+Azure CLI or workload identity federation, which are not affected.
+
+If the message comes from your own call to `New-AzDoAuthenticationProvider`, the parameters mix
+two sign-in methods, for example `-SecureStringPersonalAccessToken` with `-TenantId`. See
+[Authentication](Authentication) for the parameters each method takes.
+
 ### `The Environment Variable 'AZDODSC_CACHE_DIRECTORY' is not set`
 
 Set it before signing in and for every process that runs a resource. A variable set in one

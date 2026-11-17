@@ -16,8 +16,10 @@ Configuration Example
     {
         AzDoUserEntitlement 'RemoveJane'
         {
-            Ensure            = 'Absent'
-            UserPrincipalName = 'jane@contoso.com'
+            Ensure             = 'Absent'
+            UserPrincipalName  = 'jane@contoso.com'
+            # Mandatory on the resource, so it has to be given even when removing.
+            AccountLicenseType = 'express'
         }
     }
 }

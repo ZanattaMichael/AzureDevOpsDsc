@@ -43,8 +43,15 @@ New-AzDoAuthenticationProvider -OrganizationName 'contoso' -SecureStringPersonal
 Interactively, use `Read-Host -AsSecureString`. From a vault, most commands already return a
 `SecureString` (`Get-Secret`, `(Get-AzKeyVaultSecret ...).SecretValue`).
 
-`-NoVerify` was only available with the plain-text personal access token. A personal access token
-is not checked at sign-in, so remove `-NoVerify` from those calls.
+In 2.0.0 `-NoVerify` cannot be combined with `-SecureStringPersonalAccessToken`; it was only
+available with the plain-text token. A personal access token is not checked at sign-in, so remove
+`-NoVerify` from those calls. Later releases accept it again, as a switch with nothing to skip.
+
+> **Personal access tokens in 2.0.0.** After signing in with a personal access token, every
+> resource fails with "Parameter set cannot be resolved using the specified named parameters":
+> the resource could not read the stored token back. This is fixed in the release after 2.0.0.
+> On 2.0.0, use another sign-in method. See
+> [Troubleshooting](Troubleshooting#parameter-set-cannot-be-resolved-using-the-specified-named-parameters).
 
 Managed identity, certificate, Azure CLI and workload identity federation sign-in are unchanged.
 

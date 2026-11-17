@@ -17,6 +17,9 @@ Configuration Example
             Ensure           = 'Absent'
             SubscriptionName = 'BuildFailureAlert'
             EventType        = 'ms.vss-build.build-completed-failed-id'
+            # Mandatory on the resource, so they have to be given even when removing.
+            ChannelType      = 'EmailHtml'
+            Subscriber       = 'team@example.com'
         }
     }
 }

@@ -31,7 +31,7 @@ This resource is used to manage Azure DevOps project groups using Desired State 
 
 ```PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoProjectGroup ProjectGroup {

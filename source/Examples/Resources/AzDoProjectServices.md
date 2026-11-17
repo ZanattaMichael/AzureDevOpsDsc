@@ -37,7 +37,7 @@ This resource is used to manage Azure DevOps project services using Desired Stat
 
 ```PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoProjectServices ProjectServices {

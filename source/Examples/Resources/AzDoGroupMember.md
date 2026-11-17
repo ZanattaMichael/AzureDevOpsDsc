@@ -55,7 +55,7 @@ This resource is used to manage Azure DevOps group memberships using Desired Sta
 
 ```PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoGroupMember GroupExample {

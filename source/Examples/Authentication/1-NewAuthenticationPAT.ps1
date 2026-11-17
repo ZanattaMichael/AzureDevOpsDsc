@@ -18,5 +18,7 @@ New-AzDoAuthenticationProvider -OrganizationName 'my-organization' -SecureString
 $SecureStringPAT = ConvertTo-SecureString -String $env:AZDO_PAT -AsPlainText -Force
 New-AzDoAuthenticationProvider -OrganizationName 'my-organization' -SecureStringPersonalAccessToken $SecureStringPAT
 
-# The SecureString parameter set does not run the initial connectivity check and so does not take
-# -NoVerify; the first API call made through the token verifies it instead.
+# A personal access token is not checked at sign-in: the first API call made through the token
+# verifies it instead. -NoVerify is accepted here, as it is for the other sign-in methods, but has
+# nothing to skip.
+New-AzDoAuthenticationProvider -OrganizationName 'my-organization' -SecureStringPersonalAccessToken $SecureStringPAT -NoVerify

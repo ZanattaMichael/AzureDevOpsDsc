@@ -299,6 +299,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     sign-in, and `New-AzDoAuthenticationProvider` did not accept it together with
     `-SecureStringPersonalAccessToken`. It does now; a personal access token is still
     not verified at that point, so the switch changes nothing there.
+  - New integration test `Authentication.StoredSignIn`: a resource run in a new
+    PowerShell process has to restore the sign-in the suite stored. The successful runs
+    of the suite had all used a managed identity, so nothing exercised a stored personal
+    access token.
+
+- Examples
+  - `AzDoIterationPermission` example 1 used a resource name that does not exist
+    (`AzDoPermission`).
+  - The remove examples for `AzDoUserEntitlement`, `AzDoProcess` and
+    `AzDoNotificationSubscription` left out mandatory properties, so they did not compile.
+  - The `AzDoGroupMember`, `AzDoOrganizationGroup`, `AzDoProjectGroup` and
+    `AzDoProjectServices` pages imported the module under its old name, `AzDevOpsDsc`.
+  - The personal access token example said `-NoVerify` is not accepted.
 
 - Integration tests
   - The `AzDoArtifactFeedPermission`, `AzDoArtifactFeedView` and `AzDoPicklist` tests no
