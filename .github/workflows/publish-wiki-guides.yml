@@ -39,11 +39,42 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  publish:
-    name: ${{ github.event_name == 'pull_request' && 'Preview wiki guide changes' || 'Publish wiki guides' }}
+  # Token permissions cannot be set from an expression, so the dry run and the publish
+  # are separate jobs: only the one that pushes holds `contents: write`.
+  preview:
+    name: Preview wiki guide changes
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
-      contents: ${{ github.event_name == 'pull_request' && 'read' || 'write' }}
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          path: repo
+          persist-credentials: false
+
+      - name: Checkout wiki
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: wiki
+          persist-credentials: false
+
+      - name: Copy guides into the wiki (dry run)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          repo/.github/scripts/Sync-WikiGuides.sh repo wiki
+
+  publish:
+    name: Publish wiki guides
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
@@ -58,41 +89,14 @@ jobs:
           repository: ${{ github.repository }}.wiki
           path: wiki
 
-      # The version shown on the wiki's Home page is the latest full release, which is
-      # what a reader installs by default. A repository with no release yet leaves the
-      # placeholder alone.
-      - name: Find the latest released version
-        id: version
+      - name: Copy guides into the wiki
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
         run: |
-          tag=$(gh api "repos/$REPOSITORY/releases/latest" --jq '.tag_name' 2>/dev/null || true)
-          echo "Latest release tag: ${tag:-none}"
-          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
-
-      - name: Copy guides into the wiki
-        env:
-          MODULE_VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          repo/.github/scripts/Sync-WikiGuides.sh repo wiki "$MODULE_VERSION"
-
-      - name: Show what changes on the wiki
-        working-directory: wiki
-        run: |
-          if git diff --cached --quiet; then
-              echo "The wiki guides already match the repository." | tee -a "$GITHUB_STEP_SUMMARY"
-          else
-              {
-                  echo '### Wiki guide changes'
-                  echo '```'
-                  git diff --cached --stat
-                  echo '```'
-              } | tee -a "$GITHUB_STEP_SUMMARY"
-          fi
+          repo/.github/scripts/Sync-WikiGuides.sh repo wiki
 
       - name: Push to the wiki
-        if: github.event_name != 'pull_request'
         working-directory: wiki
         env:
           COMMIT_SHA: ${{ github.sha }}

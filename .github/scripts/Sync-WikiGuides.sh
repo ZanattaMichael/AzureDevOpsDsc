@@ -6,6 +6,9 @@
 #
 # Usage: Sync-WikiGuides.sh <repository directory> <wiki directory> [<module version>]
 #
+# Without a module version it asks GitHub for the latest full release, which needs
+# GH_TOKEN and REPOSITORY (owner/name) in the environment.
+#
 # The files are read from the commit (git show), not from the working copy, because
 # .gitattributes checks every text file out with CRLF line endings and the wiki pages
 # use LF.
@@ -29,6 +32,13 @@ while IFS= read -r -d '' file; do
     count=$((count + 1))
 done < <(git -C "$repo_dir" ls-tree -r -z --name-only HEAD -- "$source_dir/")
 
+# The version shown on the wiki's Home page is the latest full release, which is what a
+# reader installs by default.
+if [[ -z "$version" && -n "${REPOSITORY:-}" ]]; then
+    tag=$(gh api "repos/$REPOSITORY/releases/latest" --jq '.tag_name' 2>/dev/null || true)
+    version=${tag#v}
+fi
+
 # The release build (Copy_Source_Wiki_Folder in DscResource.DocGenerator) replaces the
 # '#.#.#' placeholder in Home.md with the module version. Do the same here, so a guide
 # update between releases does not put the placeholder back on the wiki's front page.
@@ -42,4 +52,15 @@ fi
 
 git -C "$wiki_dir" add --all
 echo "Copied $count file(s) from $source_dir."
-git -C "$wiki_dir" status --short
+
+summary=${GITHUB_STEP_SUMMARY:-/dev/null}
+if git -C "$wiki_dir" diff --cached --quiet; then
+    echo 'The wiki guides already match the repository.' | tee -a "$summary"
+else
+    {
+        echo '### Wiki guide changes'
+        echo '```'
+        git -C "$wiki_dir" diff --cached --stat
+        echo '```'
+    } | tee -a "$summary"
+fi
