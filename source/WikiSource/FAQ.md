@@ -29,8 +29,8 @@ resource has its own page with its properties and examples.
 
 ### Does it work with Azure DevOps Server?
 
-The module is built and tested against Azure DevOps Services (the cloud service). Support for
-Azure DevOps Server is tracked in
+No. The module supports Azure DevOps Services, the cloud service at `dev.azure.com`. Azure
+DevOps Server (on-premises) is not supported. The work it would take is tracked in
 [issue 91](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues/91).
 
 ### I am on 1.x. What changes in 2.0?

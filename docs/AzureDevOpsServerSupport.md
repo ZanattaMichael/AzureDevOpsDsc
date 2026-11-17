@@ -6,13 +6,11 @@ cloud service, Azure DevOps Services.
 
 ## Status
 
-**Pending a repository-owner decision.** The README currently states support for "Azure
-DevOps and Azure DevOps Server," and `CONTRIBUTING.md` keeps a `Server` resource category.
-Whether the module is actually built out to run against a Server collection, or whether
-that claim should instead be narrowed, is a decision for the repository owner — not
-something this plan makes on their behalf. Everything below is written to be useful either
-way: each increment is either infrastructure any caller benefits from (increment 1), or
-work that is cheap to abandon if the answer turns out to be "narrow the README instead."
+**Decided on 2026-11-17: the module supports Azure DevOps Services only.** The repository
+owner chose to narrow the claim rather than build Server support out now. The `about_`
+help topic, the wiki FAQ and `USAGE.md` say that Azure DevOps Server is not supported.
+Everything below stays as the plan of record should that change: increment 1 is
+infrastructure any caller benefits from, and the later increments have not been started.
 
 Today, every private API function reaches Azure DevOps Services by building a request URL
 against one of a handful of hardcoded `dev.azure.com` subdomains. None of that reaches a

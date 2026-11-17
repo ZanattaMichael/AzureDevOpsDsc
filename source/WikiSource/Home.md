@@ -4,13 +4,32 @@
 
 <sup>*AzureDevOpsDscNative v#.#.#*</sup>
 
-AzureDevOpsDscNative is a PowerShell DSC module for managing Azure DevOps as code: projects,
-groups and permissions, repositories and policies, pipelines, boards, process customization,
-artifacts and more. Every resource works from `Invoke-DscResource` and from the DSC v3 `dsc`
-command-line tool.
+Here you will find all the information you need to make use of the AzureDevOpsDscNative
+DSC resources in the latest release. This includes details of the resources that are
+available, current capabilities, known issues, and information to help plan a DSC based
+implementation of AzureDevOpsDscNative.
 
-Please leave comments, feature requests and bug reports in the
-[issues section](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues) of the repository.
+Please leave comments, feature requests, and bug reports for this module in the
+[issues section](https://github.com/ZanattaMichael/AzureDevOpsDsc/issues) for this repository.
+
+> **Note:** This is a native DSC v3 module where every resource is discoverable and invokable
+> by `dsc.exe` via the `Microsoft.Adapter/PowerShell` adapter, using generated adapted resource
+> manifests. No wrapper resources required.
+
+## About AzureDevOpsDscNative
+
+**AzureDevOpsDscNative** is a comprehensive DSC module that enables you to:
+
+- **Manage Projects**: Create and configure Azure DevOps projects with specific settings
+- **Control Permissions**: Define fine-grained permissions for users and groups across resources
+- **Manage Teams**: Create and manage teams and team membership
+- **Configure Repositories**: Manage Git repositories, permissions, and settings
+- **Setup Pipelines**: Configure pipelines, environments, and pipeline settings
+- **Manage Service Connections**: Create and manage service connections for CI/CD
+- **Configure Variable Groups**: Create and manage variable groups
+- **Manage Artifacts**: Configure artifact feeds and permissions
+- **Setup Infrastructure**: Manage agent pools, deployment groups, and other infrastructure
+- **Apply Policies**: Configure branch policies and other governance settings
 
 > **Upgrading from 1.x?** Version 2.0 changes how the credential is passed and stored. Read
 > [Upgrading to 2.0](Upgrading-to-2.0) first.

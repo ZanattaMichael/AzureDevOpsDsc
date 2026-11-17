@@ -119,7 +119,7 @@ $env:AZDODSC_ALLOWED_API_HOSTS = 'tfs.contoso.com'
 ```
 
 It exists for Azure DevOps Server (on-premises) collections, which the module does
-not target yet (see `docs/AzureDevOpsServerSupport.md`). Every host named here
+not support (see `docs/AzureDevOpsServerSupport.md`). Every host named here
 receives the credential, so only name hosts you operate.
 
 ### *AZDO_VERBOSELOGGING_FILEPATH*, *AZDO_WARNINGLOGGING_FILEPATH* and *AZDO_ERRORLOGGING_FILEPATH* Environment Variables
