@@ -33,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     preview-first rule and what to do when the changelog roll-over pull request is not
     opened.
 
+## [2.0.0] - 2026-11-16
+
 ### Removed
 
 - **BREAKING:** `New-AzDoAuthenticationProvider` no longer has the plain-text
