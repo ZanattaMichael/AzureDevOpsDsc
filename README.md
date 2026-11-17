@@ -328,8 +328,8 @@ CMMI) are read-only, so start by creating an inherited process with `AzDoProcess
 | [SECURITY.md](SECURITY.md) | Reporting a vulnerability, and how the module protects the credential. |
 
 The guides are kept in [`source/WikiSource`](source/WikiSource) and published to the
-[AzureDevOpsDscNative Wiki](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki) on each release, together with a generated page for every
-resource.
+[AzureDevOpsDscNative Wiki](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki) whenever they change on `main`. A generated page for every
+resource is published with them on each release.
 
 Each resource also has a page under [`source/Examples/Resources`](source/Examples/Resources)
 covering its properties, the behaviour worth knowing before using it, and three worked examples (a

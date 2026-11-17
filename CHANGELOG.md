@@ -71,6 +71,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     with `GITHUB_TOKEN` does not trigger other workflows, creating a tag this way does
     not cut a release unless the `publish` option is ticked, which dispatches the
     Publish workflow on the new tag.
+  - `Publish Wiki Guides` workflow (`.github/workflows/publish-wiki-guides.yml`), which
+    makes the repository the authoritative source for the wiki guides under
+    `source/WikiSource`. A change to a guide on `main` is pushed to the GitHub wiki
+    straight away, a guide deleted from the repository is deleted from the wiki, and a
+    guide edited directly in the wiki is put back as it is in the repository. On a pull
+    request it only reports what would change. The release workflow still publishes the
+    whole wiki, including the generated resource pages.
 
 ### Changed
 
