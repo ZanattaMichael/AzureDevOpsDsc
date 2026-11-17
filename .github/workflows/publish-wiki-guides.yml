@@ -6,6 +6,7 @@ name: Publish Wiki Guides
 #
 #   - A change to a guide on main is pushed to the GitHub wiki straight away.
 #   - A guide deleted from source/WikiSource is deleted from the wiki.
+#   - A page or folder listed in .github/wiki-retired-pages.txt is deleted from the wiki.
 #   - A guide edited directly in the wiki is put back as it is in the repository. The
 #     `gollum` trigger fires on every wiki edit made by a person. The push this workflow
 #     makes with GITHUB_TOKEN does not fire it, so it cannot loop.
@@ -30,11 +31,13 @@ on:
       - 'source/WikiSource/**'
       - '.github/workflows/publish-wiki-guides.yml'
       - '.github/scripts/Sync-WikiGuides.sh'
+      - '.github/wiki-retired-pages.txt'
   pull_request:
     paths:
       - 'source/WikiSource/**'
       - '.github/workflows/publish-wiki-guides.yml'
       - '.github/scripts/Sync-WikiGuides.sh'
+      - '.github/wiki-retired-pages.txt'
   # A page was created or edited in the wiki itself.
   gollum:
   workflow_dispatch:

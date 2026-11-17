@@ -6,7 +6,8 @@
 # overwritten from the repository, and a guide that was published by this script before
 # and is no longer in source/WikiSource is deleted from the wiki. The script knows what
 # it published from a manifest it keeps in the wiki (.guides-from-repository), so it
-# never deletes anything else: the per-resource pages and the sidebar that the release
+# never deletes anything else, apart from the retired pages listed in
+# .github/wiki-retired-pages.txt: the per-resource pages and the sidebar that the release
 # workflow generates are not in the manifest and are left alone.
 #
 # Usage: Sync-WikiGuides.sh <repository directory> <wiki directory> [<module version>]
@@ -72,6 +73,34 @@ if [[ -f "$wiki_dir/$manifest" ]]; then
 fi
 
 printf '%s\n' "${published[@]}" | LC_ALL=C sort > "$wiki_dir/$manifest"
+
+# Delete the retired pages and folders listed in the repository. Like the manifest, an
+# entry is only honoured if it is a plain relative path that git tracks in the wiki, and
+# never if it is, or contains, a guide that was just published.
+if git -C "$repo_dir" cat-file -e "HEAD:.github/wiki-retired-pages.txt" 2>/dev/null; then
+    while IFS= read -r retired || [[ -n "$retired" ]]; do
+        retired=${retired%$'\r'}
+        retired=${retired%/}
+        [[ -z "$retired" || "$retired" == \#* || "$retired" == /* || "$retired" == *..* ]] && continue
+        [[ "$retired" == .git || "$retired" == .git/* || "$retired" == "$manifest" ]] && continue
+        is_guide=false
+        for current in "${published[@]}"; do
+            if [[ "$current" == "$retired" || "$current" == "$retired"/* ]]; then
+                is_guide=true
+                break
+            fi
+        done
+        if "$is_guide"; then
+            echo "::warning::$retired is listed as retired but is a guide in $source_dir. It was not deleted."
+            continue
+        fi
+        if [[ -n "$(git -C "$wiki_dir" ls-files -- "$retired")" ]]; then
+            git -C "$wiki_dir" rm -r --quiet -- "$retired"
+            echo "Deleted retired page or folder $retired."
+            removed=$((removed + 1))
+        fi
+    done < <(git -C "$repo_dir" show "HEAD:.github/wiki-retired-pages.txt")
+fi
 
 # The version shown on the wiki's Home page is the latest full release, which is what a
 # reader installs by default.
