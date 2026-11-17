@@ -1,80 +1,56 @@
 # Usage Documentation
 
-This document provides detailed instructions on how to use the module effectively.
+This document covers the module's settings and the features that cut across resources:
+environment variables, logging, export, secret references and running at scale. For a first run,
+start with the [README](README.md#quick-start).
+
+Related guides, published to the [wiki](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki):
+
+| Guide | What it covers |
+|---|---|
+| [Authentication](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Authentication) | Every sign-in method and the setup each needs. |
+| [Upgrading to 2.0](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Upgrading-to-2.0) | Moving from 1.x. |
+| [Using the module with DSC v3](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/DscV3) | The `dsc` command-line tool and configuration documents. |
+| [Caching](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Caching) | What is cached, when it changes and how to reset it. |
+| [Troubleshooting](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Troubleshooting) | Error messages and what to do about them. |
 
 ## Prerequisites
 
-Ensure you have the following prerequisites before proceeding:
+- **PowerShell 7.0 or later.**
+- **The module**, from the PowerShell Gallery:
 
-- **PowerShell 7.0**
-- **Required Modules**:
-  - `ChangelogManagement`
-  - `Configuration`
-  - `DscResource.AnalyzerRules`
-  - `DscResource.Common`
-  - `DscResource.DocGenerator`
-  - `DscResource.Test`
-  - `InvokeBuild`
-  - `MarkdownLinkCheck`
-  - `Metadata`
-  - `ModuleBuilder`
-  - `Pester`
-  - `Plaster`
-  - `PSDepend`
-  - `PSDscResources`
-  - `PSScriptAnalyzer`
-  - `Sampler`
-  - `xDSCResourceDesigner`
+    ```powershell
+    Install-PSResource -Name AzureDevOpsDscNative
+    ```
 
-__Using Install-Module__
+- **To use `Invoke-DscResource`:** the `PSDesiredStateConfiguration` module, version 2.
+  PowerShell 7.2 and later no longer include it.
 
-``` PowerShell
-# Run as Administrator
-Install-Module -Scope AllUsers -Name @(
-  'ChangelogManagement'
-  'Configuration'
-  'DscResource.AnalyzerRules'
-  'DscResource.Common'
-  'DscResource.DocGenerator'
-  'DscResource.Test'
-  'InvokeBuild'
-  'MarkdownLinkCheck'
-  'Metadata'
-  'ModuleBuilder'
-  'Pester'
-  'Plaster'
-  'PSDepend'
-  'PSDscResources'
-  'PSScriptAnalyzer'
-  'Sampler'
-  'xDSCResourceDesigner'
-)
-```
+    ```powershell
+    Install-PSResource -Name PSDesiredStateConfiguration -Version '[2.0.5,3.0.0)'
+    ```
 
-__Using Install-PSResource__
+- **To use DSC v3:** the `dsc` command-line tool with its PowerShell adapter. See
+  [Using the module with DSC v3](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/DscV3).
+- **To use secret references to a vault:** `Microsoft.PowerShell.SecretManagement` and a
+  registered vault.
 
-``` PowerShell
-# Run as Administrator
-Install-PSResource @(
-  'ChangelogManagement'
-  'Configuration'
-  'DscResource.AnalyzerRules'
-  'DscResource.Common'
-  'DscResource.DocGenerator'
-  'DscResource.Test'
-  'InvokeBuild'
-  'MarkdownLinkCheck'
-  'Metadata'
-  'ModuleBuilder'
-  'Pester'
-  'Plaster'
-  'PSDepend'
-  'PSDscResources'
-  'PSScriptAnalyzer'
-  'Sampler'
-  'xDSCResourceDesigner'
-)
-```
+Nothing else is needed to use the module. The modules needed to build and test it are listed in
+[CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Environment Variables
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `AZDODSC_CACHE_DIRECTORY` | Yes | Folder for the stored credential and the cache. |
+| `AZDODSC_ALLOW_SHARED_CACHE_DIRECTORY` | No | `1` turns the Linux and macOS check that the cache folder is private into a warning. |
+| `AZDODSC_ALLOWED_API_HOSTS` | No | Extra hosts the credential may be sent to. |
+| `AZDODSC_REQUEST_TIMEOUT_SECONDS` | No | Request timeout. Default 300. |
+| `AZDODSC_MAX_RESPONSE_PAGES` | No | Most pages read for one listing. Default 10000. |
+| `AZDO_VERBOSELOGGING_FILEPATH`, `AZDO_WARNINGLOGGING_FILEPATH`, `AZDO_ERRORLOGGING_FILEPATH` | No | Files that receive verbose, warning and error messages. |
+
+Set them for every process that runs the module (a service, a scheduled task, a pipeline job, the
+`dsc` command), not only for an interactive session.
 
 ### *AZDODSC_CACHE_DIRECTORY* Environment Variable
 
@@ -103,6 +79,27 @@ rebuilt by running `New-AzDoAuthenticationProvider` there. On Linux and macOS th
 cache files are plain CLIXML protected by the owner-only permissions. Cache files
 written by an earlier version are still read, and are encrypted the next time they
 are written.
+
+### *AZDODSC_ALLOW_SHARED_CACHE_DIRECTORY* Environment Variable
+
+On Linux and macOS a resource only reads the stored credential when the cache directory is owned
+by the current account (or root) and has no group or other permissions. Otherwise the run stops
+and names the fix (`chmod 700`). Sign-in also fails, without writing the credential, if it cannot
+restrict the directory's permissions.
+
+Where the permissions cannot be changed, such as a volume mounted into a container, set
+`AZDODSC_ALLOW_SHARED_CACHE_DIRECTORY` to `1` to get a warning instead of the failure. Only do
+this when nothing else can write to the directory. The check is not made on Windows.
+
+### *AZDODSC_REQUEST_TIMEOUT_SECONDS* and *AZDODSC_MAX_RESPONSE_PAGES* Environment Variables
+
+Every request to Azure DevOps has a timeout of 300 seconds, so a server that accepts a connection
+and then says nothing cannot hold a run open. Set `AZDODSC_REQUEST_TIMEOUT_SECONDS` to a whole
+number of seconds to change it.
+
+A listing that spans several pages stops with an error after 10000 pages, or when a response
+repeats the continuation token of the previous page. Set `AZDODSC_MAX_RESPONSE_PAGES` to raise the
+limit for a very large organization.
 
 ### *AZDODSC_ALLOWED_API_HOSTS* Environment Variable
 
@@ -166,17 +163,22 @@ sensitive anyway: they name projects, identities and URIs. The module creates ea
 log file with owner-only permissions (the same as the cache directory); a file that
 already exists keeps the permissions it has.
 
-## Setting Up Managed Identity
-
-Please use the following [documentation](https://learn.microsoft.com/en-us/azure/devops/integrate/get-started/authentication/service-principal-managed-identity?view=azure-devops) as a guide to create a managed identity in Azure DevOps.
-
 ## Authentication
 
-Prior to accessing any resources, it is necessary to configure authentication by utilizing the `New-AzDoAuthenticationProvider` cmdlet.
+Before any resource runs, sign in once with `New-AzDoAuthenticationProvider`, as the account that
+will run DSC. It stores the credential in `AZDODSC_CACHE_DIRECTORY` and builds the cache.
 
 ```powershell
-New-AzDoAuthenticationProvider -OrganizationName $AzureDevopsOrganizationName -UseManagedIdentity
+# Managed identity
+New-AzDoAuthenticationProvider -OrganizationName 'contoso' -useManagedIdentity
+
+# Personal access token, as a SecureString
+$pat = Read-Host -Prompt 'Personal access token' -AsSecureString
+New-AzDoAuthenticationProvider -OrganizationName 'contoso' -SecureStringPersonalAccessToken $pat
 ```
+
+A personal access token and a client secret are only accepted as a `SecureString`. The plain-text
+`-PersonalAccessToken` and `-ClientSecret` parameters were removed in 2.0.
 
 `-OrganizationName` is the organization's name only, not its URL: for
 `https://dev.azure.com/contoso` pass `contoso`. A value that is not 1 to 50 letters,
@@ -184,40 +186,40 @@ digits or hyphens, starting and ending with a letter or digit, is refused before
 token is requested. `-TenantId`, where an authentication type takes one, must be the
 tenant GUID or a verified domain name such as `contoso.onmicrosoft.com`.
 
+The [Authentication guide](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Authentication) covers all six sign-in methods (personal access
+token, managed identity, service principal with a client secret or a certificate, Azure CLI and
+workload identity federation), and what each needs set up in Azure DevOps and Microsoft Entra ID.
+
 ## Sample Invocation
 
-Here is an example of how to invoke a resource using the module:
-
-1. Import the necessary modules:
+1. Set the cache directory and sign in:
 
     ```powershell
-    Import-Module "\AzureDevOpsDscNative\0.0.1\Modules\DscResource.Common\0.17.1\DscResource.Common.psd1"
-    Import-Module "\AzureDevOpsDscNative\0.0.1\Modules\AzureDevOpsDsc.Common\AzureDevOpsDsc.Common.psd1"
-    Import-Module "\AzureDevOpsDscNative\0.0.1\AzureDevOpsDscNative.psd1"
+    $env:AZDODSC_CACHE_DIRECTORY = Join-Path $HOME '.azuredevopsdsc'
+    New-AzDoAuthenticationProvider -OrganizationName 'contoso' -useManagedIdentity
     ```
 
-1. Create a Managed Identity Token:
-
-    ```powershell
-    New-AzDoAuthenticationProvider -OrganizationName "akkodistestorg" -UseManagedIdentity
-    ```
-
-1. Define the properties to be used by the module:
+1. Define the properties of the resource:
 
     ```powershell
     $properties = @{
-      ProjectName = 'UpdateSharePoint'
-      GroupName = 'TESTGROUP5'
+        ProjectName = 'Contoso'
+        GroupName   = 'Release Approvers'
     }
     ```
 
-1. Invoke the DSC Resource:
+1. Check, then apply:
 
     ```powershell
-    Invoke-DscResource -Name 'AzDoProjectGroup' -Method Set -Property $properties -ModuleName 'AzureDevOpsDscNative'
+    Invoke-DscResource -Name 'AzDoProjectGroup' -ModuleName 'AzureDevOpsDscNative' -Method Test -Property $properties
+    Invoke-DscResource -Name 'AzDoProjectGroup' -ModuleName 'AzureDevOpsDscNative' -Method Set -Property $properties
     ```
 
-By following these steps, you can successfully set up and use the module with Azure DevOps.
+With DSC v3 the same resource is `AzureDevOpsDscNative/AzDoProjectGroup`:
+
+```powershell
+dsc resource set --resource AzureDevOpsDscNative/AzDoProjectGroup --input '{"ProjectName":"Contoso","GroupName":"Release Approvers"}'
+```
 
 ## Onboarding an Existing Organization with Export
 
@@ -355,38 +357,54 @@ Invoke-DscRunner -Source Git -SourceContext @{ Url = $repoUrl } `
                  -Mode Set
 ```
 
+`-Connect AzureDevOps` signs this module in for you with a managed identity (the default) or a
+personal access token (`AuthenticationType = 'PAT'` and `PATToken` in the context). For any other
+sign-in method, run `New-AzDoAuthenticationProvider` yourself first and leave `-Connect` out. Set
+`AZDODSC_CACHE_DIRECTORY` before the run either way.
+
+> **Personal access tokens and module 2.0.** At the time 2.0 was released, the runner passed the
+> token to `New-AzDoAuthenticationProvider` with the plain-text `-PersonalAccessToken` parameter,
+> which 2.0 removed. Until the runner is updated, use a managed identity through the runner, or
+> sign in yourself and run `Invoke-DscRunner` without `-Connect AzureDevOps`.
+
 Existing Azure DevOps pipelines can continue to use the `Invoke-DscPipelineRunner`
 back-compat shim, which maps its Azure DevOps-flavored parameters onto
-`Invoke-DscRunner -Source Git -Connect AzureDevOps` with no functional change
-for existing callers. It requires the `AzureDevOpsDsc.Common` module to be
-installed separately, since Azure DevOps support is no longer a hard
-dependency of the core `Dsc.PipelineRunner` module:
+`Invoke-DscRunner -Source Git -Connect AzureDevOps`. It imports the `AzureDevOpsDsc.Common`
+module by name, so that module (it ships inside this one, under `Modules`) has to be on
+`PSModulePath`. Azure DevOps support is not a hard dependency of the core `Dsc.PipelineRunner`
+module:
 
 ```powershell
 Import-Module Dsc.PipelineRunner
 
+$env:PIPELINERUNNER_CACHE_DIRECTORY = 'C:\Datum\Cache'
+
 $params = @{
     AzureDevopsOrganizationName = 'MyOrg'
-    exportConfigDir             = 'C:\Datum\DSCOutput\'
+    ExportConfigDir             = 'C:\Datum\DSCOutput\'
     ConfigurationSourcePath     = 'https://configuration-path'
     JITToken                    = $env:SYSTEM_ACCESSTOKEN
     Mode                        = 'Set'
-    AuthenticationType          = 'ManagedIdentity'
     ReportPath                  = 'C:\Datum\DSCOutput\Reports'
 }
 
 Invoke-DscPipelineRunner @params
 ```
 
+`Invoke-DscPipelineRunner` no longer has an `-AuthenticationType` parameter: passing `-PATToken`
+selects a personal access token, and leaving it out uses the managed identity. `-ExportConfigDir`
+must already exist, and `-Mode` defaults to `Test`.
+
 > New integrations should prefer `Invoke-DscRunner`. See the [Dsc.PipelineRunner
 > README](https://github.com/ZanattaMichael/Dsc.PipelineRunner#public-commands)
-> for the full parameter reference for both commands.
+> for the full parameter reference for both commands, and
+> [Dsc.PipelineRunnerActions](https://github.com/ZanattaMichael/Dsc.PipelineRunnerActions) for
+> ready-made pipeline steps for GitHub Actions, Azure Pipelines, GitLab, CircleCI and Jenkins.
 
-The cache directory used to compile Datum configuration is set via
-`PIPELINERUNNER_CACHE_DIRECTORY` (the legacy `AZDODSC_CACHE_DIRECTORY` is
-still honoured as a back-compat alias). `Invoke-DscRunner` doesn't require
-either — pass `-CacheDirectory` explicitly, set one of those environment
-variables, or let it fall back to a temporary directory.
+The runner compiles Datum configuration into its own cache directory, set with `-CacheDirectory`
+or `PIPELINERUNNER_CACHE_DIRECTORY` (the legacy `AZDODSC_CACHE_DIRECTORY` is still honoured as a
+back-compat alias). `Invoke-DscRunner` falls back to a temporary directory when neither is set.
+`Invoke-DscPipelineRunner` requires one of the variables.
 
 Below is an example of how you can define parameters, variables, and resources in a YAML file to manage your Azure DevOps environment:
 
