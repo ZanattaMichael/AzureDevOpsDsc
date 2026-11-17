@@ -156,6 +156,54 @@ Describe "New-AzDoAuthenticationProvider" -Tag "Unit", "Public" {
 
             Assert-MockCalled -CommandName Set-AzPersonalAccessToken -Exactly 1 -ParameterFilter { $null -ne $SecureStringPersonalAccessToken }
         }
+
+        It "Should accept -isResource -NoVerify, which is how a resource restores a stored token" {
+            # The exact call [AzDevOpsDscResourceBase]::Construct() makes. NoVerify was missing from
+            # this parameter set, so every resource failed with 'Parameter set cannot be resolved'.
+            $secureStringPAT = ConvertTo-SecureString "dummySecurePat" -AsPlainText -Force
+
+            { New-AzDoAuthenticationProvider -OrganizationName "Contoso" -SecureStringPersonalAccessToken $secureStringPAT -isResource -NoVerify } | Should -Not -Throw
+
+            $Global:DSCAZDO_AuthenticationToken | Should -Be "mockedToken"
+            Assert-MockCalled -CommandName Set-AzPersonalAccessToken -Exactly 1 -ParameterFilter { -not $Verify }
+            Assert-MockCalled -CommandName Export-Clixml -Exactly 0
+        }
+    }
+
+    Context "Calls made by the resource base class" {
+
+        BeforeDiscovery {
+            # Every New-AzDoAuthenticationProvider call in the base class, with the named parameters
+            # it passes. Construct() cannot run in this suite, so the calls are read from its source.
+            $baseClassPath = (Get-ChildItem -Path (Join-Path $PSScriptRoot '../../../../../../../source/Classes') -Filter '006.AzDevOpsDscResourceBase.ps1').FullName
+            $ast = [System.Management.Automation.Language.Parser]::ParseFile($baseClassPath, [ref]$null, [ref]$null)
+            $restoreCalls = @(
+                $ast.FindAll({ param($node)
+                    $node -is [System.Management.Automation.Language.CommandAst] -and
+                    $node.GetCommandName() -eq 'New-AzDoAuthenticationProvider'
+                }, $true) | ForEach-Object {
+                    $names = @($_.CommandElements |
+                        Where-Object { $_ -is [System.Management.Automation.Language.CommandParameterAst] } |
+                        ForEach-Object { $_.ParameterName })
+                    @{ Line = $_.Extent.StartLineNumber; Names = $names; Text = ($names -join ', ') }
+                }
+            )
+        }
+
+        It "Finds the calls in the base class source" -ForEach @(@{ Count = $restoreCalls.Count }) {
+            $Count | Should -BeGreaterThan 5
+        }
+
+        It "Line <Line> (<Text>) names parameters that belong to one parameter set" -ForEach $restoreCalls {
+            $command = Get-Item -Path 'function:New-AzDoAuthenticationProvider'
+
+            $matching = @($command.ParameterSets | Where-Object {
+                $setNames = @($_.Parameters.Name) + @($_.Parameters.Aliases)
+                @($Names | Where-Object { $_ -notin $setNames }).Count -eq 0
+            })
+
+            $matching.Count | Should -BeGreaterThan 0 -Because "no parameter set of New-AzDoAuthenticationProvider accepts all of: $Text"
+        }
     }
 
     Context "Using ServicePrincipal parameter set" {

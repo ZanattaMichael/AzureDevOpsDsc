@@ -29,7 +29,7 @@ This resource is used to manage Azure DevOps organization groups using Desired S
 
 ``` PowerShell
 Configuration ExampleConfig {
-    Import-DscResource -ModuleName 'AzDevOpsDsc'
+    Import-DscResource -ModuleName 'AzureDevOpsDscNative'
 
     Node localhost {
         AzDoOrganizationGroup OrgGroup {

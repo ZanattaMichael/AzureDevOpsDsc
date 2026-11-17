@@ -17,8 +17,10 @@ Configuration Example
     {
         AzDoProcess 'RemoveContosoAgile'
         {
-            Ensure      = 'Absent'
-            ProcessName = 'Contoso Agile'
+            Ensure            = 'Absent'
+            ProcessName       = 'Contoso Agile'
+            # Mandatory on the resource, so it has to be given even when removing.
+            ParentProcessName = 'Agile'
         }
     }
 }

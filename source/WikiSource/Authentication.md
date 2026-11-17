@@ -74,7 +74,8 @@ long-lived secret to store or rotate.
 
 All methods except the personal access token check the connection when you sign in. Add
 `-NoVerify` to skip that check. A personal access token is not checked at sign-in, so a wrong or
-expired token only shows up when the cache is built or a resource runs.
+expired token only shows up when the cache is built or a resource runs. `-NoVerify` is accepted
+with a personal access token too, where it has nothing to skip.
 
 ### Managed identity
 

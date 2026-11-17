@@ -13,7 +13,7 @@ Configuration Example
 
     node localhost
     {
-        AzDoPermission 'AddAzDoIterationPermission'
+        AzDoIterationPermission 'AddAzDoIterationPermission'
         {
             Ensure               = 'Present'
             ProjectName          = 'Test Project'
