@@ -5,6 +5,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Documentation
+  - The user guides now live in the repository, under `source/WikiSource`, and are copied
+    to the wiki by the `docs` build task. They were kept only in the wiki, and had gone
+    out of date: the Home and Authentication pages still showed the plain-text
+    `-PersonalAccessToken` parameter that 2.0 removed. Authentication, Troubleshooting,
+    FAQ, Best Practices and the pipeline runner page are rewritten for 2.0, and
+    Troubleshooting now lists the module's own error messages.
+  - New guides: Upgrading to 2.0, Caching, and Using the module with DSC v3.
+  - The Authentication guide covers what each sign-in method needs set up in Azure
+    DevOps and Microsoft Entra ID.
+  - `USAGE.md` no longer lists the build modules as prerequisites, documents
+    `AZDODSC_ALLOW_SHARED_CACHE_DIRECTORY`, `AZDODSC_REQUEST_TIMEOUT_SECONDS` and
+    `AZDODSC_MAX_RESPONSE_PAGES`, and shows every sign-in example with a `SecureString`.
+  - The `Dsc.PipelineRunner` examples match the current runner: `Invoke-DscPipelineRunner`
+    no longer has `-AuthenticationType`, and its settings block is `PipelineRunnerSettings`.
+    This changes the runner example on 76 resource pages.
+  - Example scripts for `AzDoTestPlan`, `AzDoTestSuite`, `AzDoTestVariable`,
+    `AzDoTestConfiguration`, `AzDoPipelineAuthorization`, `AzDoDeploymentGroupTarget`,
+    `AzDoEnvironmentKubernetesResource` and `AzDoEnvironmentVMResource`, which had a
+    reference page but no example folder, so their generated wiki pages had no examples.
+  - The `about_AzureDevOpsDscNative` help topic covers getting started, authentication
+    and the environment variables.
+  - `CONTRIBUTING.md` has a Documentation section, and the Releasing section states the
+    preview-first rule and what to do when the changelog roll-over pull request is not
+    opened.
+
 ## [2.0.0] - 2026-11-16
 
 ### Removed

@@ -7,19 +7,83 @@ SHORT DESCRIPTION
 LONG DESCRIPTION
     This module contains DSC Resources for deployment and configuration of Azure DevOps Services and Azure DevOps Server. It is a fork of the DSC Community AzureDevOpsDsc module, adding native DSC v3 support - every resource is discoverable and invokable by dsc.exe via the Microsoft.Adapter/PowerShell adapter, using generated adapted resource manifests.
 
+    The resources manage projects, groups and permissions, repositories and policies, pipelines, boards, process customization, artifacts and more. Each resource can be used with Invoke-DscResource or with the DSC v3 command-line tool, where it is addressed as AzureDevOpsDscNative/<ResourceName>.
+
+    The module needs PowerShell 7.0 or later.
+
+GETTING STARTED
+    1. Choose a private, local folder for the module's settings and cache, and name it in the AZDODSC_CACHE_DIRECTORY environment variable. Treat the folder as credential storage. Set the variable for every process that runs DSC.
+
+        PS C:\> $env:AZDODSC_CACHE_DIRECTORY = Join-Path $HOME '.azuredevopsdsc'
+
+    2. Sign in once, as the account that will run DSC. This stores the credential and builds the cache. Pass the organization's name, not its URL.
+
+        PS C:\> New-AzDoAuthenticationProvider -OrganizationName 'contoso' -useManagedIdentity
+
+    3. Apply a resource.
+
+        PS C:\> Invoke-DscResource -Name AzDoProject -ModuleName AzureDevOpsDscNative -Method Set -Property @{ ProjectName = 'Contoso' }
+
+AUTHENTICATION
+    New-AzDoAuthenticationProvider supports a personal access token, a managed identity, a service principal with a client secret or a certificate, the Azure CLI, and workload identity federation. Run Get-Help New-AzDoAuthenticationProvider -Examples for each.
+
+    A personal access token and a client secret are only accepted as a SecureString:
+
+        PS C:\> $pat = Read-Host -Prompt 'Personal access token' -AsSecureString
+        PS C:\> New-AzDoAuthenticationProvider -OrganizationName 'contoso' -SecureStringPersonalAccessToken $pat
+
+    The plain-text -PersonalAccessToken and -ClientSecret parameters were removed in version 2.0.
+
+    Prefer a managed identity or workload identity federation to a personal access token, and give the identity only the access the configuration needs.
+
+ENVIRONMENT VARIABLES
+    AZDODSC_CACHE_DIRECTORY
+        Required. The folder that holds the stored credential (ModuleSettings.clixml) and the cache.
+
+    AZDODSC_ALLOW_SHARED_CACHE_DIRECTORY
+        Set to 1 to turn the Linux and macOS check that the cache folder is private into a warning.
+
+    AZDODSC_ALLOWED_API_HOSTS
+        A comma separated list of extra hosts the credential may be sent to.
+
+    AZDODSC_REQUEST_TIMEOUT_SECONDS
+        The request timeout. The default is 300.
+
+    AZDODSC_MAX_RESPONSE_PAGES
+        The most pages read for one listing. The default is 10000.
+
+    AZDO_VERBOSELOGGING_FILEPATH, AZDO_WARNINGLOGGING_FILEPATH, AZDO_ERRORLOGGING_FILEPATH
+        Files that receive verbose, warning and error messages.
+
 EXAMPLES
-    PS C:\> Get-DscResource -Module AzureDevOpsDscNative
+    List the resources:
+
+        PS C:\> Get-DscResource -Module AzureDevOpsDscNative
+
+    List them with DSC v3:
+
+        PS C:\> dsc resource list --adapter Microsoft.Adapter/PowerShell 'AzureDevOpsDscNative/*'
+
+    Read the current state of a project:
+
+        PS C:\> Invoke-DscResource -Name AzDoProject -ModuleName AzureDevOpsDscNative -Method Get -Property @{ ProjectName = 'Contoso' }
 
 NOTE:
     Thank you to all those who contributed to this module, by writing code, sharing opinions, and provided feedback.
 
 TROUBLESHOOTING NOTE:
-    Go to the Github repository for read about issues, submit a new issue, and read
-    about new releases. https://github.com/ZanattaMichael/AzureDevOpsDsc
+    A resource that cannot find a project, group or user that exists in Azure DevOps is usually reading a cache built before the object was created. Run New-AzDoAuthenticationProvider again to rebuild the cache.
+
+    The troubleshooting guide lists the module's error messages and what to do about them:
+    https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Troubleshooting
+
+    Go to the GitHub repository to read about issues, submit a new issue, and read about new releases. https://github.com/ZanattaMichael/AzureDevOpsDsc
 
 SEE ALSO
   - https://github.com/ZanattaMichael/AzureDevOpsDsc
+  - https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki
+  - https://github.com/ZanattaMichael/AzureDevOpsDsc/blob/main/USAGE.md
+  - https://github.com/ZanattaMichael/AzureDevOpsDsc/blob/main/SECURITY.md
 
 KEYWORDS
       DSC, DscResource, AzureDevOps, VSTS, TFS
-

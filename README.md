@@ -1,116 +1,173 @@
-# AzureDevOpsDscNative
+<p align="center">
+  <img src="assets/logo/wordmark-banner.svg" alt="AzureDevOpsDscNative" width="640">
+</p>
 
-> This is a fork of [dsccommunity/AzureDevOpsDsc](https://github.com/dsccommunity/AzureDevOpsDsc), published separately as **AzureDevOpsDscNative** to add native DSC v3 support: every resource is discoverable and invokable by `dsc.exe` via the `Microsoft.Adapter/PowerShell` adapter, using generated adapted resource manifests - no wrapper resource required. See also [@mimachniak's AzureDevOpsDscv3](https://github.com/mimachniak/AzureDevOpsDscv3), which takes a different approach (a `Microsoft.Windows/WindowsPowerShell` wrapper) to the same goal.
+[![Build](https://github.com/ZanattaMichael/AzureDevOpsDsc/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/ZanattaMichael/AzureDevOpsDsc/actions/workflows/build.yml?query=branch%3Amain)
+[![Unit Tests](https://github.com/ZanattaMichael/AzureDevOpsDsc/actions/workflows/unit-tests.yml/badge.svg?branch=main)](https://github.com/ZanattaMichael/AzureDevOpsDsc/actions/workflows/unit-tests.yml?query=branch%3Amain)
+[![Publish](https://github.com/ZanattaMichael/AzureDevOpsDsc/actions/workflows/publish.yml/badge.svg)](https://github.com/ZanattaMichael/AzureDevOpsDsc/actions/workflows/publish.yml)
+[![PowerShell Gallery](https://img.shields.io/powershellgallery/v/AzureDevOpsDscNative?label=PowerShell%20Gallery&logo=powershell&logoColor=white)](https://www.powershellgallery.com/packages/AzureDevOpsDscNative)
+[![PowerShell Gallery (preview)](https://img.shields.io/powershellgallery/vpre/AzureDevOpsDscNative?label=preview&logo=powershell&logoColor=white)](https://www.powershellgallery.com/packages/AzureDevOpsDscNative)
+[![Downloads](https://img.shields.io/powershellgallery/dt/AzureDevOpsDscNative?label=downloads)](https://www.powershellgallery.com/packages/AzureDevOpsDscNative)
+[![GitHub release](https://img.shields.io/github/v/release/ZanattaMichael/AzureDevOpsDsc?label=release)](https://github.com/ZanattaMichael/AzureDevOpsDsc/releases/latest)
+[![PowerShell 7.0+](https://img.shields.io/badge/PowerShell-7.0%2B-5391FE?logo=powershell&logoColor=white)](https://learn.microsoft.com/powershell/)
+[![DSC v3](https://img.shields.io/badge/DSC-v3%20native-0B5CAD)](https://learn.microsoft.com/powershell/dsc/overview)
+[![License: MIT](https://img.shields.io/github/license/ZanattaMichael/AzureDevOpsDsc)](LICENSE)
 
-The **AzureDevOpsDscNative** module contains DSC Resources for deployment and
-configuration of Azure DevOps and Azure DevOps Server.
+**AzureDevOpsDscNative** is a PowerShell module of 84 class-based DSC resources that manage an
+Azure DevOps organization as configuration: projects, repositories, permissions, pipelines, boards,
+process customization, artifacts and more.
 
-[![PowerShell Gallery (with prereleases)](https://img.shields.io/powershellgallery/vpre/AzureDevOpsDscNative?label=AzureDevOpsDscNative%20Preview)](https://www.powershellgallery.com/packages/AzureDevOpsDscNative/)
-[![PowerShell Gallery](https://img.shields.io/powershellgallery/v/AzureDevOpsDscNative?label=AzureDevOpsDscNative)](https://www.powershellgallery.com/packages/AzureDevOpsDscNative/)
+> This is a fork of [dsccommunity/AzureDevOpsDsc](https://github.com/dsccommunity/AzureDevOpsDsc), published
+> separately as **AzureDevOpsDscNative** to add native DSC v3 support: every resource is
+> discoverable and invokable by `dsc.exe` via the `Microsoft.Adapter/PowerShell` adapter, using
+> generated adapted resource manifests - no wrapper resource required. See also
+> [@mimachniak's AzureDevOpsDscv3](https://github.com/mimachniak/AzureDevOpsDscv3), which takes a
+> different approach (a `Microsoft.Windows/WindowsPowerShell` wrapper) to the same goal.
 
-## Code of Conduct
+## Contents
 
-This project has adopted this [Code of Conduct](CODE_OF_CONDUCT.md).
+- [Highlights](#highlights)
+- [What is new in 2.0](#what-is-new-in-20)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [Authentication](#authentication)
+- [Security](#security)
+- [Resources](#resources)
+- [Documentation](#documentation)
+- [Testing](#testing)
+- [Releases](#releases)
+- [Contributing](#contributing)
 
-## Usage
+## Highlights
 
-Please review the following [Usage Documentation](USAGE.md)
+- **84 resources** covering projects, teams and groups, entitlements, Git repositories and branch
+  policies, permissions across the security namespaces, pipelines and environments, boards, test
+  management, inherited-process customization, artifacts, wikis, extensions and auditing.
+- **Works with DSC v3 and with `Invoke-DscResource`.** The same resources run through `dsc.exe`,
+  PowerShell DSC, or [`Dsc.PipelineRunner`](USAGE.md#implementation-using-dscpipelinerunner).
+- **Six ways to sign in**, including managed identity and workload identity federation, so no
+  long-lived secret is needed.
+- **Export of an existing organization** into configuration, to onboard what is already there. See
+  [Onboarding an Existing Organization with Export](USAGE.md#onboarding-an-existing-organization-with-export).
+- **Secrets stay out of configuration.** Resources accept a reference to an environment variable or
+  a SecretManagement vault instead of the secret itself.
+- **Hardened by default.** Credentials are only sent to Azure DevOps hosts, secrets are redacted
+  from logs and errors, and the stored credential and cache are owner-only and, on Windows,
+  DPAPI-encrypted. See [Security](#security).
 
-## Releases
+## What is new in 2.0
 
-Releases are tag-driven. Merging to `main` builds and tests the module but does
-**not** publish anything. A release is cut by pushing a version tag:
+Version 2.0.0 is a major release with breaking changes to how credentials are handled. The
+[change log](CHANGELOG.md) has the full list.
 
-```powershell
-git tag v1.2.3
-git push origin v1.2.3
-```
+- **Breaking:** `New-AzDoAuthenticationProvider` no longer has the plain-text `-PersonalAccessToken`
+  (alias `-PAT`) and `-ClientSecret` parameters. Pass `-SecureStringPersonalAccessToken` or
+  `-SecureStringClientSecret` instead.
+- **Breaking:** `New-AzDoAuthenticationProvider` fails, and writes no credential, when it cannot
+  restrict the permissions of the cache directory. On Linux and macOS the stored credential is only
+  read from a directory that is owned by the current account and closed to group and other
+  (`chmod 700`).
+- **Secret references** in `AzDoVariableGroup`, `AzDoServiceConnection`, `AzDoServiceHook`,
+  `AzDoAuditStream` and `AzDoPipeline`.
+- **Secret redaction** by exact value as well as by shape, in every output stream and log file.
+- **Cache protection:** secrets are removed before a value is cached, and on Windows every cache
+  file is DPAPI-encrypted for the account that wrote it.
+- **Request hardening:** names are escaped in request paths, every request has a timeout, and
+  paging is capped.
+- **Faster runs** from a performance pass over the cache and request path.
+- **Release pipeline:** pinned build modules, a `release` environment for the publish job and a
+  build provenance attestation on every package.
+- A [security policy](SECURITY.md) that sets out how to report a vulnerability and how a report
+  is handled.
 
-That triggers the [Publish workflow](.github/workflows/publish.yml), which
-verifies the tag is on `main`, rebuilds the module with the version taken from
-the tag, re-runs both unit test suites as a release gate, then creates a GitHub
-Release and publishes to
-[PowerShell Gallery](https://www.powershellgallery.com/packages/AzureDevOpsDscNative/).
+## Installation
 
-Prerelease versions use an alphanumeric suffix — for example `v1.2.3-preview0001`
-— and publish to the Gallery as prereleases, installable with
-`Install-Module AzureDevOpsDscNative -AllowPrerelease`.
-
-See [Releasing](CONTRIBUTING.md#releasing) for the full procedure.
-
-## Contributing
-
-Please check out common DSC Community [contributing guidelines](https://dsccommunity.org/guidelines/contributing).
-
-Additionally, please [`AzureDevOpsDsc` contribution guidelines](CONTRIBUTING.md)
-for more information about contributing to this module (including an overview of
-module structure, design and setup of Integration tests).
-
-## Testing
-
-This module is tested with [Pester 5](https://pester.dev/). Tests live under
-[`tests/`](tests) and are split into:
-
-- **Unit tests** ([`tests/Unit`](tests/Unit)) — fast, no external dependencies.
-- **Integration tests** ([`tests/Integration`](tests/Integration)) — run against a
-  live Azure DevOps organization and require authentication.
-
-### Test tags
-
-Every `Describe` block is tagged with a **type** tag and a **service** tag:
-
-- **Type tag** — `Unit` or `Integration`.
-- **Service tag** — the resource/service the test covers (for example
-  `ArtifactFeed`, `Project`, `GitPermission`). The same service tag is applied to a
-  service's unit *and* integration tests, so one tag selects both.
-
-Some unit tests also keep an additional category tag (`API`, `Cache`, `ACL`,
-`Helper`, `Authentication`).
-
-```powershell
-Invoke-Pester -Tag Unit            # all unit tests
-Invoke-Pester -Tag Integration     # all integration tests
-Invoke-Pester -Tag ArtifactFeed    # unit + integration for one service
-Invoke-Pester -Tag Unit, API       # unit tests for the private API functions
-```
-
-### Running the unit tests
-
-```powershell
-# Build the module first so the compiled module and classes are available.
-./build.ps1 -Tasks build
-
-Invoke-Pester -Path ./tests/Unit -Tag Unit
-```
-
-### Running the integration tests
-
-Integration tests create and tear down real Azure DevOps resources, so they run
-through a test framework that handles authentication, setup and teardown. Set the
-cache directory, then invoke the framework:
+The module needs **PowerShell 7.0 or later**. It is published to the
+[PowerShell Gallery](https://www.powershellgallery.com/packages/AzureDevOpsDscNative).
 
 ```powershell
-$env:AZDODSC_CACHE_DIRECTORY = '<path-to-a-writable-cache-folder>'
+Install-PSResource -Name AzureDevOpsDscNative
 
-Set-Location ./tests/Integration
-. ./Invoke-Tests.ps1 -TestFrameworkConfigurationPath ./TestFrameworkConfiguration.json
+# or, with PowerShellGet
+Install-Module -Name AzureDevOpsDscNative
 ```
 
-To iterate on a subset (specific files and/or `Context` blocks) without running the
-whole suite, use the targeted runner:
+To try a preview release:
 
 ```powershell
-. ./Invoke-TargetedTests.ps1 `
-    -TestFrameworkConfigurationPath ./TestFrameworkConfiguration.json `
-    -TestFile AzDoArtifactFeed `
-    -FullName '*Creating*'
+Install-PSResource -Name AzureDevOpsDscNative -Prerelease
 ```
 
-See [`tests/README.md`](tests/README.md) for the full tag taxonomy and more detail.
+## Quick start
 
-## Change log
+1. Choose a private, local folder for the module's settings and cache. Treat it as credential
+   storage.
 
-A full list of changes in each version can be found in the [change log](CHANGELOG.md).
+    ```powershell
+    $env:AZDODSC_CACHE_DIRECTORY = (Join-Path $HOME '.azuredevopsdsc')
+    ```
+
+1. Sign in once. This stores the credential and builds the cache.
+
+    ```powershell
+    $pat = Read-Host -Prompt 'Personal access token' -AsSecureString
+    New-AzDoAuthenticationProvider -OrganizationName 'contoso' -SecureStringPersonalAccessToken $pat
+    ```
+
+1. Apply a resource.
+
+    ```powershell
+    $properties = @{
+        ProjectName        = 'Contoso'
+        ProjectDescription = 'Managed by DSC'
+    }
+
+    Invoke-DscResource -Name AzDoProject -ModuleName AzureDevOpsDscNative -Method Set -Property $properties
+    ```
+
+With DSC v3, the same resource is addressed as `AzureDevOpsDscNative/AzDoProject`:
+
+```powershell
+dsc resource list --adapter Microsoft.Adapter/PowerShell 'AzureDevOpsDscNative/*'
+dsc resource get --resource AzureDevOpsDscNative/AzDoProject --input '{"ProjectName":"Contoso"}'
+```
+
+[USAGE.md](USAGE.md) covers the environment variables, logging, export, secret references and
+running configurations with `Dsc.PipelineRunner`. Coming from 1.x? Read
+[Upgrading to 2.0](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Upgrading-to-2.0).
+
+## Authentication
+
+`New-AzDoAuthenticationProvider` configures how the module signs in. `-OrganizationName` is the
+organization's name only, not its URL.
+
+| Method | Parameters | Example |
+|---|---|---|
+| Personal access token | `-SecureStringPersonalAccessToken` | [PAT](source/Examples/Authentication/1-NewAuthenticationPAT.ps1) |
+| Managed identity | `-useManagedIdentity` | [Managed identity](source/Examples/Authentication/2-NewAuthenticationManagedIdentity.ps1) |
+| Service principal with a client secret | `-TenantId`, `-ClientId`, `-SecureStringClientSecret` | [Service principal](source/Examples/Authentication/3-NewAuthenticationServicePrincipal.ps1) |
+| Service principal with a certificate | `-TenantId`, `-ClientId`, and `-CertificateThumbprint` or `-CertificatePath` with `-CertificatePassword` | [Certificate](source/Examples/Authentication/4-NewAuthenticationCertificate.ps1) |
+| Azure CLI | `-useAzureCLI` | [Azure CLI](source/Examples/Authentication/5-NewAuthenticationAzureCLI.ps1) |
+| Workload identity federation | `-TenantId`, `-ClientId`, and `-FederatedTokenFile`, `-useGitHubActionsOIDC` or `-FederatedToken` | [Workload identity federation](source/Examples/Authentication/6-NewAuthenticationWorkloadIdentityFederation.ps1) |
+
+Prefer managed identity or workload identity federation to a personal access token, and give the
+identity only the access the configuration needs. The
+[Authentication guide](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Authentication) has the setup for each method.
+
+## Security
+
+The module holds a credential that can administer an Azure DevOps organization.
+[SECURITY.md](SECURITY.md) describes what the module does to protect it, where that protection
+stops, and what the operator has to do. In short:
+
+- Keep `AZDODSC_CACHE_DIRECTORY` on a private, local path, and run DSC as the account that ran
+  `New-AzDoAuthenticationProvider`.
+- Use a [secret reference](USAGE.md#keeping-secrets-out-of-a-configuration) instead of writing a
+  secret into a configuration.
+- Treat log files as sensitive even though secrets are redacted from them.
+
+Please report a vulnerability privately, as set out in the
+[security policy](SECURITY.md#reporting-a-vulnerability), not through a public issue.
 
 ## Resources
 
@@ -257,14 +314,27 @@ CMMI) are read-only, so start by creating an inherited process with `AzDoProcess
 
 ## Documentation
 
-Each resource has a page under [`source/Examples/Resources`](source/Examples/Resources) covering its
-properties, the behaviour worth knowing before using it, and three worked examples (a DSC
-configuration, `Invoke-DscResource`, and `Dsc.PipelineRunner`). The tables above link to them
-directly.
+| Guide | What it covers |
+|---|---|
+| [Authentication](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Authentication) | Every sign-in method, and what each needs set up in Azure DevOps and Microsoft Entra ID. |
+| [Upgrading to 2.0](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Upgrading-to-2.0) | The breaking changes in 2.0 and how to move from 1.x. |
+| [Using the module with DSC v3](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/DscV3) | Running resources and configuration documents with the `dsc` command-line tool. |
+| [Pipeline Runner Configuration](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/LCMConfiguration) | Applying configurations at scale with [Dsc.PipelineRunner](https://github.com/ZanattaMichael/Dsc.PipelineRunner). |
+| [Caching](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Caching) | What the module caches, when it changes and how to reset it. |
+| [Permissions & ACLs](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Permissions) | The permission resources, identity syntax and permission names. |
+| [Best Practices](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/BestPractices) | Recommendations for identities, secrets, configurations and runs. |
+| [Troubleshooting](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Troubleshooting) | Error messages and what to do about them. |
+| [USAGE.md](USAGE.md) | Environment variables, logging, export and secret references. |
+| [SECURITY.md](SECURITY.md) | Reporting a vulnerability, and how the module protects the credential. |
 
-The same documentation is published to the
-[AzureDevOpsDscNative Wiki](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki), which is updated
-automatically on each PR merge.
+The guides are kept in [`source/WikiSource`](source/WikiSource) and published to the
+[AzureDevOpsDscNative Wiki](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki) on each release, together with a generated page for every
+resource.
+
+Each resource also has a page under [`source/Examples/Resources`](source/Examples/Resources)
+covering its properties, the behaviour worth knowing before using it, and three worked examples (a
+DSC configuration, `Invoke-DscResource`, and `Dsc.PipelineRunner`). The tables above link to them
+directly.
 
 [`docs/ResourceRoadmap.md`](docs/ResourceRoadmap.md) is the plan of record for what the module
 covers and what is still outstanding, with the reasoning behind the priority order. Start there
@@ -272,6 +342,118 @@ before adding a resource.
 
 ### Examples
 
-The [Examples](source/Examples) directory holds runnable configurations for every resource. They
-are also available in the
-[AzureDevOpsDscNative Wiki](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki).
+The [Examples](source/Examples) directory holds runnable scripts for every sign-in method and
+every resource.
+
+## Testing
+
+This module is tested with [Pester 5](https://pester.dev/). Tests live under
+[`tests/`](tests) and are split into:
+
+- **Unit tests** ([`tests/Unit`](tests/Unit)) — fast, no external dependencies.
+- **Integration tests** ([`tests/Integration`](tests/Integration)) — run against a
+  live Azure DevOps organization and require authentication.
+
+### Test tags
+
+Every `Describe` block is tagged with a **type** tag and a **service** tag:
+
+- **Type tag** — `Unit` or `Integration`.
+- **Service tag** — the resource/service the test covers (for example
+  `ArtifactFeed`, `Project`, `GitPermission`). The same service tag is applied to a
+  service's unit *and* integration tests, so one tag selects both.
+
+Some unit tests also keep an additional category tag (`API`, `Cache`, `ACL`,
+`Helper`, `Authentication`).
+
+```powershell
+Invoke-Pester -Tag Unit            # all unit tests
+Invoke-Pester -Tag Integration     # all integration tests
+Invoke-Pester -Tag ArtifactFeed    # unit + integration for one service
+Invoke-Pester -Tag Unit, API       # unit tests for the private API functions
+```
+
+### Running the unit tests
+
+```powershell
+# Build the module first so the compiled module and classes are available.
+./build.ps1 -Tasks build
+
+Invoke-Pester -Path ./tests/Unit -Tag Unit
+```
+
+### Running the integration tests
+
+Integration tests create and tear down real Azure DevOps resources, so they run
+through a test framework that handles authentication, setup and teardown. Set the
+cache directory, then invoke the framework:
+
+```powershell
+$env:AZDODSC_CACHE_DIRECTORY = '<path-to-a-writable-cache-folder>'
+
+Set-Location ./tests/Integration
+. ./Invoke-Tests.ps1 -TestFrameworkConfigurationPath ./TestFrameworkConfiguration.json
+```
+
+To iterate on a subset (specific files and/or `Context` blocks) without running the
+whole suite, use the targeted runner:
+
+```powershell
+. ./Invoke-TargetedTests.ps1 `
+    -TestFrameworkConfigurationPath ./TestFrameworkConfiguration.json `
+    -TestFile AzDoArtifactFeed `
+    -FullName '*Creating*'
+```
+
+See [`tests/README.md`](tests/README.md) for the full tag taxonomy and more detail.
+
+## Releases
+
+Releases are tag-driven. Merging to `main` builds and tests the module but does
+**not** publish anything. A release is cut by pushing a version tag:
+
+```powershell
+git tag v2.0.1
+git push origin v2.0.1
+```
+
+That triggers the [Publish workflow](.github/workflows/publish.yml), which
+verifies the tag is on `main`, rebuilds the module with the version taken from
+the tag, re-runs both unit test suites as a release gate, then creates a GitHub
+Release and publishes to
+[PowerShell Gallery](https://www.powershellgallery.com/packages/AzureDevOpsDscNative/).
+
+Prerelease versions use an alphanumeric suffix — for example `v2.1.0-preview1`
+— and publish to the Gallery as prereleases, installable with
+`Install-Module AzureDevOpsDscNative -AllowPrerelease`.
+
+A release goes out as a preview first, and the full version follows once the preview has
+succeeded. The [Create Tag workflow](.github/workflows/create-tag.yml) can create the tag from the
+Actions tab instead. Each published package carries a build provenance attestation, which can be
+checked with `gh attestation verify`.
+
+See [Releasing](CONTRIBUTING.md#releasing) for the full procedure.
+
+## Contributing
+
+Please check out common DSC Community [contributing guidelines](https://dsccommunity.org/guidelines/contributing).
+
+Additionally, please read the [`AzureDevOpsDscNative` contribution guidelines](CONTRIBUTING.md)
+for more information about contributing to this module (including an overview of
+module structure, design and setup of Integration tests).
+
+## Code of Conduct
+
+This project has adopted this [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Change log
+
+A full list of changes in each version can be found in the [change log](CHANGELOG.md).
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+## Logo
+
+The logo files are in [`assets/logo`](assets/logo).
