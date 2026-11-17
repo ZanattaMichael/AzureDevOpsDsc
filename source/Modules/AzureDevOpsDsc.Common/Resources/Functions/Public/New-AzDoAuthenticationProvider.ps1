@@ -17,6 +17,14 @@ plain-text parameter: a secret typed on the command line lands in shell history,
 process listings. Use Read-Host -AsSecureString, or ConvertTo-SecureString on a value read from an
 environment variable or a secret store.
 
+.PARAMETER NoVerify
+Skips the request that checks the new token against Azure DevOps. A personal access token is not
+checked at sign-in, so the switch has no effect with -SecureStringPersonalAccessToken.
+
+.PARAMETER isResource
+Used by the DSC resources to restore the stored sign-in: sets the token for the session without
+filling the caches or writing ModuleSettings.clixml.
+
 .PARAMETER SecureStringClientSecret
 The service principal client secret as a SecureString. There is no plain-text parameter, for the
 same reason.
@@ -137,7 +145,10 @@ Function New-AzDoAuthenticationProvider
         [SecureString]
         $FederatedToken,
 
-        # Don't verify the Token
+        # Don't verify the Token. A personal access token is never verified here, so on that
+        # parameter set the switch changes nothing; it is accepted because the resource base class
+        # passes it for every token type when it restores the stored sign-in.
+        [Parameter(ParameterSetName = 'SecureStringPersonalAccessToken')]
         [Parameter(ParameterSetName = 'ManagedIdentity')]
         [Parameter(ParameterSetName = 'SecureStringServicePrincipal')]
         [Parameter(ParameterSetName = 'Certificate')]

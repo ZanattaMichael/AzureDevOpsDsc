@@ -255,6 +255,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Personal access token sign-in
+  - A resource could not restore a stored personal access token: every `Get`, `Test`
+    and `Set` failed with "Parameter set cannot be resolved using the specified named
+    parameters". The resource base class passes `-NoVerify` when it restores the
+    sign-in, and `New-AzDoAuthenticationProvider` did not accept it together with
+    `-SecureStringPersonalAccessToken`. It does now; a personal access token is still
+    not verified at that point, so the switch changes nothing there.
+
 - Integration tests
   - The `AzDoArtifactFeedPermission`, `AzDoArtifactFeedView` and `AzDoPicklist` tests no
     longer fail when Azure DevOps returns the earlier state for a moment after a change.
