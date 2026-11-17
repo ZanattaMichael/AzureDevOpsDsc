@@ -133,7 +133,8 @@ dsc resource get --resource AzureDevOpsDscNative/AzDoProject --input '{"ProjectN
 ```
 
 [USAGE.md](USAGE.md) covers the environment variables, logging, export, secret references and
-running configurations with `Dsc.PipelineRunner`.
+running configurations with `Dsc.PipelineRunner`. Coming from 1.x? Read
+[Upgrading to 2.0](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Upgrading-to-2.0).
 
 ## Authentication
 
@@ -150,7 +151,8 @@ organization's name only, not its URL.
 | Workload identity federation | `-TenantId`, `-ClientId`, and `-FederatedTokenFile`, `-useGitHubActionsOIDC` or `-FederatedToken` | [Workload identity federation](source/Examples/Authentication/6-NewAuthenticationWorkloadIdentityFederation.ps1) |
 
 Prefer managed identity or workload identity federation to a personal access token, and give the
-identity only the access the configuration needs.
+identity only the access the configuration needs. The
+[Authentication guide](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Authentication) has the setup for each method.
 
 ## Security
 
@@ -312,14 +314,27 @@ CMMI) are read-only, so start by creating an inherited process with `AzDoProcess
 
 ## Documentation
 
-Each resource has a page under [`source/Examples/Resources`](source/Examples/Resources) covering its
-properties, the behaviour worth knowing before using it, and three worked examples (a DSC
-configuration, `Invoke-DscResource`, and `Dsc.PipelineRunner`). The tables above link to them
-directly.
+| Guide | What it covers |
+|---|---|
+| [Authentication](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Authentication) | Every sign-in method, and what each needs set up in Azure DevOps and Microsoft Entra ID. |
+| [Upgrading to 2.0](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Upgrading-to-2.0) | The breaking changes in 2.0 and how to move from 1.x. |
+| [Using the module with DSC v3](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/DscV3) | Running resources and configuration documents with the `dsc` command-line tool. |
+| [Pipeline Runner Configuration](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/LCMConfiguration) | Applying configurations at scale with [Dsc.PipelineRunner](https://github.com/ZanattaMichael/Dsc.PipelineRunner). |
+| [Caching](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Caching) | What the module caches, when it changes and how to reset it. |
+| [Permissions & ACLs](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Permissions) | The permission resources, identity syntax and permission names. |
+| [Best Practices](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/BestPractices) | Recommendations for identities, secrets, configurations and runs. |
+| [Troubleshooting](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki/Troubleshooting) | Error messages and what to do about them. |
+| [USAGE.md](USAGE.md) | Environment variables, logging, export and secret references. |
+| [SECURITY.md](SECURITY.md) | Reporting a vulnerability, and how the module protects the credential. |
 
-The same documentation is published to the
-[AzureDevOpsDscNative Wiki](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki), which is updated
-automatically on each PR merge.
+The guides are kept in [`source/WikiSource`](source/WikiSource) and published to the
+[AzureDevOpsDscNative Wiki](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki) on each release, together with a generated page for every
+resource.
+
+Each resource also has a page under [`source/Examples/Resources`](source/Examples/Resources)
+covering its properties, the behaviour worth knowing before using it, and three worked examples (a
+DSC configuration, `Invoke-DscResource`, and `Dsc.PipelineRunner`). The tables above link to them
+directly.
 
 [`docs/ResourceRoadmap.md`](docs/ResourceRoadmap.md) is the plan of record for what the module
 covers and what is still outstanding, with the reasoning behind the priority order. Start there
@@ -327,9 +342,8 @@ before adding a resource.
 
 ### Examples
 
-The [Examples](source/Examples) directory holds runnable configurations for every resource. They
-are also available in the
-[AzureDevOpsDscNative Wiki](https://github.com/ZanattaMichael/AzureDevOpsDsc/wiki).
+The [Examples](source/Examples) directory holds runnable scripts for every sign-in method and
+every resource.
 
 ## Testing
 
