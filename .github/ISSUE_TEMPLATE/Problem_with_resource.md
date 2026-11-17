@@ -32,7 +32,7 @@ about: If you have a problem, bug, or enhancement with a resource in this resour
 # insert configuration here
 ```
 
-#### Azure DevOps Server version the target node is running
+#### Module version, PowerShell version and operating system
 
 #### VSTeam PowerShell modules present on the target node
 <!--

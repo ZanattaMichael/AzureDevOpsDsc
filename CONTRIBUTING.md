@@ -26,9 +26,6 @@ The `AzureDevOpsDsc` module consists of a few key components:
     * `Resources` - These invoke the `Api` functions/commands to
         manage specific, Azure DevOps REST API resources (e.g. `Projects`).
 
-    * `Server` - These are specific to Azure DevOps
-      **Server** - the self-hosted, typically on-premise, edition of Azure DevOps.
-
     * `Services` - These are specific to Azure DevOps
       **Services** - the Microsoft, cloud-hosted, 'Software-as-a-Service' (SaaS)
       solution.
@@ -944,8 +941,9 @@ Conventions for the guides in `source/WikiSource`:
 * A file name is the wiki page name: `Upgrading-to-2.0.md` is the page *Upgrading to 2.0*.
 * Link to another wiki page by its name without an extension, `[Caching](Caching)`, and to a
   file in the repository by its full `https://github.com/...` address.
-* `Home.md` carries the placeholder `#.#.#`, which is replaced with the module version when the
-  wiki is published.
+* `Home.md` is the wiki's home page, including the logo banner and the description of the
+  module. Change them there, not in the wiki. It carries the placeholder `#.#.#`, which is
+  replaced with the module version when the wiki is published.
 * Quote an error message exactly as the module writes it, so a search finds it.
 
 A breaking change also needs an entry in the upgrade guide for that major version

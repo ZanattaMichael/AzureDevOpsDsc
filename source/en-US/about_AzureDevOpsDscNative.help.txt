@@ -2,10 +2,10 @@ TOPIC
     about_AzureDevOpsDscNative
 
 SHORT DESCRIPTION
-    DSC Resources for deployment and configuration of Azure DevOps Services and Azure DevOps Server, with native DSC v3 support.
+    DSC Resources for deployment and configuration of Azure DevOps Services, with native DSC v3 support.
 
 LONG DESCRIPTION
-    This module contains DSC Resources for deployment and configuration of Azure DevOps Services and Azure DevOps Server. It is a fork of the DSC Community AzureDevOpsDsc module, adding native DSC v3 support - every resource is discoverable and invokable by dsc.exe via the Microsoft.Adapter/PowerShell adapter, using generated adapted resource manifests.
+    This module contains DSC Resources for deployment and configuration of Azure DevOps Services, the cloud service at dev.azure.com. Azure DevOps Server (on-premises) is not supported. It is a fork of the DSC Community AzureDevOpsDsc module, adding native DSC v3 support - every resource is discoverable and invokable by dsc.exe via the Microsoft.Adapter/PowerShell adapter, using generated adapted resource manifests.
 
     The resources manage projects, groups and permissions, repositories and policies, pipelines, boards, process customization, artifacts and more. Each resource can be used with Invoke-DscResource or with the DSC v3 command-line tool, where it is addressed as AzureDevOpsDscNative/<ResourceName>.
 

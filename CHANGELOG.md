@@ -32,6 +32,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `CONTRIBUTING.md` has a Documentation section, and the Releasing section states the
     preview-first rule and what to do when the changelog roll-over pull request is not
     opened.
+  - The module is documented as supporting Azure DevOps Services only. The `about_`
+    help topic no longer claims Azure DevOps Server support, and the FAQ and `USAGE.md`
+    say it is not supported. `docs/AzureDevOpsServerSupport.md` records the decision.
+  - The repository is the source of the wiki's home page: `source/WikiSource/Home.md`
+    keeps the logo banner and the description the wiki page had.
 
 ## [2.0.0] - 2026-11-16
 
