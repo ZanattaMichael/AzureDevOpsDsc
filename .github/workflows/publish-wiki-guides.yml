@@ -1,15 +1,20 @@
 name: Publish Wiki Guides
 
-# Keeps the hand-written wiki guides (Home, Authentication, Troubleshooting and the other
-# pages under source/WikiSource) in step with the repository. A change to one of them on
-# main is pushed to the GitHub wiki straight away, so a guide is edited through a pull
-# request like any other file and never in the wiki itself.
+# Makes the repository the authoritative source for the hand-written wiki guides (Home,
+# Authentication, Troubleshooting and the other pages under source/WikiSource). A guide
+# is edited through a pull request like any other file and never in the wiki itself:
+#
+#   - A change to a guide on main is pushed to the GitHub wiki straight away.
+#   - A guide deleted from source/WikiSource is deleted from the wiki.
+#   - A guide edited directly in the wiki is put back as it is in the repository. The
+#     `gollum` trigger fires on every wiki edit made by a person. The push this workflow
+#     makes with GITHUB_TOKEN does not fire it, so it cannot loop.
 #
 # This complements the release workflow rather than replacing it. publish.yml still
 # builds the whole wiki (the generated per-resource pages, the sidebar and these guides)
-# and pushes it on each release. This workflow only copies the guide files, so a fix to
-# a guide does not wait for the next release. It adds and updates pages and never deletes
-# one: a guide removed from source/WikiSource has to be deleted from the wiki by hand.
+# and pushes it on each release. This workflow only owns the files it published from
+# source/WikiSource, which it records in a manifest in the wiki, and leaves every other
+# page alone.
 #
 # On a pull request it runs as a dry run: it shows what would change on the wiki and
 # pushes nothing.
@@ -30,6 +35,8 @@ on:
       - 'source/WikiSource/**'
       - '.github/workflows/publish-wiki-guides.yml'
       - '.github/scripts/Sync-WikiGuides.sh'
+  # A page was created or edited in the wiki itself.
+  gollum:
   workflow_dispatch:
 
 # One wiki push at a time, in the order the commits landed. A run is never cancelled

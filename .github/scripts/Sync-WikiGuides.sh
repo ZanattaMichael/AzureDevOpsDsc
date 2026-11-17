@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
-# Copies the wiki guide pages from source/WikiSource at a given commit into a clone of
-# the repository wiki, and stages the result there. It never deletes a wiki page: the
-# wiki also holds the per-resource pages the release workflow generates, and pages that
-# exist only in the wiki.
+# Makes the guide pages in a clone of the repository wiki match source/WikiSource at a
+# given commit, and stages the result there.
+#
+# The repository is the authoritative source for the guides. A guide is added or
+# overwritten from the repository, and a guide that was published by this script before
+# and is no longer in source/WikiSource is deleted from the wiki. The script knows what
+# it published from a manifest it keeps in the wiki (.guides-from-repository), so it
+# never deletes anything else: the per-resource pages and the sidebar that the release
+# workflow generates are not in the manifest and are left alone.
 #
 # Usage: Sync-WikiGuides.sh <repository directory> <wiki directory> [<module version>]
 #
@@ -24,13 +29,49 @@ if ! git -C "$repo_dir" cat-file -e "HEAD:$source_dir" 2>/dev/null; then
     exit 0
 fi
 
-count=0
+manifest='.guides-from-repository'
+published=()
 while IFS= read -r -d '' file; do
     relative=${file#"$source_dir"/}
     mkdir -p "$wiki_dir/$(dirname "$relative")"
     git -C "$repo_dir" show "HEAD:$file" > "$wiki_dir/$relative"
-    count=$((count + 1))
+    published+=("$relative")
 done < <(git -C "$repo_dir" ls-tree -r -z --name-only HEAD -- "$source_dir/")
+count=${#published[@]}
+
+# An empty folder is far more likely to be a mistake than a decision to delete every
+# guide, so it publishes nothing and deletes nothing.
+if (( count == 0 )); then
+    echo "::warning::$source_dir holds no files. Nothing was published or deleted."
+    exit 0
+fi
+
+# Delete the guides this script published before that are gone from the repository.
+# The manifest lives in the wiki, which can be edited by hand, so an entry is only
+# honoured if it is a plain relative path to a file git tracks inside the wiki.
+removed=0
+if [[ -f "$wiki_dir/$manifest" ]]; then
+    while IFS= read -r previous || [[ -n "$previous" ]]; do
+        previous=${previous%$'\r'}
+        [[ -z "$previous" || "$previous" == /* || "$previous" == *..* || "$previous" == .git/* ]] && continue
+        [[ "$previous" == "$manifest" ]] && continue
+        still_published=false
+        for current in "${published[@]}"; do
+            if [[ "$current" == "$previous" ]]; then
+                still_published=true
+                break
+            fi
+        done
+        "$still_published" && continue
+        if git -C "$wiki_dir" ls-files --error-unmatch -- "$previous" > /dev/null 2>&1; then
+            git -C "$wiki_dir" rm --quiet -- "$previous"
+            echo "Deleted $previous, which is no longer in $source_dir."
+            removed=$((removed + 1))
+        fi
+    done < "$wiki_dir/$manifest"
+fi
+
+printf '%s\n' "${published[@]}" | LC_ALL=C sort > "$wiki_dir/$manifest"
 
 # The version shown on the wiki's Home page is the latest full release, which is what a
 # reader installs by default.
@@ -51,7 +92,7 @@ if [[ -f "$wiki_dir/Home.md" ]]; then
 fi
 
 git -C "$wiki_dir" add --all
-echo "Copied $count file(s) from $source_dir."
+echo "Copied $count file(s) from $source_dir and deleted $removed."
 
 summary=${GITHUB_STEP_SUMMARY:-/dev/null}
 if git -C "$wiki_dir" diff --cached --quiet; then
