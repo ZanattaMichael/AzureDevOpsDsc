@@ -38,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - The repository is the source of the wiki's home page: `source/WikiSource/Home.md`
     keeps the logo banner and the description the wiki page had.
 
+## [2.0.0] - 2026-11-16
+
 ### Removed
 
 - **BREAKING:** `New-AzDoAuthenticationProvider` no longer has the plain-text
