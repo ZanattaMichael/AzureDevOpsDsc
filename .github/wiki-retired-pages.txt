@@ -1,0 +1,11 @@
+# Pages and folders that were once in the GitHub wiki and are retired. The Publish Wiki
+# Guides workflow deletes each one from the wiki if it is still there. One path per line,
+# relative to the wiki root. A path that is also a guide in source/WikiSource is ignored.
+#
+# Hand-made pages from before the guides moved into the repository. They listed 49
+# resources and were superseded by the generated resource pages.
+Examples.md
+Resources.md
+INDEX.md
+WIKI_SUMMARY.md
+Resources

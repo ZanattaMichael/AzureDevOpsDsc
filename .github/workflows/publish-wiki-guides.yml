@@ -1,0 +1,120 @@
+name: Publish Wiki Guides
+
+# Makes the repository the authoritative source for the hand-written wiki guides (Home,
+# Authentication, Troubleshooting and the other pages under source/WikiSource). A guide
+# is edited through a pull request like any other file and never in the wiki itself:
+#
+#   - A change to a guide on main is pushed to the GitHub wiki straight away.
+#   - A guide deleted from source/WikiSource is deleted from the wiki.
+#   - A page or folder listed in .github/wiki-retired-pages.txt is deleted from the wiki.
+#   - A guide edited directly in the wiki is put back as it is in the repository. The
+#     `gollum` trigger fires on every wiki edit made by a person. The push this workflow
+#     makes with GITHUB_TOKEN does not fire it, so it cannot loop.
+#
+# This complements the release workflow rather than replacing it. publish.yml still
+# builds the whole wiki (the generated per-resource pages, the sidebar and these guides)
+# and pushes it on each release. This workflow only owns the files it published from
+# source/WikiSource, which it records in a manifest in the wiki, and leaves every other
+# page alone.
+#
+# On a pull request it runs as a dry run: it shows what would change on the wiki and
+# pushes nothing.
+#
+# GITHUB_TOKEN is the only credential. `contents: write` covers the wiki, which must be
+# enabled and hold at least one page.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'source/WikiSource/**'
+      - '.github/workflows/publish-wiki-guides.yml'
+      - '.github/scripts/Sync-WikiGuides.sh'
+      - '.github/wiki-retired-pages.txt'
+  pull_request:
+    paths:
+      - 'source/WikiSource/**'
+      - '.github/workflows/publish-wiki-guides.yml'
+      - '.github/scripts/Sync-WikiGuides.sh'
+      - '.github/wiki-retired-pages.txt'
+  # A page was created or edited in the wiki itself.
+  gollum:
+  workflow_dispatch:
+
+# One wiki push at a time, in the order the commits landed. A run is never cancelled
+# part-way through a push.
+concurrency:
+  group: publish-wiki-guides-${{ github.event_name == 'pull_request' && github.ref || 'wiki' }}
+  cancel-in-progress: false
+
+jobs:
+  # Token permissions cannot be set from an expression, so the dry run and the publish
+  # are separate jobs: only the one that pushes holds `contents: write`.
+  preview:
+    name: Preview wiki guide changes
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          path: repo
+          persist-credentials: false
+
+      - name: Checkout wiki
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: wiki
+          persist-credentials: false
+
+      - name: Copy guides into the wiki (dry run)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          repo/.github/scripts/Sync-WikiGuides.sh repo wiki
+
+  publish:
+    name: Publish wiki guides
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          path: repo
+          persist-credentials: false
+
+      - name: Checkout wiki
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: wiki
+
+      - name: Copy guides into the wiki
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          repo/.github/scripts/Sync-WikiGuides.sh repo wiki
+
+      - name: Push to the wiki
+        working-directory: wiki
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          if git diff --cached --quiet; then
+              exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit --quiet -m "Update guides from ${COMMIT_SHA}"
+          git push
