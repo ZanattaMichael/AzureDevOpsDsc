@@ -5,6 +5,9 @@
 .claude/skills/**/*.sh text eol=lf
 .claude/skills/**/SKILL.md text eol=lf
 
+# Workflow helper scripts run under Bash on the hosted Linux runners.
+.github/scripts/*.sh text eol=lf
+
 # Ensure any exe files are treated as binary
 *.exe binary
 *.jpg binary

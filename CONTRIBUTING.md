@@ -931,8 +931,10 @@ that describe it.
 The wiki is generated, not edited by hand. The `docs` build task writes `output/WikiContent` from
 two sources: a page for each resource, built from the class's comment-based help and its example
 scripts, and the guides copied from `source/WikiSource`. Edit a guide in `source/WikiSource` and
-it reaches the wiki when the wiki is next published. A change made in the wiki's own editor is
-overwritten.
+the `Publish Wiki Guides` workflow pushes it to the wiki as soon as the change is on `main`. The
+same workflow deletes a guide from the wiki when it is deleted from `source/WikiSource`, and puts
+a guide back if it is changed in the wiki's own editor. The generated resource pages and the
+sidebar are published on each release.
 
 Conventions for the guides in `source/WikiSource`:
 
