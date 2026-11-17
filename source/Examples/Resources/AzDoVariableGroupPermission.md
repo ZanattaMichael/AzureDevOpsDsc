@@ -168,11 +168,10 @@ Import-Module Dsc.PipelineRunner
 
 $params = @{
     AzureDevopsOrganizationName = "SampleAzDoOrgName"
-    exportConfigDir             = "C:\Datum\DSCOutput\"
+    ExportConfigDir             = "C:\Datum\DSCOutput\"
     ConfigurationSourcePath     = 'https://configuration-path'
     JITToken                    = 'SampleJITToken'
     Mode                        = 'Set'
-    AuthenticationType          = 'ManagedIdentity'
     ReportPath                  = 'C:\Datum\DSCOutput\Reports'
 }
 
