@@ -319,7 +319,7 @@ This format helps users understand each property and method of your resource, pr
 
 ### Naming the Resource
 
-The resource name must start with the prefix xAzDo, such as AzDoProject.
+The resource name must start with the prefix `AzDo`, such as `AzDoProject`.
 
 ### Guidelines for Documentation
 
@@ -914,6 +914,41 @@ Below is an example of the `Write-Verbose` logfile:
 [2024-08-13 14:10:45] No members found for group '[TEAM FOUNDATION]\Enterprise Service Accounts'; skipping.
 ```
 
+# Documentation
+
+Documentation is part of a change. A pull request that changes behaviour updates the documents
+that describe it.
+
+| Document | Holds | Update it when |
+|---|---|---|
+| `README.md` | Overview, what is new, quick start, the resource tables. | A resource is added or removed, or the first-run experience changes. |
+| `USAGE.md` | Environment variables, logging, export, secret references, the pipeline runner. | A setting or cross-cutting feature changes. |
+| `SECURITY.md` | The security policy and how the credential is protected. | Credential, cache, request or redaction behaviour changes. |
+| `source/WikiSource/*.md` | The user guides: authentication, upgrading, DSC v3, caching, troubleshooting, best practices, FAQ. | A guide's subject changes, or a new error message is worth a troubleshooting entry. |
+| `source/Examples/Resources/<Resource>.md` | The reference page for a resource. | The resource's properties or behaviour change. |
+| `source/Examples/Resources/<Resource>/*.ps1` | Runnable examples, numbered `1-`, `2-`, ... | A resource is added, or an example stops matching the resource. |
+| Comment-based help in `source/Classes/*.ps1` | The source of each resource's generated wiki page. | The resource's properties change. |
+| `source/en-US/about_AzureDevOpsDscNative.help.txt` | The `about_` topic shipped in the module. | Getting started changes. |
+| `CHANGELOG.md` | Every user-visible change, under `## [Unreleased]`. | Always. |
+
+The wiki is generated, not edited by hand. The `docs` build task writes `output/WikiContent` from
+two sources: a page for each resource, built from the class's comment-based help and its example
+scripts, and the guides copied from `source/WikiSource`. Edit a guide in `source/WikiSource` and
+it reaches the wiki when the wiki is next published. A change made in the wiki's own editor is
+overwritten.
+
+Conventions for the guides in `source/WikiSource`:
+
+* A file name is the wiki page name: `Upgrading-to-2.0.md` is the page *Upgrading to 2.0*.
+* Link to another wiki page by its name without an extension, `[Caching](Caching)`, and to a
+  file in the repository by its full `https://github.com/...` address.
+* `Home.md` carries the placeholder `#.#.#`, which is replaced with the module version when the
+  wiki is published.
+* Quote an error message exactly as the module writes it, so a search finds it.
+
+A breaking change also needs an entry in the upgrade guide for that major version
+(`source/WikiSource/Upgrading-to-2.0.md` for 2.0).
+
 # Tests
 
 ## Running the Tests
@@ -1044,6 +1079,10 @@ which this project does not have.
 
 ### Cutting a release
 
+A release goes out as a preview first. Tag a prerelease (`v2.1.0-preview1`), let it publish, and
+only tag the full version (`v2.1.0`) once the preview has succeeded. This applies to major
+versions above all: a full version number cannot be reused once the Gallery has accepted it.
+
 1. Make sure `main` is green — both the Build and Unit Tests workflows must be
    passing for the commit you intend to tag.
 2. Make sure the `## [Unreleased]` section of [CHANGELOG.md](CHANGELOG.md)
@@ -1115,11 +1154,16 @@ each gating the next.
 6. Runs `docs`, `dscv3`, and `package_module_nupkg` to generate conceptual help,
    the DSC v3 adapted resource manifests, and the NuGet package.
 7. Publishes the GitHub Release and the PowerShell Gallery package.
-8. Pushes wiki content (non-blocking — requires the repository wiki to be
+8. Pushes wiki content: the generated resource pages and the guides from
+   `source/WikiSource` (non-blocking — requires the repository wiki to be
    enabled and initialised).
-9. Opens a pull request rolling `## [Unreleased]` over into a versioned
-   changelog section. **Merge this PR**, otherwise the next release's notes will
-   still contain this release's entries.
+9. Pushes a branch `updateChangelogAfter<tag>` that rolls `## [Unreleased]` over
+   into a versioned changelog section, and opens a pull request for it. **Merge
+   this PR**, otherwise the next release's notes will still contain this
+   release's entries. If the repository does not allow GitHub Actions to create
+   pull requests (**Settings → Actions → General → Workflow permissions**), the
+   branch is pushed but no pull request appears, and the step still reports
+   success: open the pull request from that branch by hand.
 
 Steps 1–6 all fail safe: nothing is published until step 7. Once the Gallery
 accepts a version, that version number is permanently consumed — it can be
