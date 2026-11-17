@@ -1,0 +1,106 @@
+name: Publish Wiki Guides
+
+# Keeps the hand-written wiki guides (Home, Authentication, Troubleshooting and the other
+# pages under source/WikiSource) in step with the repository. A change to one of them on
+# main is pushed to the GitHub wiki straight away, so a guide is edited through a pull
+# request like any other file and never in the wiki itself.
+#
+# This complements the release workflow rather than replacing it. publish.yml still
+# builds the whole wiki (the generated per-resource pages, the sidebar and these guides)
+# and pushes it on each release. This workflow only copies the guide files, so a fix to
+# a guide does not wait for the next release. It adds and updates pages and never deletes
+# one: a guide removed from source/WikiSource has to be deleted from the wiki by hand.
+#
+# On a pull request it runs as a dry run: it shows what would change on the wiki and
+# pushes nothing.
+#
+# GITHUB_TOKEN is the only credential. `contents: write` covers the wiki, which must be
+# enabled and hold at least one page.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'source/WikiSource/**'
+      - '.github/workflows/publish-wiki-guides.yml'
+      - '.github/scripts/Sync-WikiGuides.sh'
+  pull_request:
+    paths:
+      - 'source/WikiSource/**'
+      - '.github/workflows/publish-wiki-guides.yml'
+      - '.github/scripts/Sync-WikiGuides.sh'
+  workflow_dispatch:
+
+# One wiki push at a time, in the order the commits landed. A run is never cancelled
+# part-way through a push.
+concurrency:
+  group: publish-wiki-guides-${{ github.event_name == 'pull_request' && github.ref || 'wiki' }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: ${{ github.event_name == 'pull_request' && 'Preview wiki guide changes' || 'Publish wiki guides' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: ${{ github.event_name == 'pull_request' && 'read' || 'write' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          path: repo
+          persist-credentials: false
+
+      - name: Checkout wiki
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: wiki
+
+      # The version shown on the wiki's Home page is the latest full release, which is
+      # what a reader installs by default. A repository with no release yet leaves the
+      # placeholder alone.
+      - name: Find the latest released version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          tag=$(gh api "repos/$REPOSITORY/releases/latest" --jq '.tag_name' 2>/dev/null || true)
+          echo "Latest release tag: ${tag:-none}"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Copy guides into the wiki
+        env:
+          MODULE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          repo/.github/scripts/Sync-WikiGuides.sh repo wiki "$MODULE_VERSION"
+
+      - name: Show what changes on the wiki
+        working-directory: wiki
+        run: |
+          if git diff --cached --quiet; then
+              echo "The wiki guides already match the repository." | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+              {
+                  echo '### Wiki guide changes'
+                  echo '```'
+                  git diff --cached --stat
+                  echo '```'
+              } | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Push to the wiki
+        if: github.event_name != 'pull_request'
+        working-directory: wiki
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          if git diff --cached --quiet; then
+              exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit --quiet -m "Update guides from ${COMMIT_SHA}"
+          git push
